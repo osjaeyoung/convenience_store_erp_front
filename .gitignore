@@ -1,3 +1,6 @@
+# Cursor / MCP (local config)
+.cursor/
+
 # Miscellaneous
 *.class
 *.log
