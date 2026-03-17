@@ -1,0 +1,1093 @@
+# 직원관리 API 스펙 (근무일정 중심)
+
+기본 prefix: `/api/v1`
+
+> 참고: 아래 JSON 예시는 이해를 돕기 위해 `//` 주석을 포함했습니다.  
+> 실제 API 요청/응답 JSON에는 주석 없이 사용해야 합니다.
+
+## 인증/권한
+
+- 모든 API는 `Authorization: Bearer {access_token}` 필요
+- 경영주(owner): 본인 소유 점포만 접근 가능
+- 점장(manager): 본인이 배정된 점포만 접근 가능
+
+## 목표 범위
+
+- 날짜별 근무일정 조회 (24시간, 30분 단위)
+- 주별 근무일정 조회 (7일)
+- 날짜별 저장/수정
+- 주별 저장/수정
+- 특정 슬롯 상태/메모 수정
+- 특정 슬롯 삭제
+
+---
+
+## 1) 날짜별 근무일정 조회
+
+- `GET /staff-management/branches/{branch_id}/schedules/day?date=2026-09-11`
+
+### Request Body
+없음
+
+### Response Body (200)
+```json
+{
+  "work_date": "2026-09-11", // 조회 대상 날짜(YYYY-MM-DD)
+  "slots": [
+    {
+      "time": "00:00", // 30분 슬롯 시작 시각(HH:MM)
+      "employees": [] // 해당 슬롯 배정 직원 목록(없으면 빈 배열)
+    },
+    {
+      "time": "00:30", // 30분 슬롯 시작 시각(HH:MM)
+      "employees": [
+        {
+          "schedule_id": 7001, // 스케줄 엔트리 PK
+          "employee_id": 501, // 근무자 PK
+          "worker_name": "이사라", // 근무자 이름
+          "status": "scheduled", // scheduled|done|absent|unset
+          "memo": null // 근무 메모(없으면 null)
+        },
+        {
+          "schedule_id": 7002, // 스케줄 엔트리 PK
+          "employee_id": 502, // 근무자 PK
+          "worker_name": "김찬우", // 근무자 이름
+          "status": "done", // 실제 근무 상태
+          "memo": "교대 완료" // 관리자가 남긴 메모
+        }
+      ]
+    }
+  ]
+}
+```
+
+설명:
+
+- 1일 48개 슬롯(00:00 ~ 23:30)을 반환
+- 빈 슬롯은 `employees: []`
+- 한 슬롯에 여러 직원 배치 가능
+- 조회 시 근로계약 룰이 있으면 자동반영 가능
+
+---
+
+## 2) 주별 근무일정 조회
+
+- `GET /staff-management/branches/{branch_id}/schedules/week?week_start_date=2026-09-08`
+
+### Request Body
+없음
+
+### Response Body (200)
+```json
+{
+  "week_start_date": "2026-09-08", // 주 시작일(YYYY-MM-DD)
+  "days": [
+    {
+      "work_date": "2026-09-08", // 해당 일자(주 시작일 기준)
+      "slots": [
+        {
+          "time": "09:00", // 30분 슬롯 시작 시각
+          "employees": [
+            {
+              "schedule_id": 7101, // 스케줄 엔트리 PK
+              "employee_id": 501, // 근무자 PK
+              "worker_name": "이사라", // 근무자 이름
+              "status": "scheduled", // 근무 상태
+              "memo": null // 메모
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+## 3) 날짜별 근무일정 저장/수정
+
+- `PUT /staff-management/branches/{branch_id}/schedules/day`
+- 해당 날짜의 기존 일정은 입력값으로 전체 교체
+
+### Request Body
+```json
+{
+  "work_date": "2026-09-11", // 저장 대상 날짜
+  "slots": [
+    {
+      "time": "09:00", // 30분 슬롯 시작 시각
+      "assignments": [
+        {
+          "employee_id": 501, // 배정할 근무자 PK
+          "status": "scheduled", // scheduled|done|absent|unset
+          "memo": null // 슬롯 메모
+        },
+        {
+          "employee_id": 502, // 배정할 근무자 PK
+          "status": "done", // 근무 완료 처리
+          "memo": "대체근무" // 메모
+        }
+      ]
+    },
+    {
+      "time": "09:30", // 30분 슬롯 시작 시각
+      "assignments": [] // 빈 슬롯 저장
+    }
+  ]
+}
+```
+
+### Response Body (200)
+```json
+{
+  "affected_dates": [
+    "2026-09-11" // 실제 반영된 날짜 목록
+  ],
+  "inserted_count": 2 // 새로 저장된 스케줄 개수
+}
+```
+
+---
+
+## 4) 주별 근무일정 저장/수정
+
+- `PUT /staff-management/branches/{branch_id}/schedules/week`
+- 대상 주(7일) 기존 일정은 입력값으로 전체 교체
+
+### Request Body
+```json
+{
+  "week_start_date": "2026-09-08", // 저장 대상 주 시작일
+  "days": [
+    {
+      "weekday": 0, // 0=월, 1=화, ... 6=일
+      "slots": [
+        {
+          "time": "09:00", // 슬롯 시작 시각
+          "assignments": [
+            {
+              "employee_id": 501, // 배정 근무자 PK
+              "status": "scheduled", // 근무 상태
+              "memo": null // 메모
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "weekday": 2, // 수요일
+      "slots": [
+        {
+          "time": "13:00", // 슬롯 시작 시각
+          "assignments": [
+            {
+              "employee_id": 502, // 배정 근무자 PK
+              "status": "absent", // 결근 처리
+              "memo": "병가" // 메모
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Response Body (200)
+```json
+{
+  "affected_dates": [
+    "2026-09-08", // 주간 반영 날짜(월)
+    "2026-09-09", // 화
+    "2026-09-10", // 수
+    "2026-09-11", // 목
+    "2026-09-12", // 금
+    "2026-09-13", // 토
+    "2026-09-14" // 일
+  ],
+  "inserted_count": 2 // 주간 저장으로 생성된 스케줄 개수
+}
+```
+
+---
+
+## 5) 특정 슬롯 상태/메모 수정
+
+- `PATCH /staff-management/branches/{branch_id}/schedules/{schedule_id}`
+
+### Request Body
+```json
+{
+  "status": "done", // 변경할 근무 상태
+  "memo": "지각 5분" // 변경할 메모
+}
+```
+
+### Response Body (200)
+```json
+{
+  "schedule_id": 7001, // 수정된 스케줄 PK
+  "status": "done", // 최종 상태
+  "memo": "지각 5분", // 최종 메모
+  "updated_at": "2026-09-11T10:10:00Z" // 최종 수정 시각(UTC)
+}
+```
+
+---
+
+## 6) 특정 슬롯 삭제
+
+- `DELETE /staff-management/branches/{branch_id}/schedules/{schedule_id}`
+
+### Request Body
+없음
+
+### Response Body (200)
+```json
+{
+  "deleted": true // 삭제 성공 여부
+}
+```
+
+---
+
+## 상태 값
+
+- `scheduled`: 근무예정
+- `done`: 근무완료
+- `absent`: 결근
+- `unset`: 미정
+
+## 시간/저장 정책
+
+- 시간 포맷은 `HH:MM`
+- 30분 단위만 허용 (`00`, `30`)
+- 1슬롯에 0명(빈 자리) 또는 N명 배치 가능
+- 하루/주 저장은 전체 교체 방식
+
+---
+
+## 7) 현근무자/퇴사자 비교 조회 (점포 한정)
+
+- `GET /staff-management/branches/{branch_id}/employees/compare?q=이사라`
+- `q`는 이름/근무자번호/연락처 검색
+
+### Request Body
+없음
+
+### Response Body (200)
+```json
+{
+  "active_workers": [
+    {
+      "employee_id": 501, // 근무자 PK
+      "employee_number": "010-00051", // 점포 내 근무자 번호
+      "name": "이사라", // 이름
+      "phone_number": "01012341234", // 연락처
+      "hire_date": "2025-05-12", // 입사일
+      "resignation_date": null, // 퇴사일(현근무자는 null)
+      "employment_status": "active", // active|retired
+      "linked_user_id": 25, // 앱 사용자 계정 연결 ID
+      "created_at": "2026-09-11T08:00:00Z" // 등록 시각
+    }
+  ],
+  "retired_workers": [
+    {
+      "employee_id": 502, // 근무자 PK
+      "employee_number": "010-00052", // 점포 내 근무자 번호
+      "name": "김찬우", // 이름
+      "phone_number": "01099998888", // 연락처
+      "hire_date": "2024-03-02", // 입사일
+      "resignation_date": "2026-03-30", // 퇴사일
+      "employment_status": "retired", // 퇴사 상태
+      "linked_user_id": null, // 연결된 앱 계정 없으면 null
+      "created_at": "2026-09-11T08:10:00Z" // 등록 시각
+    }
+  ]
+}
+```
+
+---
+
+## 8) 근무자 번호로 단건 조회
+
+- `GET /staff-management/branches/{branch_id}/employees/by-number/{employee_number}`
+
+### Request Body
+없음
+
+### Response Body (200)
+```json
+{
+  "employee_id": 501, // 근무자 PK
+  "employee_number": "010-00051", // 점포 내 근무자 번호
+  "name": "이사라", // 이름
+  "phone_number": "01012341234", // 연락처
+  "hire_date": "2025-05-12", // 입사일
+  "resignation_date": null, // 퇴사일
+  "employment_status": "active", // active|retired
+  "linked_user_id": 25, // 앱 사용자 계정 연결 ID
+  "created_at": "2026-09-11T08:00:00Z" // 등록 시각
+}
+```
+
+---
+
+## 9) 점장/경영주 자기 자신 근무자로 등록
+
+- `POST /staff-management/branches/{branch_id}/employees/register-self`
+
+### Request Body
+```json
+{
+  "name": "이사라", // 등록할 이름(미입력 시 사용자 프로필 이름 사용)
+  "phone_number": "01012341234", // 등록할 연락처(미입력 시 프로필 연락처 사용)
+  "hire_date": "2025-05-12" // 입사일
+}
+```
+
+### Response Body (200)
+```json
+{
+  "employee_id": 501, // 생성된 근무자 PK
+  "employee_number": "010-00051", // 자동 생성된 근무자 번호
+  "name": "이사라", // 이름
+  "phone_number": "01012341234", // 연락처
+  "hire_date": "2025-05-12", // 입사일
+  "resignation_date": null, // 퇴사일
+  "employment_status": "active", // 자기등록은 기본 active
+  "linked_user_id": 25, // 현재 로그인 사용자 ID와 자동 연결
+  "created_at": "2026-09-11T08:00:00Z" // 생성 시각
+}
+```
+
+---
+
+## 10) 근무자 상세 조회 (직원정보 화면)
+
+- `GET /staff-management/branches/{branch_id}/employees/{employee_id}`
+
+### Request Body
+없음
+
+### Response Body (200)
+```json
+{
+  "employee": {
+    "employee_id": 501, // 근무자 PK
+    "employee_number": "010-00051", // 점포 내 근무자 번호
+    "name": "이사라", // 이름
+    "phone_number": "01012341234", // 연락처
+    "hire_date": "2025-05-12", // 입사일
+    "resignation_date": null, // 퇴사일
+    "employment_status": "active", // active|retired
+    "linked_user_id": 25, // 연결 사용자 ID
+    "created_at": "2026-09-11T08:00:00Z" // 등록 시각
+  },
+  "labor_contracts": [
+    {
+      "rule_id": 1, // 근로계약 근무룰 PK
+      "employee_id": 501, // 대상 근무자 PK
+      "weekday": 1, // 0=월, ... 6=일
+      "start_time": "09:00", // 시작 시각
+      "end_time": "18:00", // 종료 시각
+      "is_active": true // 룰 활성 여부
+    }
+  ],
+  "work_histories": [
+    {
+      "schedule_id": 7001, // 근무이력(스케줄) PK
+      "employee_id": 501, // 근무자 PK
+      "worker_name": "이사라", // 근무자 이름
+      "start_time": "09:00", // 시작 시각
+      "end_time": "09:30", // 종료 시각
+      "status": "done", // 근무 상태
+      "memo": "정상근무", // 근무 메모
+      "schedule_source": "manual_daily_slot", // 생성 출처
+      "updated_at": "2026-09-11T10:10:00Z" // 마지막 수정 시각
+    }
+  ],
+  "payroll_statements": [], // 급여명세 목록
+  "hr_records": [], // 인사자료 목록
+  "etc_records": [], // 기타자료 목록
+  "reviews": [
+    {
+      "review_id": 31, // 리뷰 PK
+      "rating": 3, // 1~3점
+      "comment": "우수사원", // 리뷰 코멘트
+      "author_user_id": 2, // 작성자 사용자 ID
+      "author_name": "점장 홍길동", // 작성자 이름
+      "created_at": "2026-09-11T12:00:00Z" // 작성 시각
+    }
+  ]
+}
+```
+
+카테고리 매핑:
+
+1. 인적사항: `employee`
+2. 근로계약: `labor_contracts`
+3. 근무이력: `work_histories`
+4. 급여명세: `payroll_statements`
+5. 인사자료: `hr_records`
+6. 기타자료: `etc_records`
+
+---
+
+## 11) 근무자 인적사항 수정 (입사일/퇴사일 포함)
+
+- `PATCH /staff-management/branches/{branch_id}/employees/{employee_id}`
+
+### Request Body
+```json
+{
+  "name": "이사라", // 수정할 이름
+  "phone_number": "01012341234", // 수정할 연락처
+  "hire_date": "2025-05-12", // 수정할 입사일
+  "resignation_date": "2026-03-30", // 수정할 퇴사일
+  "employment_status": "retired" // active|retired
+}
+```
+
+### Response Body (200)
+```json
+{
+  "employee_id": 501, // 근무자 PK
+  "employee_number": "010-00051", // 점포 내 근무자 번호
+  "name": "이사라", // 이름
+  "phone_number": "01012341234", // 연락처
+  "hire_date": "2025-05-12", // 입사일
+  "resignation_date": "2026-03-30", // 퇴사일
+  "employment_status": "retired", // 변경된 재직 상태
+  "linked_user_id": 25, // 연결 사용자 ID
+  "created_at": "2026-09-11T08:00:00Z" // 최초 등록 시각
+}
+```
+
+---
+
+## 12) 리뷰 등록 (점장/경영주 입력 가능)
+
+- `POST /staff-management/branches/{branch_id}/employees/{employee_id}/reviews`
+
+### Request Body
+```json
+{
+  "rating": 3, // 1~3점
+  "comment": "책임감 있고 응대가 우수함" // 평가 코멘트
+}
+```
+
+### Response Body (200)
+```json
+{
+  "review_id": 31, // 리뷰 PK
+  "rating": 3, // 평가 점수
+  "comment": "책임감 있고 응대가 우수함", // 코멘트
+  "author_user_id": 2, // 작성자 사용자 ID
+  "author_name": "점장 홍길동", // 작성자 이름
+  "created_at": "2026-09-11T12:00:00Z" // 작성 시각
+}
+```
+
+---
+
+## 13) 리뷰 삭제
+
+- `DELETE /staff-management/branches/{branch_id}/employees/{employee_id}/reviews/{review_id}`
+
+### Request Body
+없음
+
+### Response Body (200)
+```json
+{
+  "deleted": true // 삭제 성공 여부
+}
+```
+
+---
+
+## 14) 급여명세 미리계산 (저장 안함)
+
+- `POST /staff-management/branches/{branch_id}/employees/{employee_id}/payroll-statements/calculate`
+- 공제항목을 공식대로 계산만 해서 미리보기
+
+### Request Body
+```json
+{
+  "year": 2025, // 급여 연도
+  "month": 12, // 급여 월(1~12)
+  "resident_id_masked": "992222-1******", // 주민번호 마스킹 값
+  "total_work_minutes": 8400, // 총 근무시간(분)
+  "hourly_wage": 9860, // 시급(원)
+  "weekly_allowance": 206400, // 주휴수당(원)
+  "overtime_pay": 0, // 연장/야간/휴일 수당(원)
+  "taxable_salary": null, // 과세급여 직접입력(없으면 자동계산)
+  "gross_salary": null // 총급여 직접입력(없으면 자동계산)
+}
+```
+
+### Response Body (200)
+```json
+{
+  "payroll_id": 0, // 계산 전용 응답(미저장)
+  "year": 2025, // 급여 연도
+  "month": 12, // 급여 월
+  "resident_id_masked": "992222-1******", // 주민번호 마스킹 값
+  "total_work_minutes": 8400, // 총 근무시간(분)
+  "hourly_wage": 9860, // 시급
+  "base_pay": 1380400, // 기본급(총근무시간*시급)
+  "weekly_allowance": 206400, // 주휴수당
+  "overtime_pay": 0, // 연장수당
+  "taxable_salary": 1586800, // 과세급여
+  "gross_salary": 1586800, // 총급여
+  "national_pension": 71406, // 국민연금
+  "health_insurance": 56252, // 건강보험
+  "employment_insurance": 14281, // 고용보험
+  "long_term_care_insurance": 7284, // 장기요양보험료
+  "income_tax": 47604, // 소득세
+  "local_income_tax": 4760, // 지방소득세
+  "total_deduction": 201587, // 공제합계
+  "net_pay": 1385213, // 실지급액
+  "s3_file_key": null, // 파일은 별도 파일저장 API에서 저장
+  "s3_file_url": null, // 파일은 별도 파일저장 API에서 저장
+  "created_at": "2026-09-30T09:00:00Z" // 응답 생성 시각
+}
+```
+
+---
+
+## 15) 급여명세 저장 (글 데이터만)
+
+- `POST /staff-management/branches/{branch_id}/employees/{employee_id}/payroll-statements`
+- 같은 근무자의 같은 연/월 급여명세는 1건만 저장 가능
+- 파일은 저장하지 않음(파일은 아래 파일저장 API 사용)
+
+### Request Body
+`14) 급여명세 미리계산`과 동일
+
+### Response Body (200)
+```json
+{
+  "payroll_id": 88, // 저장된 급여명세 PK
+  "year": 2025, // 급여 연도
+  "month": 12, // 급여 월
+  "resident_id_masked": "992222-1******", // 주민번호 마스킹 값
+  "total_work_minutes": 8400, // 총 근무시간(분)
+  "hourly_wage": 9860, // 시급
+  "base_pay": 1380400, // 기본급
+  "weekly_allowance": 206400, // 주휴수당
+  "overtime_pay": 0, // 연장수당
+  "taxable_salary": 1586800, // 과세급여
+  "gross_salary": 1586800, // 총급여
+  "national_pension": 71406, // 국민연금
+  "health_insurance": 56252, // 건강보험
+  "employment_insurance": 14281, // 고용보험
+  "long_term_care_insurance": 7284, // 장기요양보험료
+  "income_tax": 47604, // 소득세
+  "local_income_tax": 4760, // 지방소득세
+  "total_deduction": 201587, // 공제합계
+  "net_pay": 1385213, // 실지급액
+  "s3_file_key": null, // 파일 key(파일 저장 전이면 null)
+  "s3_file_url": null, // 파일 URL(파일 저장 전이면 null)
+  "files": [], // 첨부파일 목록(여러 개 가능)
+  "created_at": "2026-09-30T09:00:00Z" // 저장 시각
+}
+```
+
+---
+
+## 16) 급여명세 목록 조회
+
+- `GET /staff-management/branches/{branch_id}/employees/{employee_id}/payroll-statements?year=2025&month=12`
+- `year`, `month` 쿼리는 선택값(필터)
+
+### Request Body
+없음
+
+### Response Body (200)
+```json
+{
+  "items": [
+    {
+      "payroll_id": 88, // 급여명세 PK
+      "year": 2025, // 급여 연도
+      "month": 12, // 급여 월
+      "resident_id_masked": "992222-1******", // 주민번호 마스킹 값
+      "total_work_minutes": 8400, // 총 근무시간(분)
+      "hourly_wage": 9860, // 시급
+      "base_pay": 1380400, // 기본급
+      "weekly_allowance": 206400, // 주휴수당
+      "overtime_pay": 0, // 연장수당
+      "taxable_salary": 1586800, // 과세급여
+      "gross_salary": 1586800, // 총급여
+      "national_pension": 71406, // 국민연금
+      "health_insurance": 56252, // 건강보험
+      "employment_insurance": 14281, // 고용보험
+      "long_term_care_insurance": 7284, // 장기요양보험료
+      "income_tax": 47604, // 소득세
+      "local_income_tax": 4760, // 지방소득세
+      "total_deduction": 201587, // 공제합계
+      "net_pay": 1385213, // 실지급액
+      "s3_file_key": "payroll/branch-1/employee-501/2025-12.pdf", // S3 object key
+      "s3_file_url": "https://your-bucket.s3.ap-northeast-2.amazonaws.com/payroll/branch-1/employee-501/2025-12.pdf", // S3 URL
+      "files": [
+        {
+          "file_id": 11, // 첨부파일 PK
+          "file_key": "payroll/branch-1/employee-501/2025-12.pdf", // S3 object key
+          "file_url": "https://your-bucket.s3.ap-northeast-2.amazonaws.com/payroll/branch-1/employee-501/2025-12.pdf", // S3 URL
+          "file_name": "2025-12-급여명세.pdf", // 표시용 파일명
+          "created_at": "2026-09-30T09:01:00Z" // 업로드 시각
+        }
+      ], // 첨부파일 목록(여러 개 가능)
+      "created_at": "2026-09-30T09:00:00Z" // 저장 시각
+    }
+  ]
+}
+```
+
+---
+
+## 17) 급여명세 상세 조회
+
+- `GET /staff-management/branches/{branch_id}/employees/{employee_id}/payroll-statements/{payroll_id}`
+
+### Request Body
+없음
+
+### Response Body (200)
+`15) 급여명세 저장`의 Response와 동일
+
+---
+
+## 18) 급여명세 삭제
+
+- `DELETE /staff-management/branches/{branch_id}/employees/{employee_id}/payroll-statements/{payroll_id}`
+
+### Request Body
+없음
+
+### Response Body (200)
+```json
+{
+  "deleted": true
+}
+```
+
+---
+
+## 19) 급여명세 파일 저장 (파일만)
+
+- `PATCH /staff-management/branches/{branch_id}/employees/{employee_id}/payroll-statements/{payroll_id}/file`
+- 한번 요청에 여러 파일 저장 가능(append)
+
+### Request Body
+```json
+{
+  "files": [
+    {
+      "file_key": "payroll/branch-1/employee-501/2025-12.pdf", // S3 object key
+      "file_url": "https://your-bucket.s3.ap-northeast-2.amazonaws.com/payroll/branch-1/employee-501/2025-12.pdf", // S3 URL
+      "file_name": "2025-12-급여명세.pdf" // 표시용 파일명
+    },
+    {
+      "file_key": "payroll/branch-1/employee-501/2025-12-부속.pdf", // S3 object key
+      "file_url": "https://your-bucket.s3.ap-northeast-2.amazonaws.com/payroll/branch-1/employee-501/2025-12-appendix.pdf", // S3 URL
+      "file_name": "2025-12-부속자료.pdf" // 표시용 파일명
+    }
+  ]
+}
+```
+
+### Response Body (200)
+`15) 급여명세 저장`의 Response와 동일
+
+---
+
+## 20) 인사자료(HR)/기타자료(ETC) 목록/등록/상세/삭제
+
+- 목록:
+  - `GET /staff-management/branches/{branch_id}/employees/{employee_id}/records/hr`
+  - `GET /staff-management/branches/{branch_id}/employees/{employee_id}/records/etc`
+- 등록:
+  - `POST /staff-management/branches/{branch_id}/employees/{employee_id}/records/hr`
+  - `POST /staff-management/branches/{branch_id}/employees/{employee_id}/records/etc`
+- 단건:
+  - `GET /staff-management/branches/{branch_id}/employees/{employee_id}/records/{record_type}/{record_id}`
+- 삭제:
+  - `DELETE /staff-management/branches/{branch_id}/employees/{employee_id}/records/{record_id}`
+
+### 등록 Request Body (HR/ETC 공통)
+```json
+{
+  "title": "기타 자료", // 자료 제목
+  "note": "메모", // 설명/메모
+  "file_url": "https://files.example.com/hr-contract-2026.pdf", // 첨부 파일 URL
+  "issued_date": "2026-01-05" // 문서 발행일
+}
+```
+
+### 등록 Response Body (200)
+```json
+{
+  "record_id": 91, // 자료 PK
+  "record_type": "etc", // hr | etc
+  "title": "기타 자료", // 제목
+  "note": "메모", // 메모
+  "file_url": "https://files.example.com/hr-contract-2026.pdf", // 파일 URL
+  "issued_date": "2026-01-05", // 발행일
+  "created_at": "2026-01-05T09:00:00Z" // 등록 시각
+}
+```
+
+### 목록 Response Body (200)
+```json
+{
+  "items": [
+    {
+      "record_id": 91, // 자료 PK
+      "record_type": "etc", // hr | etc
+      "title": "기타 자료", // 제목
+      "note": "메모", // 메모
+      "file_url": "https://files.example.com/etc-2026-01.pdf", // 파일 URL
+      "issued_date": "2026-01-05", // 작성일/발행일
+      "created_at": "2026-01-05T09:00:00Z" // 등록 시각
+    }
+  ]
+}
+```
+
+### 단건 Response Body (200)
+등록 Response Body와 동일
+
+### 삭제 Response Body (200)
+```json
+{
+  "deleted": true // 삭제 성공 여부
+}
+```
+
+---
+
+## 21) 근로계약서 목록 조회 (임시저장 포함)
+
+- `GET /staff-management/branches/{branch_id}/employees/{employee_id}/employment-contracts?status=draft&template_version=guardian_consent_v1`
+- `status`는 선택값(`draft` 또는 `completed`)
+- `template_version`도 선택값(`standard_v1`, `minor_standard_v1`, `guardian_consent_v1`)
+
+### Request Body
+없음
+
+### Response Body (200)
+```json
+{
+  "items": [
+    {
+      "contract_id": 301, // 근로계약서 PK
+      "title": "김현수 표준 근로계약서", // 문서 제목
+      "status": "draft", // draft(임시저장)|completed(완료)
+      "template_version": "standard_v1", // 템플릿 버전
+      "completion_rate": 56, // 필수항목 입력률(0~100)
+      "form_values": {
+        "employer_name": "나눔편의점", // 사업주명
+        "worker_name": "김현수", // 근로자명
+        "contract_start_date": "2026-03-01" // 근로개시일(예시)
+      },
+      "contract_file_key": null, // S3 object key
+      "contract_file_url": null, // S3 URL
+      "files": [], // 첨부파일 목록(여러 개 가능)
+      "created_by_user_id": 2, // 작성자 사용자 ID
+      "finalized_at": null, // 완료 시각(임시저장은 null)
+      "created_at": "2026-03-05T09:00:00Z", // 생성 시각
+      "updated_at": "2026-03-05T09:10:00Z" // 마지막 수정 시각
+    }
+  ]
+}
+```
+
+---
+
+## 22) 근로계약서 생성 (초안 저장/즉시완료, 글 데이터만)
+
+- `POST /staff-management/branches/{branch_id}/employees/{employee_id}/employment-contracts`
+- 앱에서 빈칸 값을 입력해 `form_values`로 전송
+- `template_version=minor_standard_v1` 선택 시 연소근로자 표준근로계약 템플릿으로 저장
+- `template_version=guardian_consent_v1` 선택 시 친권자(후견인) 동의서 템플릿으로 저장
+- `status=draft`면 중간 저장, `status=completed`면 완료 저장
+- 파일은 저장하지 않음(파일은 별도 파일저장 API 사용)
+
+### Request Body
+```json
+{
+  "title": "김현수 표준 근로계약서", // 문서 제목(없으면 자동 생성)
+  "template_version": "minor_standard_v1", // standard_v1 | minor_standard_v1 | guardian_consent_v1
+  "status": "draft", // draft|completed
+  "form_values": {
+    "employer_name": "나눔편의점", // (이하 "사업주")
+    "worker_name": "김현수", // (이하 "근로자")
+    "contract_start_date": "2026-03-01", // 근로계약 시작일
+    "contract_end_date": "2027-02-28", // 근로계약 종료일(미지정 가능)
+    "work_place": "서울시 강남구 OO로 12 나눔편의점", // 근무 장소
+    "job_description": "매장 계산, 진열, 청소", // 업무 내용
+    "scheduled_work_start_time": "09:00", // 소정근로 시작
+    "scheduled_work_end_time": "18:00", // 소정근로 종료
+    "break_start_time": "13:00", // 휴게 시작
+    "break_end_time": "14:00", // 휴게 종료
+    "work_days_per_week": 5, // 주 근무일수
+    "weekly_holiday_day": "일", // 주휴일 요일
+    "wage_type": "monthly", // monthly|daily|hourly
+    "wage_amount": 2300000, // 월/일/시간급 금액(원)
+    "bonus_included": false, // 상여금 여부
+    "bonus_amount": 0, // 상여금 금액
+    "other_allowance_included": true, // 기타수당 여부
+    "other_allowance_amount": 150000, // 기타수당 총액
+    "meal_allowance": 100000, // 식대
+    "transport_allowance": 50000, // 교통비
+    "extra_allowance_name": "야간수당", // 기타 항목명
+    "extra_allowance_amount": 0, // 기타 항목 금액
+    "payment_day": 10, // 임금지급일
+    "payment_method": "bank_transfer", // direct|bank_transfer
+    "annual_leave_note": "근로기준법에 따름", // 연차유급휴가 문구
+    "contract_delivery_confirmed": true, // 계약서 교부 확인
+    "law_reference_confirmed": true, // 근로기준법령 준수 확인
+    "contract_signed_date": "2026-03-05", // 계약 체결일
+    "employer_business_name": "나눔편의점 강남점", // 사업체명
+    "employer_phone": "02-1234-5678", // 사업주 전화
+    "employer_address": "서울시 강남구 OO로 12", // 사업주 주소
+    "employer_representative_name": "홍길동", // 대표자 성명
+    "employer_signature_text": "홍길동", // 사업주 서명값
+    "worker_address": "서울시 송파구 OO로 20", // 근로자 주소
+    "worker_phone": "010-1234-5678", // 근로자 연락처
+    "worker_signature_text": "김현수", // 근로자 서명값
+    "family_relation_certificate_submitted": "제출", // 가족관계증명서 제출 여부(연소근로자)
+    "guardian_consent_submitted": "제출" // 친권자/후견인 동의서 구비 여부(연소근로자)
+  }
+}
+```
+
+### Response Body (200)
+```json
+{
+  "contract_id": 301, // 생성된 계약서 PK
+  "title": "김현수 연소근로자 표준 근로계약서", // 문서 제목
+  "status": "draft", // 저장 상태
+  "template_version": "minor_standard_v1", // 템플릿 버전
+  "completion_rate": 72, // 필수항목 입력률
+  "form_values": {
+    "employer_name": "나눔편의점", // 저장된 입력값들
+    "worker_name": "김현수"
+  },
+  "contract_file_key": null, // 파일 key(파일 저장 전이면 null)
+  "contract_file_url": null, // 파일 URL(파일 저장 전이면 null)
+  "files": [], // 첨부파일 목록(여러 개 가능)
+  "created_by_user_id": 2, // 작성자 사용자 ID
+  "finalized_at": null, // 완료 시각
+  "created_at": "2026-03-05T09:00:00Z", // 생성 시각
+  "updated_at": "2026-03-05T09:00:00Z" // 수정 시각
+}
+```
+
+---
+
+## 23) 근로계약서 수정/중간저장/완료처리 (글 데이터만)
+
+- `PATCH /staff-management/branches/{branch_id}/employees/{employee_id}/employment-contracts/{contract_id}`
+- 입력 도중에는 `status=draft`로 반복 저장 가능
+- 마지막 단계에서 `status=completed`로 완료 처리
+
+### Request Body
+```json
+{
+  "status": "completed", // draft|completed (생략 시 기존 유지)
+  "title": "김현수 표준 근로계약서", // 제목 변경 시 전달
+  "form_values": {
+    "work_place": "서울시 강남구 OO로 12 나눔편의점", // 수정할 필드만 전달 가능
+    "job_description": "매장 계산, 진열, 청소", // 수정할 필드만 전달 가능
+    "payment_method": "bank_transfer" // 수정할 필드만 전달 가능
+  },
+  "merge_form_values": true // true=기존값에 병합, false=전체 교체
+}
+```
+
+### Response Body (200)
+`22) 근로계약서 생성`의 Response와 동일
+
+---
+
+## 24) 근로계약서 파일 저장 (파일만)
+
+- `PATCH /staff-management/branches/{branch_id}/employees/{employee_id}/employment-contracts/{contract_id}/file`
+- 한번 요청에 여러 파일 저장 가능(append)
+
+### Request Body
+```json
+{
+  "files": [
+    {
+      "file_key": "contracts/branch-1/employee-501/contract-2026-03-final.pdf", // S3 key
+      "file_url": "https://your-bucket.s3.ap-northeast-2.amazonaws.com/contracts/branch-1/employee-501/contract-2026-03-final.pdf", // S3 URL
+      "file_name": "연소근로자-표준근로계약서.pdf" // 표시용 파일명
+    },
+    {
+      "file_key": "contracts/branch-1/employee-501/consent-guardian.pdf", // S3 key
+      "file_url": "https://your-bucket.s3.ap-northeast-2.amazonaws.com/contracts/branch-1/employee-501/consent-guardian.pdf", // S3 URL
+      "file_name": "친권자동의서.pdf" // 표시용 파일명
+    }
+  ]
+}
+```
+
+### Response Body (200)
+`22) 근로계약서 생성`의 Response와 동일
+
+---
+
+## 25) 근로계약서 단건 조회
+
+- `GET /staff-management/branches/{branch_id}/employees/{employee_id}/employment-contracts/{contract_id}`
+
+### Request Body
+없음
+
+### Response Body (200)
+`22) 근로계약서 생성`의 Response와 동일
+
+---
+
+## 26) 근로계약서 삭제
+
+- `DELETE /staff-management/branches/{branch_id}/employees/{employee_id}/employment-contracts/{contract_id}`
+
+### Request Body
+없음
+
+### Response Body (200)
+```json
+{
+  "deleted": true // 삭제 성공 여부
+}
+```
+
+---
+
+## 27) 친권자(후견인) 동의서 작성 템플릿
+
+- `22) 근로계약서 생성` API를 사용하고 `template_version=guardian_consent_v1`로 저장
+- `24) 근로계약서 파일 저장` API로 가족관계증명서/동의서 파일 다중 첨부 가능
+
+### Request Body 예시
+```json
+{
+  "title": "김현수 친권자(후견인) 동의서", // 문서 제목(없으면 자동 생성)
+  "template_version": "guardian_consent_v1", // 친권자 동의서 템플릿
+  "status": "draft", // draft|completed
+  "form_values": {
+    "guardian_name": "김민정", // 친권자(후견인) 성명
+    "guardian_resident_id_masked": "800101-2******", // 주민등록번호(마스킹)
+    "guardian_address": "서울시 마포구 OO로 12", // 주소
+    "guardian_phone_number": "010-2222-3333", // 연락처
+    "relation_to_minor_worker": "모", // 연소근로자와의 관계
+    "minor_name": "김현수", // 연소근로자 성명
+    "minor_age": 14, // 만 나이
+    "minor_resident_id_masked": "110101-3******", // 주민등록번호(마스킹)
+    "minor_address": "서울시 마포구 OO로 12", // 주소
+    "business_name": "나눔편의점 강남점", // 회사명
+    "business_address": "서울시 강남구 OO로 55", // 회사주소
+    "business_representative_name": "홍길동", // 대표자
+    "business_phone_number": "02-1234-5678", // 회사전화
+    "consent_minor_name": "김현수", // 동의문에 들어갈 연소근로자명
+    "consent_signed_date": "2026-03-06", // 작성일
+    "guardian_signature_name": "김민정", // 친권자(후견인) 서명
+    "family_relation_certificate_attached": "첨부" // 첨부: 가족관계증명서 1부
+  }
+}
+```
+
+### completed 처리 시 필수값
+
+- `guardian_name`
+- `guardian_resident_id_masked`
+- `guardian_address`
+- `guardian_phone_number`
+- `relation_to_minor_worker`
+- `minor_name`
+- `minor_age`
+- `minor_resident_id_masked`
+- `minor_address`
+- `business_name`
+- `business_address`
+- `business_representative_name`
+- `business_phone_number`
+- `consent_minor_name`
+- `consent_signed_date`
+- `guardian_signature_name`
+- `family_relation_certificate_attached`
+
+---
+
+## 28) 주간 출결 확정 저장 (주휴수당 판단용)
+
+- `POST /staff-management/branches/{branch_id}/attendance/weekly/confirm`
+- `week_start_date`는 월요일만 허용
+- `employee_ids`를 생략하면 점포 전체 직원 기준으로 확정 저장(upsert)
+- 확정 데이터는 인건비 `saving-detail` API에서 주휴수당 대상 판단에 우선 반영됨
+
+### Request Body
+```json
+{
+  "week_start_date": "2026-03-02", // 주 시작일(월요일)
+  "employee_ids": [501, 502] // 선택: 특정 직원만 확정(생략 시 전체)
+}
+```
+
+### Response Body (200)
+```json
+{
+  "items": [
+    {
+      "confirmation_id": 31, // 출결 확정 PK
+      "employee_id": 501, // 직원 ID
+      "employee_name": "이사라", // 직원명
+      "week_start_date": "2026-03-02", // 주 시작일
+      "week_end_date": "2026-03-08", // 주 종료일
+      "scheduled_workdays": 5, // 스케줄이 잡힌 일수
+      "attended_workdays": 5, // 출근 확정 일수(해당 일 모든 슬롯 done)
+      "absent_workdays": 0, // 결근 일수(absent 포함 일)
+      "unfinalized_workdays": 0, // 미확정 일수(scheduled/unset 포함 일)
+      "total_work_minutes": 960, // 확정 주간 총 근로분
+      "average_weekly_minutes": 960, // 주 평균 근로분(현재 단일 주 확정값)
+      "perfect_attendance": true, // 개근 충족 여부
+      "legal_weekly_hours_condition_met": true, // 주15시간(900분) 이상 여부
+      "weekly_allowance_eligible": true, // 주휴수당 대상 여부(개근 + 15시간)
+      "confirmed_by_user_id": 2, // 확정 처리한 사용자 ID
+      "confirmed_at": "2026-03-09T10:30:00Z" // 확정 시각
+    }
+  ]
+}
+```
+
+---
+
+## 29) 주간 출결 확정 조회
+
+- `GET /staff-management/branches/{branch_id}/attendance/weekly?week_start_date=2026-03-02`
+- `employee_id`는 선택 필터
+
+### Request Body
+없음
+
+### Response Body (200)
+`28) 주간 출결 확정 저장`의 Response와 동일
+
+---
+
+## 급여 공제 계산식
+
+- 국민연금 = 과세급여 × 4.5%
+- 건강보험 = 과세급여 × 3.545%
+- 고용보험 = 과세급여 × 0.9%
+- 장기요양보험료 = 건강보험료 × 12.95%
+- 소득세 = 총급여 × 3%
+- 지방소득세 = 소득세 × 10%
