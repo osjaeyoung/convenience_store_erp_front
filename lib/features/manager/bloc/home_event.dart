@@ -37,6 +37,7 @@ class HomeWorkerStatusSaveRequested extends HomeEvent {
     required this.workerName,
     required this.status,
     this.memo,
+    this.scheduleId,
   });
 
   final int branchId;
@@ -45,6 +46,7 @@ class HomeWorkerStatusSaveRequested extends HomeEvent {
   final String workerName;
   final String status;
   final String? memo;
+  final int? scheduleId;
 
   @override
   List<Object?> get props => [
@@ -54,6 +56,7 @@ class HomeWorkerStatusSaveRequested extends HomeEvent {
         workerName,
         status,
         memo,
+        scheduleId,
       ];
 }
 
@@ -65,6 +68,7 @@ class HomeWorkerMemoDeleteRequested extends HomeEvent {
     required this.workerName,
     required this.status,
     this.statusId,
+    this.scheduleId,
   });
 
   final int branchId;
@@ -73,6 +77,7 @@ class HomeWorkerMemoDeleteRequested extends HomeEvent {
   final String workerName;
   final String status;
   final int? statusId;
+  final int? scheduleId;
 
   @override
   List<Object?> get props => [
@@ -82,5 +87,6 @@ class HomeWorkerMemoDeleteRequested extends HomeEvent {
         workerName,
         status,
         statusId,
+        scheduleId,
       ];
 }

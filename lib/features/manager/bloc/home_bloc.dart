@@ -8,6 +8,8 @@ import '../../../data/models/owner_home/owner_branch.dart';
 import '../../../data/repositories/labor_cost_repository.dart';
 import '../../../data/repositories/manager_home_repository.dart';
 import '../../../data/repositories/owner_home_repository.dart';
+import '../../../data/models/manager_home/today_worker.dart';
+import '../../../data/repositories/staff_management_repository.dart';
 
 part 'home_event.dart';
 part 'home_state.dart';
@@ -19,7 +21,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   HomeBloc(
     this._ownerHomeRepository,
     this._managerHomeRepository,
-    this._laborCostRepository, {
+    this._laborCostRepository,
+    this._staffManagementRepository, {
     required bool isOwner,
   })  : _isOwner = isOwner,
         super(const HomeState.initial()) {
@@ -32,6 +35,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final OwnerHomeRepository _ownerHomeRepository;
   final ManagerHomeRepository _managerHomeRepository;
   final LaborCostRepository _laborCostRepository;
+  final StaffManagementRepository _staffManagementRepository;
   final bool _isOwner;
 
   Future<void> _onBranchesRequested(
@@ -87,23 +91,10 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         );
         final expected = await _getExpectedLaborOrNull(event.branchId);
 
-        final rowsRaw = (todayWorkers['rows'] as List?) ??
-            (todayWorkers['items'] as List?) ??
-            (todayWorkers['today_workers'] as List?) ??
-            (todayWorkers['today_shift_rows'] as List?) ??
-            const [];
-        final rows = rowsRaw
-            .whereType<Map>()
-            .map(
-              (row) => HomeWorkerRow(
-                time: row['time_label']?.toString() ?? '-',
-                workerName: row['worker_name']?.toString() ?? '-',
-                status: _mapWorkerStatus(row['status']?.toString() ?? ''),
-                memo: row['memo']?.toString(),
-                statusId: _toNullableInt(row['status_id'] ?? row['shift_id']),
-              ),
-            )
-            .toList();
+        final rows = _todayWorkersToRows(todayWorkers);
+        final workDate = _normalizeWorkDate(
+          todayWorkers['date']?.toString() ?? date,
+        );
 
         final openAlerts = alerts.where((a) => a['is_open'] == true).toList();
         final alertTitle = openAlerts.isNotEmpty
@@ -120,10 +111,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           newApplicants: _toInt(recruitment['new_applicants']),
           newContacts: _toInt(recruitment['new_contacts']),
           rows: rows,
-          workDate: _normalizeWorkDate(todayWorkers['date']?.toString() ?? date),
-          dateLabel: _formatDateLabel(
-            _normalizeWorkDate(todayWorkers['date']?.toString() ?? date),
-          ),
+          workDate: _normalizeWorkDate(workDate),
+          dateLabel: _formatDateLabel(_normalizeWorkDate(workDate)),
           expectedTotalAmountText: expected == null
               ? null
               : '총 ${_formatWon(expected.currentTotalCost)} 원',
@@ -153,6 +142,11 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         );
         final expected = await _getExpectedLaborOrNull(event.branchId);
 
+        final rows = _managerTodayWorkersToRows(workers);
+        final workDate = _normalizeWorkDate(
+          workers.isNotEmpty ? workers.first.workDate : date,
+        );
+
         final detail = HomeBranchDetail(
           branchId: event.branchId,
           managerName: '등록된 점장',
@@ -160,25 +154,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           waitingInterview: _toInt(recruitment['waiting_interviews']),
           newApplicants: _toInt(recruitment['new_applicants']),
           newContacts: _toInt(recruitment['new_contacts']),
-          rows: workers
-              .map(
-                (w) => HomeWorkerRow(
-                  time: w.timeLabel,
-                  workerName: w.workerName,
-                  status: _mapWorkerStatus(w.status),
-                  memo: w.memo,
-                  statusId: w.statusId,
-                ),
-              )
-              .toList(),
-          workDate: _normalizeWorkDate(
-            workers.isNotEmpty ? workers.first.workDate : date,
-          ),
-          dateLabel: _formatDateLabel(
-            _normalizeWorkDate(
-              workers.isNotEmpty ? workers.first.workDate : date,
-            ),
-          ),
+          rows: rows,
+          workDate: _normalizeWorkDate(workDate),
+          dateLabel: _formatDateLabel(_normalizeWorkDate(workDate)),
           expectedTotalAmountText: expected == null
               ? null
               : '총 ${_formatWon(expected.currentTotalCost)} 원',
@@ -215,6 +193,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     try {
       final normalizedWorkDate = _normalizeWorkDate(event.workDate);
       final apiStatus = _toApiWorkerStatus(event.status);
+
       if (_isOwner) {
         await _ownerHomeRepository.putTodayWorkerStatus(
           branchId: event.branchId,
@@ -291,6 +270,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   ) async {
     try {
       final normalizedWorkDate = _normalizeWorkDate(event.workDate);
+
       if (_isOwner) {
         if (event.statusId != null) {
           await _ownerHomeRepository.deleteTodayWorkerMemo(
@@ -347,6 +327,41 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     }
   }
 
+  List<HomeWorkerRow> _todayWorkersToRows(Map<String, dynamic> data) {
+    final rowsRaw = (data['rows'] as List?) ??
+        (data['items'] as List?) ??
+        (data['today_workers'] as List?) ??
+        (data['today_shift_rows'] as List?) ??
+        const [];
+    return rowsRaw
+        .whereType<Map>()
+        .map(
+          (row) => HomeWorkerRow(
+            time: row['time_label']?.toString() ?? '-',
+            workerName: row['worker_name']?.toString() ?? '-',
+            status: _mapWorkerStatus(row['status']?.toString() ?? ''),
+            memo: row['memo']?.toString(),
+            statusId: _toNullableInt(row['status_id'] ?? row['shift_id']),
+          ),
+        )
+        .toList();
+  }
+
+  List<HomeWorkerRow> _managerTodayWorkersToRows(List<dynamic> workers) {
+    return workers
+        .whereType<TodayWorker>()
+        .map(
+          (w) => HomeWorkerRow(
+            time: w.timeLabel,
+            workerName: w.workerName,
+            status: _mapWorkerStatus(w.status),
+            memo: w.memo,
+            statusId: w.statusId,
+          ),
+        )
+        .toList();
+  }
+
   int _toInt(Object? value) {
     if (value is int) return value;
     if (value is num) return value.toInt();
@@ -393,11 +408,32 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       return '예정';
     }
     if (normalized == 'absent' || status == '결근') return '결근';
-    if (normalized == 'pending' || status == '미정') return '미정';
+    if (normalized == 'pending' ||
+        normalized == 'unset' ||
+        status == '미정') return '미정';
     return status;
   }
 
+  /// Manager/Owner home today-workers API용 (done|planned|absent|pending)
   String _toApiWorkerStatus(String status) {
+    switch (status) {
+      case '완료':
+      case '근무완료':
+        return 'done';
+      case '예정':
+      case '근무예정':
+        return 'planned';
+      case '결근':
+        return 'absent';
+      case '미정':
+        return 'pending';
+      default:
+        return status.toLowerCase();
+    }
+  }
+
+  /// 직원관리 API용 (scheduled|done|absent|unset)
+  String _toStaffManagementApiStatus(String status) {
     switch (status) {
       case '완료':
       case '근무완료':
@@ -408,7 +444,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       case '결근':
         return 'absent';
       case '미정':
-        return 'pending';
+        return 'unset';
       default:
         return status.toLowerCase();
     }

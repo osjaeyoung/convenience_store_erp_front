@@ -12,9 +12,13 @@ class HomeTodayWorkersSection extends StatelessWidget {
     this.onTapHeader,
     this.onTapStatus,
     this.onTapMemo,
+    this.showHeader = true,
+    this.tableHorizontalPadding = 8,
   });
 
   final String dateLabel;
+  final bool showHeader;
+  final double tableHorizontalPadding;
   final List<
       ({
         String time,
@@ -24,6 +28,7 @@ class HomeTodayWorkersSection extends StatelessWidget {
       })> rows;
   final VoidCallback? onTapHeader;
   final void Function(
+    int index,
     ({
       String time,
       String workerName,
@@ -33,6 +38,7 @@ class HomeTodayWorkersSection extends StatelessWidget {
   )?
       onTapStatus;
   final void Function(
+    int index,
     ({
       String time,
       String workerName,
@@ -47,40 +53,42 @@ class HomeTodayWorkersSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Image.asset(
-              'assets/icons/png/common/person_book_icon.png',
-              width: 18,
-              height: 18,
-              fit: BoxFit.contain,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              '오늘의 근무자 현황',
-              style: AppTypography.bodyLargeM.copyWith(
-                color: AppColors.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                height: 20 / 16,
+        if (showHeader) ...[
+          Row(
+            children: [
+              Image.asset(
+                'assets/icons/png/common/person_book_icon.png',
+                width: 18,
+                height: 18,
+                fit: BoxFit.contain,
               ),
-            ),
-            const Spacer(),
-            InkWell(
-              onTap: onTapHeader,
-              borderRadius: BorderRadius.circular(16),
-              child: const Padding(
-                padding: EdgeInsets.all(4),
-                child: Icon(
-                  Icons.chevron_right_rounded,
-                  size: 26,
+              const SizedBox(width: 6),
+              Text(
+                '오늘의 근무자 현황',
+                style: AppTypography.bodyLargeM.copyWith(
                   color: AppColors.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  height: 20 / 16,
                 ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
+              const Spacer(),
+              InkWell(
+                onTap: onTapHeader,
+                borderRadius: BorderRadius.circular(16),
+                child: const Padding(
+                  padding: EdgeInsets.all(4),
+                  child: Icon(
+                    Icons.chevron_right_rounded,
+                    size: 26,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+        ],
         Center(
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -106,7 +114,10 @@ class HomeTodayWorkersSection extends StatelessWidget {
             color: AppColors.grey25,
             border: Border(top: BorderSide(color: Color(0xFF666874), width: 1)),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+          padding: EdgeInsets.symmetric(
+            vertical: 10,
+            horizontal: tableHorizontalPadding,
+          ),
           child: Row(
             children: const [
               _HeaderCell('시간'),
@@ -116,31 +127,45 @@ class HomeTodayWorkersSection extends StatelessWidget {
             ],
           ),
         ),
-        ...rows.map(
-          (row) => Container(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: AppColors.grey25)),
-            ),
-            child: Row(
-              children: [
-                _BodyCell(row.time),
-                _WorkerNameCell(row.workerName),
-                _MemoIconCell(
-                  hasMemo: row.hasMemo,
-                  onTap: row.hasMemo && onTapMemo != null ? () => onTapMemo!(row) : null,
-                ),
-                _StatusCell(
-                  row.status,
-                  onTap: onTapStatus == null ? null : () => onTapStatus!(row),
-                ),
-              ],
-            ),
-          ),
+        ...rows.asMap().entries.map(
+          (entry) {
+            final index = entry.key;
+            final row = entry.value;
+            return Container(
+              padding: EdgeInsets.symmetric(
+                vertical: 10,
+                horizontal: tableHorizontalPadding,
+              ),
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: AppColors.grey25)),
+              ),
+              child: Row(
+                children: [
+                  _BodyCell(row.time),
+                  _WorkerNameCell(row.workerName),
+                  _MemoIconCell(
+                    hasMemo: row.hasMemo,
+                    onTap: row.hasMemo && onTapMemo != null
+                        ? () => onTapMemo!(index, row)
+                        : null,
+                  ),
+                  _StatusCell(
+                    row.status,
+                    onTap: onTapStatus == null
+                        ? null
+                        : () => onTapStatus!(index, row),
+                  ),
+                ],
+              ),
+            );
+          },
         ),
         if (rows.isEmpty)
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
+            padding: EdgeInsets.symmetric(
+              vertical: 18,
+              horizontal: tableHorizontalPadding,
+            ),
             decoration: const BoxDecoration(
               border: Border(bottom: BorderSide(color: AppColors.grey25)),
             ),

@@ -24,6 +24,37 @@ class ManagerHomeRepository {
     return res.data!;
   }
 
+  /// 이름+전화번호로 사전등록 점포 조회
+  Future<List<Map<String, dynamic>>> lookupBranches({
+    required String managerName,
+    required String managerPhoneNumber,
+  }) async {
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/manager/home/branches/lookup',
+      data: {
+        'manager_name': managerName,
+        'manager_phone_number': managerPhoneNumber,
+      },
+    );
+    final items = res.data?['items'] as List<dynamic>? ?? const [];
+    return items.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+  }
+
+  /// 이름+전화번호 매칭 점포 일괄 연결
+  Future<Map<String, dynamic>> joinBranchesBulk({
+    required String managerName,
+    required String managerPhoneNumber,
+  }) async {
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/manager/home/branches/join-bulk',
+      data: {
+        'manager_name': managerName,
+        'manager_phone_number': managerPhoneNumber,
+      },
+    );
+    return res.data ?? const {};
+  }
+
   /// 점장 홈 지점 목록
   Future<List<ManagerBranch>> getBranches({String? date}) async {
     final res = await _apiClient.dio.get<Map<String, dynamic>>(

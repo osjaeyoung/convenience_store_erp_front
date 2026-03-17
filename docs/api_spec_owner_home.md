@@ -869,6 +869,9 @@
 
 - `GET /owner/home/branches/{branch_id}/today-workers?date=2026-09-11`
 
+> 서버는 `today-workers`를 별도 테이블이 아닌 `staff-management` 스케줄(`WorkScheduleEntry`)에서 직접 만들어 반환합니다.  
+> 따라서 `GET /staff-management/branches/{branch_id}/schedules/day`와 동일한 근무 데이터가 30분 슬롯 단위로 노출됩니다.
+
 #### Request Body
 
 없음
@@ -880,18 +883,31 @@
   "date": "2026-09-11",
   "rows": [
     {
-      "shift_id": 7001,
+      "status_id": 7001,
+      "work_date": "2026-09-11",
       "time_label": "09:00",
       "worker_name": "이시현",
-      "memo": "",
-      "status": "scheduled"
+      "memo": null,
+      "status": "done",
+      "updated_at": "2026-09-11T09:20:00Z"
     },
     {
-      "shift_id": 7002,
-      "time_label": "18:00",
-      "worker_name": "이정의",
-      "memo": "",
-      "status": "done"
+      "status_id": 7002,
+      "work_date": "2026-09-11",
+      "time_label": "09:30",
+      "worker_name": "이시현",
+      "memo": null,
+      "status": "done",
+      "updated_at": "2026-09-11T09:20:00Z"
+    },
+    {
+      "status_id": 7010,
+      "work_date": "2026-09-11",
+      "time_label": "13:00",
+      "worker_name": "이시현",
+      "memo": null,
+      "status": "unset",
+      "updated_at": "2026-09-11T09:20:00Z"
     }
   ]
 }
@@ -899,13 +915,17 @@
 
 ### 9-4) 오늘 근무 상태 변경
 
-- `PATCH /owner/home/branches/{branch_id}/today-workers/{shift_id}/status`
+- `PUT /owner/home/branches/{branch_id}/today-workers/status`
 
 #### Request Body
 
 ```json
 {
-  "status": "done"
+  "work_date": "2026-09-11",
+  "time_label": "09:00",
+  "worker_name": "이시현",
+  "status": "done",
+  "memo": "지각 5분"
 }
 ```
 
@@ -913,10 +933,24 @@
 
 ```json
 {
-  "shift_id": 7001,
-  "status": "done"
+  "status_id": 7001,
+  "work_date": "2026-09-11",
+  "time_label": "09:00",
+  "worker_name": "이시현",
+  "status": "done",
+  "memo": "지각 5분",
+  "updated_at": "2026-09-11T09:20:00Z"
 }
 ```
+
+허용 상태값:
+
+- `scheduled`: 근무예정
+- `done`: 근무완료
+- `absent`: 결근
+- `unset`: 미정
+- `planned`: (`scheduled`로 자동 변환)
+- `pending`: (`unset`으로 자동 변환)
 
 ### 9-5) 인건비 요약 카드
 

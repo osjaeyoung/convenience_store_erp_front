@@ -135,4 +135,51 @@ class StaffManagementRepository {
     );
     return res.data!;
   }
+
+  /// 근로계약서 목록 조회 (임시저장 포함)
+  Future<Map<String, dynamic>> getEmploymentContracts({
+    required int branchId,
+    required int employeeId,
+    String? status,
+    String? templateVersion,
+  }) async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/$employeeId/employment-contracts',
+      queryParameters: {
+        if (status != null && status.isNotEmpty) 'status': status,
+        if (templateVersion != null && templateVersion.isNotEmpty)
+          'template_version': templateVersion,
+      },
+    );
+    return res.data!;
+  }
+
+  /// 리뷰 등록
+  Future<Map<String, dynamic>> createReview({
+    required int branchId,
+    required int employeeId,
+    required int rating,
+    required String comment,
+  }) async {
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/$employeeId/reviews',
+      data: {
+        'rating': rating,
+        'comment': comment,
+      },
+    );
+    return res.data!;
+  }
+
+  /// 리뷰 삭제
+  Future<Map<String, dynamic>> deleteReview({
+    required int branchId,
+    required int employeeId,
+    required int reviewId,
+  }) async {
+    final res = await _apiClient.dio.delete<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/$employeeId/reviews/$reviewId',
+    );
+    return res.data!;
+  }
 }

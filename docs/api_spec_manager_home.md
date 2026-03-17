@@ -221,6 +221,9 @@
 
 - `GET /manager/home/branches/{branch_id}/today-workers?date=2026-09-11`
 
+> 서버는 `today-workers`를 별도 테이블이 아닌 `staff-management` 스케줄(`WorkScheduleEntry`)에서 직접 만들어 반환합니다.  
+> 따라서 `GET /staff-management/branches/{branch_id}/schedules/day`와 동일한 근무 데이터가 30분 슬롯 단위로 노출됩니다.
+
 ### Request Body
 없음
 
@@ -234,7 +237,25 @@
       "work_date": "2026-09-11",
       "time_label": "09:00",
       "worker_name": "이시현",
-      "status": "scheduled",
+      "status": "done",
+      "memo": null,
+      "updated_at": "2026-09-11T09:10:00Z"
+    },
+    {
+      "status_id": 7002,
+      "work_date": "2026-09-11",
+      "time_label": "09:30",
+      "worker_name": "이시현",
+      "status": "done",
+      "memo": null,
+      "updated_at": "2026-09-11T09:10:00Z"
+    },
+    {
+      "status_id": 7010,
+      "work_date": "2026-09-11",
+      "time_label": "13:00",
+      "worker_name": "이시현",
+      "status": "unset",
       "memo": null,
       "updated_at": "2026-09-11T09:10:00Z"
     }
@@ -258,6 +279,15 @@
   "memo": "지각 5분"
 }
 ```
+
+허용 상태값:
+
+- `scheduled`: 근무예정
+- `done`: 근무완료
+- `absent`: 결근
+- `unset`: 미정
+- `planned`: (`scheduled`로 자동 변환)
+- `pending`: (`unset`으로 자동 변환)
 
 ### Response Body (200)
 ```json

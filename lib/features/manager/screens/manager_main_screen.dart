@@ -55,12 +55,20 @@ class _ManagerMainScreenState extends State<ManagerMainScreen> {
             ownerHomeRepo,
             managerHomeRepo,
             laborCostRepo,
+            staffManagementRepo,
             isOwner: isOwner,
           )..add(const HomeBranchesRequested()),
         ),
         BlocProvider(create: (_) => LaborCostBloc(laborCostRepo)),
         BlocProvider(create: (_) => StoreExpenseBloc(storeExpenseRepo)),
-        BlocProvider(create: (_) => StaffManagementBloc(staffManagementRepo)),
+        BlocProvider(
+          create: (_) => StaffManagementBloc(
+            staffManagementRepo,
+            managerHomeRepo,
+            ownerHomeRepo,
+            isOwner: isOwner,
+          ),
+        ),
         BlocProvider(create: (_) => RecruitmentBloc(managerHomeRepo)),
       ],
       child: Builder(
