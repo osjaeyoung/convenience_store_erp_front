@@ -118,6 +118,36 @@ class StaffManagementRepository {
     return res.data!;
   }
 
+  /// 앱 가입 사용자 연락처 검색 (근무자 등록용)
+  Future<Map<String, dynamic>> searchUsersByPhone({
+    required int branchId,
+    required String phone,
+  }) async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/search-users',
+      queryParameters: {'phone': phone},
+    );
+    return res.data!;
+  }
+
+  /// 앱 사용자를 근무자로 등록 (from-user 엔드포인트)
+  Future<Map<String, dynamic>> registerEmployee({
+    required int branchId,
+    required int userId,
+    String? hireDate,
+  }) async {
+    final now = DateTime.now();
+    final hireDateStr = hireDate ?? '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/from-user',
+      data: {
+        'user_id': userId,
+        'hire_date': hireDateStr,
+      },
+    );
+    return res.data!;
+  }
+
   /// 자기 자신 근무자로 등록
   Future<Map<String, dynamic>> registerSelf({
     required int branchId,

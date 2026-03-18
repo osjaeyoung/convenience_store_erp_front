@@ -334,6 +334,31 @@
 
 ---
 
+## 8-1) 앱 가입 사용자 연락처 검색 (근무자 등록용)
+
+- `GET /staff-management/branches/{branch_id}/employees/search-users?phone=01012341234`
+- 앱에 가입된 사용자 중 연락처로 검색. 해당 점포에 아직 등록되지 않은 사용자만 반환.
+
+### Request Body
+없음
+
+### Response Body (200)
+```json
+{
+  "users": [
+    {
+      "user_id": 25,
+      "name": "이사라",
+      "phone_number": "01012341234"
+    }
+  ]
+}
+```
+
+- 검색 결과 없으면 `users: []`
+
+---
+
 ## 9) 점장/경영주 자기 자신 근무자로 등록
 
 - `POST /staff-management/branches/{branch_id}/employees/register-self`
@@ -359,6 +384,36 @@
   "employment_status": "active", // 자기등록은 기본 active
   "linked_user_id": 25, // 현재 로그인 사용자 ID와 자동 연결
   "created_at": "2026-09-11T08:00:00Z" // 생성 시각
+}
+```
+
+---
+
+## 9-1) 앱 사용자를 근무자로 등록 (연락처 검색 결과 기반)
+
+- `POST /staff-management/branches/{branch_id}/employees/from-user`
+- 앱 가입 사용자를 해당 점포 근무자로 등록
+
+### Request Body
+```json
+{
+  "user_id": 25,
+  "hire_date": "2025-05-12"
+}
+```
+
+### Response Body (200)
+```json
+{
+  "employee_id": 501,
+  "employee_number": "010-00051",
+  "name": "이사라",
+  "phone_number": "01012341234",
+  "hire_date": "2025-05-12",
+  "resignation_date": null,
+  "employment_status": "active",
+  "linked_user_id": 25,
+  "created_at": "2026-09-11T08:00:00Z"
 }
 ```
 

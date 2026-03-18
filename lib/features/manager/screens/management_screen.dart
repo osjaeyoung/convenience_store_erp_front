@@ -16,6 +16,8 @@ import '../widgets/home_shared_sections.dart';
 import '../widgets/schedule_date_selector.dart';
 import '../widgets/work_assignment_tab.dart';
 import 'add_branch_screen.dart';
+import 'employee_detail_screen.dart';
+import 'worker_registration_screen.dart';
 
 /// 직원관리 화면
 class ManagementScreen extends StatefulWidget {
@@ -37,6 +39,7 @@ class _ManagementScreenState extends State<ManagementScreen>
   String? _templateVersion;
   int _reviewRating = 3;
   int? _loadedBranchId;
+  bool _employeeInfoShowActive = true; // true: 현근무자, false: 퇴직자
 
   @override
   void initState() {
@@ -868,63 +871,320 @@ class _ManagementScreenState extends State<ManagementScreen>
     final retired = ((state.employeesCompare?['retired_workers'] as List?) ??
             const [])
         .cast<Map<String, dynamic>>();
+    final list = _employeeInfoShowActive ? active : retired;
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
+    return Stack(
       children: [
-        _buildSectionTitle('직원정보 조회'),
-        const SizedBox(height: 12),
-        Row(
+        ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
           children: [
-            Expanded(
-              child: TextField(
-                controller: _searchController,
-                decoration: const InputDecoration(
-                  hintText: '이름/근무자번호/연락처 검색',
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            OutlinedButton(
-              onPressed: () => context.read<StaffManagementBloc>().add(
-                    StaffManagementEmployeesCompareRequested(
-                      branchId: branchId,
-                      q: _searchController.text.trim().isEmpty
-                          ? null
-                          : _searchController.text.trim(),
+            _buildEmployeeInfoSelector(),
+            const SizedBox(height: 12),
+            _buildEmployeeSearchInput(context, branchId),
+            const SizedBox(height: 16),
+            ...list.asMap().entries.map((e) {
+              final starCount = e.key < 3 ? e.key + 1 : 2;
+              return _buildEmployeeListTile(
+                context,
+                branchId,
+                e.value,
+                state.selectedEmployeeId,
+                starCount,
+              );
+            }),
+            if (list.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Center(
+                  child: Text(
+                    _employeeInfoShowActive ? '현근무자 없음' : '퇴직자 없음',
+                    style: AppTypography.bodyMediumR.copyWith(
+                      color: AppColors.textTertiary,
                     ),
                   ),
-              child: const Text('검색'),
+                ),
+              ),
+          ],
+        ),
+        Positioned(
+          right: 16,
+          bottom: 24,
+          child: _buildEmployeeInfoFab(context, branchId),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmployeeInfoSelector() {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: PopupMenuButton<bool>(
+      offset: const Offset(0, 40),
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 0),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      itemBuilder: (context) => [
+        const PopupMenuItem<bool>(
+          value: true,
+          child: Text('현직자'),
+        ),
+        const PopupMenuItem<bool>(
+          value: false,
+          child: Text('퇴직자'),
+        ),
+      ],
+      onSelected: (value) => setState(() => _employeeInfoShowActive = value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.grey0,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.grey50),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _employeeInfoShowActive ? '현직자' : '퇴직자',
+              style: AppTypography.bodyMediumR.copyWith(
+                color: AppColors.textPrimary,
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                height: 19 / 14,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 18,
+              color: AppColors.grey150,
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        _buildSectionTitle('현근무자'),
-        const SizedBox(height: 8),
-        ...active.map(
-          (employee) => _buildEmployeeTile(
-            context,
-            branchId,
-            employee,
-            state.selectedEmployeeId,
+      ),
+    ),
+    );
+  }
+
+  Widget _buildEmployeeSearchInput(BuildContext context, int branchId) {
+    return TextField(
+      controller: _searchController,
+      decoration: InputDecoration(
+        hintText: '검색',
+        hintStyle: AppTypography.bodyMediumR.copyWith(
+          color: AppColors.grey100,
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          height: 19 / 14,
+        ),
+        prefixIcon: Padding(
+          padding: const EdgeInsets.all(12),
+          child: SvgPicture.asset(
+            'assets/icons/svg/icon/search_mint_20.svg',
+            width: 20,
+            height: 20,
           ),
         ),
-        if (active.isEmpty) const Text('현근무자 없음'),
-        const SizedBox(height: 16),
-        _buildSectionTitle('퇴사자'),
-        const SizedBox(height: 8),
-        ...retired.map(
-          (employee) => _buildEmployeeTile(
-            context,
-            branchId,
-            employee,
-            state.selectedEmployeeId,
-          ),
+        filled: true,
+        fillColor: AppColors.grey0Alt,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.grey50),
         ),
-        if (retired.isEmpty) const Text('퇴사자 없음'),
-        const SizedBox(height: 16),
-        _buildEmployeeDetailCard(state),
-      ],
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.grey50),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      ),
+      onSubmitted: (q) => context.read<StaffManagementBloc>().add(
+            StaffManagementEmployeesCompareRequested(
+              branchId: branchId,
+              q: q.trim().isEmpty ? null : q.trim(),
+            ),
+          ),
+    );
+  }
+
+  Widget _buildEmployeeListTile(
+    BuildContext context,
+    int branchId,
+    Map<String, dynamic> employee,
+    int? selectedEmployeeId,
+    int starCount,
+  ) {
+    final employeeId = (employee['employee_id'] as num?)?.toInt();
+    final name = employee['name'] as String? ?? '-';
+    final role = employee['role'] as String?;
+    final isManager = role == 'manager' || role == '점장';
+
+    return InkWell(
+      onTap: employeeId == null
+          ? null
+          : () {
+              context.read<StaffManagementBloc>().add(
+                    StaffManagementEmployeeDetailRequested(
+                      branchId: branchId,
+                      employeeId: employeeId,
+                    ),
+                  );
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => EmployeeDetailScreen(
+                    branchId: branchId,
+                    employeeId: employeeId,
+                  ),
+                ),
+              );
+            },
+      child: Padding(
+        padding: const EdgeInsets.only(top: 10, bottom: 10),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 24,
+              child: _buildStarBadge(starCount),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Row(
+                children: [
+                  Text(
+                    name,
+                    style: AppTypography.bodyMediumM.copyWith(
+                      color: AppColors.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      height: 16 / 14,
+                    ),
+                  ),
+                  if (isManager) ...[
+                    const SizedBox(width: 4),
+                    Text(
+                      '[점장]',
+                      style: AppTypography.bodyMediumM.copyWith(
+                        color: AppColors.primary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        height: 16 / 14,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 24,
+              color: AppColors.grey100,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 별 영역: 1개=큰 별, 2개=작은 별 2개(같은 넓이), 3개=삼각형(1 위, 2 아래)
+  Widget _buildStarBadge(int count) {
+    if (count == 1) {
+      return Center(
+        child: Image.asset(
+          'assets/icons/png/common/star_icon.png',
+          width: 16,
+          height: 16,
+        ),
+      );
+    }
+    if (count == 2) {
+      const size = 10.0;
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Image.asset(
+            'assets/icons/png/common/star_icon.png',
+            width: size,
+            height: size,
+          ),
+          const SizedBox(width: 2),
+          Image.asset(
+            'assets/icons/png/common/star_icon.png',
+            width: size,
+            height: size,
+          ),
+        ],
+      );
+    }
+    if (count == 3) {
+      const size = 8.0;
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset(
+            'assets/icons/png/common/star_icon.png',
+            width: size,
+            height: size,
+          ),
+          const SizedBox(height: 2),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                'assets/icons/png/common/star_icon.png',
+                width: size,
+                height: size,
+              ),
+              const SizedBox(width: 2),
+              Image.asset(
+                'assets/icons/png/common/star_icon.png',
+                width: size,
+                height: size,
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildEmployeeInfoFab(BuildContext context, int? branchId) {
+    return Material(
+      color: AppColors.primary,
+      borderRadius: BorderRadius.circular(28),
+      elevation: 4,
+      child: InkWell(
+        onTap: () {
+          if (branchId == null) return;
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => WorkerRegistrationScreen(
+                branchId: branchId,
+                onRegistered: () {
+                  context.read<StaffManagementBloc>().add(
+                        StaffManagementEmployeesCompareRequested(
+                          branchId: branchId,
+                          q: null,
+                        ),
+                      );
+                },
+              ),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(28),
+        child: const SizedBox(
+          width: 56,
+          height: 56,
+          child: Icon(Icons.add, color: AppColors.grey0, size: 28),
+        ),
+      ),
     );
   }
 
@@ -1100,66 +1360,6 @@ class _ManagementScreenState extends State<ManagementScreen>
         ),
         if (reviews.isEmpty) const Text('등록된 평가가 없습니다.'),
       ],
-    );
-  }
-
-  Widget _buildEmployeeTile(
-    BuildContext context,
-    int branchId,
-    Map<String, dynamic> employee,
-    int? selectedEmployeeId,
-  ) {
-    final employeeId = (employee['employee_id'] as num?)?.toInt();
-    final isSelected = employeeId != null && employeeId == selectedEmployeeId;
-    return Card(
-      color: isSelected ? AppColors.primaryLight : null,
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        title: Text(
-          '${employee['name'] ?? '-'} (${employee['employee_number'] ?? '-'})',
-        ),
-        subtitle: Text(
-          '${employee['employment_status'] ?? '-'} / ${employee['phone_number'] ?? '-'}',
-        ),
-        onTap: employeeId == null
-            ? null
-            : () => context.read<StaffManagementBloc>().add(
-                  StaffManagementEmployeeDetailRequested(
-                    branchId: branchId,
-                    employeeId: employeeId,
-                  ),
-                ),
-      ),
-    );
-  }
-
-  Widget _buildEmployeeDetailCard(StaffManagementBlocState state) {
-    final employee =
-        (state.employeeDetail?['employee'] as Map?)?.cast<String, dynamic>();
-    if (employee == null) {
-      return const Text('직원을 선택하면 상세 정보가 표시됩니다.');
-    }
-    final laborContracts =
-        (state.employeeDetail?['labor_contracts'] as List?) ?? const [];
-    final reviews = (state.employeeDetail?['reviews'] as List?) ?? const [];
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${employee['name']} (${employee['employee_number']})',
-              style: AppTypography.bodyMediumB,
-            ),
-            const SizedBox(height: 6),
-            Text('입사일: ${employee['hire_date'] ?? '-'}'),
-            Text('퇴사일: ${employee['resignation_date'] ?? '-'}'),
-            Text('계약 룰: ${laborContracts.length}개'),
-            Text('평가 수: ${reviews.length}개'),
-          ],
-        ),
-      ),
     );
   }
 
