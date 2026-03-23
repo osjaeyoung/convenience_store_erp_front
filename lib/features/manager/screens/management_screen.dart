@@ -14,6 +14,7 @@ import '../widgets/branch_select_card.dart';
 import '../widgets/home_common_app_bar.dart';
 import '../widgets/home_shared_sections.dart';
 import '../widgets/schedule_date_selector.dart';
+import '../widgets/work_status_badge.dart';
 import '../widgets/work_assignment_tab.dart';
 import 'add_branch_screen.dart';
 import 'employee_detail_screen.dart';
@@ -546,25 +547,9 @@ class _ManagementScreenState extends State<ManagementScreen>
                       ),
                       Expanded(
                         child: Center(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(4),
-                              border: _toDisplayStatus(status) == '완료'
-                                  ? null
-                                  : Border.all(color: AppColors.primary),
-                              color: _toDisplayStatus(status) == '완료'
-                                  ? const Color(0xFF666874)
-                                  : AppColors.primaryLight,
-                            ),
-                            child: Text(
-                              _toDisplayStatus(status),
-                              style: AppTypography.bodySmallB.copyWith(
-                                color: _toDisplayStatus(status) == '완료'
-                                    ? AppColors.grey0
-                                    : AppColors.primary,
-                              ),
-                            ),
+                          child: WorkStatusBadge(
+                            status: _toDisplayStatus(status),
+                            compact: true,
                           ),
                         ),
                       ),
@@ -703,25 +688,9 @@ class _ManagementScreenState extends State<ManagementScreen>
                       ),
                       Expanded(
                         child: Center(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(4),
-                              border: _toDisplayStatus(row.status) == '완료'
-                                  ? null
-                                  : Border.all(color: AppColors.primary),
-                              color: _toDisplayStatus(row.status) == '완료'
-                                  ? const Color(0xFF666874)
-                                  : AppColors.primaryLight,
-                            ),
-                            child: Text(
-                              _toDisplayStatus(row.status),
-                              style: AppTypography.bodySmallB.copyWith(
-                                color: _toDisplayStatus(row.status) == '완료'
-                                    ? AppColors.grey0
-                                    : AppColors.primary,
-                              ),
-                            ),
+                          child: WorkStatusBadge(
+                            status: _toDisplayStatus(row.status),
+                            compact: true,
                           ),
                         ),
                       ),
@@ -882,12 +851,15 @@ class _ManagementScreenState extends State<ManagementScreen>
             const SizedBox(height: 12),
             _buildEmployeeSearchInput(context, branchId),
             const SizedBox(height: 16),
-            ...list.asMap().entries.map((e) {
-              final starCount = e.key < 3 ? e.key + 1 : 2;
+            ...list.map((employee) {
+              final avg = employee['average_rating'];
+              final starCount = avg != null
+                  ? (avg is num ? avg.round() : 0).clamp(0, 3)
+                  : 0;
               return _buildEmployeeListTile(
                 context,
                 branchId,
-                e.value,
+                employee,
                 state.selectedEmployeeId,
                 starCount,
               );
@@ -1015,7 +987,7 @@ class _ManagementScreenState extends State<ManagementScreen>
     int branchId,
     Map<String, dynamic> employee,
     int? selectedEmployeeId,
-    int starCount,
+    int starCount, // average_rating 기반 (0~3, 0이면 미표시)
   ) {
     final employeeId = (employee['employee_id'] as num?)?.toInt();
     final name = employee['name'] as String? ?? '-';
@@ -1025,21 +997,35 @@ class _ManagementScreenState extends State<ManagementScreen>
     return InkWell(
       onTap: employeeId == null
           ? null
-          : () {
+          : () async {
               context.read<StaffManagementBloc>().add(
                     StaffManagementEmployeeDetailRequested(
                       branchId: branchId,
                       employeeId: employeeId,
                     ),
                   );
-              Navigator.of(context).push(
+              final myRating = (employee['my_rating'] as num?)?.round();
+              final shouldRefresh = await Navigator.of(context).push<bool>(
                 MaterialPageRoute(
                   builder: (_) => EmployeeDetailScreen(
                     branchId: branchId,
                     employeeId: employeeId,
+                    initialMyRating: myRating != null && myRating >= 1 && myRating <= 3
+                        ? myRating
+                        : null,
                   ),
                 ),
               );
+              if (shouldRefresh == true && context.mounted) {
+                context.read<StaffManagementBloc>().add(
+                      StaffManagementEmployeesCompareRequested(
+                        branchId: branchId,
+                        q: _searchController.text.trim().isEmpty
+                            ? null
+                            : _searchController.text.trim(),
+                      ),
+                    );
+              }
             },
       child: Padding(
         padding: const EdgeInsets.only(top: 10, bottom: 10),
@@ -1047,7 +1033,7 @@ class _ManagementScreenState extends State<ManagementScreen>
           children: [
             SizedBox(
               width: 24,
-              child: _buildStarBadge(starCount),
+              child: starCount > 0 ? _buildStarBadge(starCount) : const SizedBox(),
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -1093,7 +1079,7 @@ class _ManagementScreenState extends State<ManagementScreen>
     if (count == 1) {
       return Center(
         child: Image.asset(
-          'assets/icons/png/common/star_icon.png',
+          'assets/icons/png/common/star_green_icon.png',
           width: 16,
           height: 16,
         ),
@@ -1106,13 +1092,13 @@ class _ManagementScreenState extends State<ManagementScreen>
         mainAxisSize: MainAxisSize.min,
         children: [
           Image.asset(
-            'assets/icons/png/common/star_icon.png',
+            'assets/icons/png/common/star_green_icon.png',
             width: size,
             height: size,
           ),
           const SizedBox(width: 2),
           Image.asset(
-            'assets/icons/png/common/star_icon.png',
+            'assets/icons/png/common/star_green_icon.png',
             width: size,
             height: size,
           ),
@@ -1126,7 +1112,7 @@ class _ManagementScreenState extends State<ManagementScreen>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Image.asset(
-            'assets/icons/png/common/star_icon.png',
+            'assets/icons/png/common/star_green_icon.png',
             width: size,
             height: size,
           ),
@@ -1136,13 +1122,13 @@ class _ManagementScreenState extends State<ManagementScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Image.asset(
-                'assets/icons/png/common/star_icon.png',
+                'assets/icons/png/common/star_green_icon.png',
                 width: size,
                 height: size,
               ),
               const SizedBox(width: 2),
               Image.asset(
-                'assets/icons/png/common/star_icon.png',
+                'assets/icons/png/common/star_green_icon.png',
                 width: size,
                 height: size,
               ),

@@ -109,3 +109,11 @@ class AuthBranchesSearchRequested extends AuthEvent {
 class AuthLogoutRequested extends AuthEvent {
   const AuthLogoutRequested();
 }
+
+class AuthGoogleLoginRequested extends AuthEvent {
+  const AuthGoogleLoginRequested();
+}
+
+class AuthAppleLoginRequested extends AuthEvent {
+  const AuthAppleLoginRequested();
+}

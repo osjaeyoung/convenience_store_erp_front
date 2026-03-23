@@ -289,7 +289,9 @@
       "resignation_date": null, // 퇴사일(현근무자는 null)
       "employment_status": "active", // active|retired
       "linked_user_id": 25, // 앱 사용자 계정 연결 ID
-      "created_at": "2026-09-11T08:00:00Z" // 등록 시각
+      "created_at": "2026-09-11T08:00:00Z", // 등록 시각
+      "average_rating": 2.5, // 해당 점포에서 매긴 평점 평균 (리뷰 없으면 null)
+      "my_rating": 3 // 현재 사용자(점장/경영주)가 해당 근무자에게 매긴 별점 (없으면 null)
     }
   ],
   "retired_workers": [
@@ -302,7 +304,9 @@
       "resignation_date": "2026-03-30", // 퇴사일
       "employment_status": "retired", // 퇴사 상태
       "linked_user_id": null, // 연결된 앱 계정 없으면 null
-      "created_at": "2026-09-11T08:10:00Z" // 등록 시각
+      "created_at": "2026-09-11T08:10:00Z", // 등록 시각
+      "average_rating": null, // 리뷰 없음
+      "my_rating": null // 평가한 적 없음
     }
   ]
 }
@@ -338,6 +342,7 @@
 
 - `GET /staff-management/branches/{branch_id}/employees/search-users?phone=01012341234`
 - 앱에 가입된 사용자 중 연락처로 검색. 해당 점포에 아직 등록되지 않은 사용자만 반환.
+- **점장/경영주 자기 등록**: 자기 번호를 입력하면 본인도 결과에 포함됨 (연락처 형식 차이 `010-1234-5678` vs `01012345678` 등 대응).
 
 ### Request Body
 없음
@@ -392,7 +397,7 @@
 ## 9-1) 앱 사용자를 근무자로 등록 (연락처 검색 결과 기반)
 
 - `POST /staff-management/branches/{branch_id}/employees/from-user`
-- 앱 가입 사용자를 해당 점포 근무자로 등록
+- 앱 가입 사용자를 해당 점포 근무자로 등록 (search-users 검색 결과의 user_id 사용)
 
 ### Request Body
 ```json
@@ -429,6 +434,7 @@
 ### Response Body (200)
 ```json
 {
+  "branch_name": "나눔 강남 테스트점", // 근무지(점포) 명
   "employee": {
     "employee_id": 501, // 근무자 PK
     "employee_number": "010-00051", // 점포 내 근무자 번호
@@ -564,7 +570,34 @@
 
 ---
 
-## 14) 급여명세 미리계산 (저장 안함)
+## 14) 급여명세 자동 채우기 (작성 화면 초기값)
+
+- `GET /staff-management/branches/{branch_id}/employees/{employee_id}/payroll-auto-fill?year=2025&month=12`
+- 근무자+연월 기준으로 **총근무시간, 시급, 기본급, 주휴수당** 자동 산출 (프론트에서 계산하지 않고 백엔드에서 반환)
+- 사용자는 저장 전 수정 가능
+
+### Request Body
+없음 (쿼리: `year`, `month`)
+
+### Response Body (200)
+```json
+{
+  "total_work_minutes": 8400, // 해당월 총 근무시간(분) - 근무일정 기준
+  "hourly_wage": 9860, // 시급(원) - 근로계약 또는 이전 급여명세 기준
+  "base_pay": 1380400, // 기본급 (총근무시간×시급)
+  "weekly_allowance": 206400, // 주휴수당(원) - 주 15시간 이상인 주만 산정
+  "resident_id_masked": null,
+  "overtime_pay": 0,
+  "taxable_salary": null,
+  "gross_salary": null
+}
+```
+
+- 이 값을 calculate 또는 저장 API 요청 body에 넣어 사용. 공제·실지급액은 백엔드에서 계산.
+
+---
+
+## 15) 급여명세 미리계산 (저장 안함)
 
 - `POST /staff-management/branches/{branch_id}/employees/{employee_id}/payroll-statements/calculate`
 - 공제항목을 공식대로 계산만 해서 미리보기
@@ -612,9 +645,12 @@
 }
 ```
 
+- **공제 공식**: 국민연금=과세급여×4.5%, 건강보험=과세급여×3.545%, 고용보험=과세급여×0.9%,
+  장기요양=건강보험×12.95%, 소득세=총급여×3%, 지방소득세=소득세×10%
+
 ---
 
-## 15) 급여명세 저장 (글 데이터만)
+## 16) 급여명세 저장 (글 데이터만)
 
 - `POST /staff-management/branches/{branch_id}/employees/{employee_id}/payroll-statements`
 - 같은 근무자의 같은 연/월 급여명세는 1건만 저장 가능
@@ -654,7 +690,7 @@
 
 ---
 
-## 16) 급여명세 목록 조회
+## 17) 급여명세 목록 조회
 
 - `GET /staff-management/branches/{branch_id}/employees/{employee_id}/payroll-statements?year=2025&month=12`
 - `year`, `month` 쿼리는 선택값(필터)
@@ -705,7 +741,7 @@
 
 ---
 
-## 17) 급여명세 상세 조회
+## 18) 급여명세 상세 조회
 
 - `GET /staff-management/branches/{branch_id}/employees/{employee_id}/payroll-statements/{payroll_id}`
 
@@ -717,7 +753,7 @@
 
 ---
 
-## 18) 급여명세 삭제
+## 19) 급여명세 삭제
 
 - `DELETE /staff-management/branches/{branch_id}/employees/{employee_id}/payroll-statements/{payroll_id}`
 
@@ -733,7 +769,7 @@
 
 ---
 
-## 19) 급여명세 파일 저장 (파일만)
+## 20) 급여명세 파일 저장 (파일만)
 
 - `PATCH /staff-management/branches/{branch_id}/employees/{employee_id}/payroll-statements/{payroll_id}/file`
 - 한번 요청에 여러 파일 저장 가능(append)
@@ -761,7 +797,7 @@
 
 ---
 
-## 20) 인사자료(HR)/기타자료(ETC) 목록/등록/상세/삭제
+## 21) 인사자료(HR)/기타자료(ETC) 목록/등록/상세/삭제
 
 - 목록:
   - `GET /staff-management/branches/{branch_id}/employees/{employee_id}/records/hr`
@@ -826,7 +862,7 @@
 
 ---
 
-## 21) 근로계약서 목록 조회 (임시저장 포함)
+## 22) 근로계약서 목록 조회 (임시저장 포함)
 
 - `GET /staff-management/branches/{branch_id}/employees/{employee_id}/employment-contracts?status=draft&template_version=guardian_consent_v1`
 - `status`는 선택값(`draft` 또는 `completed`)
@@ -864,7 +900,7 @@
 
 ---
 
-## 22) 근로계약서 생성 (초안 저장/즉시완료, 글 데이터만)
+## 23) 근로계약서 생성 (초안 저장/즉시완료, 글 데이터만)
 
 - `POST /staff-management/branches/{branch_id}/employees/{employee_id}/employment-contracts`
 - 앱에서 빈칸 값을 입력해 `form_values`로 전송
@@ -946,7 +982,7 @@
 
 ---
 
-## 23) 근로계약서 수정/중간저장/완료처리 (글 데이터만)
+## 24) 근로계약서 수정/중간저장/완료처리 (글 데이터만)
 
 - `PATCH /staff-management/branches/{branch_id}/employees/{employee_id}/employment-contracts/{contract_id}`
 - 입력 도중에는 `status=draft`로 반복 저장 가능
@@ -971,7 +1007,7 @@
 
 ---
 
-## 24) 근로계약서 파일 저장 (파일만)
+## 25) 근로계약서 파일 저장 (파일만)
 
 - `PATCH /staff-management/branches/{branch_id}/employees/{employee_id}/employment-contracts/{contract_id}/file`
 - 한번 요청에 여러 파일 저장 가능(append)
@@ -999,7 +1035,7 @@
 
 ---
 
-## 25) 근로계약서 단건 조회
+## 26) 근로계약서 단건 조회
 
 - `GET /staff-management/branches/{branch_id}/employees/{employee_id}/employment-contracts/{contract_id}`
 
@@ -1011,7 +1047,7 @@
 
 ---
 
-## 26) 근로계약서 삭제
+## 27) 근로계약서 삭제
 
 - `DELETE /staff-management/branches/{branch_id}/employees/{employee_id}/employment-contracts/{contract_id}`
 
@@ -1027,7 +1063,7 @@
 
 ---
 
-## 27) 친권자(후견인) 동의서 작성 템플릿
+## 28) 친권자(후견인) 동의서 작성 템플릿
 
 - `22) 근로계약서 생성` API를 사용하고 `template_version=guardian_consent_v1`로 저장
 - `24) 근로계약서 파일 저장` API로 가족관계증명서/동의서 파일 다중 첨부 가능
@@ -1082,7 +1118,7 @@
 
 ---
 
-## 28) 주간 출결 확정 저장 (주휴수당 판단용)
+## 29) 주간 출결 확정 저장 (주휴수당 판단용)
 
 - `POST /staff-management/branches/{branch_id}/attendance/weekly/confirm`
 - `week_start_date`는 월요일만 허용
@@ -1125,7 +1161,7 @@
 
 ---
 
-## 29) 주간 출결 확정 조회
+## 30) 주간 출결 확정 조회
 
 - `GET /staff-management/branches/{branch_id}/attendance/weekly?week_start_date=2026-03-02`
 - `employee_id`는 선택 필터

@@ -31,6 +31,14 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  void _onGoogleLogin() {
+    context.read<AuthBloc>().add(const AuthGoogleLoginRequested());
+  }
+
+  void _onAppleLogin() {
+    context.read<AuthBloc>().add(const AuthAppleLoginRequested());
+  }
+
   void _onLogin() {
     setState(() => _submitted = true);
     if (!_formKey.currentState!.validate()) return;
@@ -188,9 +196,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _SocialButton(assetPath: AppAssets.loginSocialGoogle),
+                        _SocialButton(
+                          assetPath: AppAssets.loginSocialGoogle,
+                          onTap: _onGoogleLogin,
+                        ),
                         const SizedBox(width: 16),
-                        _SocialButton(assetPath: AppAssets.loginSocialApple),
+                        _SocialButton(
+                          assetPath: AppAssets.loginSocialApple,
+                          onTap: _onAppleLogin,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 28),
@@ -224,16 +238,23 @@ class _LoginScreenState extends State<LoginScreen> {
 }
 
 class _SocialButton extends StatelessWidget {
-  const _SocialButton({required this.assetPath});
+  const _SocialButton({
+    required this.assetPath,
+    required this.onTap,
+  });
 
   final String assetPath;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 52,
-      height: 52,
-      child: Image.asset(assetPath),
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: 52,
+        height: 52,
+        child: Image.asset(assetPath),
+      ),
     );
   }
 }

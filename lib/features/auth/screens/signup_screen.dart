@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -33,9 +34,13 @@ class _SignupScreenState extends State<SignupScreen> {
   final _pwConfirmController = TextEditingController();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _phoneCodeController = TextEditingController();
 
   _SignupStep _currentStep = _SignupStep.terms;
   UserRole _selectedRole = UserRole.manager;
+  String? _phoneVerificationId;
+  bool _isPhoneVerified = false;
+  bool _isSendingPhoneCode = false;
   bool _agreeTerms = false;
   bool _agreeAge = false;
   bool _agreePrivacy = false;
@@ -65,6 +70,7 @@ class _SignupScreenState extends State<SignupScreen> {
     _pwConfirmController.dispose();
     _nameController.dispose();
     _phoneController.dispose();
+    _phoneCodeController.dispose();
     super.dispose();
   }
 
@@ -412,30 +418,81 @@ class _SignupScreenState extends State<SignupScreen> {
                   : AutovalidateMode.disabled,
               hintText: '휴대폰 번호를 입력해주세요.',
               focusedBorderColor: AppColors.primary,
-              suffix: Padding(
-                padding: const EdgeInsets.all(6),
-                child: FilledButton(
-                  onPressed: _onRequestPhoneVerification,
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    minimumSize: const Size(0, 34),
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+              enabled: !_isPhoneVerified,
+              suffix: _isPhoneVerified
+                  ? Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: Text(
+                        '인증완료',
+                        style: AppTypography.bodySmallB.copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: FilledButton(
+                        onPressed: _isSendingPhoneCode
+                            ? null
+                            : (_phoneVerificationId == null
+                                ? _onRequestPhoneVerification
+                                : _onVerifyPhoneCode),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          minimumSize: const Size(0, 34),
+                          backgroundColor: AppColors.primary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: _isSendingPhoneCode
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.grey0,
+                                ),
+                              )
+                            : Text(
+                                _phoneVerificationId == null
+                                    ? '인증번호 요청'
+                                    : '인증',
+                                style: AppTypography.bodySmallB.copyWith(
+                                  color: AppColors.grey0,
+                                ),
+                              ),
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    '요청',
-                    style: AppTypography.bodySmallB.copyWith(
-                      color: AppColors.grey0,
-                    ),
-                  ),
-                ),
-              ),
-              validator: (v) => (v == null || v.trim().isEmpty)
-                  ? '*인증번호가 일치하지 않습니다.'
-                  : null,
+              validator: (v) {
+                if (_isPhoneVerified) return null;
+                if (_phoneVerificationId == null) {
+                  return (v == null || v.trim().isEmpty)
+                      ? '*휴대폰 번호를 입력해주세요.'
+                      : null;
+                }
+                return '*인증을 완료해주세요.';
+              },
             ),
+            if (_phoneVerificationId != null && !_isPhoneVerified) ...[
+              const SizedBox(height: 12),
+              AuthInputField(
+                controller: _phoneCodeController,
+                keyboardType: TextInputType.number,
+                autovalidateMode: _submittedBasicInfo
+                    ? AutovalidateMode.always
+                    : AutovalidateMode.disabled,
+                hintText: '인증번호 6자리를 입력해주세요.',
+                focusedBorderColor: AppColors.primary,
+                validator: (v) {
+                  if (_isPhoneVerified) return null;
+                  final code = (v ?? '').trim();
+                  if (code.isEmpty) return '*인증번호를 입력해주세요.';
+                  if (code.length != 6) return '*인증번호 6자리를 입력해주세요.';
+                  return null;
+                },
+              ),
+            ],
             const SizedBox(height: 20),
             _buildFieldLabel('비밀번호'),
             AuthInputField(
@@ -503,11 +560,94 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  void _onRequestPhoneVerification() {
-    // TODO(park): Firebase Phone Auth 연동
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Firebase 전화번호 인증 연동 예정입니다.')),
-    );
+  String _toE164(String phone) {
+    final digits = phone.replaceAll(RegExp(r'[^\d]'), '');
+    if (digits.startsWith('0')) {
+      return '+82${digits.substring(1)}';
+    }
+    if (digits.length == 10 || digits.length == 11) {
+      return '+82$digits';
+    }
+    if (!digits.startsWith('82')) {
+      return '+82$digits';
+    }
+    return '+$digits';
+  }
+
+  Future<void> _onRequestPhoneVerification() async {
+    final phone = _toE164(_phoneController.text.trim());
+    if (phone.length < 10) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('올바른 전화번호를 입력해주세요.')),
+      );
+      return;
+    }
+    setState(() => _isSendingPhoneCode = true);
+    try {
+      await context.read<AuthRepository>().verifyPhoneNumber(
+            phoneNumber: phone,
+            codeSent: (verificationId, _) {
+              if (mounted) {
+                setState(() {
+                  _phoneVerificationId = verificationId;
+                  _isSendingPhoneCode = false;
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('인증번호가 발송되었습니다.')),
+                );
+              }
+            },
+            verificationFailed: (e) {
+              if (mounted) {
+                setState(() => _isSendingPhoneCode = false);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      e.message ?? '인증번호 발송에 실패했습니다.',
+                    ),
+                  ),
+                );
+              }
+            },
+          );
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSendingPhoneCode = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('인증번호 발송에 실패했습니다.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _onVerifyPhoneCode() async {
+    final code = _phoneCodeController.text.trim();
+    if (code.isEmpty || _phoneVerificationId == null) return;
+    setState(() => _isSendingPhoneCode = true);
+    try {
+      final credential = PhoneAuthProvider.credential(
+        verificationId: _phoneVerificationId!,
+        smsCode: code,
+      );
+      await FirebaseAuth.instance.signInWithCredential(credential);
+      if (mounted) {
+        await FirebaseAuth.instance.signOut();
+        setState(() {
+          _isPhoneVerified = true;
+          _isSendingPhoneCode = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('휴대폰 인증이 완료되었습니다.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSendingPhoneCode = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('인증번호가 일치하지 않습니다.')),
+        );
+      }
+    }
   }
 
   Widget _buildTermsRow({

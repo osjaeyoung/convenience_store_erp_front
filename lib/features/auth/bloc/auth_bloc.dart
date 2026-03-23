@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/models/user.dart';
 import '../../../data/models/branch.dart';
+import '../exceptions/auth_exception.dart';
 import '../../../data/models/signup_response.dart';
 import '../../../data/repositories/auth_repository.dart';
 
@@ -23,6 +24,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthSignupStep2WorkerRequested>(_onSignupStep2WorkerRequested);
     on<AuthBranchesSearchRequested>(_onBranchesSearchRequested);
     on<AuthLogoutRequested>(_onLogoutRequested);
+    on<AuthGoogleLoginRequested>(_onGoogleLoginRequested);
+    on<AuthAppleLoginRequested>(_onAppleLoginRequested);
   }
 
   final AuthRepository _repository;
@@ -189,6 +192,42 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     await _repository.logout();
     emit(const AuthState.unauthenticated());
+  }
+
+  Future<void> _onGoogleLoginRequested(
+    AuthGoogleLoginRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(const AuthState.loading());
+    try {
+      final response = await _repository.loginWithGoogle();
+      await _repository.setAuthenticated(response);
+      emit(AuthState.authenticated(_repository.user!));
+    } on AuthException catch (e) {
+      emit(AuthState.failure(e.message));
+    } on DioException catch (e) {
+      emit(AuthState.failure(_extractErrorMessage(e)));
+    } catch (e) {
+      emit(AuthState.failure('구글 로그인에 실패했습니다.'));
+    }
+  }
+
+  Future<void> _onAppleLoginRequested(
+    AuthAppleLoginRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(const AuthState.loading());
+    try {
+      final response = await _repository.loginWithApple();
+      await _repository.setAuthenticated(response);
+      emit(AuthState.authenticated(_repository.user!));
+    } on AuthException catch (e) {
+      emit(AuthState.failure(e.message));
+    } on DioException catch (e) {
+      emit(AuthState.failure(_extractErrorMessage(e)));
+    } catch (e) {
+      emit(AuthState.failure('애플 로그인에 실패했습니다.'));
+    }
   }
 
   String _extractErrorMessage(DioException e) {

@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import 'work_status_badge.dart';
 
 class HomeTodayWorkersSection extends StatelessWidget {
   const HomeTodayWorkersSection({
@@ -471,30 +472,12 @@ class _StatusCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDone = status == '완료';
     return Expanded(
       child: Center(
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(4),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(4),
-              border: isDone ? null : Border.all(color: AppColors.primary),
-              color: isDone ? const Color(0xFF666874) : AppColors.primaryLight,
-            ),
-            child: Text(
-              status,
-              textAlign: TextAlign.center,
-              style: AppTypography.bodySmallB.copyWith(
-                color: isDone ? AppColors.grey0 : AppColors.primary,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                height: 16 / 12,
-              ),
-            ),
-          ),
+          borderRadius: BorderRadius.circular(8),
+          child: WorkStatusBadge(status: status, compact: true),
         ),
       ),
     );

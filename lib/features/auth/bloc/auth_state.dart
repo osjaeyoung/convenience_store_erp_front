@@ -56,8 +56,3 @@ class AuthState extends Equatable {
   @override
   List<Object?> get props => [status, user, signupResponse, branches, errorMessage];
 }
-
-class AuthException implements Exception {
-  AuthException(this.message);
-  final String message;
-}

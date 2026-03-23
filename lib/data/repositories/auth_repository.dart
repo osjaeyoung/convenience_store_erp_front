@@ -1,6 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../core/enums/user_role.dart';
+import '../../features/auth/exceptions/auth_exception.dart';
 import '../../core/models/user.dart';
 import '../../core/storage/token_storage.dart';
 import '../models/auth_user.dart';
@@ -190,6 +194,90 @@ class AuthRepository extends ChangeNotifier {
     return LoginResponse.fromJson(res.data!);
   }
 
+  /// 구글 로그인 (Firebase Auth)
+  Future<LoginResponse> loginWithGoogle() async {
+    final googleUser = await GoogleSignIn().signIn();
+    if (googleUser == null) throw AuthException('구글 로그인이 취소되었습니다.');
+
+    final googleAuth = await googleUser.authentication;
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    final userCredential =
+        await FirebaseAuth.instance.signInWithCredential(credential);
+    final firebaseUser = userCredential.user;
+    if (firebaseUser == null) throw AuthException('구글 로그인에 실패했습니다.');
+
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/auth/login/google',
+      data: {
+        'firebase_uid': firebaseUser.uid,
+        'email': firebaseUser.email ?? '',
+        'full_name': firebaseUser.displayName ?? firebaseUser.email ?? '',
+      },
+    );
+    return LoginResponse.fromJson(res.data!);
+  }
+
+  /// 애플 로그인 (Firebase Auth)
+  Future<LoginResponse> loginWithApple() async {
+    final appleCredential = await SignInWithApple.getAppleIDCredential(
+      scopes: [
+        AppleIDAuthorizationScopes.email,
+        AppleIDAuthorizationScopes.fullName,
+      ],
+    );
+
+    final oauthCredential = OAuthProvider('apple.com').credential(
+      idToken: appleCredential.identityToken,
+      accessToken: appleCredential.authorizationCode,
+    );
+
+    final userCredential =
+        await FirebaseAuth.instance.signInWithCredential(oauthCredential);
+    final firebaseUser = userCredential.user;
+    if (firebaseUser == null) throw AuthException('애플 로그인에 실패했습니다.');
+
+    final fullName = appleCredential.givenName != null
+        ? '${appleCredential.givenName ?? ''} ${appleCredential.familyName ?? ''}'
+            .trim()
+        : firebaseUser.displayName ?? firebaseUser.email ?? '';
+
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/auth/login/apple',
+      data: {
+        'firebase_uid': firebaseUser.uid,
+        'email': firebaseUser.email ?? appleCredential.email ?? '',
+        'full_name': fullName,
+      },
+    );
+    return LoginResponse.fromJson(res.data!);
+  }
+
+  /// 전화번호 인증 코드 발송 (Firebase) - 회원가입 시 사용
+  /// [phoneNumber] 전화번호 (E.164 형식, 예: +821012345678)
+  /// [codeSent] SMS 발송 시 콜백 (verificationId, resendToken)
+  /// [verificationCompleted] 자동 검증 완료 시 (예: 같은 기기)
+  /// [verificationFailed] 인증 실패 시
+  /// [codeAutoRetrievalTimeout] 자동 재시도 타임아웃 시
+  Future<void> verifyPhoneNumber({
+    required String phoneNumber,
+    required void Function(String verificationId, int? resendToken) codeSent,
+    void Function(PhoneAuthCredential credential)? verificationCompleted,
+    void Function(FirebaseAuthException e)? verificationFailed,
+    void Function(String verificationId)? codeAutoRetrievalTimeout,
+  }) async {
+    await FirebaseAuth.instance.verifyPhoneNumber(
+      phoneNumber: phoneNumber,
+      verificationCompleted: verificationCompleted ?? (_) {},
+      verificationFailed: verificationFailed ?? (_) {},
+      codeSent: codeSent,
+      codeAutoRetrievalTimeout: codeAutoRetrievalTimeout ?? (_) {},
+    );
+  }
+
   /// 내 정보 조회
   Future<AuthUser> getMe() async {
     final res = await _apiClient.dio.get<Map<String, dynamic>>('/auth/me');
@@ -225,6 +313,8 @@ class AuthRepository extends ChangeNotifier {
   /// 로그아웃
   Future<void> logout() async {
     await _tokenStorage.clearAll();
+    await FirebaseAuth.instance.signOut();
+    await GoogleSignIn().signOut();
     _user = null;
     _isSignupInProgress = false;
     _rawRole = null;

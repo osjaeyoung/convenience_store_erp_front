@@ -105,6 +105,17 @@ class StaffManagementRepository {
     return res.data!;
   }
 
+  /// 근무자 삭제
+  Future<Map<String, dynamic>> deleteEmployee({
+    required int branchId,
+    required int employeeId,
+  }) async {
+    final res = await _apiClient.dio.delete<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/$employeeId',
+    );
+    return res.data!;
+  }
+
   /// 근무자 인적사항 수정
   Future<Map<String, dynamic>> patchEmployee({
     required int branchId,
@@ -209,6 +220,104 @@ class StaffManagementRepository {
   }) async {
     final res = await _apiClient.dio.delete<Map<String, dynamic>>(
       '/staff-management/branches/$branchId/employees/$employeeId/reviews/$reviewId',
+    );
+    return res.data!;
+  }
+
+  /// 급여명세 작성 화면 자동 채우기 — GET .../payroll-auto-fill?year=&month=
+  Future<Map<String, dynamic>> getPayrollStatementAutoFill({
+    required int branchId,
+    required int employeeId,
+    required int year,
+    required int month,
+  }) async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/$employeeId/payroll-auto-fill',
+      queryParameters: {
+        'year': year,
+        'month': month,
+      },
+    );
+    return res.data!;
+  }
+
+  /// 급여명세 미리계산 (저장 안 함)
+  Future<Map<String, dynamic>> calculatePayrollStatement({
+    required int branchId,
+    required int employeeId,
+    required Map<String, dynamic> body,
+  }) async {
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/$employeeId/payroll-statements/calculate',
+      data: body,
+    );
+    return res.data!;
+  }
+
+  /// 급여명세 저장 (글 데이터)
+  Future<Map<String, dynamic>> createPayrollStatement({
+    required int branchId,
+    required int employeeId,
+    required Map<String, dynamic> body,
+  }) async {
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/$employeeId/payroll-statements',
+      data: body,
+    );
+    return res.data!;
+  }
+
+  /// 급여명세 목록
+  Future<Map<String, dynamic>> getPayrollStatements({
+    required int branchId,
+    required int employeeId,
+    int? year,
+    int? month,
+  }) async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/$employeeId/payroll-statements',
+      queryParameters: {
+        if (year != null) 'year': year,
+        if (month != null) 'month': month,
+      },
+    );
+    return res.data!;
+  }
+
+  /// 급여명세 상세
+  Future<Map<String, dynamic>> getPayrollStatementDetail({
+    required int branchId,
+    required int employeeId,
+    required int payrollId,
+  }) async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/$employeeId/payroll-statements/$payrollId',
+    );
+    return res.data!;
+  }
+
+  /// 급여명세 삭제
+  Future<Map<String, dynamic>> deletePayrollStatement({
+    required int branchId,
+    required int employeeId,
+    required int payrollId,
+  }) async {
+    final res = await _apiClient.dio.delete<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/$employeeId/payroll-statements/$payrollId',
+    );
+    return res.data!;
+  }
+
+  /// 급여명세 파일만 추가
+  Future<Map<String, dynamic>> patchPayrollStatementFiles({
+    required int branchId,
+    required int employeeId,
+    required int payrollId,
+    required List<Map<String, dynamic>> files,
+  }) async {
+    final res = await _apiClient.dio.patch<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/$employeeId/payroll-statements/$payrollId/file',
+      data: {'files': files},
     );
     return res.data!;
   }

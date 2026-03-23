@@ -33,6 +33,8 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
   String? _errorMessage;
   String? _editableHireDate; // 등록 후 수정 가능한 입사일
   int _starRating = 0; // 0~3, 클릭 가능한 별점
+  bool _isSavingEdit = false;
+  bool _isProcessingRetirement = false;
 
   @override
   void dispose() {
@@ -137,6 +139,125 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
     } finally {
       if (mounted) {
         setState(() => _isSearching = false);
+      }
+    }
+  }
+
+  Future<void> _onSaveEdit() async {
+    final emp = _registeredEmployee;
+    if (emp == null) return;
+
+    final employeeId = (emp['employee_id'] as num?)?.toInt();
+    if (employeeId == null) return;
+
+    final hireDate = _editableHireDate ?? emp['hire_date'] as String? ?? '';
+    if (hireDate.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('입사일을 설정해 주세요.')),
+      );
+      return;
+    }
+
+    setState(() => _isSavingEdit = true);
+    try {
+      final repo = context.read<StaffManagementRepository>();
+      await repo.patchEmployee(
+        branchId: widget.branchId,
+        employeeId: employeeId,
+        data: {'hire_date': hireDate},
+      );
+      if (_starRating > 0) {
+        await repo.createReview(
+          branchId: widget.branchId,
+          employeeId: employeeId,
+          rating: _starRating,
+          comment: '등록 시 평가',
+        );
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('저장되었습니다.')),
+        );
+        widget.onRegistered?.call();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('저장 실패: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingEdit = false);
+      }
+    }
+  }
+
+  Future<void> _onRetirementTap() async {
+    final emp = _registeredEmployee;
+    if (emp == null) return;
+
+    final employeeId = (emp['employee_id'] as num?)?.toInt();
+    if (employeeId == null) return;
+
+    final isRetired = (emp['employment_status'] as String?) == 'retired';
+    if (isRetired) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('퇴사 처리'),
+        content: const Text(
+          '이 근무자를 퇴사 처리하시겠습니까?\n퇴사일은 오늘 날짜로 등록됩니다.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primaryDark,
+            ),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final today = DateTime.now();
+    final resignationDate =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+
+    setState(() => _isProcessingRetirement = true);
+    try {
+      final repo = context.read<StaffManagementRepository>();
+      await repo.patchEmployee(
+        branchId: widget.branchId,
+        employeeId: employeeId,
+        data: {
+          'resignation_date': resignationDate,
+          'employment_status': 'retired',
+        },
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('퇴사 처리되었습니다.')),
+        );
+        widget.onRegistered?.call();
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('퇴사 처리 실패: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessingRetirement = false);
       }
     }
   }
@@ -332,9 +453,6 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                       Navigator.pop(ctx);
                       if (mounted) {
                         setState(() => _editableHireDate = formatted);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('입사일 수정 기능은 곧 API와 연결됩니다.')),
-                        );
                       }
                     },
                     child: Text(
@@ -548,7 +666,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('근무시작일', style: _labelStyle),
+                              Text('입사일', style: _labelStyle),
                               Flexible(
                                 child: Align(
                                   alignment: Alignment.centerRight,
@@ -584,12 +702,17 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                       }),
                       child: Padding(
                         padding: const EdgeInsets.only(right: 4),
-                        child: Image.asset(
-                          filled
-                              ? 'assets/icons/png/common/star_icon.png'
-                              : 'assets/icons/png/common/star_empty_icon.png',
+                        child: SizedBox(
                           width: 40,
                           height: 40,
+                          child: Image.asset(
+                            filled
+                                ? 'assets/icons/png/common/star_icon.png'
+                                : 'assets/icons/png/common/star_empty_icon.png',
+                            width: 40,
+                            height: 40,
+                            fit: BoxFit.contain,
+                          ),
                         ),
                       ),
                     );
@@ -620,11 +743,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('수정 기능은 곧 연결됩니다.')),
-                      );
-                    },
+                    onPressed: _isSavingEdit ? null : _onSaveEdit,
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.primaryDark,
                       foregroundColor: AppColors.grey0,
@@ -632,7 +751,16 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text('수정'),
+                    child: _isSavingEdit
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.grey0,
+                            ),
+                          )
+                        : const Text('수정'),
                   ),
                 ),
               ],
@@ -642,21 +770,24 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
           _buildDocumentList(),
           const SizedBox(height: 16),
           GestureDetector(
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('퇴사 처리 기능은 곧 연결됩니다.')),
-              );
-            },
+            onTap: (emp['employment_status'] as String?) == 'retired' ||
+                    _isProcessingRetirement
+                ? null
+                : _onRetirementTap,
             child: Center(
               child: Text(
                 '퇴사',
                 style: AppTypography.bodyMediumB.copyWith(
-                  color: AppColors.grey150,
+                  color: (emp['employment_status'] as String?) == 'retired'
+                      ? AppColors.grey100
+                      : AppColors.grey150,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   height: 16 / 14,
                   decoration: TextDecoration.underline,
-                  decorationColor: AppColors.grey150,
+                  decorationColor: (emp['employment_status'] as String?) == 'retired'
+                      ? AppColors.grey100
+                      : AppColors.grey150,
                 ),
               ),
             ),

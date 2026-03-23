@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "315149487915",
+    "project_id": "convenience-c851d",
+    "storage_bucket": "convenience-c851d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:315149487915:android:ba311a5eac8e84f1907f6e",
+        "android_client_info": {
+          "package_name": "com.example.convenience_store_erp_front"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCDd9A76zhcTJ4VCZon-GlZEZFXBQEk--w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
