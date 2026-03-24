@@ -124,13 +124,35 @@ String buildStandardEmploymentContractPlainText(
   buf.writeln('7. 연차유급휴가');
   buf.writeln(' · 연차유급휴가는 근로기준법에서 정하는 바에 따라 부여함');
   buf.writeln();
-  buf.writeln('8. 근로계약서 교부');
-  buf.writeln(
-    ' · 사업주는 근로계약을 체결함과 동시에 본 계약서를 사본하여 근로자의 교부요구와 관계없이 근로자에게 교부함(근로기준법 제17조 이행)',
-  );
-  buf.writeln();
-  buf.writeln('9. 기 타');
-  buf.writeln(' · 이 계약에 정함이 없는 사항은 근로기준법령에 의함');
+  if (isMinor) {
+    buf.writeln('8. 가족관계증명서 및 동의서');
+    buf.writeln(
+      ' · 가족관계기록사항에 관한 증명서 제출 여부 : '
+      '${_fv(fv, 'family_relation_certificate_submitted').isEmpty ? '____' : _fv(fv, 'family_relation_certificate_submitted')}',
+    );
+    buf.writeln(
+      ' · 친권자 또는 후견인의 동의서 구비 여부 : '
+      '${_fv(fv, 'guardian_consent_submitted').isEmpty ? '____' : _fv(fv, 'guardian_consent_submitted')}',
+    );
+    buf.writeln();
+    buf.writeln('9. 근로계약서 교부');
+    buf.writeln(
+      ' · 사업주는 근로계약을 체결함과 동시에 본 계약서를 사본하여 근로자의 교부요구와 관계없이 근로자에게 교부함(근로기준법 제17조, 제67조 이행)',
+    );
+    buf.writeln();
+    buf.writeln('10. 기 타');
+    buf.writeln(
+      ' · 13세 이상 15세 미만인 자에 대해서는 고용노동부장관으로부터 취직인허증을 교부받아야 하며, 이 계약에 정함이 없는 사항은 근로기준법령에 의함',
+    );
+  } else {
+    buf.writeln('8. 근로계약서 교부');
+    buf.writeln(
+      ' · 사업주는 근로계약을 체결함과 동시에 본 계약서를 사본하여 근로자의 교부요구와 관계없이 근로자에게 교부함(근로기준법 제17조 이행)',
+    );
+    buf.writeln();
+    buf.writeln('9. 기 타');
+    buf.writeln(' · 이 계약에 정함이 없는 사항은 근로기준법령에 의함');
+  }
   buf.writeln();
   buf.writeln(signed);
   buf.writeln();
@@ -151,49 +173,52 @@ String buildStandardEmploymentContractPlainText(
   buf.writeln(
     ' 성 명 : ${worker.isEmpty ? '__________' : worker} (서명) ${wsign.isNotEmpty ? wsign : ''}',
   );
-  if (isMinor) {
-    buf.writeln();
-    buf.writeln(
-      '연소근로자 : 가족관계증명서 ${_fv(fv, 'family_relation_certificate_submitted').isEmpty ? '—' : _fv(fv, 'family_relation_certificate_submitted')}',
-    );
-    buf.writeln(
-      '친권자 동의서 ${_fv(fv, 'guardian_consent_submitted').isEmpty ? '—' : _fv(fv, 'guardian_consent_submitted')}',
-    );
-  }
   return buf.toString();
 }
 
-const _guardianKeys = <String, String>{
-  'guardian_name': '친권자(후견인) 성명',
-  'guardian_resident_id_masked': '친권자 주민등록번호(마스킹)',
-  'guardian_address': '친권자 주소',
-  'guardian_phone_number': '친권자 연락처',
-  'relation_to_minor_worker': '근로자와의 관계',
-  'minor_name': '연소근로자 성명',
-  'minor_age': '연소근로자 만 나이',
-  'minor_resident_id_masked': '연소근로자 주민등록번호(마스킹)',
-  'minor_address': '연소근로자 주소',
-  'business_name': '사업체명',
-  'business_address': '사업장 주소',
-  'business_representative_name': '대표자',
-  'business_phone_number': '사업장 연락처',
-  'consent_minor_name': '동의서 상 근로자명',
-  'consent_signed_date': '작성일',
-  'guardian_signature_name': '친권자 서명',
-  'family_relation_certificate_attached': '가족관계증명서',
-};
-
 String buildGuardianConsentPlainText(Map<String, dynamic> fv) {
+  final g = _fv(fv, 'guardian_name');
+  final m = _fv(fv, 'minor_name');
+  final b = _fv(fv, 'business_name');
+  if (g.isEmpty && m.isEmpty && b.isEmpty) {
+    return '친권자(후견인) 동의서\n\n등록된 내용이 없습니다.\n';
+  }
+
   final buf = StringBuffer();
   buf.writeln('친권자(후견인) 동의서');
   buf.writeln();
-  var any = false;
-  for (final e in _guardianKeys.entries) {
-    final v = _fv(fv, e.key);
-    if (v.isEmpty) continue;
-    any = true;
-    buf.writeln('${e.value} : $v');
-  }
-  if (!any) buf.writeln('등록된 내용이 없습니다.');
+  buf.writeln('친권자(후견인) 인적사항');
+  buf.writeln('성 명 : ${_fv(fv, 'guardian_name')}');
+  buf.writeln('주민등록번호 : ${_fv(fv, 'guardian_resident_id_masked')}');
+  buf.writeln('주 소 : ${_fv(fv, 'guardian_address')}');
+  buf.writeln('연락처 : ${_fv(fv, 'guardian_phone_number')}');
+  buf.writeln('연소근로자와의 관계 : ${_fv(fv, 'relation_to_minor_worker')}');
+  buf.writeln();
+  buf.writeln('연소근로자 인적사항');
+  buf.writeln(
+    '성 명 : ${_fv(fv, 'minor_name')} (만 ${_fv(fv, 'minor_age')} 세)',
+  );
+  buf.writeln('주민등록번호 : ${_fv(fv, 'minor_resident_id_masked')}');
+  buf.writeln('주 소 : ${_fv(fv, 'minor_address')}');
+  buf.writeln();
+  buf.writeln('사업장 개요');
+  buf.writeln('회사명 : ${_fv(fv, 'business_name')}');
+  buf.writeln('회사주소 : ${_fv(fv, 'business_address')}');
+  buf.writeln('대표 자 : ${_fv(fv, 'business_representative_name')}');
+  buf.writeln('회사전화 : ${_fv(fv, 'business_phone_number')}');
+  buf.writeln();
+  buf.writeln(
+    '본인은 위 연소근로자 ${_fv(fv, 'consent_minor_name')} 가 위 사업장에서 근로를 하는 것에 대하여 동의합니다.',
+  );
+  buf.writeln();
+  buf.writeln(_formatKoreanDate(_fv(fv, 'consent_signed_date')));
+  buf.writeln();
+  buf.writeln(
+    '친권자(후견인) ${_fv(fv, 'guardian_signature_name')} (인)',
+  );
+  buf.writeln();
+  buf.writeln(
+    '첨 부 : 가족관계증명서 1부 ${_fv(fv, 'family_relation_certificate_attached')}',
+  );
   return buf.toString();
 }

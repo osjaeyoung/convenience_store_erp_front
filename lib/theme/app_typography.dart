@@ -59,6 +59,15 @@ class AppTypography {
     height: 1.5,
   );
 
+  /// AppBar 제목 전역 — 뒤로가기(<) 있는 서브페이지와 동일 (18/600, 좌측 타이틀)
+  static const TextStyle appBarTitle = TextStyle(
+    fontFamily: _fontFamily,
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+    height: 1.45,
+    color: Color(0xFF000000),
+  );
+
   /// Body Large / Medium / 16px
   static const TextStyle bodyLargeM = TextStyle(
     fontFamily: _fontFamily,

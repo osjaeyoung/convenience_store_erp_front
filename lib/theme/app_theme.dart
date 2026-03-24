@@ -43,18 +43,21 @@ class AppTheme {
         outline: AppColors.border,
       );
 
+  static const Color _appBarForeground = Color(0xFF000000);
+
   static AppBarTheme get _appBarTheme => AppBarTheme(
         backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.textPrimary,
+        foregroundColor: _appBarForeground,
         elevation: 0,
-        scrolledUnderElevation: 1,
-        centerTitle: true,
-        titleTextStyle: AppTypography.titleLarge.copyWith(
-          color: AppColors.textPrimary,
-        ),
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        centerTitle: false,
+        titleSpacing: 0,
+        titleTextStyle: AppTypography.appBarTitle,
         iconTheme: const IconThemeData(
-          color: AppColors.textPrimary,
-          size: 24,
+          color: _appBarForeground,
+          size: 22,
         ),
       );
 

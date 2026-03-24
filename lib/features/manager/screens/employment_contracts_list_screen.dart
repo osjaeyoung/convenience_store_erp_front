@@ -35,6 +35,28 @@ class _EmploymentContractsListScreenState
   String? _error;
   List<Map<String, dynamic>> _items = [];
 
+  static String _formatYmd(dynamic raw) {
+    if (raw == null) return '-';
+    final dt = DateTime.tryParse(raw.toString());
+    if (dt == null) return raw.toString();
+    final m = dt.month.toString().padLeft(2, '0');
+    final d = dt.day.toString().padLeft(2, '0');
+    return '${dt.year}.$m.$d';
+  }
+
+  static String _listSubtitle(Map<String, dynamic> c) {
+    final status = c['status']?.toString();
+    if (status == 'completed') {
+      final at = c['finalized_at'] ?? c['updated_at'];
+      return '완료일 ${_formatYmd(at)}';
+    }
+    final at = c['updated_at'];
+    if (at != null) {
+      return '임시저장 · ${_formatYmd(at)}';
+    }
+    return '임시저장';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -112,14 +134,7 @@ class _EmploymentContractsListScreenState
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          widget.screenTitle,
-          style: AppTypography.bodyMediumM.copyWith(
-            color: AppColors.textPrimary,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        title: Text(widget.screenTitle),
         backgroundColor: AppColors.grey0,
         elevation: 0,
       ),
@@ -174,52 +189,75 @@ class _EmploymentContractsListScreenState
                               ],
                             )
                           : ListView.separated(
-                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                              padding:
+                                  const EdgeInsets.fromLTRB(0, 0, 0, 100),
                               itemCount: _items.length,
-                              separatorBuilder: (_, __) =>
-                                  const SizedBox(height: 8),
+                              separatorBuilder: (_, __) => const Divider(
+                                height: 1,
+                                thickness: 1,
+                                color: AppColors.divider,
+                              ),
                               itemBuilder: (context, i) {
                                 final c = _items[i];
                                 final title = c['title']?.toString() ?? '-';
-                                final status = c['status']?.toString() ?? '-';
-                                final rate =
-                                    (c['completion_rate'] as num?)?.toInt() ??
-                                        0;
+                                final status = c['status']?.toString() ?? '';
+                                final completed = status == 'completed';
                                 return Material(
                                   color: AppColors.grey0,
-                                  borderRadius: BorderRadius.circular(12),
                                   child: InkWell(
-                                    borderRadius: BorderRadius.circular(12),
                                     onTap: () => _openDetail(c),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(16),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color: AppColors.grey50,
-                                        ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 16,
                                       ),
-                                      child: Column(
+                                      child: Row(
                                         crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                            CrossAxisAlignment.center,
                                         children: [
-                                          Text(
-                                            title,
-                                            style: AppTypography.bodyMediumM
-                                                .copyWith(
-                                              fontSize: 14,
-                                              color: AppColors.textPrimary,
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  title,
+                                                  maxLines: 2,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: AppTypography
+                                                      .bodyMediumM
+                                                      .copyWith(
+                                                    fontSize: 15,
+                                                    fontWeight: FontWeight.w600,
+                                                    height: 22 / 15,
+                                                    color:
+                                                        AppColors.textPrimary,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  _listSubtitle(c),
+                                                  style: AppTypography
+                                                      .bodySmall
+                                                      .copyWith(
+                                                    fontSize: 13,
+                                                    height: 18 / 13,
+                                                    color: AppColors
+                                                        .textSecondary,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            status == 'draft'
-                                                ? '임시저장 · 입력 $rate%'
-                                                : '완료 · 입력 $rate%',
-                                            style: AppTypography.bodySmall
-                                                .copyWith(
-                                              color: AppColors.textSecondary,
-                                            ),
+                                          const SizedBox(width: 12),
+                                          _ContractStatusChip(
+                                              completed: completed),
+                                          const SizedBox(width: 4),
+                                          Icon(
+                                            Icons.chevron_right_rounded,
+                                            color: AppColors.textTertiary,
+                                            size: 22,
                                           ),
                                         ],
                                       ),
@@ -256,6 +294,36 @@ class _EmploymentContractsListScreenState
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 목록 우측 상태 뱃지 (Figma: 초록 계약완료 / 빨강 계약미완료)
+class _ContractStatusChip extends StatelessWidget {
+  const _ContractStatusChip({required this.completed});
+
+  final bool completed;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = completed ? AppColors.success : AppColors.error;
+    final label = completed ? '계약완료' : '계약미완료';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.grey0,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color, width: 1),
+      ),
+      child: Text(
+        label,
+        style: AppTypography.bodySmall.copyWith(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          height: 16 / 12,
+          color: color,
+        ),
       ),
     );
   }

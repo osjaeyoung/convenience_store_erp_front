@@ -89,6 +89,29 @@ class _EmploymentContractDetailScreenState
     }
   }
 
+  /// 공유·저장 파일명: `제목_이름.pdf` (예: 근로계약서_김테스트)
+  static String _sanitizeFileNameSegment(String raw) {
+    return raw
+        .trim()
+        .replaceAll(RegExp(r'[\\/:*?"<>|]'), '_')
+        .replaceAll(RegExp(r'\s+'), '_');
+  }
+
+  String _pdfFileName() {
+    // 목록/메뉴 제목(예: 근로계약서) + 근로자명 → `근로계약서_김테스트.pdf`
+    final titleRaw = widget.listTitle.trim().isNotEmpty
+        ? widget.listTitle
+        : _documentTitle();
+    final title = _sanitizeFileNameSegment(titleRaw);
+    final name = _sanitizeFileNameSegment(widget.employeeName);
+    if (title.isEmpty && name.isEmpty) {
+      return '근로계약서.pdf';
+    }
+    if (name.isEmpty) return '$title.pdf';
+    if (title.isEmpty) return '$name.pdf';
+    return '${title}_$name.pdf';
+  }
+
   Future<void> _downloadPdf() async {
     final fv =
         (_row!['form_values'] as Map?)?.cast<String, dynamic>() ?? <String, dynamic>{};
@@ -102,7 +125,7 @@ class _EmploymentContractDetailScreenState
       if (!mounted) return;
       await Printing.sharePdf(
         bytes: bytes,
-        filename: 'employment_contract_${widget.contractId}.pdf',
+        filename: _pdfFileName(),
       );
     } catch (e) {
       if (mounted) {
@@ -248,16 +271,7 @@ class _EmploymentContractDetailScreenState
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          widget.listTitle,
-          style: AppTypography.bodyLargeB.copyWith(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            height: 24 / 16,
-            color: const Color(0xFF1D1D1F),
-          ),
-        ),
-        centerTitle: false,
+        title: Text(widget.listTitle),
         backgroundColor: AppColors.grey0,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -284,6 +298,7 @@ class _EmploymentContractDetailScreenState
   Widget _buildContent() {
     final fv = (_row!['form_values'] as Map?)?.cast<String, dynamic>() ?? {};
     final tv = _templateVersion();
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -305,58 +320,57 @@ class _EmploymentContractDetailScreenState
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline_rounded),
-                iconSize: 28,
-                color: AppColors.textPrimary,
                 onPressed: _delete,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                icon: Image.asset(
+                  'assets/icons/png/common/trash_icon.png',
+                  width: 24,
+                  height: 24,
+                ),
               ),
             ],
           ),
         ),
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-            child: tv == 'guardian_consent_v1'
-                ? _buildGuardianReadBody(fv)
-                : _buildStandardContractReadBody(fv, tv == 'minor_standard_v1'),
-          ),
-        ),
-        SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: (_pdfBusy || _loading) ? null : _downloadPdf,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  side: const BorderSide(color: AppColors.primary),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (tv == 'guardian_consent_v1')
+                  _buildGuardianReadBody(fv)
+                else
+                  _buildStandardContractReadBody(fv, tv == 'minor_standard_v1'),
+                const SizedBox(height: 28),
+                OutlinedButton(
+                  onPressed: (_pdfBusy || _loading) ? null : _downloadPdf,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.primary),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
+                  child: _pdfBusy
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.primary,
+                          ),
+                        )
+                      : Text(
+                          '다운로드',
+                          style: AppTypography.bodyLargeB.copyWith(
+                            color: AppColors.primary,
+                            fontSize: 16,
+                            height: 24 / 16,
+                          ),
+                        ),
                 ),
-                child: _pdfBusy
-                    ? const SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.primary,
-                        ),
-                      )
-                    : Text(
-                        '다운로드',
-                        style: AppTypography.bodyLargeB.copyWith(
-                          color: AppColors.primary,
-                          fontSize: 16,
-                          height: 24 / 16,
-                        ),
-                      ),
-              ),
+                SizedBox(height: 20 + bottomInset),
+              ],
             ),
           ),
         ),
@@ -576,14 +590,55 @@ class _EmploymentContractDetailScreenState
         _t('7. 연차유급휴가'),
         _t(' · 연차유급휴가는 근로기준법에서 정하는 바에 따라 부여함'),
         const SizedBox(height: 12),
-        _t('8. 근로계약서 교부'),
-        _t(
-          ' · 사업주는 근로계약을 체결함과 동시에 본 계약서를 사본하여 '
-          '근로자의 교부요구와 관계없이 근로자에게 교부함(근로기준법 제17조 이행)',
-        ),
-        const SizedBox(height: 12),
-        _t('9. 기 타'),
-        _t(' · 이 계약에 정함이 없는 사항은 근로기준법령에 의함'),
+        if (isMinor) ...[
+          _t('8. 가족관계증명서 및 동의서'),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 4,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.end,
+            children: [
+              Text(
+                ' · 가족관계기록사항에 관한 증명서 제출 여부 : ',
+                style: _docBodyStyle,
+              ),
+              _u(_fv(fv, 'family_relation_certificate_submitted')),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 4,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.end,
+            children: [
+              Text(
+                ' · 친권자 또는 후견인의 동의서 구비 여부 : ',
+                style: _docBodyStyle,
+              ),
+              _u(_fv(fv, 'guardian_consent_submitted')),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _t('9. 근로계약서 교부'),
+          _t(
+            ' · 사업주는 근로계약을 체결함과 동시에 본 계약서를 사본하여 '
+            '근로자의 교부요구와 관계없이 근로자에게 교부함(근로기준법 제17조, 제67조 이행)',
+          ),
+          const SizedBox(height: 12),
+          _t('10. 기 타'),
+          _t(
+            ' · 13세 이상 15세 미만인 자에 대해서는 고용노동부장관으로부터 취직인허증을 교부받아야 하며, 이 계약에 정함이 없는 사항은 근로기준법령에 의함',
+          ),
+        ] else ...[
+          _t('8. 근로계약서 교부'),
+          _t(
+            ' · 사업주는 근로계약을 체결함과 동시에 본 계약서를 사본하여 '
+            '근로자의 교부요구와 관계없이 근로자에게 교부함(근로기준법 제17조 이행)',
+          ),
+          const SizedBox(height: 12),
+          _t('9. 기 타'),
+          _t(' · 이 계약에 정함이 없는 사항은 근로기준법령에 의함'),
+        ],
         const SizedBox(height: 16),
         _u(
           _fv(fv, 'contract_signed_date').isEmpty ? '' : signed,
@@ -642,66 +697,206 @@ class _EmploymentContractDetailScreenState
             _u(wsign, placeholder: '　　　'),
           ],
         ),
-        if (isMinor) ...[
-          const SizedBox(height: 20),
-          _uBlock(
-            '가족관계증명서 ${_fv(fv, 'family_relation_certificate_submitted').isEmpty ? '—' : _fv(fv, 'family_relation_certificate_submitted')}',
-          ),
-          const SizedBox(height: 8),
-          _uBlock(
-            '친권자 동의서 ${_fv(fv, 'guardian_consent_submitted').isEmpty ? '—' : _fv(fv, 'guardian_consent_submitted')}',
-          ),
-        ],
       ],
     );
   }
 
-  static const _guardianKeys = <String, String>{
-    'guardian_name': '친권자(후견인) 성명',
-    'guardian_resident_id_masked': '친권자 주민등록번호(마스킹)',
-    'guardian_address': '친권자 주소',
-    'guardian_phone_number': '친권자 연락처',
-    'relation_to_minor_worker': '근로자와의 관계',
-    'minor_name': '연소근로자 성명',
-    'minor_age': '연소근로자 만 나이',
-    'minor_resident_id_masked': '연소근로자 주민등록번호(마스킹)',
-    'minor_address': '연소근로자 주소',
-    'business_name': '사업체명',
-    'business_address': '사업장 주소',
-    'business_representative_name': '대표자',
-    'business_phone_number': '사업장 연락처',
-    'consent_minor_name': '동의서 상 근로자명',
-    'consent_signed_date': '작성일',
-    'guardian_signature_name': '친권자 서명',
-    'family_relation_certificate_attached': '가족관계증명서',
-  };
-
-  Widget _buildGuardianReadBody(Map<String, dynamic> fv) {
-    final children = <Widget>[
-      _t('친권자(후견인) 동의서'),
-      const SizedBox(height: 12),
-    ];
-    var any = false;
-    for (final e in _guardianKeys.entries) {
-      final v = _fv(fv, e.key);
-      if (v.isEmpty) continue;
-      any = true;
-      children.add(Text('${e.value} :', style: _docBodyStyle));
-      children.add(const SizedBox(height: 4));
-      children.add(_uBlock(v));
-      children.add(const SizedBox(height: 12));
-    }
-    if (!any) {
-      children.add(
-        Text(
-          '등록된 내용이 없습니다.',
-          style: _docBodyStyle.copyWith(color: AppColors.textSecondary),
+  Widget _guardianReadHeading(String s) => Padding(
+        padding: const EdgeInsets.only(top: 6, bottom: 10),
+        child: Text(
+          s,
+          style: _docBodyStyle.copyWith(fontWeight: FontWeight.w600),
         ),
       );
+
+  Widget _buildGuardianReadBody(Map<String, dynamic> fv) {
+    bool any = _fv(fv, 'guardian_name').isNotEmpty ||
+        _fv(fv, 'minor_name').isNotEmpty ||
+        _fv(fv, 'business_name').isNotEmpty;
+
+    if (!any) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _t('친권자(후견인) 동의서'),
+          const SizedBox(height: 12),
+          Text(
+            '등록된 내용이 없습니다.',
+            style: _docBodyStyle.copyWith(color: AppColors.textSecondary),
+          ),
+        ],
+      );
     }
+
+    final consentName = _fv(fv, 'consent_minor_name');
+    final signed = _formatKoreanDate(_fv(fv, 'consent_signed_date'));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: children,
+      children: [
+        _guardianReadHeading('친권자(후견인) 인적사항'),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.end,
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              Text('성 명 : ', style: _docBodyStyle),
+              _u(_fv(fv, 'guardian_name')),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.end,
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              Text('주민등록번호 : ', style: _docBodyStyle),
+              _u(_fv(fv, 'guardian_resident_id_masked')),
+            ],
+          ),
+        ),
+        Text('주 소 : ', style: _docBodyStyle),
+        const SizedBox(height: 4),
+        _uBlock(_fv(fv, 'guardian_address')),
+        const SizedBox(height: 10),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.end,
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              Text('연락처 : ', style: _docBodyStyle),
+              _u(_fv(fv, 'guardian_phone_number')),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.end,
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              Text('연소근로자와의 관계 : ', style: _docBodyStyle),
+              _u(_fv(fv, 'relation_to_minor_worker')),
+            ],
+          ),
+        ),
+        _guardianReadHeading('연소근로자 인적사항'),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.end,
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              Text('성 명 : ', style: _docBodyStyle),
+              _u(_fv(fv, 'minor_name')),
+              Text(' (만 ', style: _docBodyStyle),
+              _u(_fv(fv, 'minor_age')),
+              Text(' 세)', style: _docBodyStyle),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.end,
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              Text('주민등록번호 : ', style: _docBodyStyle),
+              _u(_fv(fv, 'minor_resident_id_masked')),
+            ],
+          ),
+        ),
+        Text('주 소 : ', style: _docBodyStyle),
+        const SizedBox(height: 4),
+        _uBlock(_fv(fv, 'minor_address')),
+        const SizedBox(height: 8),
+        _guardianReadHeading('사업장 개요'),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.end,
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              Text('회사명 : ', style: _docBodyStyle),
+              _u(_fv(fv, 'business_name')),
+            ],
+          ),
+        ),
+        Text('회사주소 : ', style: _docBodyStyle),
+        const SizedBox(height: 4),
+        _uBlock(_fv(fv, 'business_address')),
+        const SizedBox(height: 10),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.end,
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              Text('대표 자 : ', style: _docBodyStyle),
+              _u(_fv(fv, 'business_representative_name')),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.end,
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              Text('회사전화 : ', style: _docBodyStyle),
+              _u(_fv(fv, 'business_phone_number')),
+            ],
+          ),
+        ),
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.end,
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            Text('본인은 위 연소근로자 ', style: _docBodyStyle),
+            _u(consentName),
+            Text(
+              ' 가 위 사업장에서 근로를 하는 것에 대하여 동의합니다.',
+              style: _docBodyStyle,
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Center(child: Text(signed, style: _docBodyStyle)),
+        const SizedBox(height: 16),
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.end,
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            Text('친권자(후견인) ', style: _docBodyStyle),
+            _u(_fv(fv, 'guardian_signature_name')),
+            Text(' (인)', style: _docBodyStyle),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.end,
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            Text('첨 부 : 가족관계증명서 1부 ', style: _docBodyStyle),
+            _u(_fv(fv, 'family_relation_certificate_attached')),
+          ],
+        ),
+      ],
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -48,7 +49,7 @@ void main() async {
   ));
 }
 
-class ConvenienceStoreApp extends StatelessWidget {
+class ConvenienceStoreApp extends StatefulWidget {
   const ConvenienceStoreApp({
     super.key,
     required this.authRepository,
@@ -67,18 +68,40 @@ class ConvenienceStoreApp extends StatelessWidget {
   final StaffManagementRepository staffManagementRepository;
 
   @override
+  State<ConvenienceStoreApp> createState() => _ConvenienceStoreAppState();
+}
+
+class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
+  late final GoRouter _router;
+  late final AuthBloc _authBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _router = createAppRouter(widget.authRepository);
+    _authBloc = AuthBloc(widget.authRepository)..add(const AuthCheckRequested());
+  }
+
+  @override
+  void dispose() {
+    _router.dispose();
+    _authBloc.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider.value(value: authRepository),
-        RepositoryProvider.value(value: ownerHomeRepository),
-        RepositoryProvider.value(value: managerHomeRepository),
-        RepositoryProvider.value(value: laborCostRepository),
-        RepositoryProvider.value(value: storeExpenseRepository),
-        RepositoryProvider.value(value: staffManagementRepository),
+        ChangeNotifierProvider.value(value: widget.authRepository),
+        RepositoryProvider.value(value: widget.ownerHomeRepository),
+        RepositoryProvider.value(value: widget.managerHomeRepository),
+        RepositoryProvider.value(value: widget.laborCostRepository),
+        RepositoryProvider.value(value: widget.storeExpenseRepository),
+        RepositoryProvider.value(value: widget.staffManagementRepository),
       ],
-      child: BlocProvider(
-        create: (_) => AuthBloc(authRepository)..add(const AuthCheckRequested()),
+      child: BlocProvider.value(
+        value: _authBloc,
         child: MaterialApp.router(
           title: '편의점 ERP',
           theme: AppTheme.light,
@@ -93,7 +116,7 @@ class ConvenienceStoreApp extends StatelessWidget {
             Locale('en', 'US'),
           ],
           locale: const Locale('ko', 'KR'),
-          routerConfig: createAppRouter(authRepository),
+          routerConfig: _router,
         ),
       ),
     );

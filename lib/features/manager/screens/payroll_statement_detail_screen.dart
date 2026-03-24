@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:printing/printing.dart';
 
 import '../../../data/repositories/staff_management_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../payroll/payroll_formatters.dart';
+import 'payroll_statement_pdf_export.dart';
 
 /// 급여명세 상세 (아이콘 + 카드 + 공제 + 다운로드)
 class PayrollStatementDetailScreen extends StatefulWidget {
@@ -34,6 +35,7 @@ class _PayrollStatementDetailScreenState
     extends State<PayrollStatementDetailScreen> {
   Map<String, dynamic>? _detail;
   bool _loading = true;
+  bool _pdfBusy = false;
   String? _error;
 
   static const _deductionKeys = <String, String>{
@@ -123,33 +125,39 @@ class _PayrollStatementDetailScreenState
     }
   }
 
+  static String _sanitizeFileNameSegment(String raw) {
+    return raw
+        .trim()
+        .replaceAll(RegExp(r'[\\/:*?"<>|]'), '_')
+        .replaceAll(RegExp(r'\s+'), '_');
+  }
+
+  String _pdfFileName() {
+    final name = _sanitizeFileNameSegment(widget.employeeName);
+    if (name.isEmpty) return '급여명세서.pdf';
+    return '급여명세서_$name.pdf';
+  }
+
   Future<void> _onDownload() async {
-    final url = _row['s3_file_url'] as String?;
-    if (url != null && url.isNotEmpty) {
-      final uri = Uri.tryParse(url);
-      if (uri != null && await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-        return;
-      }
-    }
-    final files = _row['files'] as List?;
-    if (files != null && files.isNotEmpty) {
-      final first = files.first;
-      if (first is Map) {
-        final u = first['file_url'] as String?;
-        if (u != null && u.isNotEmpty) {
-          final uri = Uri.tryParse(u);
-          if (uri != null && await canLaunchUrl(uri)) {
-            await launchUrl(uri, mode: LaunchMode.externalApplication);
-            return;
-          }
-        }
-      }
-    }
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('다운로드할 파일 URL이 없습니다.')),
+    setState(() => _pdfBusy = true);
+    try {
+      final bytes = await buildPayrollStatementPdfBytes(
+        row: _row,
+        employeeName: widget.employeeName,
       );
+      if (!mounted) return;
+      await Printing.sharePdf(
+        bytes: bytes,
+        filename: _pdfFileName(),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('PDF 저장에 실패했습니다: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _pdfBusy = false);
     }
   }
 
@@ -168,20 +176,13 @@ class _PayrollStatementDetailScreenState
     final hasDeductions = deductions.isNotEmpty || totalDed > 0;
 
     return Scaffold(
-      backgroundColor: AppColors.grey0Alt,
+      backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          '급여명세',
-          style: AppTypography.bodyMediumM.copyWith(
-            color: AppColors.textPrimary,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        title: const Text('급여명세'),
         backgroundColor: AppColors.grey0,
         elevation: 0,
       ),
@@ -271,7 +272,7 @@ class _PayrollStatementDetailScreenState
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.grey25,
+                        color: AppColors.grey0Alt,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AppColors.grey50),
                       ),
@@ -305,7 +306,7 @@ class _PayrollStatementDetailScreenState
                     width: double.infinity,
                     height: 52,
                     child: OutlinedButton(
-                      onPressed: _onDownload,
+                      onPressed: (_pdfBusy || _loading) ? null : _onDownload,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.primaryDark,
                         side: const BorderSide(color: AppColors.primaryDark),
@@ -313,13 +314,22 @@ class _PayrollStatementDetailScreenState
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: Text(
-                        '다운로드',
-                        style: AppTypography.bodyMediumB.copyWith(
-                          color: AppColors.primaryDark,
-                          fontSize: 16,
-                        ),
-                      ),
+                      child: _pdfBusy
+                          ? SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.primaryDark,
+                              ),
+                            )
+                          : Text(
+                              '다운로드',
+                              style: AppTypography.bodyMediumB.copyWith(
+                                color: AppColors.primaryDark,
+                                fontSize: 16,
+                              ),
+                            ),
                     ),
                   ),
                 ],
@@ -338,7 +348,7 @@ class _PayrollStatementDetailScreenState
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
       decoration: BoxDecoration(
-        color: AppColors.grey25,
+        color: AppColors.grey0Alt,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.grey50),
       ),

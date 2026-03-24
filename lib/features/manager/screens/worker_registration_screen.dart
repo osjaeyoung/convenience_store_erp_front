@@ -272,15 +272,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          '근무자 등록',
-          style: AppTypography.bodyMediumM.copyWith(
-            color: AppColors.textPrimary,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            height: 16 / 14,
-          ),
-        ),
+        title: const Text('근무자 등록'),
         backgroundColor: AppColors.grey0,
         elevation: 0,
       ),

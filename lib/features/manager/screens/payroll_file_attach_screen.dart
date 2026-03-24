@@ -189,14 +189,7 @@ class _PayrollFileAttachScreenState extends State<PayrollFileAttachScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          '파일로 첨부하기',
-          style: AppTypography.bodyMediumM.copyWith(
-            color: AppColors.textPrimary,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        title: const Text('파일로 첨부하기'),
         backgroundColor: AppColors.grey0,
         elevation: 0,
       ),

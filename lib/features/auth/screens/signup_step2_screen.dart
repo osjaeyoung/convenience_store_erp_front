@@ -105,7 +105,7 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
           backgroundColor: AppColors.grey0,
           appBar: AppBar(
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
+              icon: const Icon(Icons.arrow_back_ios_new_rounded),
               onPressed: () => context.pop(),
             ),
             title: Text(widget.role == UserRole.manager ? '사업주 회원가입' : '회원가입'),

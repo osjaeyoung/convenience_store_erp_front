@@ -68,14 +68,7 @@ class _EmployeeEtcRecordsScreenState extends State<EmployeeEtcRecordsScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          '기타',
-          style: AppTypography.bodyMediumM.copyWith(
-            color: AppColors.textPrimary,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        title: const Text('기타'),
         backgroundColor: AppColors.grey0,
         elevation: 0,
       ),

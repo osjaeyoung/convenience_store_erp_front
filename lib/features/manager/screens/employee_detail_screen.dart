@@ -180,15 +180,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.pop(context, _needsRefresh),
         ),
-        title: Text(
-          '직원정보',
-          style: AppTypography.bodyMediumM.copyWith(
-            color: AppColors.textPrimary,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            height: 16 / 14,
-          ),
-        ),
+        title: const Text('직원정보'),
         backgroundColor: AppColors.grey0,
         elevation: 0,
         actions: [

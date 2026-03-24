@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
-import '../widgets/manager_menu_drawer.dart';
+import '../../account/account_routes.dart';
 import '../bloc/selected_branch_cubit.dart';
 import '../bloc/store_expense_bloc.dart';
 
@@ -14,17 +14,11 @@ class StoreCostScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      endDrawer: const ManagerMenuDrawer(),
       appBar: AppBar(
-        title: Text(
-          '매장·비용',
-          style: AppTypography.titleLarge.copyWith(
-            color: AppColors.textPrimary,
-          ),
-        ),
+        title: const Text('매장·비용'),
         actions: [
           IconButton(
-            onPressed: () => openManagerMenuDrawer(context),
+            onPressed: () => openAccountSettingsMenu(context),
             icon: Image.asset(
               'assets/icons/png/common/menu_icon.png',
               width: 24,
@@ -134,7 +128,7 @@ class StoreCostScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryCard(String label, String value) {
+  static Widget _buildSummaryCard(String label, String value) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),

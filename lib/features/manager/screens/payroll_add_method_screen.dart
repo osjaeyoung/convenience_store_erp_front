@@ -19,14 +19,6 @@ class PayrollAddMethodScreen extends StatelessWidget {
   final int employeeId;
   final String employeeName;
 
-  static const TextStyle _appBarTitleStyle = TextStyle(
-    fontFamily: 'Pretendard',
-    fontSize: 20,
-    fontWeight: FontWeight.w600,
-    height: 26 / 20,
-    color: Color(0xFF000000),
-  );
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,13 +28,10 @@ class PayrollAddMethodScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('급여명세', style: _appBarTitleStyle),
-        centerTitle: false,
-        titleSpacing: 0,
+        title: const Text('급여명세'),
         backgroundColor: AppColors.grey0,
         elevation: 0,
         scrolledUnderElevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

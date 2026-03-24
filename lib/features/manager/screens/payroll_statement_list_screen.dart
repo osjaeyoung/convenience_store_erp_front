@@ -128,15 +128,7 @@ class _PayrollStatementListScreenState extends State<PayrollStatementListScreen>
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.pop(context, _dirty),
         ),
-        title: Text(
-          '급여명세',
-          style: AppTypography.bodyMediumM.copyWith(
-            color: AppColors.textPrimary,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            height: 16 / 14,
-          ),
-        ),
+        title: const Text('급여명세'),
         backgroundColor: AppColors.grey0,
         elevation: 0,
       ),

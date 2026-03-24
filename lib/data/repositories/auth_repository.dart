@@ -7,6 +7,7 @@ import '../../core/enums/user_role.dart';
 import '../../features/auth/exceptions/auth_exception.dart';
 import '../../core/models/user.dart';
 import '../../core/storage/token_storage.dart';
+import '../models/account_profile.dart';
 import '../models/auth_user.dart';
 import '../models/branch.dart';
 import '../models/login_response.dart';
@@ -256,21 +257,22 @@ class AuthRepository extends ChangeNotifier {
     return LoginResponse.fromJson(res.data!);
   }
 
-  /// 전화번호 인증 코드 발송 (Firebase) - 회원가입 시 사용
-  /// [phoneNumber] 전화번호 (E.164 형식, 예: +821012345678)
-  /// [codeSent] SMS 발송 시 콜백 (verificationId, resendToken)
-  /// [verificationCompleted] 자동 검증 완료 시 (예: 같은 기기)
-  /// [verificationFailed] 인증 실패 시
-  /// [codeAutoRetrievalTimeout] 자동 재시도 타임아웃 시
+  /// 전화번호 인증 코드 발송 (Firebase SMS) - 회원가입 시 사용
+  /// [phoneNumber] E.164 (예: +821012345678)
+  /// [forceResendingToken] [codeSent]에서 받은 값으로 재전송 시 전달
   Future<void> verifyPhoneNumber({
     required String phoneNumber,
-    required void Function(String verificationId, int? resendToken) codeSent,
-    void Function(PhoneAuthCredential credential)? verificationCompleted,
-    void Function(FirebaseAuthException e)? verificationFailed,
-    void Function(String verificationId)? codeAutoRetrievalTimeout,
+    required PhoneCodeSent codeSent,
+    PhoneVerificationCompleted? verificationCompleted,
+    PhoneVerificationFailed? verificationFailed,
+    PhoneCodeAutoRetrievalTimeout? codeAutoRetrievalTimeout,
+    Duration timeout = const Duration(seconds: 120),
+    int? forceResendingToken,
   }) async {
     await FirebaseAuth.instance.verifyPhoneNumber(
       phoneNumber: phoneNumber,
+      timeout: timeout,
+      forceResendingToken: forceResendingToken,
       verificationCompleted: verificationCompleted ?? (_) {},
       verificationFailed: verificationFailed ?? (_) {},
       codeSent: codeSent,
@@ -285,6 +287,51 @@ class AuthRepository extends ChangeNotifier {
     _syncAuthUser(user);
     notifyListeners();
     return user;
+  }
+
+  /// 계정·설정 UI용 (`GET /me/account`)
+  Future<AccountProfile> getAccountProfile() async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>('/me/account');
+    return AccountProfile.fromJson(res.data!);
+  }
+
+  /// 이름·전화번호 부분 갱신 (`PATCH /me/account`)
+  Future<AccountProfile> patchAccount({
+    String? fullName,
+    String? phoneNumber,
+  }) async {
+    final body = <String, dynamic>{};
+    if (fullName != null) body['full_name'] = fullName;
+    if (phoneNumber != null) body['phone_number'] = phoneNumber;
+    final res = await _apiClient.dio.patch<Map<String, dynamic>>(
+      '/me/account',
+      data: body,
+    );
+    final profile = AccountProfile.fromJson(res.data!);
+    await getMe();
+    return profile;
+  }
+
+  /// 로그인 상태 비밀번호 변경 (`POST /me/account/password`)
+  Future<void> changeAccountPassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    await _apiClient.dio.post<Map<String, dynamic>>(
+      '/me/account/password',
+      data: {
+        'current_password': currentPassword,
+        'new_password': newPassword,
+      },
+    );
+  }
+
+  /// 회원 탈퇴 (`POST /me/account/withdraw`)
+  Future<void> withdrawAccount() async {
+    await _apiClient.dio.post<Map<String, dynamic>>(
+      '/me/account/withdraw',
+      data: {'confirm': true},
+    );
   }
 
   /// 로그인 성공 후 상태 저장
@@ -312,6 +359,11 @@ class AuthRepository extends ChangeNotifier {
 
   /// 로그아웃
   Future<void> logout() async {
+    try {
+      await _apiClient.dio.post<Map<String, dynamic>>('/auth/logout');
+    } catch (_) {
+      // 서버에 엔드포인트가 없거나 실패해도 로컬 로그아웃은 진행
+    }
     await _tokenStorage.clearAll();
     await FirebaseAuth.instance.signOut();
     await GoogleSignIn().signOut();

@@ -20,12 +20,7 @@ class JobSeekerMainScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(
-          '구직자',
-          style: AppTypography.titleLarge.copyWith(
-            color: AppColors.textPrimary,
-          ),
-        ),
+        title: const Text('구직자'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),

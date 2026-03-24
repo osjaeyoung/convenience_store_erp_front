@@ -6,13 +6,13 @@ import '../../../core/enums/user_role.dart';
 import '../../../core/models/user.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import '../../account/account_routes.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/selected_branch_cubit.dart';
 import '../bloc/staff_management_bloc.dart';
 import '../widgets/branch_select_card.dart';
 import '../widgets/home_common_app_bar.dart';
-import '../widgets/manager_menu_drawer.dart';
 import '../widgets/home_shared_sections.dart';
 import '../widgets/schedule_date_selector.dart';
 import '../widgets/work_status_badge.dart';
@@ -67,7 +67,6 @@ class _ManagementScreenState extends State<ManagementScreen>
     final hasAlarm = _hasAlarm(homeState, selectedBranchId);
     return Scaffold(
       backgroundColor: AppColors.grey0,
-      endDrawer: const ManagerMenuDrawer(),
       appBar: HomeCommonAppBar(
         alarmActive: hasAlarm,
         onAlarmTap: () {
@@ -75,7 +74,7 @@ class _ManagementScreenState extends State<ManagementScreen>
             const SnackBar(content: Text('알림 기능은 곧 연결됩니다.')),
           );
         },
-        onMenuTap: () => openManagerMenuDrawer(context),
+        onMenuTap: () => openAccountSettingsMenu(context),
       ),
       body: BlocConsumer<SelectedBranchCubit, int?>(
         listener: (context, branchId) {
@@ -523,7 +522,7 @@ class _ManagementScreenState extends State<ManagementScreen>
                   child: Row(
                     children: const [
                       Expanded(child: Text('시간', textAlign: TextAlign.center)),
-                      Expanded(child: Text('근무자', textAlign: TextAlign.center)),
+                      Expanded(child: Text('근무자', textAlign: TextAlign.start)),
                       Expanded(child: Text('메모', textAlign: TextAlign.center)),
                       Expanded(child: Text('상태', textAlign: TextAlign.center)),
                     ],
@@ -537,7 +536,7 @@ class _ManagementScreenState extends State<ManagementScreen>
                   child: Row(
                     children: [
                       Expanded(child: Text(row.time, textAlign: TextAlign.center)),
-                      Expanded(child: Text(row.workerName, textAlign: TextAlign.center)),
+                      Expanded(child: Text(row.workerName, textAlign: TextAlign.start)),
                       const Expanded(
                         child: Center(
                           child: Icon(Icons.edit_outlined, color: AppColors.grey150),
@@ -664,7 +663,7 @@ class _ManagementScreenState extends State<ManagementScreen>
                   child: Row(
                     children: const [
                       Expanded(child: Text('시간', textAlign: TextAlign.center)),
-                      Expanded(child: Text('근무자', textAlign: TextAlign.center)),
+                      Expanded(child: Text('근무자', textAlign: TextAlign.start)),
                       Expanded(child: Text('메모', textAlign: TextAlign.center)),
                       Expanded(child: Text('상태', textAlign: TextAlign.center)),
                     ],
@@ -678,7 +677,7 @@ class _ManagementScreenState extends State<ManagementScreen>
                   child: Row(
                     children: [
                       Expanded(child: Text(row.time, textAlign: TextAlign.center)),
-                      Expanded(child: Text(row.workerName, textAlign: TextAlign.center)),
+                      Expanded(child: Text(row.workerName, textAlign: TextAlign.start)),
                       const Expanded(
                         child: Center(
                           child: Icon(Icons.edit_outlined, color: AppColors.grey150),

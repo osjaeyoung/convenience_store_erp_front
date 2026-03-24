@@ -23,11 +23,16 @@ class EmploymentContractAddMethodScreen extends StatelessWidget {
   final String templateVersion;
   final String listTitle;
 
-  static TextStyle get _appBarTitleStyle => AppTypography.bodyMediumB.copyWith(
-        fontSize: 20,
-        height: 26 / 20,
-        color: AppColors.textPrimary,
-      );
+  String get _directWriteTitle {
+    switch (templateVersion) {
+      case 'minor_standard_v1':
+        return '연소근로자 표준근로계약 작성';
+      case 'guardian_consent_v1':
+        return '친권동의서 작성';
+      default:
+        return '표준 근로계약서 작성';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,13 +43,10 @@ class EmploymentContractAddMethodScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(listTitle, style: _appBarTitleStyle),
-        centerTitle: false,
-        titleSpacing: 0,
+        title: Text(listTitle),
         backgroundColor: AppColors.grey0,
         elevation: 0,
         scrolledUnderElevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -58,8 +60,8 @@ class EmploymentContractAddMethodScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               _MethodRow(
-                asset: 'assets/icons/svg/icon/payroll_add_pencil_16.svg',
-                title: '직접 작성',
+                imageAsset: 'assets/icons/png/common/box_green_icon.png',
+                title: _directWriteTitle,
                 onTap: () async {
                   final ok = await Navigator.of(context).push<bool>(
                     MaterialPageRoute<bool>(
@@ -79,7 +81,7 @@ class EmploymentContractAddMethodScreen extends StatelessWidget {
               ),
               const Divider(height: 1, thickness: 1, color: AppColors.grey50),
               _MethodRow(
-                asset: 'assets/icons/svg/icon/payroll_add_folder_16.svg',
+                svgAsset: 'assets/icons/svg/icon/payroll_add_folder_16.svg',
                 title: '파일로 첨부',
                 onTap: () async {
                   final ok = await Navigator.of(context).push<bool>(
@@ -107,12 +109,14 @@ class EmploymentContractAddMethodScreen extends StatelessWidget {
 
 class _MethodRow extends StatelessWidget {
   const _MethodRow({
-    required this.asset,
+    this.svgAsset,
+    this.imageAsset,
     required this.title,
     required this.onTap,
-  });
+  }) : assert(svgAsset != null || imageAsset != null);
 
-  final String asset;
+  final String? svgAsset;
+  final String? imageAsset;
   final String title;
   final VoidCallback onTap;
 
@@ -127,7 +131,10 @@ class _MethodRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
           child: Row(
             children: [
-              SvgPicture.asset(asset, width: 16, height: 16),
+              if (imageAsset != null)
+                Image.asset(imageAsset!, width: 16, height: 16)
+              else
+                SvgPicture.asset(svgAsset!, width: 16, height: 16),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(

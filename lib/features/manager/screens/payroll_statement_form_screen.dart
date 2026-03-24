@@ -353,20 +353,12 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          '급여명세 작성',
-          style: AppTypography.bodyMediumM.copyWith(
-            color: AppColors.textPrimary,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            height: 20 / 16,
-          ),
-        ),
-        centerTitle: true,
+        title: const Text('급여명세 작성'),
+        centerTitle: false,
+        titleSpacing: 0,
         backgroundColor: AppColors.grey0,
         elevation: 0,
         scrolledUnderElevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       body: Form(
         key: _formKey,

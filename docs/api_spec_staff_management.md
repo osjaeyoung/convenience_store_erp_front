@@ -1009,11 +1009,37 @@
 **Flutter 수집 시 흔한 누락:** 하단 사업주 영역만 채우고 상단 `employer_name`, `contract_start_date`, `work_place`, `job_description`을 `form_values`에 넣지 않으면 400 에러가 납니다. 제출 직전에 위 16개 키가 모두 포함되는지 확인하세요.
 
 #### minor_standard_v1 (연소근로자 표준 근로계약서)
-표준 필수 항목 모두 + 아래 추가 필수:
-| form_values 키 | 한글 라벨 |
-|----------------|-----------|
-| `family_relation_certificate_submitted` | 가족관계증명서 제출 여부 |
-| `guardian_consent_submitted` | 친권자/후견인 동의서 구비 여부 |
+
+표준 필수 항목 16개 **모두** + 아래 2개 추가 필수 (총 18개):
+
+| form_values 키 | 한글 라벨 | 계약서 위치 |
+|----------------|-----------|-------------|
+| `family_relation_certificate_submitted` | 가족관계증명서 제출 여부 | 가족관계기록사항에 관한 증명서 제출 여부 |
+| `guardian_consent_submitted` | 친권자/후견인 동의서 구비 여부 | 친권자 또는 후견인의 동의서 구비 여부 |
+
+**연소근로자 계약서 ↔ API 전체 매핑:**
+| 계약서 항목 | form_values 키 | 필수 |
+|-------------|----------------|------|
+| (이하 "사업주"라 함) | `employer_name` | ✓ |
+| (이하 "근로자"라 함) | `worker_name` | ✓ |
+| 근로계약기간 시작일 | `contract_start_date` | ✓ |
+| 근로계약기간 종료일 | `contract_end_date` | 선택 |
+| 근무 장소 | `work_place` | ✓ |
+| 업무 내용 | `job_description` | ✓ |
+| 소정근로시간 (시~분부터~시~분까지) | `scheduled_work_start_time`, `scheduled_work_end_time` | ✓ |
+| 휴게시간 | `break_start_time`, `break_end_time` | 선택 |
+| 근무일/휴일 (매주 N일) | `work_days_per_week` | ✓ |
+| 주휴일 (매주 N요일) | `weekly_holiday_day` | ✓ |
+| 월(일,시간)급 | `wage_type`, `wage_amount` | ✓ |
+| 상여금 | `bonus_included`, `bonus_amount` | 선택 |
+| 기타급여/식대/교통비/기타 | `other_allowance_*`, `meal_allowance`, `transport_allowance`, `extra_allowance_*` | 선택 |
+| 임금지급일 | `payment_day` | ✓ |
+| 지급방법 | `payment_method` | ✓ |
+| 가족관계증명서 제출 여부 | `family_relation_certificate_submitted` | ✓ |
+| 친권자/후견인 동의서 구비 여부 | `guardian_consent_submitted` | ✓ |
+| 계약 체결일 (연/월/일) | `contract_signed_date` | ✓ |
+| (사업주) 사업체명, 전화, 주소, 대표자 | `employer_business_name`, `employer_phone`, `employer_address`, `employer_representative_name` | 사업체명·대표자 필수 |
+| (근로자) 주소, 연락처, 성명 | `worker_address`, `worker_phone`, `worker_signature_text` | 선택 |
 
 #### guardian_consent_v1 (친권자 동의서)
 | form_values 키 | 한글 라벨 |

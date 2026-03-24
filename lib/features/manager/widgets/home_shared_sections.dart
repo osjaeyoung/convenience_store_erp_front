@@ -122,7 +122,7 @@ class HomeTodayWorkersSection extends StatelessWidget {
           child: Row(
             children: const [
               _HeaderCell('시간'),
-              _HeaderCell('근무자'),
+              _HeaderCell('근무자', textAlign: TextAlign.start),
               _HeaderCell('메모'),
               _HeaderCell('상태'),
             ],
@@ -380,16 +380,17 @@ class _LearnMoreButton extends StatelessWidget {
 }
 
 class _HeaderCell extends StatelessWidget {
-  const _HeaderCell(this.text);
+  const _HeaderCell(this.text, {this.textAlign = TextAlign.center});
 
   final String text;
+  final TextAlign textAlign;
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: Text(
         text,
-        textAlign: TextAlign.center,
+        textAlign: textAlign,
         style: AppTypography.bodySmallB.copyWith(
           color: AppColors.textSecondary,
           fontSize: 12,
@@ -493,22 +494,27 @@ class _WorkerNameCell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SvgPicture.asset(
             'assets/icons/svg/icon/star_mint_16.svg',
             width: 16,
             height: 16,
           ),
-          const SizedBox(width: 6),
-          Text(
-            text,
-            textAlign: TextAlign.center,
-            style: AppTypography.bodyMediumR.copyWith(
-              color: AppColors.textPrimary,
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-              height: 19 / 14,
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              text,
+              textAlign: TextAlign.start,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.bodyMediumR.copyWith(
+                color: AppColors.textPrimary,
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                height: 19 / 14,
+              ),
             ),
           ),
         ],

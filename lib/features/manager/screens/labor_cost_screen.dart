@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
-import '../widgets/manager_menu_drawer.dart';
+import '../../account/account_routes.dart';
 import '../bloc/labor_cost_bloc.dart';
 import '../bloc/selected_branch_cubit.dart';
 
@@ -14,17 +14,11 @@ class LaborCostScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      endDrawer: const ManagerMenuDrawer(),
       appBar: AppBar(
-        title: Text(
-          '인건비',
-          style: AppTypography.titleLarge.copyWith(
-            color: AppColors.textPrimary,
-          ),
-        ),
+        title: const Text('인건비'),
         actions: [
           IconButton(
-            onPressed: () => openManagerMenuDrawer(context),
+            onPressed: () => openAccountSettingsMenu(context),
             icon: Image.asset(
               'assets/icons/png/common/menu_icon.png',
               width: 24,
@@ -104,17 +98,17 @@ class LaborCostScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    _buildSummaryCard(
+                    LaborCostScreen._buildSummaryCard(
                       '현재 총 인건비',
                       '${expected.currentTotalCost.toStringAsFixed(0)}원',
                     ),
                     const SizedBox(height: 8),
-                    _buildSummaryCard(
+                    LaborCostScreen._buildSummaryCard(
                       '이전 대비 증감률',
                       '${expected.changeRatePercent.toStringAsFixed(1)}%',
                     ),
                     const SizedBox(height: 8),
-                    _buildSummaryCard(
+                    LaborCostScreen._buildSummaryCard(
                       '현재 인원',
                       '${expected.headcountCurrent}명',
                     ),
@@ -128,7 +122,7 @@ class LaborCostScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryCard(String label, String value) {
+  static Widget _buildSummaryCard(String label, String value) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),

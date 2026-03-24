@@ -186,14 +186,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
         surfaceTintColor: AppColors.grey0,
         elevation: 0,
         scrolledUnderElevation: 0,
-        centerTitle: false,
-        titleSpacing: 0,
-        title: Text(
-          '점포 추가하기',
-          style: AppTypography.bodyLargeB.copyWith(
-            color: AppColors.textPrimary,
-          ),
-        ),
+        title: const Text('점포 추가하기'),
       ),
       body: SafeArea(
         child: Column(

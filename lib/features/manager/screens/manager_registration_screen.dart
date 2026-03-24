@@ -306,12 +306,7 @@ class _ManagerRegistrationScreenState extends State<ManagerRegistrationScreen> {
         surfaceTintColor: AppColors.grey0,
         elevation: 0,
         scrolledUnderElevation: 0,
-        centerTitle: false,
-        titleSpacing: 0,
-        title: Text(
-          '등록된 점장',
-          style: AppTypography.bodyLargeB.copyWith(color: AppColors.textPrimary),
-        ),
+        title: const Text('등록된 점장'),
       ),
       body: SafeArea(
         child: Column(

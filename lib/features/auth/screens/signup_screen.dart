@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -39,6 +42,8 @@ class _SignupScreenState extends State<SignupScreen> {
   _SignupStep _currentStep = _SignupStep.terms;
   UserRole _selectedRole = UserRole.manager;
   String? _phoneVerificationId;
+  int? _phoneForceResendingToken;
+  String? _phoneE164Sent;
   bool _isPhoneVerified = false;
   bool _isSendingPhoneCode = false;
   bool _agreeTerms = false;
@@ -56,6 +61,7 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   void initState() {
     super.initState();
+    _phoneController.addListener(_syncPhoneVerificationState);
     final authRepository = context.read<AuthRepository>();
     if (authRepository.shouldStartAtRoleSelection) {
       _currentStep = _SignupStep.role;
@@ -63,8 +69,21 @@ class _SignupScreenState extends State<SignupScreen> {
     }
   }
 
+  void _syncPhoneVerificationState() {
+    if (_isPhoneVerified || _phoneE164Sent == null) return;
+    final now = _toE164(_phoneController.text.trim());
+    if (now.isEmpty || now == _phoneE164Sent || !mounted) return;
+    setState(() {
+      _phoneVerificationId = null;
+      _phoneForceResendingToken = null;
+      _phoneE164Sent = null;
+      _phoneCodeController.clear();
+    });
+  }
+
   @override
   void dispose() {
+    _phoneController.removeListener(_syncPhoneVerificationState);
     _emailController.dispose();
     _pwController.dispose();
     _pwConfirmController.dispose();
@@ -89,6 +108,12 @@ class _SignupScreenState extends State<SignupScreen> {
     if (_currentStep == _SignupStep.basicInfo) {
       setState(() => _submittedBasicInfo = true);
       if (!_formKey.currentState!.validate()) return;
+      if (!_isPhoneVerified) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('휴대폰 문자 인증을 완료해주세요.')),
+        );
+        return;
+      }
       setState(() => _currentStep = _SignupStep.role);
       return;
     }
@@ -150,7 +175,7 @@ class _SignupScreenState extends State<SignupScreen> {
           backgroundColor: AppColors.grey0,
           appBar: AppBar(
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
+              icon: const Icon(Icons.arrow_back_ios_new_rounded),
               onPressed: () {
                 if (_currentStep == _SignupStep.terms) {
                   context.pop();
@@ -466,10 +491,13 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
               validator: (v) {
                 if (_isPhoneVerified) return null;
+                final t = (v ?? '').trim();
                 if (_phoneVerificationId == null) {
-                  return (v == null || v.trim().isEmpty)
-                      ? '*휴대폰 번호를 입력해주세요.'
-                      : null;
+                  if (t.isEmpty) return '*휴대폰 번호를 입력해주세요.';
+                  if (!_isKoreanMobile(t)) {
+                    return '*올바른 휴대폰 번호를 입력해주세요. (010 등)';
+                  }
+                  return null;
                 }
                 return '*인증을 완료해주세요.';
               },
@@ -491,6 +519,18 @@ class _SignupScreenState extends State<SignupScreen> {
                   if (code.length != 6) return '*인증번호 6자리를 입력해주세요.';
                   return null;
                 },
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: _isSendingPhoneCode ? null : _onResendPhoneCode,
+                  child: Text(
+                    '인증번호 재전송',
+                    style: AppTypography.bodySmallM.copyWith(
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
               ),
             ],
             const SizedBox(height: 20),
@@ -562,51 +602,132 @@ class _SignupScreenState extends State<SignupScreen> {
 
   String _toE164(String phone) {
     final digits = phone.replaceAll(RegExp(r'[^\d]'), '');
+    if (digits.startsWith('82') && digits.length >= 11) {
+      return '+$digits';
+    }
     if (digits.startsWith('0')) {
       return '+82${digits.substring(1)}';
     }
-    if (digits.length == 10 || digits.length == 11) {
+    if (digits.length >= 9 && digits.length <= 11) {
       return '+82$digits';
     }
-    if (!digits.startsWith('82')) {
-      return '+82$digits';
+    if (digits.isNotEmpty) {
+      return '+$digits';
     }
-    return '+$digits';
+    return '';
   }
 
-  Future<void> _onRequestPhoneVerification() async {
-    final phone = _toE164(_phoneController.text.trim());
-    if (phone.length < 10) {
+  /// 한국 휴대전화 (010, 011, 016~019)
+  bool _isKoreanMobile(String raw) {
+    final d = raw.replaceAll(RegExp(r'[^\d]'), '');
+    return RegExp(r'^01[016789]\d{7,8}$').hasMatch(d);
+  }
+
+  Future<void> _finalizePhoneVerified(PhoneAuthCredential credential) async {
+    try {
+      await FirebaseAuth.instance.signInWithCredential(credential);
+      await FirebaseAuth.instance.signOut();
+      if (!mounted) return;
+      setState(() {
+        _isPhoneVerified = true;
+        _isSendingPhoneCode = false;
+        _phoneVerificationId = null;
+        _phoneForceResendingToken = null;
+        _phoneE164Sent = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('휴대폰 인증이 완료되었습니다.')),
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSendingPhoneCode = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('인증 처리 중 오류가 발생했습니다: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _startFirebasePhoneVerification({required bool isResend}) async {
+    if (kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('휴대폰 문자 인증은 Android/iOS 앱에서 진행해 주세요.'),
+        ),
+      );
+      return;
+    }
+
+    final raw = _phoneController.text.trim();
+    if (!_isKoreanMobile(raw)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('휴대폰 번호를 확인해 주세요. (예: 01012345678)'),
+        ),
+      );
+      return;
+    }
+
+    final phone = _toE164(raw);
+    if (phone.length < 12) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('올바른 전화번호를 입력해주세요.')),
       );
       return;
     }
+
+    if (isResend &&
+        _phoneE164Sent != null &&
+        _phoneE164Sent != phone) {
+      setState(() {
+        _phoneVerificationId = null;
+        _phoneForceResendingToken = null;
+      });
+    }
+
     setState(() => _isSendingPhoneCode = true);
     try {
       await context.read<AuthRepository>().verifyPhoneNumber(
             phoneNumber: phone,
-            codeSent: (verificationId, _) {
-              if (mounted) {
-                setState(() {
-                  _phoneVerificationId = verificationId;
-                  _isSendingPhoneCode = false;
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('인증번호가 발송되었습니다.')),
-                );
-              }
+            forceResendingToken: isResend ? _phoneForceResendingToken : null,
+            verificationCompleted: (credential) {
+              unawaited(_finalizePhoneVerified(credential));
             },
             verificationFailed: (e) {
               if (mounted) {
                 setState(() => _isSendingPhoneCode = false);
+                final msg = e.message ?? e.code;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      e.message ?? '인증번호 발송에 실패했습니다.',
+                      msg.isEmpty ? '인증번호 발송에 실패했습니다.' : msg,
                     ),
                   ),
                 );
+              }
+            },
+            codeSent: (verificationId, resendToken) {
+              if (mounted) {
+                setState(() {
+                  _phoneVerificationId = verificationId;
+                  _phoneForceResendingToken = resendToken;
+                  _phoneE164Sent = phone;
+                  _isSendingPhoneCode = false;
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      isResend
+                          ? '인증번호를 다시 보냈습니다.'
+                          : '인증번호가 발송되었습니다.',
+                    ),
+                  ),
+                );
+              }
+            },
+            codeAutoRetrievalTimeout: (_) {
+              if (mounted) {
+                setState(() => _isSendingPhoneCode = false);
               }
             },
           );
@@ -614,37 +735,36 @@ class _SignupScreenState extends State<SignupScreen> {
       if (mounted) {
         setState(() => _isSendingPhoneCode = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('인증번호 발송에 실패했습니다.')),
+          SnackBar(content: Text('인증번호 발송에 실패했습니다: $e')),
         );
       }
     }
   }
 
+  Future<void> _onRequestPhoneVerification() async {
+    await _startFirebasePhoneVerification(isResend: false);
+  }
+
+  Future<void> _onResendPhoneCode() async {
+    if (_phoneVerificationId == null) return;
+    await _startFirebasePhoneVerification(isResend: true);
+  }
+
   Future<void> _onVerifyPhoneCode() async {
     final code = _phoneCodeController.text.trim();
-    if (code.isEmpty || _phoneVerificationId == null) return;
+    if (code.length != 6 || _phoneVerificationId == null) return;
     setState(() => _isSendingPhoneCode = true);
     try {
       final credential = PhoneAuthProvider.credential(
         verificationId: _phoneVerificationId!,
         smsCode: code,
       );
-      await FirebaseAuth.instance.signInWithCredential(credential);
-      if (mounted) {
-        await FirebaseAuth.instance.signOut();
-        setState(() {
-          _isPhoneVerified = true;
-          _isSendingPhoneCode = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('휴대폰 인증이 완료되었습니다.')),
-        );
-      }
+      await _finalizePhoneVerified(credential);
     } catch (e) {
       if (mounted) {
         setState(() => _isSendingPhoneCode = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('인증번호가 일치하지 않습니다.')),
+          const SnackBar(content: Text('인증번호가 올바르지 않습니다.')),
         );
       }
     }
