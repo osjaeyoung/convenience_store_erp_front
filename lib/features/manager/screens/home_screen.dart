@@ -12,6 +12,7 @@ import '../bloc/selected_branch_cubit.dart';
 import 'add_branch_screen.dart';
 import 'manager_registration_screen.dart';
 import '../widgets/home_common_app_bar.dart';
+import '../widgets/manager_menu_drawer.dart';
 import '../widgets/home_shared_sections.dart';
 import '../widgets/branch_select_card.dart';
 
@@ -66,6 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           return Scaffold(
             backgroundColor: AppColors.grey0,
+            endDrawer: const ManagerMenuDrawer(),
             appBar: HomeCommonAppBar(
               alarmActive: hasAlarm,
               onAlarmTap: () {
@@ -73,11 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SnackBar(content: Text('알림 기능은 곧 연결됩니다.')),
                 );
               },
-              onMenuTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('메뉴 기능은 곧 연결됩니다.')),
-                );
-              },
+              onMenuTap: () => openManagerMenuDrawer(context),
             ),
             body: _buildBody(
               context: context,

@@ -177,6 +177,17 @@ class StaffManagementRepository {
     return res.data!;
   }
 
+  /// 기타자료 목록 — 스펙 ##21
+  Future<Map<String, dynamic>> getEmployeeRecordsEtc({
+    required int branchId,
+    required int employeeId,
+  }) async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/$employeeId/records/etc',
+    );
+    return res.data!;
+  }
+
   /// 근로계약서 목록 조회 (임시저장 포함)
   Future<Map<String, dynamic>> getEmploymentContracts({
     required int branchId,
@@ -191,6 +202,90 @@ class StaffManagementRepository {
         if (templateVersion != null && templateVersion.isNotEmpty)
           'template_version': templateVersion,
       },
+    );
+    return res.data!;
+  }
+
+  /// 근로계약서 단건 조회 — 스펙 ##26
+  Future<Map<String, dynamic>> getEmploymentContractDetail({
+    required int branchId,
+    required int employeeId,
+    required int contractId,
+  }) async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/$employeeId/employment-contracts/$contractId',
+    );
+    return res.data!;
+  }
+
+  /// 근로계약서 생성 — 스펙 ##23
+  Future<Map<String, dynamic>> createEmploymentContract({
+    required int branchId,
+    required int employeeId,
+    required Map<String, dynamic> body,
+  }) async {
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/$employeeId/employment-contracts',
+      data: body,
+    );
+    return res.data!;
+  }
+
+  /// 근로계약서 파일 전용 등록 — 스펙 ##23-1
+  Future<Map<String, dynamic>> createEmploymentContractFileOnly({
+    required int branchId,
+    required int employeeId,
+    required String templateVersion,
+    String? title,
+    required List<Map<String, dynamic>> files,
+  }) async {
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/$employeeId/employment-contracts/file-only',
+      data: {
+        'template_version': templateVersion,
+        if (title != null && title.isNotEmpty) 'title': title,
+        'files': files,
+      },
+    );
+    return res.data!;
+  }
+
+  /// 근로계약서 수정 — 스펙 ##24
+  Future<Map<String, dynamic>> patchEmploymentContract({
+    required int branchId,
+    required int employeeId,
+    required int contractId,
+    required Map<String, dynamic> data,
+  }) async {
+    final res = await _apiClient.dio.patch<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/$employeeId/employment-contracts/$contractId',
+      data: data,
+    );
+    return res.data!;
+  }
+
+  /// 근로계약서 파일 추가 — 스펙 ##25
+  Future<Map<String, dynamic>> patchEmploymentContractFiles({
+    required int branchId,
+    required int employeeId,
+    required int contractId,
+    required List<Map<String, dynamic>> files,
+  }) async {
+    final res = await _apiClient.dio.patch<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/$employeeId/employment-contracts/$contractId/file',
+      data: {'files': files},
+    );
+    return res.data!;
+  }
+
+  /// 근로계약서 삭제 — 스펙 ##27
+  Future<Map<String, dynamic>> deleteEmploymentContract({
+    required int branchId,
+    required int employeeId,
+    required int contractId,
+  }) async {
+    final res = await _apiClient.dio.delete<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/$employeeId/employment-contracts/$contractId',
     );
     return res.data!;
   }
@@ -254,7 +349,7 @@ class StaffManagementRepository {
     return res.data!;
   }
 
-  /// 급여명세 저장 (글 데이터)
+  /// 급여명세 저장 (글 데이터, 선택적으로 `files` 배열 포함 — 스펙 ##16)
   Future<Map<String, dynamic>> createPayrollStatement({
     required int branchId,
     required int employeeId,
@@ -263,6 +358,25 @@ class StaffManagementRepository {
     final res = await _apiClient.dio.post<Map<String, dynamic>>(
       '/staff-management/branches/$branchId/employees/$employeeId/payroll-statements',
       data: body,
+    );
+    return res.data!;
+  }
+
+  /// 급여명세 파일 전용 등록 (연/월 + `files` 필수) — 스펙 ##16-1
+  Future<Map<String, dynamic>> createPayrollStatementFileOnly({
+    required int branchId,
+    required int employeeId,
+    required int year,
+    required int month,
+    required List<Map<String, dynamic>> files,
+  }) async {
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/$employeeId/payroll-statements/file-only',
+      data: {
+        'year': year,
+        'month': month,
+        'files': files,
+      },
     );
     return res.data!;
   }

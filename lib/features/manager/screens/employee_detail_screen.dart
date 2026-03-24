@@ -8,9 +8,8 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../../data/repositories/staff_management_repository.dart';
 import '../widgets/employee_profile_box.dart';
+import 'employee_document_menu_actions.dart';
 import 'employee_review_screen.dart';
-import 'employee_work_history_screen.dart';
-import 'payroll_statement_list_screen.dart';
 
 /// 직원 상세 화면 - 직원정보 탭에서 직원 클릭 시 별도 화면으로 표시
 class EmployeeDetailScreen extends StatefulWidget {
@@ -371,6 +370,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
           resignationDate: isRetired ? empResignDate : null,
           starCount: ratingInt > 0 ? ratingInt : null,
           workHistories: workHistoriesForUi,
+          payrollStatementsRaw: _detail?['payroll_statements'],
         ),
         const SizedBox(height: 16),
         GestureDetector(
@@ -561,12 +561,15 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
     required String? resignationDate,
     required int? starCount,
     required List<Map<String, dynamic>> workHistories,
+    Object? payrollStatementsRaw,
   }) {
     const items = [
-      '근로계약서',
       '근무이력',
       '급여명세',
-      '인사자료',
+      '근로계약서',
+      '연소근로자(18세 미만) 표준근로계약',
+      '친권동의서',
+      '기타',
     ];
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -592,44 +595,22 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
               color: AppColors.grey100,
             ),
             onTap: () {
-              if (title == '근무이력') {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => EmployeeWorkHistoryScreen(
-                      branchName: branchName,
-                      employeeName: employeeName,
-                      hireDate: hireDate,
-                      contact: contact,
-                      resignationDate: resignationDate,
-                      starCount: starCount,
-                      workHistories: workHistories,
-                    ),
-                  ),
-                );
-                return;
-              }
-              if (title == '급여명세') {
-                final payrollRaw = _detail!['payroll_statements'];
-                Navigator.of(context)
-                    .push<bool>(
-                  MaterialPageRoute<bool>(
-                    builder: (_) => PayrollStatementListScreen(
-                      branchId: widget.branchId,
-                      employeeId: widget.employeeId,
-                      employeeName: employeeName,
-                      initialItemsPayload: payrollRaw is List
-                          ? {'payroll_statements': payrollRaw}
-                          : null,
-                    ),
-                  ),
-                )
-                    .then((changed) {
-                  if (changed == true && mounted) _loadDetail();
-                });
-                return;
-              }
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('$title 기능은 곧 연결됩니다.')),
+              openEmployeeDocumentMenuItem(
+                context,
+                title: title,
+                branchId: widget.branchId,
+                employeeId: widget.employeeId,
+                employeeName: employeeName,
+                branchName: branchName,
+                hireDate: hireDate,
+                contact: contact,
+                resignationDate: resignationDate,
+                starCount: starCount,
+                workHistories: workHistories,
+                payrollStatementsRaw: payrollStatementsRaw,
+                onPayrollFlowFinished: () {
+                  if (mounted) _loadDetail();
+                },
               );
             },
           );

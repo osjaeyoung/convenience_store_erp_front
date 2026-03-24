@@ -650,14 +650,34 @@
 
 ---
 
-## 16) 급여명세 저장 (글 데이터만)
+## 16) 급여명세 저장 (글 데이터 + 파일)
 
 - `POST /staff-management/branches/{branch_id}/employees/{employee_id}/payroll-statements`
-- 같은 근무자의 같은 연/월 급여명세는 1건만 저장 가능
-- 파일은 저장하지 않음(파일은 아래 파일저장 API 사용)
+- **중복 허용**: 같은 근무자·같은 연/월이라도 여러 건 생성 가능 (제목 동일해도 됨)
+- **파일 함께 저장 가능**: `files` 배열에 file_key, file_url, file_name 포함 시 저장 시점에 첨부
 
 ### Request Body
-`14) 급여명세 미리계산`과 동일
+```json
+{
+  "year": 2025,
+  "month": 12,
+  "resident_id_masked": "992222-1******",
+  "total_work_minutes": 8400,
+  "hourly_wage": 9860,
+  "weekly_allowance": 206400,
+  "overtime_pay": 0,
+  "taxable_salary": null,
+  "gross_salary": null,
+  "files": [
+    {
+      "file_key": "payroll/branch-1/employee-501/2025-12.pdf",
+      "file_url": "https://your-bucket.s3.../2025-12.pdf",
+      "file_name": "2025-12-급여명세.pdf"
+    }
+  ]
+}
+```
+- `files`는 선택(없으면 빈 배열). 있으면 저장 시 함께 첨부됨.
 
 ### Response Body (200)
 ```json
@@ -687,6 +707,31 @@
   "created_at": "2026-09-30T09:00:00Z" // 저장 시각
 }
 ```
+
+---
+
+## 16-1) 급여명세 파일 전용 등록
+
+- `POST /staff-management/branches/{branch_id}/employees/{employee_id}/payroll-statements/file-only`
+- **글 데이터 없이 파일만으로 등록**: 연/월만 지정하고 수치 데이터는 0으로 저장. `files` 필수(최소 1개).
+
+### Request Body
+```json
+{
+  "year": 2025,
+  "month": 12,
+  "files": [
+    {
+      "file_key": "payroll/branch-1/employee-501/2025-12.pdf",
+      "file_url": "https://your-bucket.s3.../2025-12.pdf",
+      "file_name": "2025-12-급여명세.pdf"
+    }
+  ]
+}
+```
+
+### Response Body (200)
+`16) 급여명세 저장`의 Response와 동일 (수치 필드 0, files에 첨부파일 반영)
 
 ---
 
@@ -749,7 +794,7 @@
 없음
 
 ### Response Body (200)
-`15) 급여명세 저장`의 Response와 동일
+`16) 급여명세 저장`의 Response와 동일
 
 ---
 
@@ -773,6 +818,7 @@
 
 - `PATCH /staff-management/branches/{branch_id}/employees/{employee_id}/payroll-statements/{payroll_id}/file`
 - 한번 요청에 여러 파일 저장 가능(append)
+- 응답의 `s3_file_url`, `files[].file_url`로 **미리보기** 가능 (웹뷰/이미지뷰에 URL 사용)
 
 ### Request Body
 ```json
@@ -793,7 +839,7 @@
 ```
 
 ### Response Body (200)
-`15) 급여명세 저장`의 Response와 동일
+`16) 급여명세 저장`의 Response와 동일
 
 ---
 
@@ -810,15 +856,18 @@
 - 삭제:
   - `DELETE /staff-management/branches/{branch_id}/employees/{employee_id}/records/{record_id}`
 
+- **파일 전용 등록**: `file_url`만 제공하면 `title` 없이 등록 가능. `record_type`이 `hr`이면 제목 자동 "인사자료", `etc`이면 "기타자료".
+
 ### 등록 Request Body (HR/ETC 공통)
 ```json
 {
-  "title": "기타 자료", // 자료 제목
+  "title": "기타 자료", // 자료 제목 (선택. file_url만 있으면 파일 전용 등록, title 생략 시 자동 생성)
   "note": "메모", // 설명/메모
   "file_url": "https://files.example.com/hr-contract-2026.pdf", // 첨부 파일 URL
   "issued_date": "2026-01-05" // 문서 발행일
 }
 ```
+- `title` 또는 `file_url` 중 하나는 반드시 필요. `file_url`만 있으면 파일 전용 등록.
 
 ### 등록 Response Body (200)
 ```json
@@ -900,14 +949,92 @@
 
 ---
 
-## 23) 근로계약서 생성 (초안 저장/즉시완료, 글 데이터만)
+## 23) 근로계약서 생성 (초안 저장/즉시완료, 글 데이터 + 파일)
 
 - `POST /staff-management/branches/{branch_id}/employees/{employee_id}/employment-contracts`
 - 앱에서 빈칸 값을 입력해 `form_values`로 전송
 - `template_version=minor_standard_v1` 선택 시 연소근로자 표준근로계약 템플릿으로 저장
 - `template_version=guardian_consent_v1` 선택 시 친권자(후견인) 동의서 템플릿으로 저장
-- `status=draft`면 중간 저장, `status=completed`면 완료 저장
-- 파일은 저장하지 않음(파일은 별도 파일저장 API 사용)
+- `status=draft`면 중간 저장, `status=completed`면 **필수 항목 모두 입력 후** 완료 저장
+- **파일 함께 저장 가능**: `files` 배열 포함 시 저장 시점에 첨부
+
+### 완료 처리(`status=completed`) 시 필수 항목
+
+`status=completed`로 요청할 때는 아래 `form_values` 키가 모두 채워져 있어야 합니다. 하나라도 비어 있으면 400 에러를 반환합니다.
+
+**자동 보정:** `employer_name`이 비어 있고 `employer_business_name`이 있으면, 서버가 `employer_name`을 `employer_business_name`으로 채웁니다. (표준/연소근로자 템플릿만 해당)
+
+**400 에러 응답 예시:**
+```json
+{
+  "detail": {
+    "message": "완료 처리할 수 없습니다. 필수 입력 항목이 누락되었습니다.",
+    "missing_fields": ["contract_start_date", "job_description", "work_place"],
+    "missing_fields_labels": {
+      "contract_start_date": "근로개시일",
+      "job_description": "업무 내용",
+      "work_place": "근무 장소"
+    }
+  }
+}
+```
+- `missing_fields`: 누락된 form_values 키 목록
+- `missing_fields_labels`: 클라이언트 표시용 한글 라벨 맵
+
+#### standard_v1 (표준 근로계약서)
+
+**폼 UI ↔ API 필드 매핑 (계약서 화면 기준)**
+
+| form_values 키 | 한글 라벨 | 폼 위치 |
+|----------------|-----------|---------|
+| `employer_name` | 사업주명 | 상단 첫 번째 칩 (사업주) |
+| `worker_name` | 근로자명 | 상단 두 번째 칩 (근로자) |
+| `contract_start_date` | 근로개시일 | 근로계약기간 칩 → 시작일 (YYYY-MM-DD) |
+| `work_place` | 근무 장소 | 근무장소 칩 |
+| `job_description` | 업무 내용 | 업무내용 칩 |
+| `scheduled_work_start_time` | 소정근로 시작 | 소정근로시간 - 시작 시각 (HH:mm) |
+| `scheduled_work_end_time` | 소정근로 종료 | 소정근로시간 - 종료 시각 (HH:mm) |
+| `work_days_per_week` | 주당 근무일 수 | 근무일/휴일 (자동 기입 시 work_day_N 조합에서 산출) |
+| `weekly_holiday_day` | 주휴일 요일 | 근무일/휴일 - 주휴일 요일 |
+| `wage_type` | 임금 유형 | 임금 - 월/일/시간급 선택 (monthly\|daily\|hourly) |
+| `wage_amount` | 임금 금액(원) | 임금 - 금액 칩 |
+| `payment_day` | 임금지급일 | 임금 - 임금지급일 칩 (매월 N일) |
+| `payment_method` | 지급방법 | 직접지급=`direct`, 예금통장입금=`bank_transfer` |
+| `contract_signed_date` | 계약 체결일 | 날짜 연/월/일 스피너 결합 (YYYY-MM-DD) |
+| `employer_business_name` | 사업체명 | 하단 사업주 - 사업체명 칩 |
+| `employer_representative_name` | 대표자 성명 | 하단 사업주 - 대표자 칩 |
+
+**주의:** `employer_name`은 상단 "사업주" 칩이고, `employer_business_name`은 하단 "사업체명" 칩입니다. `employer_name`이 비어 있으면 `employer_business_name`으로 자동 채움되므로, 사업체명만 보내도 됩니다.
+
+**Flutter 수집 시 흔한 누락:** 하단 사업주 영역만 채우고 상단 `employer_name`, `contract_start_date`, `work_place`, `job_description`을 `form_values`에 넣지 않으면 400 에러가 납니다. 제출 직전에 위 16개 키가 모두 포함되는지 확인하세요.
+
+#### minor_standard_v1 (연소근로자 표준 근로계약서)
+표준 필수 항목 모두 + 아래 추가 필수:
+| form_values 키 | 한글 라벨 |
+|----------------|-----------|
+| `family_relation_certificate_submitted` | 가족관계증명서 제출 여부 |
+| `guardian_consent_submitted` | 친권자/후견인 동의서 구비 여부 |
+
+#### guardian_consent_v1 (친권자 동의서)
+| form_values 키 | 한글 라벨 |
+|----------------|-----------|
+| `guardian_name` | 친권자(후견인) 성명 |
+| `guardian_resident_id_masked` | 친권자 주민번호 마스킹 |
+| `guardian_address` | 친권자 주소 |
+| `guardian_phone_number` | 친권자 연락처 |
+| `relation_to_minor_worker` | 근로자와의 관계 |
+| `minor_name` | 만 18세 미만 근로자 성명 |
+| `minor_age` | 만 18세 미만 근로자 나이 |
+| `minor_resident_id_masked` | 만 18세 미만 근로자 주민번호 마스킹 |
+| `minor_address` | 만 18세 미만 근로자 주소 |
+| `business_name` | 사업체명 |
+| `business_address` | 사업장 주소 |
+| `business_representative_name` | 사업주 대표자명 |
+| `business_phone_number` | 사업장 연락처 |
+| `consent_minor_name` | 동의서 상 근로자명 |
+| `consent_signed_date` | 동의서 작성일 |
+| `guardian_signature_name` | 친권자 서명 |
+| `family_relation_certificate_attached` | 가족관계증명서 첨부 여부 |
 
 ### Request Body
 ```json
@@ -954,9 +1081,17 @@
     "worker_signature_text": "김현수", // 근로자 서명값
     "family_relation_certificate_submitted": "제출", // 가족관계증명서 제출 여부(연소근로자)
     "guardian_consent_submitted": "제출" // 친권자/후견인 동의서 구비 여부(연소근로자)
-  }
+  },
+  "files": [
+    {
+      "file_key": "contracts/branch-1/employee-501/contract-2026-03.pdf",
+      "file_url": "https://your-bucket.s3.../contract-2026-03.pdf",
+      "file_name": "표준근로계약서.pdf"
+    }
+  ]
 }
 ```
+- `files`는 선택(없으면 빈 배열). 있으면 저장 시 함께 첨부됨.
 
 ### Response Body (200)
 ```json
@@ -982,11 +1117,37 @@
 
 ---
 
+## 23-1) 근로계약서/부모님동의서 파일 전용 등록
+
+- `POST /staff-management/branches/{branch_id}/employees/{employee_id}/employment-contracts/file-only`
+- **글 데이터 없이 파일만으로 등록**: form_values 없이 `template_version`과 `files`만으로 근로계약서·연소근로자 계약서·친권자(부모님) 동의서 등록. status=draft, completion_rate=0.
+
+### Request Body
+```json
+{
+  "template_version": "guardian_consent_v1", // standard_v1 | minor_standard_v1 | guardian_consent_v1
+  "title": null, // 선택 (없으면 "근무자명 표준 근로계약서" 등 자동 생성)
+  "files": [
+    {
+      "file_key": "contracts/branch-1/employee-501/consent.pdf",
+      "file_url": "https://your-bucket.s3.../consent.pdf",
+      "file_name": "친권자동의서.pdf"
+    }
+  ]
+}
+```
+
+### Response Body (200)
+`23) 근로계약서 생성`의 Response와 동일
+
+---
+
 ## 24) 근로계약서 수정/중간저장/완료처리 (글 데이터만)
 
 - `PATCH /staff-management/branches/{branch_id}/employees/{employee_id}/employment-contracts/{contract_id}`
 - 입력 도중에는 `status=draft`로 반복 저장 가능
 - 마지막 단계에서 `status=completed`로 완료 처리
+- `status=completed` 시 **23)의 완료 처리 시 필수 항목**이 병합 후 모두 채워져 있어야 함
 
 ### Request Body
 ```json

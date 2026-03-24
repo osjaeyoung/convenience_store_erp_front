@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../../data/repositories/staff_management_repository.dart';
+import 'employee_document_menu_actions.dart';
 
 /// 근무자 등록 화면
 /// - 연락처 검색 → 결과 시 확인 모달 → 등록 → 직원정보 형태로 표시
@@ -292,7 +293,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                 children: [
                   _buildRegistrationCard(),
                   const SizedBox(height: 16),
-                  _buildDocumentList(),
+                  _buildDocumentList(registered: false),
                 ],
               ),
             ),
@@ -564,7 +565,10 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
     );
   }
 
-  Widget _buildDocumentList() {
+  Widget _buildDocumentList({
+    required bool registered,
+    Map<String, dynamic>? employee,
+  }) {
     const items = [
       '근무이력',
       '급여명세',
@@ -597,8 +601,37 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
               color: AppColors.grey100,
             ),
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('$title 기능은 곧 연결됩니다.')),
+              if (!registered || employee == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('근무자 등록 후 이용할 수 있습니다.'),
+                  ),
+                );
+                return;
+              }
+              final employeeId = (employee['employee_id'] as num?)?.toInt();
+              if (employeeId == null) return;
+              final name = employee['name'] as String? ?? '-';
+              final hireDate = _editableHireDate ??
+                  employee['hire_date'] as String? ??
+                  '';
+              final phone = employee['phone_number'] as String? ?? '-';
+              openEmployeeDocumentMenuItem(
+                context,
+                title: title,
+                branchId: widget.branchId,
+                employeeId: employeeId,
+                employeeName: name,
+                branchName: '-',
+                hireDate: hireDate,
+                contact: phone,
+                resignationDate:
+                    (employee['employment_status'] as String?) == 'retired'
+                        ? employee['resignation_date'] as String?
+                        : null,
+                starCount: null,
+                workHistories: const <Map<String, dynamic>>[],
+                payrollStatementsRaw: null,
               );
             },
           );
@@ -767,7 +800,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          _buildDocumentList(),
+          _buildDocumentList(registered: true, employee: emp),
           const SizedBox(height: 16),
           GestureDetector(
             onTap: (emp['employment_status'] as String?) == 'retired' ||

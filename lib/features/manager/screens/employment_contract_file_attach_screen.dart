@@ -12,27 +12,29 @@ import '../../auth/widgets/auth_input_field.dart';
 import '../../../widgets/file_attachment_drop_zone.dart';
 import '../../../widgets/file_form_name_save_dialog.dart';
 
-/// 파일로 급여명세 등록 — 제목(모달 입력) + 파일 첨부 + 추가하기
-class PayrollFileAttachScreen extends StatefulWidget {
-  const PayrollFileAttachScreen({
+/// 근로계약서 파일 전용 등록 (스펙 ##23-1)
+class EmploymentContractFileAttachScreen extends StatefulWidget {
+  const EmploymentContractFileAttachScreen({
     super.key,
     required this.branchId,
     required this.employeeId,
+    required this.templateVersion,
+    required this.screenTitle,
   });
 
   final int branchId;
   final int employeeId;
+  final String templateVersion;
+  final String screenTitle;
 
   @override
-  State<PayrollFileAttachScreen> createState() =>
-      _PayrollFileAttachScreenState();
+  State<EmploymentContractFileAttachScreen> createState() =>
+      _EmploymentContractFileAttachScreenState();
 }
 
-class _PayrollFileAttachScreenState extends State<PayrollFileAttachScreen> {
+class _EmploymentContractFileAttachScreenState
+    extends State<EmploymentContractFileAttachScreen> {
   final _titleCtrl = TextEditingController();
-
-  final int _year = DateTime.now().year;
-  final int _month = DateTime.now().month;
   PlatformFile? _picked;
   bool _submitting = false;
 
@@ -40,20 +42,6 @@ class _PayrollFileAttachScreenState extends State<PayrollFileAttachScreen> {
   void dispose() {
     _titleCtrl.dispose();
     super.dispose();
-  }
-
-  Map<String, dynamic> _bodyFromAutoFill(Map<String, dynamic> d) {
-    return {
-      'year': _year,
-      'month': _month,
-      'resident_id_masked': d['resident_id_masked'] ?? '',
-      'total_work_minutes': (d['total_work_minutes'] as num?)?.toInt() ?? 0,
-      'hourly_wage': (d['hourly_wage'] as num?)?.toInt() ?? 0,
-      'weekly_allowance': (d['weekly_allowance'] as num?)?.toInt() ?? 0,
-      'overtime_pay': (d['overtime_pay'] as num?)?.toInt() ?? 0,
-      'taxable_salary': d['taxable_salary'],
-      'gross_salary': d['gross_salary'],
-    };
   }
 
   Future<void> _pickFile() async {
@@ -66,7 +54,6 @@ class _PayrollFileAttachScreenState extends State<PayrollFileAttachScreen> {
           withData: kIsWeb,
         );
       } on MissingPluginException {
-        // 일부 환경에서 custom 메서드가 미지원일 때 any로 폴백한다.
         res = await FilePicker.platform.pickFiles(
           type: FileType.any,
           withData: kIsWeb,
@@ -108,71 +95,44 @@ class _PayrollFileAttachScreenState extends State<PayrollFileAttachScreen> {
       );
       return;
     }
-
-    final formName = _titleCtrl.text.trim();
+    final picked = _picked;
+    if (picked == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('파일을 첨부해 주세요.')),
+      );
+      return;
+    }
 
     setState(() => _submitting = true);
     try {
+      final uploaded = PayrollFileStorageService().buildContractsAttachmentMetadata(
+        branchId: widget.branchId,
+        employeeId: widget.employeeId,
+        file: picked,
+      );
       final repo = context.read<StaffManagementRepository>();
-      final auto = await repo.getPayrollStatementAutoFill(
+      await repo.createEmploymentContractFileOnly(
         branchId: widget.branchId,
         employeeId: widget.employeeId,
-        year: _year,
-        month: _month,
+        templateVersion: widget.templateVersion,
+        title: _titleCtrl.text.trim(),
+        files: [uploaded.toApiMap()],
       );
-      final body = _bodyFromAutoFill(auto);
-
-      final picked = _picked;
-      List<Map<String, dynamic>>? filesPayload;
-      if (picked != null) {
-        final uploaded = PayrollFileStorageService().buildAttachmentMetadata(
-          branchId: widget.branchId,
-          employeeId: widget.employeeId,
-          file: picked,
-        );
-        filesPayload = [uploaded.toApiMap()];
-      }
-
-      await repo.calculatePayrollStatement(
-        branchId: widget.branchId,
-        employeeId: widget.employeeId,
-        body: body,
-      );
-      final createBody = Map<String, dynamic>.from(body);
-      if (filesPayload != null) {
-        createBody['files'] = filesPayload;
-      }
-      await repo.createPayrollStatement(
-        branchId: widget.branchId,
-        employeeId: widget.employeeId,
-        body: createBody,
-      );
-
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            picked != null
-                ? '「$formName」 급여명세와 첨부 파일이 저장되었습니다.'
-                : '「$formName」 급여명세가 저장되었습니다.',
-          ),
-        ),
+        const SnackBar(content: Text('파일이 등록되었습니다.')),
       );
       Navigator.pop(context, true);
     } on StateError catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '첨부파일 메타 생성 실패: ${e.message}',
-            ),
-          ),
+          SnackBar(content: Text(e.message)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('저장 실패: $e')),
+          SnackBar(content: Text('등록 실패: $e')),
         );
       }
     } finally {

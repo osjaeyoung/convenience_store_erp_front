@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../features/auth/widgets/auth_input_field.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 
@@ -48,11 +49,11 @@ class _FileFormNameSaveDialogState extends State<_FileFormNameSaveDialog> {
       backgroundColor: AppColors.grey0,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
       ),
       insetPadding: const EdgeInsets.symmetric(horizontal: 28),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+        padding: const EdgeInsets.fromLTRB(22, 24, 22, 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -65,45 +66,28 @@ class _FileFormNameSaveDialogState extends State<_FileFormNameSaveDialog> {
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 22),
             Text(
               '양식명',
               style: AppTypography.bodySmallB.copyWith(
-                color: AppColors.textSecondary,
+                color: AppColors.textPrimary,
                 fontSize: 13,
               ),
             ),
             const SizedBox(height: 8),
-            TextField(
+            AuthInputField(
               controller: _ctrl,
+              hintText: '입력해주세요.',
               minLines: 3,
               maxLines: 5,
-              decoration: InputDecoration(
-                hintText: '입력해주세요.',
-                hintStyle: AppTypography.bodyMediumR.copyWith(
-                  color: AppColors.grey100,
-                ),
-                filled: true,
-                fillColor: AppColors.grey0,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppColors.grey50),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppColors.grey50),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppColors.primaryDark),
-                ),
+              fillColor: AppColors.grey25,
+              focusedBorderColor: AppColors.primaryDark,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             Row(
               children: [
                 Expanded(
@@ -116,7 +100,7 @@ class _FileFormNameSaveDialogState extends State<_FileFormNameSaveDialog> {
                         foregroundColor: AppColors.textSecondary,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                       ),
                       child: Text(
@@ -151,7 +135,7 @@ class _FileFormNameSaveDialogState extends State<_FileFormNameSaveDialog> {
                         foregroundColor: AppColors.grey0,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                       ),
                       child: Text(

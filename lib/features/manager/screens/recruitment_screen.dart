@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import '../widgets/manager_menu_drawer.dart';
 import '../bloc/recruitment_bloc.dart';
 import '../bloc/selected_branch_cubit.dart';
 
@@ -13,6 +14,7 @@ class RecruitmentScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      endDrawer: const ManagerMenuDrawer(),
       appBar: AppBar(
         title: Text(
           '구인·채용',
@@ -20,6 +22,17 @@ class RecruitmentScreen extends StatelessWidget {
             color: AppColors.textPrimary,
           ),
         ),
+        actions: [
+          IconButton(
+            onPressed: () => openManagerMenuDrawer(context),
+            icon: Image.asset(
+              'assets/icons/png/common/menu_icon.png',
+              width: 24,
+              height: 24,
+            ),
+          ),
+          const SizedBox(width: 6),
+        ],
       ),
       body: BlocConsumer<SelectedBranchCubit, int?>(
         listener: (context, branchId) {
