@@ -34,6 +34,45 @@ class ManagerMainScreen extends StatefulWidget {
 class _ManagerMainScreenState extends State<ManagerMainScreen> {
   int _currentIndex = 0;
 
+  Future<void> _handleBottomTap(BuildContext context, int index) async {
+    if (index == _currentIndex) return;
+
+    final selectedBranchId = context.read<SelectedBranchCubit>().state;
+    final requiresBranchSelection = index != 0;
+
+    if (requiresBranchSelection && selectedBranchId == null) {
+      final moveHome = await showDialog<bool>(
+            context: context,
+            builder: (dialogContext) {
+              return AlertDialog(
+                title: const Text('매장을 선택해주세요'),
+                content: const Text(
+                  '직원관리, 인건비, 매장·비용, 구인·채용 페이지는\n홈에서 매장을 선택한 뒤 이용할 수 있어요.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(false),
+                    child: const Text('닫기'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(true),
+                    child: const Text('홈으로 이동'),
+                  ),
+                ],
+              );
+            },
+          ) ??
+          false;
+
+      if (moveHome && mounted) {
+        setState(() => _currentIndex = 0);
+      }
+      return;
+    }
+
+    setState(() => _currentIndex = index);
+  }
+
   @override
   Widget build(BuildContext context) {
     final ownerHomeRepo = context.read<OwnerHomeRepository>();
@@ -87,7 +126,7 @@ class _ManagerMainScreenState extends State<ManagerMainScreen> {
             ),
             bottomNavigationBar: ManagerBottomBar(
               currentIndex: _currentIndex,
-              onTap: (index) => setState(() => _currentIndex = index),
+              onTap: (index) => _handleBottomTap(context, index),
             ),
           );
         },

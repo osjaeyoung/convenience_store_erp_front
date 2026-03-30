@@ -1,4 +1,5 @@
 import '../models/store_expense/store_expense_dashboard.dart';
+import '../models/store_expense/store_expense_month.dart';
 import '../network/api_client.dart';
 
 /// 매장 비용 API
@@ -26,7 +27,7 @@ class StoreExpenseRepository {
   }
 
   /// 월별 점내 비용 묶음 목록 조회
-  Future<List<Map<String, dynamic>>> getMonths({
+  Future<List<StoreExpenseMonthSummary>> getMonths({
     required int branchId,
     required int year,
   }) async {
@@ -35,11 +36,13 @@ class StoreExpenseRepository {
       queryParameters: {'year': year},
     );
     final items = res.data!['items'] as List<dynamic>? ?? [];
-    return items.cast<Map<String, dynamic>>();
+    return items
+        .map((e) => StoreExpenseMonthSummary.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   /// 월별 점내 비용 추가
-  Future<Map<String, dynamic>> postMonth({
+  Future<StoreExpenseMonthSummary> postMonth({
     required int branchId,
     required int year,
     required int month,
@@ -48,20 +51,22 @@ class StoreExpenseRepository {
       '/store-expenses/branches/$branchId/months',
       data: {'year': year, 'month': month},
     );
-    return res.data!;
+    return StoreExpenseMonthSummary.fromJson(res.data!);
   }
 
   /// 카테고리 목록 조회
-  Future<List<Map<String, dynamic>>> getCategories() async {
+  Future<List<StoreExpenseCategory>> getCategories() async {
     final res = await _apiClient.dio.get<Map<String, dynamic>>(
       '/store-expenses/categories',
     );
     final items = res.data!['items'] as List<dynamic>? ?? [];
-    return items.cast<Map<String, dynamic>>();
+    return items
+        .map((e) => StoreExpenseCategory.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   /// 항목 추가
-  Future<Map<String, dynamic>> postItem({
+  Future<StoreExpenseItem> postItem({
     required int branchId,
     required int expenseMonthId,
     required String expenseDate,
@@ -78,18 +83,18 @@ class StoreExpenseRepository {
         if (memo != null) 'memo': memo,
       },
     );
-    return res.data!;
+    return StoreExpenseItem.fromJson(res.data!);
   }
 
   /// 월 상세 조회
-  Future<Map<String, dynamic>> getMonthDetail({
+  Future<StoreExpenseMonthDetail> getMonthDetail({
     required int branchId,
     required int expenseMonthId,
   }) async {
     final res = await _apiClient.dio.get<Map<String, dynamic>>(
       '/store-expenses/branches/$branchId/months/$expenseMonthId',
     );
-    return res.data!;
+    return StoreExpenseMonthDetail.fromJson(res.data!);
   }
 
   /// 항목 수정

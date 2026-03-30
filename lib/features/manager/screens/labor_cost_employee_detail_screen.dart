@@ -72,9 +72,7 @@ class LaborCostEmployeeDetailScreen extends StatelessWidget {
               _row('급여 유형', employee.wageTypeLabel),
               _row(
                 '계약 단가',
-                employee.wageType == 'hourly'
-                    ? '${LaborCostFormatters.won(employee.wageAmount)} / 시'
-                    : LaborCostFormatters.won(employee.wageAmount),
+                _wageAmountLabel(employee),
               ),
               _row(
                 '근무 시간',
@@ -126,6 +124,13 @@ class LaborCostEmployeeDetailScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _wageAmountLabel(EmployeeLaborDetail employee) {
+    final amount = employee.wageAmount;
+    if (amount == null || amount <= 0) return '미설정';
+    final won = LaborCostFormatters.won(amount);
+    return employee.wageType == 'hourly' ? '$won / 시' : won;
   }
 }
 

@@ -80,7 +80,7 @@ class _LaborCostScreenState extends State<LaborCostScreen>
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.grey0,
+        backgroundColor: AppColors.grey0Alt,
         appBar: HomeCommonAppBar(
           alarmActive: hasAlarm,
           onAlarmTap: () {
@@ -199,7 +199,7 @@ class _ExpectedLaborTabView extends StatelessWidget {
                 '총 ${LaborCostFormatters.won(expected.currentTotalCost).replaceAll('원', ' 원')}';
 
             return ColoredBox(
-              color: AppColors.grey0,
+              color: AppColors.grey0Alt,
               child: RefreshIndicator(
                 onRefresh: () async {
                   context.read<LaborCostBloc>().add(

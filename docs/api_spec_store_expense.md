@@ -34,32 +34,36 @@
   "as_of_date": "2025-09-10", // 조회 기준일(YYYY-MM-DD)
   "current_month_to_date_total": 9157430, // 당월 1일~기준일까지 누적 지출(원)
   "previous_month_to_date_total": 8290000, // 전달 동일 구간 누적 지출(원)
-  "change_rate_percent": 10.3, // 전달 동기간 대비 증감률(%)
+  "change_rate_percent": 110.3, // 전달 동기간 대비 비율(%, 100% 초과 시 상승)
   "monthly_total_cost": 12410000, // 당월 총 점내 비용(현재 집계 기준)
   "category_cards": [
     {
       "category_code": "rent", // 카테고리 코드
       "category_label": "임대료", // 카테고리명
       "month_amount": 3300000, // 당월 카테고리 누적 금액
-      "transaction_count": 1 // 건수
+      "transaction_count": 1, // 건수
+      "summary_label": "31일 예정" // 디자인의 "31일 예정", "4회" 등 표시용 라벨
     },
     {
       "category_code": "management_fee",
       "category_label": "관리비",
       "month_amount": 1120000,
-      "transaction_count": 1
+      "transaction_count": 1,
+      "summary_label": "31일 예정"
     },
     {
       "category_code": "supplies",
       "category_label": "소모품",
       "month_amount": 102000,
-      "transaction_count": 4
+      "transaction_count": 4,
+      "summary_label": "4회"
     },
     {
       "category_code": "repair",
       "category_label": "수리비",
       "month_amount": 30000,
-      "transaction_count": 1
+      "transaction_count": 1,
+      "summary_label": "1회"
     }
   ],
   "calendar_expenses": [
@@ -177,21 +181,25 @@
     {
       "category_code": "rent", // 카테고리 코드
       "category_label": "임대료", // 화면 표시명
+      "color_hex": "#b570d2", // 디자인의 카테고리별 테마 색상
       "is_active": true // 사용 가능 여부
     },
     {
       "category_code": "management_fee",
       "category_label": "관리비",
+      "color_hex": "#8fd270",
       "is_active": true
     },
     {
       "category_code": "supplies",
       "category_label": "소모품",
+      "color_hex": "#70d2b3",
       "is_active": true
     },
     {
       "category_code": "repair",
       "category_label": "수리비",
+      "color_hex": "#707dd2",
       "is_active": true
     },
     {
@@ -362,12 +370,63 @@
 
 ---
 
+## 11) 점내 비용 추이 조회 (연간)
+
+- `GET /store-expenses/branches/{branch_id}/trend?range_type=year&year=2025`
+- "연간 추이" 탭에서 사용
+
+### Request Body
+없음
+
+### Response Body (200)
+```json
+{
+  "branch_id": 1,
+  "year": 2025,
+  "range_type": "year",
+  "monthly_trends": [
+    {
+      "month": "2025-01",
+      "total_amount": 4100000
+    },
+    {
+      "month": "2025-02",
+      "total_amount": 3800000
+    }
+    // ... 12개월 데이터
+  ]
+}
+```
+
+---
+
+## 12) 영수증 OCR (항목 자동 입력 제안)
+
+- `POST /store-expenses/receipt-ocr`
+- 영수증 촬영 후 자동 입력을 위한 데이터 추출
+
+### Request Body (Multipart)
+- `file`: 영수증 이미지 파일
+
+### Response Body (200)
+```json
+{
+  "expense_date": "2025-09-11", // 추출된 날짜
+  "amount": 9860, // 추출된 금액
+  "category_code": "supplies", // 추천 카테고리(선택)
+  "memo": "OO 마트" // 영수증 상호명 등
+}
+```
+
+---
+
 ## 구현 규칙(권장)
 
 - 월별 지표 계산:
   - `current_month_to_date_total`: 조회월 1일~`base_day`
   - `previous_month_to_date_total`: 전달 1일~동일 `base_day`(말일 초과 시 말일로 보정)
-- 증감률:
+- 증감률(비율):
+  - `(당월 / 전월) * 100` 계산
   - `previous=0`이고 `current>0`이면 `100.0`
   - `previous=0`이고 `current=0`이면 `0.0`
 - 카테고리 코드는 고정 enum으로 시작 후 추후 관리자 설정형으로 확장 가능

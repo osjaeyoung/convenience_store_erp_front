@@ -29,32 +29,22 @@ class LaborCostSubTabsBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.grey0,
-        border: Border(bottom: BorderSide(color: AppColors.grey25)),
-      ),
+      color: AppColors.grey0,
       child: TabBar(
         controller: controller,
         isScrollable: true,
         tabAlignment: TabAlignment.start,
+        padding: EdgeInsets.zero,
+        labelPadding: const EdgeInsets.symmetric(horizontal: 12),
+        dividerColor: AppColors.grey25,
+        dividerHeight: 1,
         labelColor: AppColors.textPrimary,
-        unselectedLabelColor: AppColors.textTertiary,
-        labelStyle: AppTypography.bodyLargeB.copyWith(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          height: 24 / 16,
-        ),
-        unselectedLabelStyle: AppTypography.bodyLargeB.copyWith(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          height: 24 / 16,
-          color: AppColors.textTertiary,
-        ),
+        unselectedLabelColor: AppColors.grey150,
+        labelStyle: AppTypography.bodyLargeB,
+        unselectedLabelStyle: AppTypography.bodyLargeB,
         indicatorColor: AppColors.textPrimary,
-        indicatorWeight: 2,
-        dividerColor: Colors.transparent,
-        padding: const EdgeInsets.symmetric(horizontal: 0),
-        labelPadding: const EdgeInsets.symmetric(horizontal: 16),
+        indicatorSize: TabBarIndicatorSize.tab,
+        indicatorWeight: 1,
         tabs: [for (final t in _tabs) Tab(text: t)],
       ),
     );

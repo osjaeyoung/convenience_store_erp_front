@@ -78,19 +78,44 @@ class WeeklyAllowanceImprovementPoint {
   const WeeklyAllowanceImprovementPoint({
     required this.pointTitle,
     this.legalBasis,
+    this.recommendsNewHire = false,
+    this.newHireWeeklyMinutes,
+    this.recommendationNote,
     this.beforeWorkers = const [],
     this.afterWorkers = const [],
   });
 
   final String pointTitle;
   final String? legalBasis;
+  final bool recommendsNewHire;
+  final int? newHireWeeklyMinutes;
+  final String? recommendationNote;
   final List<WorkerInfo> beforeWorkers;
   final List<WorkerInfo> afterWorkers;
+
+  List<WorkerInfo> get resolvedAfterWorkers {
+    final hasNewHire = afterWorkers.any((worker) => worker.isNewHire);
+    if (!recommendsNewHire || hasNewHire || newHireWeeklyMinutes == null) {
+      return afterWorkers;
+    }
+
+    return <WorkerInfo>[
+      ...afterWorkers,
+      WorkerInfo(
+        employeeName: '신규채용',
+        category: '개선안',
+        weeklyWorkMinutes: newHireWeeklyMinutes!,
+      ),
+    ];
+  }
 
   factory WeeklyAllowanceImprovementPoint.fromJson(Map<String, dynamic> json) {
     return WeeklyAllowanceImprovementPoint(
       pointTitle: json['point_title'] as String,
       legalBasis: json['legal_basis'] as String?,
+      recommendsNewHire: json['recommends_new_hire'] as bool? ?? false,
+      newHireWeeklyMinutes: json['new_hire_weekly_minutes'] as int?,
+      recommendationNote: json['recommendation_note'] as String?,
       beforeWorkers: (json['before_workers'] as List<dynamic>?)
               ?.map((e) => WorkerInfo.fromJson(e as Map<String, dynamic>))
               .toList() ??
@@ -114,6 +139,8 @@ class WorkerInfo {
   final String category;
   final int weeklyWorkMinutes;
 
+  bool get isNewHire => employeeName.trim() == '신규채용';
+
   factory WorkerInfo.fromJson(Map<String, dynamic> json) {
     return WorkerInfo(
       employeeName: json['employee_name'] as String,
@@ -126,20 +153,31 @@ class WorkerInfo {
 class OverlappingWorkIssue {
   const OverlappingWorkIssue({
     required this.workDate,
-    required this.employeeName,
+    this.employeeNames = const [],
     required this.overlapTimeRange,
     required this.scheduleIdPair,
   });
 
   final String workDate;
-  final String employeeName;
+  final List<String> employeeNames;
   final String overlapTimeRange;
   final List<int> scheduleIdPair;
 
+  String get employeeName => employeeNames.join(', ');
+
   factory OverlappingWorkIssue.fromJson(Map<String, dynamic> json) {
+    final namesRaw = json['employee_names'];
+    final names = namesRaw is List
+        ? namesRaw.map((e) => e.toString()).where((e) => e.isNotEmpty).toList()
+        : <String>[];
+    final fallback = json['employee_name']?.toString();
     return OverlappingWorkIssue(
       workDate: json['work_date'] as String,
-      employeeName: json['employee_name'] as String,
+      employeeNames: names.isNotEmpty
+          ? names
+          : <String>[
+              if (fallback != null && fallback.isNotEmpty) fallback,
+            ],
       overlapTimeRange: json['overlap_time_range'] as String,
       scheduleIdPair:
           (json['schedule_id_pair'] as List<dynamic>).cast<int>(),

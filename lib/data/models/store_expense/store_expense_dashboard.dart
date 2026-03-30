@@ -57,12 +57,14 @@ class CategoryCard {
     required this.categoryLabel,
     required this.monthAmount,
     required this.transactionCount,
+    this.summaryLabel,
   });
 
   final String categoryCode;
   final String categoryLabel;
   final int monthAmount;
   final int transactionCount;
+  final String? summaryLabel;
 
   factory CategoryCard.fromJson(Map<String, dynamic> json) {
     return CategoryCard(
@@ -70,6 +72,7 @@ class CategoryCard {
       categoryLabel: json['category_label'] as String,
       monthAmount: json['month_amount'] as int,
       transactionCount: json['transaction_count'] as int,
+      summaryLabel: json['summary_label'] as String?,
     );
   }
 }
