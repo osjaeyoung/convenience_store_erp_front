@@ -1,12 +1,14 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../../../data/models/store_expense/store_expense_month.dart';
 import '../../../data/repositories/store_expense_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import '../../auth/widgets/auth_input_field.dart';
 
 class StoreExpenseAddItemScreen extends StatefulWidget {
   const StoreExpenseAddItemScreen({
@@ -78,7 +80,7 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -99,6 +101,7 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
                           : DateFormat('yyyy-MM-dd').format(_expenseDate!),
                       hint: '입력해주세요.',
                       onTap: _pickDate,
+                      showArrow: false,
                     ),
                     const SizedBox(height: 20),
                     _label('항목'),
@@ -122,7 +125,7 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
               child: SizedBox(
                 height: 56,
                 child: FilledButton(
@@ -174,6 +177,7 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
     required String? value,
     required String hint,
     required VoidCallback? onTap,
+    bool showArrow = true,
   }) {
     final hasValue = value != null && value.isNotEmpty;
     return InkWell(
@@ -198,11 +202,12 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
                 ),
               ),
             ),
-            const Icon(
-              Icons.keyboard_arrow_down_rounded,
-              size: 18,
-              color: AppColors.grey150,
-            ),
+            if (showArrow)
+              const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: 18,
+                color: AppColors.grey150,
+              ),
           ],
         ),
       ),
@@ -213,33 +218,11 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
     required TextEditingController controller,
     required String hint,
   }) {
-    return Container(
-      height: 56,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: AppColors.grey0Alt,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.grey50),
-      ),
-      child: Center(
-        child: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: AppTypography.bodyMediumR.copyWith(
-              color: AppColors.grey100,
-              fontSize: 14,
-            ),
-            border: InputBorder.none,
-            isDense: true,
-          ),
-          style: AppTypography.bodyMediumR.copyWith(
-            fontSize: 14,
-            color: AppColors.textPrimary,
-          ),
-        ),
-      ),
+    return AuthInputField(
+      controller: controller,
+      hintText: hint,
+      keyboardType: TextInputType.number,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
     );
   }
 
@@ -363,12 +346,22 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
     setState(() => _saving = true);
     try {
       final repo = context.read<StoreExpenseRepository>();
-      await repo.postItem(
+      final fileDrafts = _pickedFiles
+          .map(
+            (file) => StoreExpenseFileDraft(
+              fileKey: file.path ?? file.name,
+              fileUrl: file.path ?? file.name,
+              fileName: file.name,
+            ),
+          )
+          .toList();
+      await repo.createStep2(
         branchId: widget.branchId,
         expenseMonthId: widget.expenseMonthId,
         expenseDate: DateFormat('yyyy-MM-dd').format(date),
         categoryCode: category.categoryCode,
         amount: amount,
+        files: fileDrafts,
       );
       if (!mounted) return;
       Navigator.pop<bool>(context, true);

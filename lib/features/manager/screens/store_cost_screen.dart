@@ -114,19 +114,20 @@ class _StoreCostScreenState extends State<StoreCostScreen>
   }
 
   Future<void> _openAddMonth(int branchId) async {
-    final created = await Navigator.of(context).push<StoreExpenseMonthSummary>(
-      MaterialPageRoute<StoreExpenseMonthSummary>(
+    final selectedYear = await Navigator.of(context).push<int>(
+      MaterialPageRoute<int>(
         builder: (_) => StoreExpenseAddMonthScreen(
           branchId: branchId,
           initialYear: _monthsYear,
         ),
       ),
     );
-    if (created == null || !mounted) return;
+    if (selectedYear == null || !mounted) return;
     setState(() {
-      _monthsYear = created.year;
+      _monthsYear = selectedYear;
     });
     await _loadMonths(branchId);
+    _loadDashboard(branchId);
   }
 
   Future<void> _openAddItem(
@@ -146,6 +147,12 @@ class _StoreCostScreenState extends State<StoreCostScreen>
       await _loadMonths(branchId);
       _loadDashboard(branchId);
     }
+  }
+
+  void _showEditMonthUnavailable() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('월 수정 기능은 곧 지원됩니다.')),
+    );
   }
 
   Future<void> _deleteMonth(int branchId, int expenseMonthId) async {
@@ -245,6 +252,7 @@ class _StoreCostScreenState extends State<StoreCostScreen>
                           onRefresh: () => _loadMonths(branchId),
                           onAddMonth: () => _openAddMonth(branchId),
                           onAddItem: (month) => _openAddItem(branchId, month),
+                          onEditMonth: (_) => _showEditMonthUnavailable(),
                           onDeleteMonth: (monthId) =>
                               _deleteMonth(branchId, monthId),
                         ),
@@ -268,16 +276,14 @@ class _StoreExpenseTopTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.grey25)),
-      ),
+      color: AppColors.grey0,
       child: TabBar(
         controller: controller,
         isScrollable: true,
         tabAlignment: TabAlignment.start,
         padding: EdgeInsets.zero,
         labelPadding: const EdgeInsets.symmetric(horizontal: 12),
-        dividerColor: AppColors.grey50,
+        dividerColor: AppColors.grey25,
         dividerHeight: 1,
         indicatorColor: AppColors.textPrimary,
         indicatorSize: TabBarIndicatorSize.tab,
@@ -310,66 +316,88 @@ class _DashboardTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-          return BlocBuilder<StoreExpenseBloc, StoreExpenseBlocState>(
-            builder: (context, state) {
-              if (state.status == StoreExpenseBlocStatus.loading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (state.status == StoreExpenseBlocStatus.failure) {
+    return BlocBuilder<StoreExpenseBloc, StoreExpenseBlocState>(
+      builder: (context, state) {
+        if (state.status == StoreExpenseBlocStatus.loading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (state.status == StoreExpenseBlocStatus.failure) {
           return _ErrorRetryView(message: state.errorMessage ?? '오류가 발생했습니다.');
         }
         final d = state.dashboard;
         if (d == null) {
           return const Center(child: Text('데이터 없음'));
         }
+
         final ratio = d.changeRatePercent.toStringAsFixed(1);
         final wentUp = d.changeRatePercent >= 100;
+        final categoryCards = d.categoryCards.take(4).toList();
+
         return RefreshIndicator(
           onRefresh: () async {
+            final branchId = context.read<SelectedBranchCubit>().state;
+            if (branchId == null) return;
             context.read<StoreExpenseBloc>().add(
                   StoreExpenseDashboardRequested(
-                    branchId: context.read<SelectedBranchCubit>().state,
+                    branchId: branchId,
                     year: year,
                     month: month,
                   ),
                 );
           },
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
             children: [
               Row(
                 children: [
                   _YearMonthDrop(
                     text: '$year',
+                    width: 88,
                     onTap: () => _pickYear(context),
                   ),
                   const SizedBox(width: 8),
-                  Text('년', style: AppTypography.bodyLargeM.copyWith(fontSize: 16)),
-                  const SizedBox(width: 8),
+                  Text(
+                    '년',
+                    style: AppTypography.bodyMediumR.copyWith(
+                      fontSize: 14,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
                   _YearMonthDrop(
                     text: '$month',
+                    width: 66,
                     onTap: () => _pickMonth(context),
                   ),
                   const SizedBox(width: 8),
-                  Text('월', style: AppTypography.bodyLargeM.copyWith(fontSize: 16)),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  const Icon(Icons.attach_money, size: 16, color: AppColors.textPrimary),
                   Text(
-                    '${d.month}월 ${d.baseDay}일 기준 예상 점내 비용',
-                    style: AppTypography.bodyLargeM.copyWith(
-                      fontSize: 16,
+                    '월',
+                    style: AppTypography.bodyMediumR.copyWith(
+                      fontSize: 14,
                       color: AppColors.textPrimary,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const _DashboardMoneyIcon(),
+                  const SizedBox(width: 2),
+                  Text(
+                    '${d.month}월 ${d.baseDay}일 기준 예상 점내 비용',
+                    style: AppTypography.bodyLargeM.copyWith(
+                      fontSize: 16,
+                      height: 20 / 16,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.all(18),
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
                   gradient: const LinearGradient(
@@ -377,6 +405,13 @@ class _DashboardTab extends StatelessWidget {
                     end: Alignment(1, 1),
                     colors: [Color(0xFF9FEDD4), Color(0xFFE1F0B8)],
                   ),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color.fromRGBO(29, 29, 31, 0.12),
+                      blurRadius: 6,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -386,59 +421,76 @@ class _DashboardTab extends StatelessWidget {
                       style: AppTypography.heading1.copyWith(
                         fontSize: 24,
                         fontWeight: FontWeight.w400,
+                        height: 32 / 24,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Text(
-                      '전월 대비 총 $ratio% ${wentUp ? '올랐어요' : '내렸어요'}',
-                      style: AppTypography.bodyMediumM.copyWith(
-                        fontSize: 14,
-                        color: AppColors.textSecondary,
+                    Text.rich(
+                      TextSpan(
+                        style: AppTypography.bodyMediumM.copyWith(
+                          fontSize: 14,
+                          height: 16 / 14,
+                          color: AppColors.textSecondary,
+                        ),
+                        children: [
+                          const TextSpan(text: '전월 대비 총 '),
+                          TextSpan(text: '$ratio%'),
+                          TextSpan(text: ' ${wentUp ? '올랐어요' : '내렸어요'}'),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: d.categoryCards.length,
+                itemCount: categoryCards.length,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  childAspectRatio: 1.55,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  childAspectRatio: 1.54,
                 ),
                 itemBuilder: (context, i) {
-                  final c = d.categoryCards[i];
+                  final c = categoryCards[i];
                   return Container(
                     decoration: BoxDecoration(
                       color: AppColors.grey0Alt,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
                           c.categoryLabel,
-                          style: AppTypography.bodyMediumR.copyWith(
-                            fontSize: 14,
+                          textAlign: TextAlign.center,
+                          style: AppTypography.bodySmallM.copyWith(
+                            fontSize: 12,
+                            height: 16 / 12,
                             color: AppColors.textTertiary,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          _StoreCostScreenState.won(c.monthAmount),
-                          style: AppTypography.heading3.copyWith(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
+                          _compactAmountLabel(c.monthAmount),
+                          textAlign: TextAlign.center,
+                          style: AppTypography.bodyLargeM.copyWith(
+                            fontSize: 16,
+                            height: 20 / 16,
+                            color: AppColors.textPrimary,
                           ),
                         ),
+                        const SizedBox(height: 2),
                         Text(
                           c.summaryLabel ?? '${c.transactionCount}회',
+                          textAlign: TextAlign.center,
                           style: AppTypography.bodyMediumR.copyWith(
                             fontSize: 14,
+                            height: 19 / 14,
                             color: AppColors.textTertiary,
                           ),
                         ),
@@ -447,7 +499,7 @@ class _DashboardTab extends StatelessWidget {
                   );
                 },
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
               _ExpenseCalendar(dashboard: d),
             ],
           ),
@@ -504,10 +556,12 @@ class _DashboardTab extends StatelessWidget {
 class _YearMonthDrop extends StatelessWidget {
   const _YearMonthDrop({
     required this.text,
+    required this.width,
     required this.onTap,
   });
 
   final String text;
+  final double width;
   final VoidCallback onTap;
 
   @override
@@ -516,9 +570,9 @@ class _YearMonthDrop extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(10),
       child: Container(
-        width: 76,
-        height: 40,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
+        width: width,
+        height: 42,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           color: AppColors.grey0,
           borderRadius: BorderRadius.circular(10),
@@ -529,12 +583,16 @@ class _YearMonthDrop extends StatelessWidget {
             Expanded(
               child: Text(
                 text,
-                style: AppTypography.bodyLargeM.copyWith(fontSize: 16),
+                style: AppTypography.bodyMediumR.copyWith(
+                  fontSize: 14,
+                  height: 19 / 14,
+                  color: AppColors.textPrimary,
+                ),
               ),
             ),
             const Icon(
               Icons.keyboard_arrow_down_rounded,
-              size: 16,
+              size: 14,
               color: AppColors.textTertiary,
             ),
           ],
@@ -553,6 +611,7 @@ class _MonthlyExpenseTab extends StatelessWidget {
     required this.onRefresh,
     required this.onAddMonth,
     required this.onAddItem,
+    required this.onEditMonth,
     required this.onDeleteMonth,
   });
 
@@ -563,6 +622,7 @@ class _MonthlyExpenseTab extends StatelessWidget {
   final Future<void> Function() onRefresh;
   final VoidCallback onAddMonth;
   final ValueChanged<StoreExpenseMonthSummary> onAddItem;
+  final ValueChanged<StoreExpenseMonthSummary> onEditMonth;
   final ValueChanged<int> onDeleteMonth;
 
   @override
@@ -576,27 +636,28 @@ class _MonthlyExpenseTab extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: onRefresh,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
         children: [
           InkWell(
             onTap: onAddMonth,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
             child: Container(
               height: 96,
               decoration: BoxDecoration(
                 color: AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.primary),
               ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
                   const Icon(Icons.add_circle, color: AppColors.primary, size: 28),
                   const SizedBox(height: 8),
                   Text(
                     '월별 점내 비용 추가',
-                    style: AppTypography.bodyLargeB.copyWith(
-                      fontSize: 16,
+                    style: AppTypography.bodyMediumB.copyWith(
+                      fontSize: 14,
+                      height: 16 / 14,
                       color: AppColors.primary,
                     ),
                   ),
@@ -604,15 +665,16 @@ class _MonthlyExpenseTab extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
           for (final month in months) ...[
             _MonthExpenseCard(
               month: month,
               detail: monthDetails[month.expenseMonthId],
               onAddItem: () => onAddItem(month),
+              onEdit: () => onEditMonth(month),
               onDelete: () => onDeleteMonth(month.expenseMonthId),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
           ],
           if (months.isEmpty)
             Container(
@@ -640,116 +702,179 @@ class _MonthExpenseCard extends StatelessWidget {
     required this.month,
     required this.detail,
     required this.onAddItem,
+    required this.onEdit,
     required this.onDelete,
   });
 
   final StoreExpenseMonthSummary month;
   final StoreExpenseMonthDetail? detail;
   final VoidCallback onAddItem;
+  final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     final items = detail?.items ?? const <StoreExpenseItem>[];
     return Container(
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: AppColors.grey0,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.grey25),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.grey50),
       ),
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
       child: Column(
         children: [
           Row(
             children: [
-              Text(
-                month.periodLabel,
-                style: AppTypography.bodyLargeB.copyWith(
-                  fontSize: 16,
-                  color: AppColors.textPrimary,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 0, 12),
+                child: Text(
+                  month.periodLabel,
+                  style: AppTypography.bodyLargeB.copyWith(
+                    fontSize: 16,
+                    height: 24 / 16,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
               const Spacer(),
-              IconButton(
-                onPressed: onDelete,
-                icon: const Icon(Icons.delete_outline_rounded),
-                color: AppColors.grey150,
-                iconSize: 20,
-                visualDensity: VisualDensity.compact,
+              Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: Row(
+                  children: [
+                    InkWell(
+                      onTap: onEdit,
+                      borderRadius: BorderRadius.circular(12),
+                      child: const Padding(
+                        padding: EdgeInsets.all(2),
+                        child: Icon(
+                          Icons.edit_outlined,
+                          size: 24,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    InkWell(
+                      onTap: onDelete,
+                      borderRadius: BorderRadius.circular(12),
+                      child: const Padding(
+                        padding: EdgeInsets.all(2),
+                        child: Icon(
+                          Icons.delete_outline_rounded,
+                          size: 24,
+                          color: AppColors.grey150,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          SizedBox(
+          Container(
             width: double.infinity,
-            height: 38,
-            child: OutlinedButton.icon(
-              onPressed: onAddItem,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                side: const BorderSide(color: AppColors.primary),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              icon: const Icon(Icons.add_circle, size: 16),
-              label: Text(
-                '항목 추가',
-                style: AppTypography.bodyMediumM.copyWith(
-                  fontSize: 14,
-                  color: AppColors.primary,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          for (final item in items) ...[
-            Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppColors.grey0Alt,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    _toMmDd(item.expenseDate),
-                    style: AppTypography.bodyMediumR.copyWith(
-                      fontSize: 14,
-                      color: AppColors.textTertiary,
+            color: AppColors.grey0Alt,
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+            child: Column(
+              children: [
+                InkWell(
+                  onTap: onAddItem,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.primary),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.add_circle, size: 16, color: AppColors.primary),
+                        const SizedBox(width: 8),
+                        Text(
+                          '항목 추가',
+                          style: AppTypography.bodyMediumB.copyWith(
+                            fontSize: 14,
+                            height: 16 / 14,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  _CategoryChip(
-                    label: item.categoryLabel,
-                    categoryCode: item.categoryCode,
-                  ),
-                  const Spacer(),
-                  Text(
-                    _StoreCostScreenState.won(item.amount),
-                    style: AppTypography.bodyLargeB.copyWith(fontSize: 16),
+                ),
+                for (final item in items) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.grey0,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.grey25),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          _toMmDd(item.expenseDate),
+                          style: AppTypography.bodyMediumR.copyWith(
+                            fontSize: 14,
+                            height: 19 / 14,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const Spacer(),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _CategoryChip(
+                              label: item.categoryLabel,
+                              categoryCode: item.categoryCode,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              _StoreCostScreenState.won(item.amount),
+                              style: AppTypography.bodyMediumR.copyWith(
+                                fontSize: 14,
+                                height: 19 / 14,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ],
-              ),
+              ],
             ),
-          ],
-          Row(
-            children: [
-              Text(
-                '합계',
-                style: AppTypography.bodyMediumR.copyWith(
-                  fontSize: 14,
-                  color: AppColors.textTertiary,
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Text(
+                  '합계',
+                  style: AppTypography.bodyMediumM.copyWith(
+                    fontSize: 14,
+                    height: 16 / 14,
+                    color: AppColors.textTertiary,
+                  ),
                 ),
-              ),
-              const Spacer(),
-                      Text(
-                _StoreCostScreenState.won(detail?.totalAmount ?? month.totalAmount),
-                style: AppTypography.heading3.copyWith(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
+                const Spacer(),
+                Text(
+                  _wonWithoutSuffix(detail?.totalAmount ?? month.totalAmount),
+                  style: AppTypography.bodyLargeB.copyWith(
+                    fontSize: 16,
+                    height: 24 / 16,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -828,98 +953,114 @@ class _ExpenseCalendar extends StatelessWidget {
     final totalCells = ((firstWeekdayMon0 + daysInMonth + 6) ~/ 7) * 7;
 
     const week = ['일', '월', '화', '수', '목', '금', '토'];
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.grey0,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-            child: Row(
-              children: [
-                for (var i = 0; i < 7; i++)
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        week[i],
-                        style: AppTypography.bodyMediumM.copyWith(
-                          fontSize: 14,
-                          color: i == 0
-                              ? Colors.redAccent
-                              : i == 6
-                                  ? AppColors.textPrimary
-                                  : AppColors.textSecondary,
-                        ),
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: const BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: AppColors.grey25),
+            ),
+          ),
+          child: Row(
+            children: [
+              for (var i = 0; i < 7; i++)
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      week[i],
+                      style: AppTypography.bodyMediumR.copyWith(
+                        fontSize: 14,
+                        height: 20 / 14,
+                        color: i == 0
+                            ? const Color(0xFFFF4834)
+                            : i == 6
+                                ? AppColors.textPrimary
+                                : AppColors.textTertiary,
                       ),
                     ),
                   ),
-              ],
-            ),
-          ),
-          GridView.builder(
-            physics: const NeverScrollableScrollPhysics(),
-            shrinkWrap: true,
-            itemCount: totalCells,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 7,
-              childAspectRatio: 0.68,
-            ),
-            itemBuilder: (context, index) {
-              final dayNum = index - firstWeekdayMon0 + 1;
-              final inMonth = dayNum >= 1 && dayNum <= daysInMonth;
-              final label = inMonth
-                  ? '$dayNum'
-                  : dayNum <= 0
-                      ? '${prevMonthDays + dayNum}'
-                      : '${dayNum - daysInMonth}';
-              final expense = inMonth ? dateMap[dayNum] : null;
-              return Padding(
-                padding: const EdgeInsets.fromLTRB(2, 2, 2, 4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Text(
-                        label,
-                        style: AppTypography.bodyMediumR.copyWith(
-                          fontSize: 14,
-                          color: inMonth ? AppColors.textPrimary : AppColors.grey100,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    if (expense != null && expense.items.isNotEmpty)
-                      ...expense.items.take(2).map(
-                            (it) => Container(
-                              margin: const EdgeInsets.only(bottom: 2),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _categoryColor(it.categoryCode),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                '${it.categoryLabel} ${_StoreCostScreenState.won(it.amount)}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTypography.bodyXSmallM.copyWith(
-                                  fontSize: 10,
-                                  color: AppColors.grey0,
-                                ),
-                              ),
-                            ),
-                          ),
-                  ],
                 ),
-              );
-            },
+            ],
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 10),
+        Column(
+          children: [
+            for (var weekIndex = 0; weekIndex < totalCells ~/ 7; weekIndex++)
+              Builder(
+                builder: (context) {
+                  final rowStart = weekIndex * 7;
+                  final rowBadgeCount = List<int>.generate(7, (offset) {
+                    final index = rowStart + offset;
+                    final dayNum = index - firstWeekdayMon0 + 1;
+                    final inMonth = dayNum >= 1 && dayNum <= daysInMonth;
+                    final expense = inMonth ? dateMap[dayNum] : null;
+                    return expense == null ? 0 : expense.items.take(2).length;
+                  }).fold<int>(0, (maxCount, count) => count > maxCount ? count : maxCount);
+
+                  final rowHeight = rowBadgeCount >= 2 ? 111.0 : 72.0;
+
+                  return Row(
+                    children: [
+                      for (var offset = 0; offset < 7; offset++)
+                        Expanded(
+                          child: Builder(
+                            builder: (context) {
+                              final index = rowStart + offset;
+                              final dayNum = index - firstWeekdayMon0 + 1;
+                              final inMonth = dayNum >= 1 && dayNum <= daysInMonth;
+                              final label = inMonth
+                                  ? '$dayNum'
+                                  : dayNum <= 0
+                                      ? '${prevMonthDays + dayNum}'
+                                      : '${dayNum - daysInMonth}';
+                              final expense = inMonth ? dateMap[dayNum] : null;
+                              final weekDayIndex = index % 7;
+                              final dayColor = !inMonth
+                                  ? AppColors.grey50
+                                  : weekDayIndex == 0
+                                      ? const Color(0xFFFF4834)
+                                      : AppColors.textPrimary;
+
+                              return SizedBox(
+                                height: rowHeight,
+                                child: Column(
+                                  children: [
+                                    SizedBox(
+                                      height: 20,
+                                      child: Center(
+                                        child: Text(
+                                          label.padLeft(2, '0'),
+                                          style: AppTypography.bodySmallR.copyWith(
+                                            fontSize: 12,
+                                            height: 18 / 12,
+                                            color: dayColor,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 5),
+                                    if (expense != null && expense.items.isNotEmpty)
+                                      ...expense.items.take(2).map(
+                                            (it) => Padding(
+                                              padding: const EdgeInsets.only(bottom: 5),
+                                              child: _CalendarExpenseBadge(item: it),
+                                            ),
+                                          ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -929,20 +1070,107 @@ class _ExpenseCalendar extends StatelessWidget {
     return int.tryParse(parts[2]);
   }
 
-  Color _categoryColor(String code) {
-    switch (code) {
-      case 'rent':
-        return const Color(0xFFB570D2);
-      case 'management_fee':
-        return const Color(0xFF8FD270);
-      case 'supplies':
-        return const Color(0xFF70D2B3);
-      case 'repair':
-        return const Color(0xFF707DD2);
-      default:
-        return AppColors.grey150;
-    }
+}
+
+class _DashboardMoneyIcon extends StatelessWidget {
+  const _DashboardMoneyIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 16,
+      height: 16,
+      decoration: const BoxDecoration(
+        color: AppColors.textPrimary,
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        '\$',
+        style: AppTypography.bodyXSmallM.copyWith(
+          fontSize: 10,
+          height: 16 / 10,
+          color: AppColors.grey0,
+        ),
+      ),
+    );
   }
+}
+
+class _CalendarExpenseBadge extends StatelessWidget {
+  const _CalendarExpenseBadge({required this.item});
+
+  final ExpenseItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: SizedBox(
+        width: 43,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: double.infinity,
+              height: 16,
+              color: _categoryColor(item.categoryCode),
+              alignment: Alignment.center,
+              child: Text(
+                item.categoryLabel,
+                style: AppTypography.bodyXSmallM.copyWith(
+                  fontSize: 10,
+                  height: 16 / 10,
+                  color: AppColors.grey0,
+                ),
+              ),
+            ),
+            Container(
+              width: double.infinity,
+              color: AppColors.grey25,
+              padding: const EdgeInsets.fromLTRB(2, 2, 2, 4),
+              alignment: Alignment.center,
+              child: Text(
+                _compactAmountLabel(item.amount),
+                style: AppTypography.bodyXSmallM.copyWith(
+                  fontSize: 10,
+                  height: 16 / 10,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Color _categoryColor(String code) {
+  switch (code) {
+    case 'rent':
+      return const Color(0xFFB570D2);
+    case 'management_fee':
+      return const Color(0xFF8FD270);
+    case 'supplies':
+      return const Color(0xFF70D2B3);
+    case 'repair':
+      return const Color(0xFF707DD2);
+    default:
+      return AppColors.grey150;
+  }
+}
+
+String _wonWithoutSuffix(int amount) => _StoreCostScreenState._won.format(amount);
+
+String _compactAmountLabel(int amount) {
+  if (amount >= 10000) {
+    final manWon = amount / 10000;
+    final hasDecimal = amount % 10000 != 0;
+    final text = hasDecimal ? manWon.toStringAsFixed(1) : manWon.toStringAsFixed(0);
+    return '$text만원';
+  }
+  return '${_StoreCostScreenState._won.format(amount)}원';
 }
 
 class _ErrorRetryView extends StatelessWidget {

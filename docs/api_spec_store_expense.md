@@ -136,31 +136,57 @@
 
 ---
 
-## 3) 월별 점내 비용 추가 (연도/월 지정)
+## 3) 2-Step 추가 - Step1 (연도/월 선택)
 
-- `POST /store-expenses/branches/{branch_id}/months`
-- "월별 점내 비용 추가" 화면에서 연도/월 선택 후 생성
-- 동일 점포+연월은 1건만 허용(중복 생성 방지)
+- `POST /store-expenses/branches/{branch_id}/create/step1`
+- "월별 점내 비용 추가" 1단계 화면(연도/월 선택)에서 사용
+- 동일 점포+연월이 이미 있으면 기존 월 묶음을 재사용하고 `is_new_month_created=false` 반환
 
 ### Request Body
 ```json
 {
-  "year": 2025, // 생성할 연도
-  "month": 9 // 생성할 월(1~12)
+  "year": 2025, // 선택한 연도
+  "month": 9 // 선택한 월(1~12)
 }
 ```
 
 ### Response Body (200)
 ```json
 {
-  "expense_month_id": 41, // 생성된 월 묶음 PK
+  "expense_month_id": 41, // 다음 Step에서 사용할 월 묶음 PK
   "year": 2025, // 연도
   "month": 9, // 월
   "period_label": "2025.09", // 화면 표시용
-  "total_amount": 0, // 초기 합계
-  "item_count": 0, // 초기 항목 수
-  "created_at": "2025-09-01T09:00:00Z", // 생성 시각
-  "updated_at": "2025-09-01T09:00:00Z" // 수정 시각
+  "is_new_month_created": true // 신규 생성이면 true, 기존 재사용이면 false
+}
+```
+
+---
+
+## 3-1) (레거시) 월별 점내 비용 추가 (연도/월 지정)
+
+- `POST /store-expenses/branches/{branch_id}/months`
+- 기존 클라이언트 호환용. 동일 점포+연월 중복 시 409 반환
+
+### Request Body
+```json
+{
+  "year": 2025,
+  "month": 9
+}
+```
+
+### Response Body (200)
+```json
+{
+  "expense_month_id": 41,
+  "year": 2025,
+  "month": 9,
+  "period_label": "2025.09",
+  "total_amount": 0,
+  "item_count": 0,
+  "created_at": "2025-09-01T09:00:00Z",
+  "updated_at": "2025-09-01T09:00:00Z"
 }
 ```
 
@@ -213,19 +239,27 @@
 
 ---
 
-## 5) 항목 추가 (글 데이터만)
+## 5) 2-Step 추가 - Step2 (항목 입력 + 파일 첨부)
 
-- `POST /store-expenses/branches/{branch_id}/months/{expense_month_id}/items`
-- 해당 월 카드의 `항목 추가` 버튼으로 진입한 입력 화면 저장
-- 파일은 저장하지 않음(파일 저장 API 별도 사용)
+- `POST /store-expenses/branches/{branch_id}/create/step2`
+- Step1에서 받은 `expense_month_id`로 항목 생성
+- 디자인의 확인 버튼 1회로 글+파일을 함께 저장 가능
 
 ### Request Body
 ```json
 {
+  "expense_month_id": 41, // Step1 응답에서 받은 월 묶음 ID
   "expense_date": "2025-09-11", // 구체 일자
   "category_code": "supplies", // 카테고리 코드
   "amount": 9860, // 금액(원)
-  "memo": "테이프/봉투 구매" // 메모(선택)
+  "memo": "테이프/봉투 구매", // 메모(선택)
+  "files": [
+    {
+      "file_key": "expenses/branch-1/2025-09/item-501-receipt.jpg",
+      "file_url": "https://your-bucket.s3.ap-northeast-2.amazonaws.com/expenses/branch-1/2025-09/item-501-receipt.jpg",
+      "file_name": "영수증-1.jpg"
+    }
+  ]
 }
 ```
 
@@ -239,11 +273,39 @@
   "category_label": "소모품", // 카테고리명
   "amount": 9860, // 금액
   "memo": "테이프/봉투 구매", // 메모
-  "files": [], // 첨부파일 목록(초기값)
+  "files": [
+    {
+      "file_id": 9001,
+      "file_key": "expenses/branch-1/2025-09/item-501-receipt.jpg",
+      "file_url": "https://your-bucket.s3.ap-northeast-2.amazonaws.com/expenses/branch-1/2025-09/item-501-receipt.jpg",
+      "file_name": "영수증-1.jpg",
+      "created_at": "2025-09-11T09:15:00Z"
+    }
+  ],
   "created_at": "2025-09-11T09:11:00Z", // 생성 시각
   "updated_at": "2025-09-11T09:11:00Z" // 수정 시각
 }
 ```
+
+---
+
+## 5-1) (레거시) 항목 추가 (글 데이터만)
+
+- `POST /store-expenses/branches/{branch_id}/months/{expense_month_id}/items`
+- 기존 클라이언트 호환용. 파일 저장은 `6) 항목 파일 저장` 사용
+
+### Request Body
+```json
+{
+  "expense_date": "2025-09-11",
+  "category_code": "supplies",
+  "amount": 9860,
+  "memo": "테이프/봉투 구매"
+}
+```
+
+### Response Body (200)
+`5) 2-Step 추가 - Step2`와 동일(단, `files`는 기본 `[]`)
 
 ---
 

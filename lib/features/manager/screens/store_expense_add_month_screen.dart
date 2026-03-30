@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../data/models/store_expense/store_expense_month.dart';
 import '../../../data/repositories/store_expense_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import 'store_expense_add_item_screen.dart';
 
 class StoreExpenseAddMonthScreen extends StatefulWidget {
   const StoreExpenseAddMonthScreen({
@@ -54,7 +54,7 @@ class _StoreExpenseAddMonthScreenState extends State<StoreExpenseAddMonthScreen>
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -88,7 +88,7 @@ class _StoreExpenseAddMonthScreenState extends State<StoreExpenseAddMonthScreen>
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
               child: SizedBox(
                 height: 56,
                 child: FilledButton(
@@ -236,13 +236,33 @@ class _StoreExpenseAddMonthScreenState extends State<StoreExpenseAddMonthScreen>
     setState(() => _submitting = true);
     try {
       final repo = context.read<StoreExpenseRepository>();
-      final created = await repo.postMonth(
+      final created = await repo.createStep1(
         branchId: widget.branchId,
         year: year,
         month: month,
       );
       if (!mounted) return;
-      Navigator.pop<StoreExpenseMonthSummary>(context, created);
+      if (!created.isNewMonthCreated) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('기존 월별 점내 비용 내역에 이어서 추가합니다.')),
+        );
+      }
+
+      final saved = await Navigator.of(context).push<bool>(
+        MaterialPageRoute<bool>(
+          builder: (_) => StoreExpenseAddItemScreen(
+            branchId: widget.branchId,
+            expenseMonthId: created.expenseMonthId,
+            periodLabel: created.periodLabel,
+          ),
+        ),
+      );
+      if (!mounted) return;
+      if (saved == true) {
+        Navigator.pop<int>(context, created.year);
+        return;
+      }
+      setState(() => _submitting = false);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

@@ -33,6 +33,32 @@ class StoreExpenseMonthSummary {
   }
 }
 
+class StoreExpenseCreateStep1Result {
+  const StoreExpenseCreateStep1Result({
+    required this.expenseMonthId,
+    required this.year,
+    required this.month,
+    required this.periodLabel,
+    required this.isNewMonthCreated,
+  });
+
+  final int expenseMonthId;
+  final int year;
+  final int month;
+  final String periodLabel;
+  final bool isNewMonthCreated;
+
+  factory StoreExpenseCreateStep1Result.fromJson(Map<String, dynamic> json) {
+    return StoreExpenseCreateStep1Result(
+      expenseMonthId: (json['expense_month_id'] as num).toInt(),
+      year: (json['year'] as num).toInt(),
+      month: (json['month'] as num).toInt(),
+      periodLabel: (json['period_label'] as String?) ?? '',
+      isNewMonthCreated: (json['is_new_month_created'] as bool?) ?? false,
+    );
+  }
+}
+
 class StoreExpenseMonthDetail {
   const StoreExpenseMonthDetail({
     required this.expenseMonthId,
@@ -135,6 +161,26 @@ class StoreExpenseFile {
       fileName: (json['file_name'] as String?) ?? '',
       createdAt: json['created_at'] as String?,
     );
+  }
+}
+
+class StoreExpenseFileDraft {
+  const StoreExpenseFileDraft({
+    required this.fileKey,
+    required this.fileUrl,
+    required this.fileName,
+  });
+
+  final String fileKey;
+  final String fileUrl;
+  final String fileName;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'file_key': fileKey,
+      'file_url': fileUrl,
+      'file_name': fileName,
+    };
   }
 }
 

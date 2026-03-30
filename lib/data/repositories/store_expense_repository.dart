@@ -54,6 +54,19 @@ class StoreExpenseRepository {
     return StoreExpenseMonthSummary.fromJson(res.data!);
   }
 
+  /// 2-Step 추가 Step1: 연도/월 선택
+  Future<StoreExpenseCreateStep1Result> createStep1({
+    required int branchId,
+    required int year,
+    required int month,
+  }) async {
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/store-expenses/branches/$branchId/create/step1',
+      data: {'year': year, 'month': month},
+    );
+    return StoreExpenseCreateStep1Result.fromJson(res.data!);
+  }
+
   /// 카테고리 목록 조회
   Future<List<StoreExpenseCategory>> getCategories() async {
     final res = await _apiClient.dio.get<Map<String, dynamic>>(
@@ -81,6 +94,30 @@ class StoreExpenseRepository {
         'category_code': categoryCode,
         'amount': amount,
         if (memo != null) 'memo': memo,
+      },
+    );
+    return StoreExpenseItem.fromJson(res.data!);
+  }
+
+  /// 2-Step 추가 Step2: 항목 입력 + 파일 첨부
+  Future<StoreExpenseItem> createStep2({
+    required int branchId,
+    required int expenseMonthId,
+    required String expenseDate,
+    required String categoryCode,
+    required int amount,
+    String? memo,
+    List<StoreExpenseFileDraft> files = const [],
+  }) async {
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/store-expenses/branches/$branchId/create/step2',
+      data: {
+        'expense_month_id': expenseMonthId,
+        'expense_date': expenseDate,
+        'category_code': categoryCode,
+        'amount': amount,
+        if (memo != null && memo.isNotEmpty) 'memo': memo,
+        'files': files.map((file) => file.toJson()).toList(),
       },
     );
     return StoreExpenseItem.fromJson(res.data!);
