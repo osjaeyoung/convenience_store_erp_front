@@ -1,11 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../../data/repositories/staff_management_repository.dart';
+import '../../../widgets/app_styled_confirm_dialog.dart';
 import 'employee_document_menu_actions.dart';
 
 /// 근무자 등록 화면
@@ -204,27 +206,12 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
     final isRetired = (emp['employment_status'] as String?) == 'retired';
     if (isRetired) return;
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('퇴사 처리'),
-        content: const Text(
+    final confirmed = await showAppStyledConfirmDialog(
+      context,
+      message:
           '이 근무자를 퇴사 처리하시겠습니까?\n퇴사일은 오늘 날짜로 등록됩니다.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('취소'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primaryDark,
-            ),
-            child: const Text('확인'),
-          ),
-        ],
-      ),
+      confirmLabel: '확인',
+      confirmBackgroundColor: AppColors.primaryDark,
     );
     if (confirmed != true || !mounted) return;
 
@@ -328,6 +315,10 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
           const SizedBox(height: 12),
           TextField(
             controller: _phoneController,
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+            ],
             decoration: InputDecoration(
               hintText: '앱내 가입된 근무자 연락처를 검색해주세요.',
               hintStyle: AppTypography.bodyMediumR.copyWith(
@@ -357,7 +348,6 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),
-            keyboardType: TextInputType.phone,
             onSubmitted: (_) => _searchResult == null ? _onSearch() : _onRegister(),
           ),
           if (_searchResult != null) ...[

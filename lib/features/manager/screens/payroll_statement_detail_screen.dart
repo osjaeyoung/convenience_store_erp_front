@@ -6,6 +6,7 @@ import 'package:printing/printing.dart';
 import '../../../data/repositories/staff_management_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import '../../../widgets/app_styled_confirm_dialog.dart';
 import '../payroll/payroll_formatters.dart';
 import 'payroll_statement_pdf_export.dart';
 
@@ -89,23 +90,9 @@ class _PayrollStatementDetailScreenState
   }
 
   Future<void> _onDelete() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('급여명세 삭제'),
-        content: const Text('이 급여명세를 삭제하시겠습니까?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('취소'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('삭제'),
-          ),
-        ],
-      ),
+    final ok = await showAppStyledDeleteDialog(
+      context,
+      message: '이 급여명세를 삭제하시겠습니까?',
     );
     if (ok != true || !mounted) return;
     try {

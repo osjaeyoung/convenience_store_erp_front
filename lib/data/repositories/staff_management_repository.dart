@@ -1,3 +1,8 @@
+import 'dart:typed_data';
+
+import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
+
 import '../network/api_client.dart';
 
 /// 직원관리 API (근무일정 중심)
@@ -188,6 +193,137 @@ class StaffManagementRepository {
     return res.data!;
   }
 
+  /// 인사/기타 자료 단건 조회 — 스펙 ##21
+  /// `record_type`: `hr` | `etc`
+  Future<Map<String, dynamic>> getEmployeeRecord({
+    required int branchId,
+    required int employeeId,
+    required String recordType,
+    required int recordId,
+  }) async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/$employeeId/records/$recordType/$recordId',
+    );
+    return res.data!;
+  }
+
+  /// 인사/기타 자료 삭제 — 스펙 ##21
+  /// `DELETE .../records/{record_id}`
+  Future<void> deleteEmployeeRecord({
+    required int branchId,
+    required int employeeId,
+    required int recordId,
+  }) async {
+    await _apiClient.dio.delete<void>(
+      '/staff-management/branches/$branchId/employees/$employeeId/records/$recordId',
+    );
+  }
+
+  /// 기타자료 등록 (JSON) — 스펙 ##21 `application/json` (`file_url` 등)
+  Future<Map<String, dynamic>> createEmployeeRecordEtc({
+    required int branchId,
+    required int employeeId,
+    required Map<String, dynamic> body,
+  }) async {
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/$employeeId/records/etc',
+      data: body,
+    );
+    return res.data!;
+  }
+
+  /// 기타자료 등록 (Multipart) — 스펙 ##21 파일 직접 업로드 (`title`, `issued_date`, `file`)
+  Future<Map<String, dynamic>> createEmployeeRecordEtcMultipart({
+    required int branchId,
+    required int employeeId,
+    required String title,
+    required String issuedDateYmd,
+    required PlatformFile file,
+    String? note,
+  }) async {
+    final filePart = await _etcRecordMultipartFile(file);
+    final formData = FormData.fromMap({
+      'title': title,
+      'issued_date': issuedDateYmd,
+      if (note != null && note.isNotEmpty) 'note': note,
+      'file': filePart,
+    });
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/$employeeId/records/etc',
+      data: formData,
+      options: Options(
+        connectTimeout: const Duration(seconds: 60),
+        sendTimeout: const Duration(minutes: 3),
+        receiveTimeout: const Duration(minutes: 3),
+      ),
+    );
+    return res.data!;
+  }
+
+  /// 기타자료 등록 (JSON + Base64) — 스펙 ##21 `etc` 전용, multipart 대안.
+  /// `file_url` 과 동시 전송 불가.
+  Future<Map<String, dynamic>> createEmployeeRecordEtcBase64({
+    required int branchId,
+    required int employeeId,
+    required String title,
+    String? issuedDateYmd,
+    required String fileContentBase64,
+    required String attachmentFileName,
+    String? note,
+  }) async {
+    final body = <String, dynamic>{
+      'title': title,
+      'file_content_base64': fileContentBase64,
+      'attachment_file_name': attachmentFileName,
+      if (issuedDateYmd != null && issuedDateYmd.isNotEmpty)
+        'issued_date': issuedDateYmd,
+      if (note != null && note.isNotEmpty) 'note': note,
+    };
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/$employeeId/records/etc',
+      data: body,
+      options: Options(
+        connectTimeout: const Duration(seconds: 60),
+        sendTimeout: const Duration(minutes: 3),
+        receiveTimeout: const Duration(minutes: 3),
+      ),
+    );
+    return res.data!;
+  }
+
+  static Future<MultipartFile> _etcRecordMultipartFile(PlatformFile file) async {
+    final name =
+        file.name.trim().isEmpty ? 'attachment' : file.name.trim();
+    final contentType = _etcMultipartMediaType(name);
+    if (file.bytes != null) {
+      return MultipartFile.fromBytes(
+        file.bytes!,
+        filename: name,
+        contentType: contentType,
+      );
+    }
+    final path = file.path;
+    if (path != null && path.isNotEmpty) {
+      return MultipartFile.fromFile(
+        path,
+        filename: name,
+        contentType: contentType,
+      );
+    }
+    throw StateError('첨부 파일을 읽을 수 없습니다. 다시 선택해 주세요.');
+  }
+
+  /// PDF/이미지 등 흔한 확장자에 대해 파트 Content-Type을 명시 (Dio [DioMediaType]).
+  static DioMediaType? _etcMultipartMediaType(String filename) {
+    final lower = filename.toLowerCase();
+    if (lower.endsWith('.pdf')) return DioMediaType('application', 'pdf');
+    if (lower.endsWith('.png')) return DioMediaType('image', 'png');
+    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
+      return DioMediaType('image', 'jpeg');
+    }
+    return null;
+  }
+
   /// 근로계약서 목록 조회 (임시저장 포함)
   Future<Map<String, dynamic>> getEmploymentContracts({
     required int branchId,
@@ -216,6 +352,47 @@ class StaffManagementRepository {
       '/staff-management/branches/$branchId/employees/$employeeId/employment-contracts/$contractId',
     );
     return res.data!;
+  }
+
+  /// 근로계약 첨부 바이너리 — 스펙 ##26-1 (비공개 S3 미리보기·다운로드용)
+  Future<Uint8List> getEmploymentContractAttachmentBytes({
+    required int branchId,
+    required int employeeId,
+    required int contractId,
+    int? fileId,
+  }) async {
+    try {
+      final res = await _apiClient.dio.get(
+        '/staff-management/branches/$branchId/employees/$employeeId/employment-contracts/$contractId/attachment',
+        queryParameters: {
+          if (fileId != null) 'file_id': fileId,
+        },
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: {'Accept': '*/*'},
+        ),
+      );
+      final data = res.data;
+      if (data == null) {
+        throw StateError('첨부 파일 응답이 비어 있습니다.');
+      }
+      if (data is Uint8List) return data;
+      if (data is List<int>) return Uint8List.fromList(data);
+      throw StateError('지원하지 않는 첨부 응답 형식입니다.');
+    } on DioException catch (e) {
+      final code = e.response?.statusCode;
+      if (code == 404) {
+        throw StateError(
+          '첨부 파일을 찾을 수 없습니다. 저장소에 객체가 없거나 계약과 연결된 파일이 없을 수 있습니다.',
+        );
+      }
+      if (code == 503) {
+        throw StateError(
+          '파일 저장소(S3)가 서버에 연결되어 있지 않습니다. 관리자에게 문의해 주세요.',
+        );
+      }
+      rethrow;
+    }
   }
 
   /// 근로계약서 생성 — 스펙 ##23

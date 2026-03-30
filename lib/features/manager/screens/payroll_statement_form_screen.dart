@@ -477,7 +477,10 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                     ValidatedAuthInputField(
                       controller: _residentCtrl,
                       hintText: '선택 입력',
-                      keyboardType: TextInputType.text,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
                       fillColor: AppColors.grey0,
                       contentPadding: _payrollInputPadding,
                     ),

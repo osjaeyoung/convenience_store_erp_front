@@ -2,6 +2,30 @@
 
 기본 prefix: `/api/v1`
 
+Figma: [`개인 공간`](https://www.figma.com/design/unoGN3istoEgvyJKbfuICS/%EA%B0%9C%EC%9D%B8-%EA%B3%B5%EA%B0%84) — 아래 노드는 **인건비** 상단 탭(예상 인건비 / 월별 인건비 / 인건비 절감 상세)과 동일 플로우입니다.
+
+## Figma 노드 ↔ 화면 ↔ API
+
+| 노드 ID | 프레임(또는 컴포넌트) | 앱에서 사용할 API |
+|---------|------------------------|-------------------|
+| `2534:11446` | 이번달 예상 인건비 — **이번달** 구간·탭「예상 인건비」 | `GET /labor-cost/branches/{branch_id}/expected?range_type=this_month` |
+| `2534:12883` | 이번달 예상 인건비 — 동일 탭 변형(레이아웃/디바이스 등) | 위와 동일 |
+| `2534:12751` | 이번달 예상 인건비 — 드롭다운 **6개월**·월별 추이 차트 | `GET /labor-cost/branches/{branch_id}/expected?range_type=six_months` → `monthly_trend` 사용 |
+| `2534:12453` | **Native / Status Bar** (시계·배터리 등 OS 크롬) | API 없음 · Flutter `SystemChrome` / `SafeArea` 등 |
+| `2534:12492` | **인건비 절감 상세** — 탭「인건비 절감 상세」·표·아코디언 | `GET /labor-cost/branches/{branch_id}/saving-detail?year=&month=` |
+
+상단 탭 **「월별 인건비」** (위 표에 단독 프레임은 없음): `GET /labor-cost/branches/{branch_id}/monthly-detail?year=&month=`
+
+### 화면 필드 매핑 요약
+
+- **예상 인건비 카드** (총액·전월 대비 %·총 근로자 수): `current_total_cost`, `previous_total_cost`, `change_rate_percent`, `headcount_current`, `headcount_previous`
+- **인건비** 소계 막대(총급여·주휴·기타): `component_comparisons[]` (`총급여` = 급여명세 `base_pay` 합, `주휴수당`, `기타수당` = `overtime_pay` 합)
+- **6개월 추이**: `monthly_trend[]` (막대/축 레이블은 클라이언트가 `month`, `total_cost`, `headcount` 등으로 구성)
+- **절감 포인트** 카드·「상세보기»: 카드는 `saving_points[]`; 상세 화면은 `saving-detail` 전체
+- 금액 단위: API는 **원(정수)**. Figma `(천원)` 표기는 표시 시 ÷1000 등 클라이언트 포맷
+
+---
+
 ## 인증/권한
 
 - 모든 API는 `Authorization: Bearer {access_token}` 필요
@@ -15,7 +39,7 @@
 - `GET /labor-cost/branches/{branch_id}/expected?range_type=this_month`
 - `GET /labor-cost/branches/{branch_id}/expected?range_type=six_months`
 - `range_type`:
-  - `this_month`: 이번달 vs 전월 비교
+  - `this_month` (`current_month`도 허용): 이번달 vs 전월 비교
   - `six_months`: 최근 6개월 추이
 
 ### Request Body
@@ -25,7 +49,7 @@
 ```json
 {
   "branch_id": 1, // 점포 ID
-  "range_type": "this_month", // this_month | six_months
+  "range_type": "this_month", // this_month(current_month 입력 시 this_month로 정규화) | six_months
   "period_label": "이번달", // 화면 표시용 라벨
   "current_total_cost": 9157430, // 현재 기간 총 인건비(원)
   "previous_total_cost": 8290000, // 비교 기준 기간 총 인건비(원)
@@ -97,9 +121,18 @@
   "year": 2025, // 조회 연도
   "month": 9, // 조회 월
   "period_label": "2025.09", // 화면 표시 라벨
+  "business_days": 30, // 영업 일수
   "total_employee_count": 10, // 해당 월 급여 데이터가 있는 직원 수
   "total_work_minutes": 7250, // 총 근무 분
   "total_cost": 8525580, // 월 총 인건비
+  "previous_total_cost": 4200000, // 전월 총 인건비
+  "change_rate_percent": 103.0, // 전월 대비 증감률(%)
+  "component_summaries": [ // 하단 요약용 수당 내역 등
+    {
+      "component_name": "주휴",
+      "amount": 650760
+    }
+  ],
   "employees": [
     {
       "employee_id": 501, // 직원 ID
@@ -109,6 +142,7 @@
       "wage_amount": 9860, // 계약서 기준 급여 단가
       "total_work_minutes": 725, // 월 누적 근무 분
       "total_work_hours": 12.1, // 월 누적 근무 시간
+      "average_weekly_minutes": 960, // 주 평균 근로 분
       "base_pay": 8525580, // 총급여(기본)
       "weekly_allowance": 650760, // 주휴수당
       "overtime_pay": 0, // 기타수당/연장수당
@@ -202,7 +236,7 @@
   "overlapping_work_issues": [
     {
       "work_date": "2025-02-12", // 중복 근무 발생일
-      "employee_name": "홍승민", // 중복 근무 직원
+      "employee_names": ["홍승민", "이사라"], // 중복 근무 직원 목록
       "overlap_time_range": "17:00-19:00", // 중복 시간대
       "schedule_id_pair": [1201, 1202] // 충돌 스케줄 ID 쌍
     }

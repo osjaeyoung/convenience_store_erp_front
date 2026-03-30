@@ -87,7 +87,7 @@ Future<void> openEmployeeDocumentMenuItem(
             branchId: branchId,
             employeeId: employeeId,
             employeeName: employeeName,
-            screenTitle: '친권동의서',
+            screenTitle: '친권자(후견인) 동의서',
             templateVersion: 'guardian_consent_v1',
           ),
         ),

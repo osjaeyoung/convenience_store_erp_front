@@ -320,7 +320,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     try {
       return await _laborCostRepository.getExpected(
         branchId: branchId,
-        rangeType: 'current_month',
+        rangeType: 'this_month',
       );
     } catch (_) {
       return null;

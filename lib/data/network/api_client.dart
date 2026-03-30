@@ -8,12 +8,14 @@ import '../../core/storage/token_storage.dart';
 /// API HTTP 클라이언트
 class ApiClient {
   ApiClient(this._tokenStorage) {
+    // Do not set Content-Type globally: Dio's ImplyContentTypeInterceptor +
+    // transformer set application/json for Map/String and multipart/form-data
+    // (with boundary at send time) for FormData.
     final baseOptions = BaseOptions(
       baseUrl: ApiConfig.baseUrl,
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
       headers: {
-        'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
     );
@@ -73,6 +75,10 @@ class ApiClient {
       'queryParameters': options.queryParameters,
       'headers': options.headers,
       'data': _normalizeData(options.data),
+      if (options.data is FormData)
+        'dataNote':
+            'FormData: log is field names + file metadata only; '
+            'on the wire Dio sets multipart/form-data with boundary and file bytes.',
     };
     _printJson(payload);
   }
@@ -180,6 +186,9 @@ class ApiClient {
     return ok;
   }
 
+  static const int _maxLogStringLen = 500;
+  static const int _maxLogStringHead = 160;
+
   Object? _normalizeData(Object? data) {
     if (data == null) return null;
     if (data is FormData) {
@@ -195,7 +204,33 @@ class ApiClient {
         ],
       };
     }
-    return data;
+    return _redactForLog(data);
+  }
+
+  /// 긴 Base64·PDF/XML 조각 등이 콘솔을 오염하지 않도록 요약/마스킹.
+  dynamic _redactForLog(dynamic value) {
+    if (value is Map) {
+      final out = <String, dynamic>{};
+      for (final e in value.entries) {
+        final k = e.key.toString();
+        final ks = k.toLowerCase();
+        if (ks.contains('base64') || ks == 'password') {
+          out[k] = '«redacted»';
+          continue;
+        }
+        out[k] = _redactForLog(e.value);
+      }
+      return out;
+    }
+    if (value is List) {
+      return value.map(_redactForLog).toList();
+    }
+    if (value is String) {
+      if (value.length <= _maxLogStringLen) return value;
+      return '${value.substring(0, _maxLogStringHead)}… '
+          '(truncated, ${value.length} chars)';
+    }
+    return value;
   }
 
   void _printJson(Object payload) {

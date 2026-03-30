@@ -7,6 +7,7 @@ import '../../auth/bloc/auth_bloc.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../../data/repositories/staff_management_repository.dart';
+import '../../../widgets/app_styled_confirm_dialog.dart';
 import '../widgets/employee_profile_box.dart';
 import 'employee_document_menu_actions.dart';
 import 'employee_review_screen.dart';
@@ -44,27 +45,10 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
   }
 
   Future<void> _onDeleteTap() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('근무자 삭제'),
-        content: const Text(
+    final confirmed = await showAppStyledDeleteDialog(
+      context,
+      message:
           '이 근무자를 삭제하시겠습니까?\n근로계약, 근무일정, 리뷰 등 관련 데이터가 모두 삭제됩니다.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('취소'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.error,
-            ),
-            child: const Text('삭제'),
-          ),
-        ],
-      ),
     );
     if (confirmed != true || !mounted) return;
 
@@ -90,27 +74,12 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
   }
 
   Future<void> _onRetirementTap() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('퇴사 처리'),
-        content: const Text(
+    final confirmed = await showAppStyledConfirmDialog(
+      context,
+      message:
           '이 근무자를 퇴사 처리하시겠습니까?\n퇴사일은 오늘 날짜로 등록됩니다.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('취소'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primaryDark,
-            ),
-            child: const Text('확인'),
-          ),
-        ],
-      ),
+      confirmLabel: '확인',
+      confirmBackgroundColor: AppColors.primaryDark,
     );
     if (confirmed != true || !mounted) return;
 

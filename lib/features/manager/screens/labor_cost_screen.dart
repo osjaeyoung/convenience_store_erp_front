@@ -4,136 +4,270 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../account/account_routes.dart';
+import '../bloc/home_bloc.dart';
 import '../bloc/labor_cost_bloc.dart';
 import '../bloc/selected_branch_cubit.dart';
+import '../labor/labor_cost_formatters.dart';
+import '../widgets/home_common_app_bar.dart';
+import '../widgets/labor_cost/labor_cost_overview_widgets.dart';
+import 'labor_cost_monthly_list_screen.dart';
+import 'labor_cost_saving_detail_screen.dart';
 
-/// 인건비 화면
-class LaborCostScreen extends StatelessWidget {
+/// 인건비 탭 — Figma: 홈 앱바 + 서브탭(예상/월별/절감)
+class LaborCostScreen extends StatefulWidget {
   const LaborCostScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('인건비'),
-        actions: [
-          IconButton(
-            onPressed: () => openAccountSettingsMenu(context),
-            icon: Image.asset(
-              'assets/icons/png/common/menu_icon.png',
-              width: 24,
-              height: 24,
-            ),
+  State<LaborCostScreen> createState() => _LaborCostScreenState();
+}
+
+class _LaborCostScreenState extends State<LaborCostScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+  String _rangeType = 'this_month';
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final branchId = context.read<SelectedBranchCubit>().state;
+      if (branchId != null) {
+        _dispatchExpected(branchId);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _dispatchExpected(int branchId) {
+    context.read<LaborCostBloc>().add(
+          LaborCostExpectedRequested(
+            branchId: branchId,
+            rangeType: _rangeType,
           ),
-          const SizedBox(width: 6),
-        ],
-      ),
-      body: BlocConsumer<SelectedBranchCubit, int?>(
-        listener: (context, branchId) {
-          if (branchId != null) {
-            context.read<LaborCostBloc>().add(
-                  LaborCostExpectedRequested(
-                    branchId: branchId,
-                    rangeType: 'current_month',
-                  ),
-                );
-          }
-        },
-        builder: (context, branchId) {
-          if (branchId == null) {
-            return Center(
-              child: Text(
-                '지점을 선택해주세요.\n홈 탭에서 지점을 먼저 선택해주세요.',
-                style: AppTypography.bodyMedium.copyWith(
-                  color: AppColors.textSecondary,
+        );
+  }
+
+  bool _hasAlarm(HomeState homeState, int? branchId) {
+    if (branchId == null) return false;
+    for (final b in homeState.managerBranches) {
+      if (b.id == branchId && b.openAlertCount > 0) return true;
+    }
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final branchId = context.select<SelectedBranchCubit, int?>((c) => c.state);
+    final homeState = context.watch<HomeBloc>().state;
+    final hasAlarm = _hasAlarm(homeState, branchId);
+
+    return BlocListener<SelectedBranchCubit, int?>(
+      listener: (context, id) {
+        if (id != null) {
+          context.read<LaborCostBloc>().add(
+                LaborCostExpectedRequested(
+                  branchId: id,
+                  rangeType: _rangeType,
                 ),
-                textAlign: TextAlign.center,
-              ),
+              );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.grey0,
+        appBar: HomeCommonAppBar(
+          alarmActive: hasAlarm,
+          onAlarmTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('알림 기능은 곧 연결됩니다.')),
             );
-          }
-          return BlocBuilder<LaborCostBloc, LaborCostBlocState>(
-            builder: (context, state) {
-              if (state.status == LaborCostBlocStatus.loading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (state.status == LaborCostBlocStatus.failure) {
-                return Center(
+          },
+          onMenuTap: () => openAccountSettingsMenu(context),
+        ),
+        body: branchId == null
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  '지점을 선택해주세요.\n홈 탭에서 지점을 먼저 선택해주세요.',
+                  style: AppTypography.bodyMediumR.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                LaborCostSubTabsBar(controller: _tabController),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _ExpectedLaborTabView(
+                        branchId: branchId,
+                        rangeType: _rangeType,
+                        onRangeChanged: (v) {
+                          setState(() => _rangeType = v);
+                          _dispatchExpected(branchId);
+                        },
+                        onOpenSavingTab: () =>
+                            _tabController.animateTo(2),
+                      ),
+                      LaborCostMonthlyListScreen(
+                        branchId: branchId,
+                        embedded: true,
+                      ),
+                      LaborCostSavingDetailScreen(
+                        branchId: branchId,
+                        embedded: true,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+      ),
+    );
+  }
+}
+
+class _ExpectedLaborTabView extends StatelessWidget {
+  const _ExpectedLaborTabView({
+    required this.branchId,
+    required this.rangeType,
+    required this.onRangeChanged,
+    required this.onOpenSavingTab,
+  });
+
+  final int branchId;
+  final String rangeType;
+  final ValueChanged<String> onRangeChanged;
+  final VoidCallback onOpenSavingTab;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<LaborCostBloc, LaborCostBlocState>(
+      builder: (context, state) {
+            if (state.status == LaborCostBlocStatus.loading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (state.status == LaborCostBlocStatus.failure) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         state.errorMessage ?? '오류가 발생했습니다.',
-                        style: AppTypography.bodyMedium.copyWith(
+                        style: AppTypography.bodyMediumR.copyWith(
                           color: AppColors.textSecondary,
                         ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
-                      TextButton(
+                      FilledButton(
                         onPressed: () => context.read<LaborCostBloc>().add(
                               LaborCostExpectedRequested(
                                 branchId: branchId,
-                                rangeType: 'current_month',
+                                rangeType: rangeType,
                               ),
                             ),
                         child: const Text('다시 시도'),
                       ),
                     ],
                   ),
-                );
-              }
-              final expected = state.expected;
-              if (expected == null) {
-                return const Center(child: Text('데이터 없음'));
-              }
-              return SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                ),
+              );
+            }
+            final expected = state.expected;
+            if (expected == null) {
+              return const Center(child: Text('데이터 없음'));
+            }
+
+            final ratioText = '${expected.changeRatePercent.abs().toStringAsFixed(1)}%';
+            final wentUp = expected.changeRatePercent >= 0;
+            final totalLine =
+                '총 ${LaborCostFormatters.won(expected.currentTotalCost).replaceAll('원', ' 원')}';
+
+            return ColoredBox(
+              color: AppColors.grey0,
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  context.read<LaborCostBloc>().add(
+                        LaborCostExpectedRequested(
+                          branchId: branchId,
+                          rangeType: rangeType,
+                        ),
+                      );
+                },
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
                   children: [
-                    Text(
-                      expected.periodLabel,
-                      style: AppTypography.heading3.copyWith(
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    LaborCostScreen._buildSummaryCard(
-                      '현재 총 인건비',
-                      '${expected.currentTotalCost.toStringAsFixed(0)}원',
+                    const LaborCostSectionTitleRow(),
+                    LaborCostFigmaSummaryCard(
+                      totalWonText: totalLine,
+                      ratioPercentText: ratioText,
+                      ratioWentUp: wentUp,
                     ),
                     const SizedBox(height: 8),
-                    LaborCostScreen._buildSummaryCard(
-                      '이전 대비 증감률',
-                      '${expected.changeRatePercent.toStringAsFixed(1)}%',
+                    LaborCostPeriodDropdown(
+                      rangeType: rangeType,
+                      onChanged: onRangeChanged,
                     ),
-                    const SizedBox(height: 8),
-                    LaborCostScreen._buildSummaryCard(
-                      '현재 인원',
-                      '${expected.headcountCurrent}명',
+                    const SizedBox(height: 20),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '총 근로자 인원수',
+                          style: AppTypography.bodyLargeM.copyWith(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '(명)',
+                          style: AppTypography.bodySmallR.copyWith(
+                            fontSize: 12,
+                            color: AppColors.textTertiary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    LaborCostHeadcountCompareCard(
+                      leftLabel:
+                          rangeType == 'six_months' ? '6개월 전' : '전월',
+                      rightLabel: '금월',
+                      leftCount: expected.headcountPrevious,
+                      rightCount: expected.headcountCurrent,
+                    ),
+                    const SizedBox(height: 28),
+                    LaborCostDualBarChartSection(
+                      rangeType: rangeType,
+                      components: expected.componentComparisons,
+                      monthlyTrend: expected.monthlyTrend,
+                    ),
+                    const SizedBox(height: 28),
+                    LaborCostSavingPointsFigma(
+                      points: expected.savingPoints,
+                      onDetailTap: onOpenSavingTab,
                     ),
                   ],
                 ),
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-
-  static Widget _buildSummaryCard(String label, String value) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label, style: AppTypography.bodyMedium),
-            Text(value, style: AppTypography.bodyMedium),
-          ],
-        ),
-      ),
+              ),
+            );
+      },
     );
   }
 }

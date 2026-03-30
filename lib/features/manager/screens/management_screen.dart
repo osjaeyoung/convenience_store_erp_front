@@ -32,28 +32,23 @@ class ManagementScreen extends StatefulWidget {
 class _ManagementScreenState extends State<ManagementScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
-  final TextEditingController _reviewController = TextEditingController();
   late final TabController _tabController;
   bool _isBranchListExpanded = false;
   bool _isWorkAssignmentDragMode = false;
   DateTime _selectedDate = DateTime.now();
-  String? _contractStatus;
-  String? _templateVersion;
-  int _reviewRating = 3;
   int? _loadedBranchId;
   bool _employeeInfoShowActive = true; // true: 현근무자, false: 퇴직자
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     _searchController.dispose();
-    _reviewController.dispose();
     super.dispose();
   }
 
@@ -184,8 +179,6 @@ class _ManagementScreenState extends State<ManagementScreen>
                                     branchId,
                                     state,
                                   ),
-                                  _buildContractsTab(context, branchId, state),
-                                  _buildReviewsTab(context, branchId, state),
                                 ],
                               ),
                       ),
@@ -220,8 +213,6 @@ class _ManagementScreenState extends State<ManagementScreen>
         Tab(text: '근무일정'),
         Tab(text: '근무배정'),
         Tab(text: '직원정보'),
-        Tab(text: '계약서'),
-        Tab(text: '근무자 평가'),
       ],
     );
   }
@@ -1168,188 +1159,6 @@ class _ManagementScreenState extends State<ManagementScreen>
           child: Icon(Icons.add, color: AppColors.grey0, size: 28),
         ),
       ),
-    );
-  }
-
-  Widget _buildContractsTab(
-    BuildContext context,
-    int branchId,
-    StaffManagementBlocState state,
-  ) {
-    final employeeId = state.selectedEmployeeId;
-    final contracts = ((state.employmentContracts?['items'] as List?) ??
-            const [])
-        .cast<Map<String, dynamic>>();
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _buildSectionTitle('근로계약서'),
-        const SizedBox(height: 8),
-        Text(
-          employeeId == null
-              ? '직원정보 탭에서 직원을 먼저 선택해주세요.'
-              : '선택된 직원 ID: $employeeId',
-          style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
-        ),
-        const SizedBox(height: 12),
-        DropdownButtonFormField<String?>(
-          value: _contractStatus,
-          decoration: const InputDecoration(labelText: '상태 필터'),
-          items: const [
-            DropdownMenuItem<String?>(value: null, child: Text('전체')),
-            DropdownMenuItem<String?>(value: 'draft', child: Text('임시저장')),
-            DropdownMenuItem<String?>(
-              value: 'completed',
-              child: Text('완료'),
-            ),
-          ],
-          onChanged: (value) => setState(() => _contractStatus = value),
-        ),
-        const SizedBox(height: 8),
-        DropdownButtonFormField<String?>(
-          value: _templateVersion,
-          decoration: const InputDecoration(labelText: '템플릿 필터'),
-          items: const [
-            DropdownMenuItem<String?>(value: null, child: Text('전체')),
-            DropdownMenuItem<String?>(value: 'standard_v1', child: Text('표준')),
-            DropdownMenuItem<String?>(
-              value: 'minor_standard_v1',
-              child: Text('연소'),
-            ),
-            DropdownMenuItem<String?>(
-              value: 'guardian_consent_v1',
-              child: Text('친권자 동의서'),
-            ),
-          ],
-          onChanged: (value) => setState(() => _templateVersion = value),
-        ),
-        const SizedBox(height: 12),
-        FilledButton(
-          onPressed: employeeId == null
-              ? null
-              : () => context.read<StaffManagementBloc>().add(
-                    StaffManagementEmploymentContractsRequested(
-                      branchId: branchId,
-                      employeeId: employeeId,
-                      status: _contractStatus,
-                      templateVersion: _templateVersion,
-                    ),
-                  ),
-          child: const Text('계약서 조회'),
-        ),
-        const SizedBox(height: 12),
-        ...contracts.map(
-          (contract) => Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: ListTile(
-              title: Text(contract['title']?.toString() ?? '-'),
-              subtitle: Text(
-                '상태: ${contract['status']} / 템플릿: ${contract['template_version']}',
-              ),
-            ),
-          ),
-        ),
-        if (contracts.isEmpty) const Text('표시할 계약서가 없습니다.'),
-      ],
-    );
-  }
-
-  Widget _buildReviewsTab(
-    BuildContext context,
-    int branchId,
-    StaffManagementBlocState state,
-  ) {
-    final employeeId = state.selectedEmployeeId;
-    final reviews = ((state.employeeDetail?['reviews'] as List?) ?? const [])
-        .cast<Map<String, dynamic>>();
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _buildSectionTitle('근무자 평가'),
-        const SizedBox(height: 8),
-        Text(
-          employeeId == null
-              ? '직원정보 탭에서 직원을 먼저 선택해주세요.'
-              : '선택된 직원 ID: $employeeId',
-          style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
-        ),
-        const SizedBox(height: 12),
-        DropdownButtonFormField<int>(
-          value: _reviewRating,
-          decoration: const InputDecoration(labelText: '평점 (1~3)'),
-          items: const [
-            DropdownMenuItem(value: 1, child: Text('1점')),
-            DropdownMenuItem(value: 2, child: Text('2점')),
-            DropdownMenuItem(value: 3, child: Text('3점')),
-          ],
-          onChanged: (value) {
-            if (value != null) {
-              setState(() => _reviewRating = value);
-            }
-          },
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _reviewController,
-          maxLines: 2,
-          decoration: const InputDecoration(hintText: '평가 코멘트 입력'),
-        ),
-        const SizedBox(height: 12),
-        FilledButton(
-          onPressed: employeeId == null
-              ? null
-              : () {
-                  final comment = _reviewController.text.trim();
-                  if (comment.isEmpty) return;
-                  context.read<StaffManagementBloc>().add(
-                        StaffManagementReviewCreated(
-                          branchId: branchId,
-                          employeeId: employeeId,
-                          rating: _reviewRating,
-                          comment: comment,
-                        ),
-                      );
-                  _reviewController.clear();
-                },
-          child: const Text('평가 등록'),
-        ),
-        const SizedBox(height: 12),
-        ...reviews.map(
-          (review) {
-            final reviewId = (review['review_id'] as num?)?.toInt();
-            return Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: ListTile(
-                title:
-                    Text('${review['rating']}점 - ${review['author_name'] ?? '-'}'),
-                subtitle: Text(review['comment']?.toString() ?? '-'),
-                trailing: employeeId == null || reviewId == null
-                    ? null
-                    : IconButton(
-                        icon: const Icon(Icons.delete_outline),
-                        onPressed: () => context.read<StaffManagementBloc>().add(
-                              StaffManagementReviewDeleted(
-                                branchId: branchId,
-                                employeeId: employeeId,
-                                reviewId: reviewId,
-                              ),
-                            ),
-                      ),
-              ),
-            );
-          },
-        ),
-        if (reviews.isEmpty) const Text('등록된 평가가 없습니다.'),
-      ],
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: AppTypography.bodyLargeB.copyWith(color: AppColors.textPrimary),
     );
   }
 

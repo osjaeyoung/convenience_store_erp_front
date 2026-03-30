@@ -858,7 +858,56 @@
 
 - **파일 전용 등록**: `file_url`만 제공하면 `title` 없이 등록 가능. `record_type`이 `hr`이면 제목 자동 "인사자료", `etc`이면 "기타자료".
 
-### 등록 Request Body (HR/ETC 공통)
+### 기타(ETC) 등록 시 전송 방식 (앱 화면: 제목 · 작성일 · 파일 첨부)
+
+기타 탭은 한 화면에서 입력 후 **한 번의 요청**으로 보내는 것을 기본으로 합니다.
+
+| 방식 | Content-Type | 용도 |
+|------|----------------|------|
+| **Multipart** | `multipart/form-data` | 앱에서 촬영/갤러리 파일을 **바로 업로드**. 서버가 저장소에 올리고 메타데이터와 묶어 레코드 생성. |
+| **JSON** | `application/json` | 클라이언트가 이미 S3(또는 동일 정책)에 올린 뒤 **`file_url`** 만 넘기는 경우. |
+
+- Multipart는 **`POST .../records/etc`** 에만 적용(인사자료 `hr`는 동일 패턴이 필요하면 추후 확장).
+- UI 매핑: **제목** → `title`, **작성일** → `issued_date` (`YYYY-MM-DD`), **첨부 파일** → 아래 `file`(또는 반복 `files`).
+
+#### Multipart 요청 (`POST .../records/etc`)
+
+- **Header**: `Authorization: Bearer {access_token}`
+- **Header**: `Content-Type: multipart/form-data` (클라이언트가 boundary 포함해 설정. 수동으로 boundary를 넣지 말고 HTTP 클라이언트의 multipart 빌더 사용.)
+- **Part 목록**
+
+| Part 이름 | 필수 | 설명 |
+|-----------|------|------|
+| `title` | 예 | 제목(문자열). |
+| `issued_date` | 예 | 작성일. `YYYY-MM-DD`. |
+| `file` | 예\* | 첨부 파일 1개. 바이너리. |
+| `files` | 예\* | 같은 폼에서 여러 개 첨부 시, 동일 part 이름 `files`로 **여러 번** 보내도 됨(구현체는 `file` 단일 또는 `files` 다중 중 하나 패턴으로 처리). |
+| `note` | 아니오 | JSON 등록과 동일한 메모. |
+
+\* `file` 1개 **또는** `files` 1개 이상 중 하나는 반드시 포함.
+
+- **클라이언트 구현 참고**
+  - iOS: `URLSession` `multipartFormData` 또는 Alamofire `multipartFormData { $0.append(...) }`.
+  - Android: OkHttp `MultipartBody.Builder`에 `addFormDataPart("title", ...)`, `addFormDataPart("issued_date", ...)`, `addFormDataPart("file", fileName, body)`.
+  - React Native: `FormData`에 `append('title', title)`, `append('issued_date', date)`, `append('file', { uri, type, name })`.
+
+**cURL 예시**
+
+```bash
+curl -X POST "${BASE}/api/v1/staff-management/branches/${BRANCH_ID}/employees/${EMPLOYEE_ID}/records/etc" \
+  -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+  -F "title=점포 운영 안내문" \
+  -F "issued_date=2026-03-26" \
+  -F "file=@/path/to/scan.pdf;type=application/pdf"
+```
+
+- **성공 시**: 아래 `등록 Response Body (200)` 과 동일. 서버가 저장한 파일의 URL이 `file_url`(및 필요 시 확장 필드 `files`)에 채워짐.
+- **오류 예**: 파일 크기 초과 `413`, 지원하지 않는 형식 `415`, 제목/작성일/파일 누락 `400`.
+
+### 등록 Request Body (HR/ETC 공통, `application/json`)
+
+기타 탭에서 파일을 바로 올리는 경우에는 위 **Multipart** 절을 사용하고, 이미 업로드한 URL만 알고 있을 때 아래 JSON을 씁니다.
+
 ```json
 {
   "title": "기타 자료", // 자료 제목 (선택. file_url만 있으면 파일 전용 등록, title 생략 시 자동 생성)
@@ -868,6 +917,24 @@
 }
 ```
 - `title` 또는 `file_url` 중 하나는 반드시 필요. `file_url`만 있으면 파일 전용 등록.
+- Multipart 등록 시에도 응답의 `file_url`(및 스토리지 정책에 따른 `files`) 형태는 동일하게 맞추는 것을 권장.
+
+#### JSON + Base64 (기타 `etc` 전용, 프록시/업로드 이슈 우회)
+
+`multipart/form-data` 대신 **`application/json`** 으로 한 번에 올릴 수 있습니다 (모바일에서 연결이 끊기는 경우 시도).
+
+- `record_type`은 **`etc`** 인 요청만 허용. `file_url` 과 동시에 보낼 수 없음.
+- 필드: `title`, `issued_date`(선택·화면과 동일), `file_content_base64`(파일 바이트를 Standard Base64 인코딩한 문자열), `attachment_file_name`(원본 파일명, 확장자 포함 권장)
+- 본문 크기가 커지므로 **리버스 프록시**·API 게이트웨이의 `client_max_body_size`(또는 동등 설정)를 **최소 수십 MB** 이상 권장.
+
+```json
+{
+  "title": "제목",
+  "issued_date": "2026-03-20",
+  "file_content_base64": "JVBERi0xLjQK...",
+  "attachment_file_name": "문서.pdf"
+}
+```
 
 ### 등록 Response Body (200)
 ```json
@@ -1042,25 +1109,28 @@
 | (근로자) 주소, 연락처, 성명 | `worker_address`, `worker_phone`, `worker_signature_text` | 선택 |
 
 #### guardian_consent_v1 (친권자 동의서)
-| form_values 키 | 한글 라벨 |
-|----------------|-----------|
-| `guardian_name` | 친권자(후견인) 성명 |
-| `guardian_resident_id_masked` | 친권자 주민번호 마스킹 |
-| `guardian_address` | 친권자 주소 |
-| `guardian_phone_number` | 친권자 연락처 |
-| `relation_to_minor_worker` | 근로자와의 관계 |
-| `minor_name` | 만 18세 미만 근로자 성명 |
-| `minor_age` | 만 18세 미만 근로자 나이 |
-| `minor_resident_id_masked` | 만 18세 미만 근로자 주민번호 마스킹 |
-| `minor_address` | 만 18세 미만 근로자 주소 |
-| `business_name` | 사업체명 |
-| `business_address` | 사업장 주소 |
-| `business_representative_name` | 사업주 대표자명 |
-| `business_phone_number` | 사업장 연락처 |
-| `consent_minor_name` | 동의서 상 근로자명 |
-| `consent_signed_date` | 동의서 작성일 |
-| `guardian_signature_name` | 친권자 서명 |
-| `family_relation_certificate_attached` | 가족관계증명서 첨부 여부 |
+
+`status=completed` 시 아래 **16개** 필수. 가족관계증명서 **파일**은 생성 시점에 없어도 되며, 이후 `PATCH .../employment-contracts/{contract_id}/file` 로 첨부하면 됩니다.
+
+| form_values 키 | 한글 라벨 | 완료 시 필수 |
+|----------------|-----------|:------------:|
+| `guardian_name` | 친권자(후견인) 성명 | ✓ |
+| `guardian_resident_id_masked` | 친권자 주민번호 마스킹 | ✓ |
+| `guardian_address` | 친권자 주소 | ✓ |
+| `guardian_phone_number` | 친권자 연락처 | ✓ |
+| `relation_to_minor_worker` | 근로자와의 관계 | ✓ |
+| `minor_name` | 만 18세 미만 근로자 성명 | ✓ |
+| `minor_age` | 만 18세 미만 근로자 나이 | ✓ |
+| `minor_resident_id_masked` | 만 18세 미만 근로자 주민번호 마스킹 | ✓ |
+| `minor_address` | 만 18세 미만 근로자 주소 | ✓ |
+| `business_name` | 사업체명 | ✓ |
+| `business_address` | 사업장 주소 | ✓ |
+| `business_representative_name` | 사업주 대표자명 | ✓ |
+| `business_phone_number` | 사업장 연락처 | ✓ |
+| `consent_minor_name` | 동의서 상 근로자명 | ✓ |
+| `consent_signed_date` | 동의서 작성일 | ✓ |
+| `guardian_signature_name` | 친권자 서명 | ✓ |
+| `family_relation_certificate_attached` | 가족관계증명서 첨부 여부(문구) | 선택 |
 
 ### Request Body
 ```json
@@ -1146,13 +1216,18 @@
 ## 23-1) 근로계약서/부모님동의서 파일 전용 등록
 
 - `POST /staff-management/branches/{branch_id}/employees/{employee_id}/employment-contracts/file-only`
-- **글 데이터 없이 파일만으로 등록**: form_values 없이 `template_version`과 `files`만으로 근로계약서·연소근로자 계약서·친권자(부모님) 동의서 등록. status=draft, completion_rate=0.
+- **글 데이터 없이 파일만으로 등록**: `form_values` 없이 `template_version`과 `files`(최소 1개)만으로 등록. `status=draft`, `completion_rate=0`.
+- **`template_version` 세 가지 모두 허용 (구현·검증 동일)**  
+  - `standard_v1` — 일반 표준 근로계약서 PDF 등  
+  - `minor_standard_v1` — 연소근로자 표준 근로계약서  
+  - `guardian_consent_v1` — 친권자(부모님·후견인) 동의서  
+  제목 `title`은 선택. 없으면 순서대로 `"{근무자명} 표준 근로계약서"`, `"{근무자명} 연소근로자 표준 근로계약서"`, `"{근무자명} 친권자(후견인) 동의서"`로 자동 생성.
 
 ### Request Body
 ```json
 {
-  "template_version": "guardian_consent_v1", // standard_v1 | minor_standard_v1 | guardian_consent_v1
-  "title": null, // 선택 (없으면 "근무자명 표준 근로계약서" 등 자동 생성)
+  "template_version": "guardian_consent_v1", // standard_v1 | minor_standard_v1 | guardian_consent_v1 (위 세 가지 모두 동일 API)
+  "title": null, // 선택. 생략 시 template_version에 따른 기본 제목(위 참고)
   "files": [
     {
       "file_key": "contracts/branch-1/employee-501/consent.pdf",
@@ -1162,6 +1237,13 @@
   ]
 }
 ```
+
+### 서버·클라이언트·스토리지 (운영 시)
+
+- 이 API는 **파일 바이너리를 받지 않습니다.** `files[].file_key`(및 선택 `file_url`, `file_name`)만 저장합니다. 스토리지 객체는 **업로드 단계**에서 이미 `file_key` 위치에 있어야 합니다.
+- **A)** 백엔드가 presigned PUT/POST URL을 발급하고, 앱이 업로드 후 여기로 `file_key`·`file_url`을 보내거나  
+- **B)** 버킷/CloudFront를 공개(또는 서명 URL)로 두고, 앱이 조합한 `file_url`이 실제 객체와 일치하게 맞출 것.
+- **`file_url` 생략**: 서버가 **`.env`의 `S3_PUBLIC_BASE_URL`**(선택) 또는 **`S3_BUCKET_NAME` + `S3_REGION`**(표준 AWS, `S3_ENDPOINT_URL` 비어 있을 때 virtual-hosted URL)으로 `file_key`에서 공개 URL을 합성해 저장·응답에 채울 수 있습니다. 이 경우 **Flutter 앱에 `S3_PUBLIC_BASE_URL`을 두지 않아도** 요청 본문에는 `file_key`(와 `file_name`)만 넘겨도 됩니다. CloudFront 등 커스텀 베이스만 쓰는 경우에는 서버에 `S3_PUBLIC_BASE_URL`을 설정하는 편이 안전합니다. (급여명세·경비 첨부 등 동일 규칙)
 
 ### Response Body (200)
 `23) 근로계약서 생성`의 Response와 동일
@@ -1253,14 +1335,15 @@
 ## 28) 친권자(후견인) 동의서 작성 템플릿
 
 - `22) 근로계약서 생성` API를 사용하고 `template_version=guardian_consent_v1`로 저장
-- `24) 근로계약서 파일 저장` API로 가족관계증명서/동의서 파일 다중 첨부 가능
+- **가족관계증명서 PDF/이미지**는 글 저장(`completed`) 시점에 필수가 아니며, 이후 `25) 근로계약서 파일 저장` 으로 첨부하면 됩니다.
+- (선택) `form_values.family_relation_certificate_attached`에 `"첨부"` 등 문구를 넣어 두었다가, 실제 파일은 별도 API로 올려도 됩니다.
 
 ### Request Body 예시
 ```json
 {
   "title": "김현수 친권자(후견인) 동의서", // 문서 제목(없으면 자동 생성)
   "template_version": "guardian_consent_v1", // 친권자 동의서 템플릿
-  "status": "draft", // draft|completed
+  "status": "completed", // draft|completed
   "form_values": {
     "guardian_name": "김민정", // 친권자(후견인) 성명
     "guardian_resident_id_masked": "800101-2******", // 주민등록번호(마스킹)
@@ -1277,13 +1360,12 @@
     "business_phone_number": "02-1234-5678", // 회사전화
     "consent_minor_name": "김현수", // 동의문에 들어갈 연소근로자명
     "consent_signed_date": "2026-03-06", // 작성일
-    "guardian_signature_name": "김민정", // 친권자(후견인) 서명
-    "family_relation_certificate_attached": "첨부" // 첨부: 가족관계증명서 1부
+    "guardian_signature_name": "김민정" // 친권자(후견인) 서명
   }
 }
 ```
 
-### completed 처리 시 필수값
+### completed 처리 시 필수값 (16개)
 
 - `guardian_name`
 - `guardian_resident_id_masked`
@@ -1301,7 +1383,8 @@
 - `consent_minor_name`
 - `consent_signed_date`
 - `guardian_signature_name`
-- `family_relation_certificate_attached`
+
+※ `family_relation_certificate_attached`는 **완료 검증에서 제외**. 증명서 파일은 **계약 생성 후** `PATCH .../employment-contracts/{contract_id}/file` 로 업로드.
 
 ---
 

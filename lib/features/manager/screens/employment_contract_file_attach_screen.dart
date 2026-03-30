@@ -11,6 +11,7 @@ import '../../../theme/app_typography.dart';
 import '../../auth/widgets/auth_input_field.dart';
 import '../../../widgets/file_attachment_drop_zone.dart';
 import '../../../widgets/file_form_name_save_dialog.dart';
+import 'picked_file_inline_preview.dart';
 
 /// 근로계약서 파일 전용 등록 (스펙 ##23-1)
 class EmploymentContractFileAttachScreen extends StatefulWidget {
@@ -153,91 +154,103 @@ class _EmploymentContractFileAttachScreenState
         backgroundColor: AppColors.grey0,
         elevation: 0,
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    '제목',
-                    style: AppTypography.bodySmallB.copyWith(
-                      color: AppColors.textSecondary,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Stack(
-                    children: [
-                      AuthInputField(
-                        controller: _titleCtrl,
-                        hintText: '제목을 입력해주세요.',
-                        readOnly: true,
-                        fillColor: AppColors.grey25,
-                        focusedBorderColor: AppColors.primaryDark,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                      ),
-                      Positioned.fill(
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(12),
-                            onTap: _openTitleModal,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  FileAttachmentDropZone(
-                    onTap: _pickFile,
-                    fileName: _picked?.name,
-                    height: 200,
-                  ),
-                ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              '제목',
+              style: AppTypography.bodySmallB.copyWith(
+                color: AppColors.textSecondary,
+                fontSize: 13,
               ),
             ),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton(
-                  onPressed: _submitting ? null : _onAddPressed,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+            const SizedBox(height: 6),
+            Stack(
+              children: [
+                AuthInputField(
+                  controller: _titleCtrl,
+                  hintText: '제목을 입력해주세요.',
+                  readOnly: true,
+                  fillColor: AppColors.grey25,
+                  focusedBorderColor: AppColors.primaryDark,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
                   ),
-                  child: _submitting
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Text(
-                          '추가하기',
-                          style: AppTypography.bodyMediumB.copyWith(
-                            color: AppColors.grey0,
-                            fontSize: 16,
-                          ),
-                        ),
                 ),
+                Positioned.fill(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: _openTitleModal,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            if (_picked == null)
+              FileAttachmentDropZone(
+                onTap: _pickFile,
+                fileName: null,
+                height: 200,
+              )
+            else ...[
+              PickedFileInlinePreview(
+                key: ValueKey<String>(
+                  '${_picked!.name}_${_picked!.size}',
+                ),
+                file: _picked!,
+                height: 280,
+                onTapReplace: _pickFile,
+              ),
+            ],
+          ],
+        ),
+      ),
+      bottomNavigationBar: Material(
+        color: AppColors.grey0,
+        child: SafeArea(
+          minimum: const EdgeInsets.only(bottom: 8),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: FilledButton(
+                onPressed: _submitting ? null : _onAddPressed,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.grey0,
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: _submitting
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        '추가하기',
+                        style: AppTypography.bodyMediumB.copyWith(
+                          color: AppColors.grey0,
+                          fontSize: 16,
+                          height: 24 / 16,
+                        ),
+                      ),
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }

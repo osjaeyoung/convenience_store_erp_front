@@ -217,8 +217,6 @@ String buildGuardianConsentPlainText(Map<String, dynamic> fv) {
     '친권자(후견인) ${_fv(fv, 'guardian_signature_name')} (인)',
   );
   buf.writeln();
-  buf.writeln(
-    '첨 부 : 가족관계증명서 1부 ${_fv(fv, 'family_relation_certificate_attached')}',
-  );
+  buf.writeln('첨 부 : 가족관계증명서 1부');
   return buf.toString();
 }

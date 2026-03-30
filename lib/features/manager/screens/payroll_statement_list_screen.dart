@@ -217,26 +217,32 @@ class _PayrollStatementListScreenState extends State<PayrollStatementListScreen>
           ),
         ],
       ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: FilledButton(
-              onPressed: _openAdd,
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.grey0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+      bottomNavigationBar: Material(
+        color: AppColors.grey0,
+        child: SafeArea(
+          minimum: const EdgeInsets.only(bottom: 8),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: FilledButton(
+                onPressed: _openAdd,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.grey0,
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
-              ),
-              child: Text(
-                '추가하기',
-                style: AppTypography.bodyMediumB.copyWith(
-                  color: AppColors.grey0,
-                  fontSize: 16,
+                child: Text(
+                  '추가하기',
+                  style: AppTypography.bodyMediumB.copyWith(
+                    color: AppColors.grey0,
+                    fontSize: 16,
+                    height: 24 / 16,
+                  ),
                 ),
               ),
             ),

@@ -10,7 +10,7 @@ abstract class LaborCostBlocEvent extends Equatable {
 class LaborCostExpectedRequested extends LaborCostBlocEvent {
   const LaborCostExpectedRequested({
     this.branchId,
-    this.rangeType = 'current_month',
+    this.rangeType = 'this_month',
   });
 
   final int? branchId;

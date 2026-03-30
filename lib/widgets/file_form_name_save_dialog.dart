@@ -11,7 +11,7 @@ Future<String?> showFileFormNameSaveDialog(
 }) {
   return showDialog<String>(
     context: context,
-    barrierColor: Colors.black.withValues(alpha: 0.45),
+    barrierColor: Colors.black.withValues(alpha: 0.55),
     builder: (ctx) => _FileFormNameSaveDialog(
       initialFormName: initialFormName,
     ),
@@ -49,11 +49,11 @@ class _FileFormNameSaveDialogState extends State<_FileFormNameSaveDialog> {
       backgroundColor: AppColors.grey0,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16),
       ),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(22, 24, 22, 20),
+        padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -61,17 +61,19 @@ class _FileFormNameSaveDialogState extends State<_FileFormNameSaveDialog> {
             Text(
               '제목',
               textAlign: TextAlign.center,
-              style: AppTypography.bodyMediumB.copyWith(
-                fontSize: 16,
+              style: AppTypography.bodyLargeM.copyWith(
+                fontSize: 18,
+                height: 24 / 18,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 22),
+            const SizedBox(height: 16),
             Text(
               '양식명',
-              style: AppTypography.bodySmallB.copyWith(
+              style: AppTypography.bodyMediumM.copyWith(
+                fontSize: 14,
+                height: 16 / 14,
                 color: AppColors.textPrimary,
-                fontSize: 13,
               ),
             ),
             const SizedBox(height: 8),
@@ -80,43 +82,46 @@ class _FileFormNameSaveDialogState extends State<_FileFormNameSaveDialog> {
               hintText: '입력해주세요.',
               minLines: 3,
               maxLines: 5,
-              fillColor: AppColors.grey25,
-              focusedBorderColor: AppColors.primaryDark,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 12,
+              fillColor: AppColors.grey0Alt,
+              hintStyle: AppTypography.bodyMediumR.copyWith(
+                fontSize: 14,
+                height: 19 / 14,
+                color: AppColors.grey100,
               ),
+              focusedBorderColor: AppColors.primaryDark,
+              contentPadding: const EdgeInsets.all(16),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 36),
             Row(
               children: [
                 Expanded(
                   child: SizedBox(
-                    height: 48,
+                    height: 52,
                     child: FilledButton(
                       onPressed: () => Navigator.pop(context),
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.grey25,
-                        foregroundColor: AppColors.textSecondary,
+                        foregroundColor: AppColors.textTertiary,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       child: Text(
                         '닫기',
-                        style: AppTypography.bodyMediumM.copyWith(
-                          color: AppColors.textSecondary,
-                          fontSize: 15,
+                        style: AppTypography.bodyLargeB.copyWith(
+                          color: AppColors.textTertiary,
+                          fontSize: 16,
+                          height: 24 / 16,
                         ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 16),
                 Expanded(
                   child: SizedBox(
-                    height: 48,
+                    height: 52,
                     child: FilledButton(
                       onPressed: () {
                         final t = _ctrl.text.trim();
@@ -135,14 +140,15 @@ class _FileFormNameSaveDialogState extends State<_FileFormNameSaveDialog> {
                         foregroundColor: AppColors.grey0,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       child: Text(
                         '저장',
-                        style: AppTypography.bodyMediumB.copyWith(
+                        style: AppTypography.bodyLargeB.copyWith(
                           color: AppColors.grey0,
-                          fontSize: 15,
+                          fontSize: 16,
+                          height: 24 / 16,
                         ),
                       ),
                     ),

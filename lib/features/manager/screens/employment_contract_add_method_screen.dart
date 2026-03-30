@@ -6,7 +6,8 @@ import '../../../theme/app_typography.dart';
 import 'employment_contract_file_attach_screen.dart';
 import 'employment_contract_form_screen.dart';
 
-/// 근로계약서 추가: 직접 작성 vs 파일 첨부 (급여명세 추가와 동일 패턴)
+/// 근로계약서 추가: 직접 작성 vs 파일 첨부 (Figma 2534:14819)
+/// 표준·연소·친권 모두 스펙 `##23-1` 파일 전용 등록(`template_version` + `files`) 가능.
 class EmploymentContractAddMethodScreen extends StatelessWidget {
   const EmploymentContractAddMethodScreen({
     super.key,
@@ -28,7 +29,7 @@ class EmploymentContractAddMethodScreen extends StatelessWidget {
       case 'minor_standard_v1':
         return '연소근로자 표준근로계약 작성';
       case 'guardian_consent_v1':
-        return '친권동의서 작성';
+        return '친권자(후견인) 동의서 작성';
       default:
         return '표준 근로계약서 작성';
     }
@@ -49,11 +50,11 @@ class EmploymentContractAddMethodScreen extends StatelessWidget {
         scrolledUnderElevation: 0,
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
         child: Container(
           decoration: BoxDecoration(
             color: AppColors.grey0,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.grey50),
           ),
           child: Column(
@@ -79,7 +80,7 @@ class EmploymentContractAddMethodScreen extends StatelessWidget {
                   }
                 },
               ),
-              const Divider(height: 1, thickness: 1, color: AppColors.grey50),
+              const Divider(height: 1, thickness: 1, color: AppColors.grey25),
               _MethodRow(
                 svgAsset: 'assets/icons/svg/icon/payroll_add_folder_16.svg',
                 title: '파일로 첨부',
@@ -126,28 +127,38 @@ class _MethodRow extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           child: Row(
             children: [
-              if (imageAsset != null)
-                Image.asset(imageAsset!, width: 16, height: 16)
-              else
-                SvgPicture.asset(svgAsset!, width: 16, height: 16),
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppColors.grey0Alt,
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                alignment: Alignment.center,
+                child: imageAsset != null
+                    ? Image.asset(imageAsset!, width: 16, height: 16)
+                    : SvgPicture.asset(svgAsset!, width: 16, height: 16),
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   title,
                   style: AppTypography.bodyMediumM.copyWith(
                     fontSize: 14,
+                    height: 16 / 14,
                     color: AppColors.textPrimary,
                   ),
                 ),
               ),
               Icon(
                 Icons.chevron_right_rounded,
-                color: AppColors.grey100,
+                size: 16,
+                color: AppColors.grey150,
               ),
             ],
           ),

@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../data/repositories/staff_management_repository.dart';
+import '../../../utils/modal_title_format.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../auth/widgets/auth_input_field.dart';
+
+/// 친권 동의서 칩: 색은 민트(사업장)·주황(후견인·연소)만. 빈 칩 문구만 「입력」「근로자」「후견인 입력」.
+enum _ContractChipTone { mint, worker, guardian }
 
 /// 근로계약서 작성·수정 (표준/연소/친권: 법정 문구 + 인라인 입력 칩)
 class EmploymentContractFormScreen extends StatefulWidget {
@@ -42,6 +47,12 @@ class _EmploymentContractFormScreenState
 
   /// 사업주·일반 입력 칩 배경 (Figma light mint)
   static const Color _mintChipBg = Color(0xFFE2F6F0);
+
+  /// 표준·연소·친권 인라인 칩 공통 패딩 (민트/오렌지, 높이 절약)
+  static const EdgeInsets _contractChipPadding =
+      EdgeInsets.symmetric(horizontal: 8, vertical: 3);
+  static const EdgeInsets _contractChipPaddingWide =
+      EdgeInsets.symmetric(horizontal: 10, vertical: 4);
 
   /// 모달 하단 취소·확인 (Figma 8px)
   static final OutlinedBorder _modalActionButtonShape =
@@ -192,7 +203,6 @@ class _EmploymentContractFormScreenState
         'consent_minor_name',
         'consent_signed_date',
         'guardian_signature_name',
-        'family_relation_certificate_attached',
       ]);
     } else {
       reg(const [
@@ -359,7 +369,8 @@ class _EmploymentContractFormScreenState
 
   bool _fieldNonEmpty(String key) => (_c[key]?.text.trim().isNotEmpty ?? false);
 
-  /// `docs/api_spec_staff_management.md` §28 `guardian_consent_v1` 완료 필수
+  /// `docs/api_spec_staff_management.md` §28 `guardian_consent_v1` 완료 필수 필드(16개)만 검사.
+  /// 가족관계증명서 **파일**은 완료 시점에 필수 아님(이후 PATCH file). 화면 문구는 양식대로 유지.
   List<String> _missingFieldsForGuardianCompletion() {
     final m = <String>[];
     if (!widget.isGuardian) return m;
@@ -390,9 +401,6 @@ class _EmploymentContractFormScreenState
     }
     if (!_fieldNonEmpty('guardian_signature_name')) {
       m.add('친권자(후견인) 서명');
-    }
-    if (!_fieldNonEmpty('family_relation_certificate_attached')) {
-      m.add('가족관계증명서 첨부');
     }
     return m;
   }
@@ -530,6 +538,16 @@ class _EmploymentContractFormScreenState
     );
   }
 
+  /// 친권 동의서는 문서 제목 입력 없이 저장 시 목록용 자동 제목
+  String _resolvedSaveTitle() {
+    final t = _titleCtrl.text.trim();
+    if (t.isNotEmpty) return t;
+    if (widget.isGuardian) {
+      return '${widget.employeeName}_친권자(후견인) 동의서';
+    }
+    return '';
+  }
+
   Future<void> _save({required bool completed}) async {
     if (completed) {
       final missing = widget.isGuardian
@@ -544,7 +562,7 @@ class _EmploymentContractFormScreenState
     try {
       final repo = context.read<StaffManagementRepository>();
       final fv = _collectFormValues();
-      final title = _titleCtrl.text.trim();
+      final title = _resolvedSaveTitle();
       if (_contractId == null) {
         final res = await repo.createEmploymentContract(
           branchId: widget.branchId,
@@ -606,170 +624,196 @@ class _EmploymentContractFormScreenState
       );
 
   Widget _buildGuardianBody() {
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+      padding: EdgeInsets.zero,
       children: [
-        Text(
-          '친권자(후견인) 동의서',
-          textAlign: TextAlign.center,
-          style: AppTypography.heading3.copyWith(fontSize: 18),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          '문서 제목(선택)',
-          style: AppTypography.bodySmallB.copyWith(
-            color: AppColors.textSecondary,
-            fontSize: 13,
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          decoration: const BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: AppColors.grey25),
+            ),
+          ),
+          child: Text(
+            '친권자(후견인) 동의서',
+            style: AppTypography.bodyLargeM.copyWith(
+              fontSize: 18,
+              height: 24 / 18,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textPrimary,
+            ),
           ),
         ),
-        const SizedBox(height: 6),
-        AuthInputField(
-          controller: _titleCtrl,
-          hintText: '비우면 자동 생성',
-          fillColor: AppColors.grey25,
-          focusedBorderColor: AppColors.primaryDark,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: 12,
-          ),
-        ),
-        const SizedBox(height: 20),
-        _guardianDocHeading('친권자(후견인) 인적사항'),
-        _guardianLabeledChipRow('성 명 : ', '친권자(후견인) 성명', 'guardian_name'),
-        _guardianLabeledChipRow(
-          '주민등록번호 : ',
-          '주민등록번호(마스킹)',
-          'guardian_resident_id_masked',
-        ),
-        _guardianLabeledChipRow('주 소 : ', '주소', 'guardian_address',
-            wideChip: true),
-        _guardianLabeledChipRow('연락처 : ', '연락처', 'guardian_phone_number'),
-        _guardianLabeledChipRow(
-          '연소근로자와의 관계 : ',
-          '연소근로자와의 관계',
-          'relation_to_minor_worker',
-        ),
-        const SizedBox(height: 8),
-        _guardianDocHeading('연소근로자 인적사항'),
         Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: Wrap(
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 6,
-            runSpacing: 8,
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('성 명 : ', style: _contractBodyStyle),
-              _inputChip(
-                display: _c['minor_name']?.text,
-                worker: true,
-                onTap: () => _openInlineInput('연소근로자 성명', 'minor_name'),
+              _guardianDocHeading('친권자(후견인) 인적사항'),
+              _guardianLabeledChipRow(
+                  '성 명 : ', '친권자(후견인) 성명', 'guardian_name'),
+              _guardianLabeledChipRow(
+                '주민등록번호 : ',
+                '주민등록번호(마스킹)',
+                'guardian_resident_id_masked',
               ),
-              Text(' (만 ', style: _contractBodyStyle),
-              _inputChip(
-                display: _c['minor_age']?.text,
-                worker: true,
-                onTap: () => _openInlineInput('만 나이', 'minor_age'),
+              _guardianLabeledChipRow('주 소 : ', '주소', 'guardian_address',
+                  wideChip: true),
+              _guardianLabeledChipRow(
+                  '연락처 : ', '연락처', 'guardian_phone_number'),
+              _guardianLabeledChipRow(
+                '연소근로자와의 관계 : ',
+                '연소근로자와의 관계',
+                'relation_to_minor_worker',
               ),
-              Text(' 세)', style: _contractBodyStyle),
+              const SizedBox(height: 8),
+              _guardianDocHeading('연소근로자 인적사항'),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 6,
+                  runSpacing: 8,
+                  children: [
+                    Text('성 명 : ', style: _contractBodyStyle),
+                    _inputChip(
+                      display: _c['minor_name']?.text,
+                      tone: _ContractChipTone.worker,
+                      onTap: () =>
+                          _openInlineInput('연소근로자 성명', 'minor_name'),
+                    ),
+                    Text(' (만 ', style: _contractBodyStyle),
+                    _inputChip(
+                      display: _c['minor_age']?.text,
+                      tone: _ContractChipTone.worker,
+                      onTap: () => _openInlineInput('만 나이', 'minor_age'),
+                    ),
+                    Text(' 세)', style: _contractBodyStyle),
+                  ],
+                ),
+              ),
+              _guardianLabeledChipRow(
+                '주민등록번호 : ',
+                '연소근로자 주민등록번호(마스킹)',
+                'minor_resident_id_masked',
+                tone: _ContractChipTone.worker,
+              ),
+              _guardianLabeledChipRow('주 소 : ', '연소근로자 주소', 'minor_address',
+                  tone: _ContractChipTone.worker, wideChip: true),
+              const SizedBox(height: 8),
+              _guardianDocHeading('사업장 개요'),
+              _guardianLabeledChipRow('회사명 : ', '회사명', 'business_name',
+                  tone: _ContractChipTone.mint),
+              _guardianLabeledChipRow('회사주소 : ', '회사주소', 'business_address',
+                  tone: _ContractChipTone.mint, wideChip: true),
+              _guardianLabeledChipRow(
+                  '대표 자 : ',
+                  '대표자',
+                  'business_representative_name',
+                  tone: _ContractChipTone.mint),
+              _guardianLabeledChipRow('회사전화 : ', '회사전화', 'business_phone_number',
+                  tone: _ContractChipTone.mint),
+              const SizedBox(height: 16),
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 6,
+                runSpacing: 8,
+                children: [
+                  Text('본인은 위 연소근로자 ', style: _contractBodyStyle),
+                  _inputChip(
+                    display: _c['consent_minor_name']?.text,
+                    tone: _ContractChipTone.guardian,
+                    onTap: () => _openInlineInput(
+                        '동의문 속 연소근로자명', 'consent_minor_name'),
+                  ),
+                  Text(
+                    ' 가 위 사업장에서 근로를 하는 것에 대하여 동의합니다.',
+                    style: _contractBodyStyle,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Center(
+                child: Builder(
+                  builder: (context) {
+                    final d =
+                        DateTime.tryParse(_c['consent_signed_date']?.text ?? '');
+                    return Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 4,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        _inputChip(
+                          display: d == null ? null : '${d.year}',
+                          tone: _ContractChipTone.guardian,
+                          onTap: _openConsentSignedDateDialog,
+                        ),
+                        Text('년 ', style: _contractBodyStyle),
+                        _inputChip(
+                          display: d == null ? null : '${d.month}',
+                          tone: _ContractChipTone.guardian,
+                          onTap: _openConsentSignedDateDialog,
+                        ),
+                        Text('월 ', style: _contractBodyStyle),
+                        _inputChip(
+                          display: d == null ? null : '${d.day}',
+                          tone: _ContractChipTone.guardian,
+                          onTap: _openConsentSignedDateDialog,
+                        ),
+                        Text('일', style: _contractBodyStyle),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 20),
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 6,
+                runSpacing: 8,
+                children: [
+                  Text('친권자(후견인) ', style: _contractBodyStyle),
+                  _inputChip(
+                    display: _c['guardian_signature_name']?.text,
+                    tone: _ContractChipTone.guardian,
+                    onTap: () => _openInlineInput(
+                        '친권자(후견인) 서명', 'guardian_signature_name'),
+                  ),
+                  Text(' (인)', style: _contractBodyStyle),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text('첨 부 : 가족관계증명서 1부', style: _contractBodyStyle),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _loading ? null : _showSendDialogAndComplete,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.grey0,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    '다음',
+                    style: AppTypography.bodyLargeB.copyWith(
+                      color: AppColors.grey0,
+                      fontSize: 16,
+                      height: 24 / 16,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 16 + bottomInset),
             ],
           ),
-        ),
-        _guardianLabeledChipRow(
-          '주민등록번호 : ',
-          '연소근로자 주민등록번호(마스킹)',
-          'minor_resident_id_masked',
-          worker: true,
-        ),
-        _guardianLabeledChipRow('주 소 : ', '연소근로자 주소', 'minor_address',
-            worker: true, wideChip: true),
-        const SizedBox(height: 8),
-        _guardianDocHeading('사업장 개요'),
-        _guardianLabeledChipRow('회사명 : ', '회사명', 'business_name'),
-        _guardianLabeledChipRow('회사주소 : ', '회사주소', 'business_address',
-            wideChip: true),
-        _guardianLabeledChipRow('대표 자 : ', '대표자', 'business_representative_name'),
-        _guardianLabeledChipRow('회사전화 : ', '회사전화', 'business_phone_number'),
-        const SizedBox(height: 16),
-        Wrap(
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 6,
-          runSpacing: 8,
-          children: [
-            Text('본인은 위 연소근로자 ', style: _contractBodyStyle),
-            _inputChip(
-              display: _c['consent_minor_name']?.text,
-              worker: true,
-              onTap: () =>
-                  _openInlineInput('동의문 속 연소근로자명', 'consent_minor_name'),
-            ),
-            Text(
-              ' 가 위 사업장에서 근로를 하는 것에 대하여 동의합니다.',
-              style: _contractBodyStyle,
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        Center(
-          child: Builder(
-            builder: (context) {
-              final d =
-                  DateTime.tryParse(_c['consent_signed_date']?.text ?? '');
-              return Wrap(
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 4,
-                runSpacing: 8,
-                alignment: WrapAlignment.center,
-                children: [
-                  _inputChip(
-                    display: d == null ? null : '${d.year}',
-                    onTap: _openConsentSignedDateDialog,
-                  ),
-                  Text('년 ', style: _contractBodyStyle),
-                  _inputChip(
-                    display: d == null ? null : '${d.month}',
-                    onTap: _openConsentSignedDateDialog,
-                  ),
-                  Text('월 ', style: _contractBodyStyle),
-                  _inputChip(
-                    display: d == null ? null : '${d.day}',
-                    onTap: _openConsentSignedDateDialog,
-                  ),
-                  Text('일', style: _contractBodyStyle),
-                ],
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 20),
-        Wrap(
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 6,
-          runSpacing: 8,
-          children: [
-            Text('친권자(후견인) ', style: _contractBodyStyle),
-            _inputChip(
-              display: _c['guardian_signature_name']?.text,
-              onTap: () =>
-                  _openInlineInput('친권자(후견인) 서명', 'guardian_signature_name'),
-            ),
-            Text(' (인)', style: _contractBodyStyle),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Wrap(
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 6,
-          runSpacing: 8,
-          children: [
-            Text('첨 부 : 가족관계증명서 1부 ', style: _contractBodyStyle),
-            _inputChip(
-              display: _c['family_relation_certificate_attached']?.text,
-              onTap: () => _openInlineInput(
-                '가족관계증명서(예: 첨부)',
-                'family_relation_certificate_attached',
-              ),
-            ),
-          ],
         ),
       ],
     );
@@ -779,7 +823,7 @@ class _EmploymentContractFormScreenState
     String label,
     String dialogLabel,
     String key, {
-    bool worker = false,
+    _ContractChipTone tone = _ContractChipTone.guardian,
     bool wideChip = false,
   }) {
     return Padding(
@@ -792,10 +836,10 @@ class _EmploymentContractFormScreenState
           Text(label, style: _contractBodyStyle),
           _inputChip(
             display: _c[key]?.text,
-            worker: worker,
+            tone: tone,
             padding: wideChip
-                ? const EdgeInsets.symmetric(horizontal: 12, vertical: 8)
-                : const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                ? _contractChipPaddingWide
+                : _contractChipPadding,
             onTap: () => _openInlineInput(dialogLabel, key),
           ),
         ],
@@ -809,17 +853,26 @@ class _EmploymentContractFormScreenState
         color: AppColors.textTertiary,
       );
 
-  /// Figma: 민트/오렌지 라운드 칩, 비어 있으면 「입력」
+  /// Figma: 민트/오렌지 라운드 칩. 빈 칩: 사업장 「입력」, 연소 「근로자」, 후견 「후견인 입력」
   Widget _inputChip({
     required String? display,
     required VoidCallback onTap,
-    bool worker = false,
-    EdgeInsets padding = const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    _ContractChipTone tone = _ContractChipTone.mint,
+    EdgeInsets padding = _contractChipPadding,
   }) {
     final t = display?.trim() ?? '';
     final empty = t.isEmpty;
-    final bg = worker ? _workerChipBg : _mintChipBg;
-    final fg = worker ? _workerChipFg : AppColors.primary;
+    final String emptyLabel = switch (tone) {
+      _ContractChipTone.mint => '입력',
+      _ContractChipTone.worker => '근로자',
+      _ContractChipTone.guardian => '후견인 입력',
+    };
+    final (Color bg, Color fg) = switch (tone) {
+      _ContractChipTone.mint => (_mintChipBg, AppColors.primary),
+      _ContractChipTone.worker => (_workerChipBg, _workerChipFg),
+      // 후견인·연소 모두 주황 팔레트, 빈 칩 문구만 다름
+      _ContractChipTone.guardian => (_workerChipBg, _workerChipFg),
+    };
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -833,12 +886,12 @@ class _EmploymentContractFormScreenState
             border: Border.all(color: fg.withValues(alpha: 0.45)),
           ),
           child: Text(
-            empty ? '입력' : t,
+            empty ? emptyLabel : t,
             style: _contractFigmaBody.copyWith(
               color: fg,
               fontWeight: FontWeight.w500,
-              fontSize: 13,
-              height: 20 / 13,
+              fontSize: 12,
+              height: 18 / 12,
             ),
           ),
         ),
@@ -1857,38 +1910,75 @@ class _EmploymentContractFormScreenState
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('알림', style: AppTypography.heading3),
-              const SizedBox(height: 14),
+              Text(
+                '알림',
+                textAlign: TextAlign.center,
+                style: AppTypography.bodyLargeM.copyWith(
+                  fontSize: 18,
+                  height: 24 / 18,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 20),
               Text(
                 widget.isGuardian
                     ? '친권자(후견인) 동의서를 완료로 저장하시겠습니까?'
                     : '해당 계약서를 근로자에게 전송하시겠습니까?',
-                style: AppTypography.bodyMediumM.copyWith(fontSize: 14),
+                textAlign: TextAlign.center,
+                style: AppTypography.bodyMediumM.copyWith(
+                  fontSize: 14,
+                  height: 16 / 14,
+                  color: AppColors.textPrimary,
+                ),
               ),
-              const SizedBox(height: 22),
+              const SizedBox(height: 28),
               Row(
                 children: [
                   Expanded(
-                    child: FilledButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.grey25,
-                        foregroundColor: AppColors.textTertiary,
-                        shape: _modalActionButtonShape,
+                    child: SizedBox(
+                      height: 52,
+                      child: FilledButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.grey25,
+                          foregroundColor: AppColors.textTertiary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          '취소',
+                          style: AppTypography.bodyLargeB.copyWith(
+                            color: AppColors.textTertiary,
+                            fontSize: 16,
+                            height: 24 / 16,
+                          ),
+                        ),
                       ),
-                      child: const Text('취소'),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: FilledButton(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.grey0,
-                        shape: _modalActionButtonShape,
+                    child: SizedBox(
+                      height: 52,
+                      child: FilledButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.grey0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          '확인',
+                          style: AppTypography.bodyLargeB.copyWith(
+                            color: AppColors.grey0,
+                            fontSize: 16,
+                            height: 24 / 16,
+                          ),
+                        ),
                       ),
-                      child: const Text('확인'),
                     ),
                   ),
                 ],
@@ -2094,7 +2184,7 @@ class _EmploymentContractFormScreenState
             Text('(이하 "사업주"라 함)과(와) ', style: _contractBodyStyle),
             _inputChip(
               display: _c['worker_name']?.text,
-              worker: true,
+              tone: _ContractChipTone.worker,
               onTap: () => _openInlineInput('근로자명', 'worker_name'),
             ),
             Text('(이하 "근로자"라 함)은', style: _contractBodyStyle),
@@ -2140,8 +2230,7 @@ class _EmploymentContractFormScreenState
               _inputChip(
                 display: _c['work_place']?.text,
                 onTap: () => _openInlineInput('근무 장소', 'work_place'),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: _contractChipPaddingWide,
               ),
             ],
           ),
@@ -2157,8 +2246,7 @@ class _EmploymentContractFormScreenState
               _inputChip(
                 display: _c['job_description']?.text,
                 onTap: () => _openInlineInput('업무 내용', 'job_description'),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: _contractChipPaddingWide,
               ),
             ],
           ),
@@ -2177,10 +2265,7 @@ class _EmploymentContractFormScreenState
                   _inputChip(
                     display: _scheduledWorkTimeChipDisplay(),
                     onTap: _openWorkTimesDialog,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
+                    padding: _contractChipPaddingWide,
                   ),
                   if (breakBody != null) ...[
                     Text(' (휴게시간: ', style: _contractBodyStyle),
@@ -2259,10 +2344,7 @@ class _EmploymentContractFormScreenState
                           display:
                               wageChipText.isEmpty ? null : wageChipText,
                           onTap: _openWageDialog,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
+                          padding: _contractChipPaddingWide,
                         ),
                         Text(' 원', style: _contractBodyStyle),
                       ],
@@ -2498,7 +2580,7 @@ class _EmploymentContractFormScreenState
                     ),
                     _inputChip(
                       display: _c['guardian_consent_submitted']?.text,
-                      worker: true,
+                      tone: _ContractChipTone.worker,
                       onTap: () => _openInlineInput(
                         '친권자 또는 후견인의 동의서 구비 여부',
                         'guardian_consent_submitted',
@@ -2628,7 +2710,7 @@ class _EmploymentContractFormScreenState
             _inputChip(
               display: _c['employer_address']?.text,
               onTap: () => _openInlineInput('사업주 주소', 'employer_address'),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: _contractChipPaddingWide,
             ),
           ],
         ),
@@ -2660,9 +2742,9 @@ class _EmploymentContractFormScreenState
             Text('(근로자) 주 소 : ', style: _contractBodyStyle),
             _inputChip(
               display: _c['worker_address']?.text,
-              worker: true,
+              tone: _ContractChipTone.worker,
               onTap: () => _openInlineInput('근로자 주소', 'worker_address'),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: _contractChipPaddingWide,
             ),
           ],
         ),
@@ -2675,7 +2757,7 @@ class _EmploymentContractFormScreenState
             Text('연락처 : ', style: _contractBodyStyle),
             _inputChip(
               display: _c['worker_phone']?.text,
-              worker: true,
+              tone: _ContractChipTone.worker,
               onTap: () => _openInlineInput('근로자 연락처', 'worker_phone'),
             ),
           ],
@@ -2689,13 +2771,13 @@ class _EmploymentContractFormScreenState
             Text('성 명 : ', style: _contractBodyStyle),
             _inputChip(
               display: _c['worker_name']?.text,
-              worker: true,
+              tone: _ContractChipTone.worker,
               onTap: () => _openInlineInput('근로자 성명', 'worker_name'),
             ),
             Text('(서명)', style: _contractBodyStyle),
             _inputChip(
               display: _c['worker_signature_text']?.text,
-              worker: true,
+              tone: _ContractChipTone.worker,
               onTap: () =>
                   _openInlineInput('근로자 서명', 'worker_signature_text'),
             ),
@@ -2705,8 +2787,21 @@ class _EmploymentContractFormScreenState
     );
   }
 
+  /// 만 나이·연락처·주민등록번호(마스킹) 등 숫자만 받는 필드
+  static const Set<String> _inlineDigitsOnlyKeys = {
+    'minor_age',
+    'guardian_resident_id_masked',
+    'minor_resident_id_masked',
+    'guardian_phone_number',
+    'business_phone_number',
+    'employer_phone',
+    'worker_phone',
+  };
+
   Future<void> _openInlineInput(String label, String key) async {
     final ctrl = TextEditingController(text: _c[key]?.text ?? '');
+    final modalTitle = modalTitleWithoutParenthetical(label);
+    final digitsOnly = _inlineDigitsOnlyKeys.contains(key);
     final val = await showDialog<String>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.55),
@@ -2719,13 +2814,18 @@ class _EmploymentContractFormScreenState
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                label,
+                modalTitle,
                 style: AppTypography.heading3.copyWith(fontSize: 18),
               ),
               const SizedBox(height: 14),
               AuthInputField(
                 controller: ctrl,
                 hintText: '입력해주세요.',
+                keyboardType:
+                    digitsOnly ? TextInputType.number : TextInputType.text,
+                inputFormatters: digitsOnly
+                    ? [FilteringTextInputFormatter.digitsOnly]
+                    : null,
                 fillColor: AppColors.grey25,
                 focusedBorderColor: AppColors.primaryDark,
                 contentPadding: const EdgeInsets.symmetric(
@@ -2775,7 +2875,7 @@ class _EmploymentContractFormScreenState
   Widget build(BuildContext context) {
     if (_bootLoading) {
       return Scaffold(
-        backgroundColor: AppColors.grey0Alt,
+        backgroundColor: AppColors.grey0,
         appBar: AppBar(
           backgroundColor: AppColors.grey0,
           elevation: 0,
@@ -2789,29 +2889,24 @@ class _EmploymentContractFormScreenState
     }
 
     return Scaffold(
-      backgroundColor:
-          widget.isGuardian ? AppColors.grey0Alt : AppColors.grey0,
+      backgroundColor: AppColors.grey0,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(widget.listTitle),
+        title: widget.isGuardian
+            ? Text(
+                '친권자(후견인) 동의서 작성',
+                style: AppTypography.bodyMediumM.copyWith(
+                  fontSize: 14,
+                  height: 16 / 14,
+                  color: AppColors.textPrimary,
+                ),
+              )
+            : Text(widget.listTitle),
         backgroundColor: AppColors.grey0,
         elevation: 0,
-        actions: widget.isGuardian
-            ? [
-                TextButton(
-                  onPressed: _loading ? null : () => _save(completed: false),
-                  child: Text(
-                    '임시저장',
-                    style: AppTypography.bodyMediumM.copyWith(
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-              ]
-            : const [],
       ),
       body: Column(
         children: [
@@ -2819,9 +2914,7 @@ class _EmploymentContractFormScreenState
             Expanded(child: _buildStandardContractBody())
           else
             Expanded(child: _buildGuardianBody()),
-          if (widget.isGuardian)
-            _guardianBottom()
-          else
+          if (!widget.isGuardian)
             SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -2842,25 +2935,6 @@ class _EmploymentContractFormScreenState
               ),
             ),
         ],
-      ),
-    );
-  }
-
-  Widget _guardianBottom() {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        child: SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: FilledButton(
-            onPressed: _loading ? null : () => _save(completed: true),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primary,
-            ),
-            child: const Text('작성 완료'),
-          ),
-        ),
       ),
     );
   }

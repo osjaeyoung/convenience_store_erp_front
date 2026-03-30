@@ -5,7 +5,10 @@ import 'package:printing/printing.dart';
 import '../../../data/repositories/staff_management_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import '../../../widgets/app_styled_confirm_dialog.dart';
+import 'employment_contract_attachment_helpers.dart';
 import 'employment_contract_pdf_export.dart';
+import 'employee_etc_record_inline_preview.dart';
 
 /// 근로계약서 조회 (Figma 2534-18557, 읽기 전용 · 입력값 밑줄 · PDF 다운로드)
 class EmploymentContractDetailScreen extends StatefulWidget {
@@ -139,23 +142,9 @@ class _EmploymentContractDetailScreenState
   }
 
   Future<void> _delete() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('삭제'),
-        content: const Text('이 근로계약서를 삭제할까요?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('취소'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('삭제'),
-          ),
-        ],
-      ),
+    final ok = await showAppStyledDeleteDialog(
+      context,
+      message: '이 근로계약서를 삭제할까요?',
     );
     if (ok != true || !mounted) return;
     try {
@@ -296,7 +285,12 @@ class _EmploymentContractDetailScreenState
   }
 
   Widget _buildContent() {
-    final fv = (_row!['form_values'] as Map?)?.cast<String, dynamic>() ?? {};
+    final row = _row!;
+    if (EmploymentContractAttachmentHelpers.isFileOnlyRegistration(row)) {
+      return _buildFileOnlyContractContent(row);
+    }
+
+    final fv = (row['form_values'] as Map?)?.cast<String, dynamic>() ?? {};
     final tv = _templateVersion();
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
 
@@ -369,6 +363,79 @@ class _EmploymentContractDetailScreenState
                           ),
                         ),
                 ),
+                SizedBox(height: 20 + bottomInset),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 스펙 ##23-1: 제목·첨부만 등록 — 양식 본문 대신 파일 미리보기 (바이트는 ##26-1 스트리밍)
+  Widget _buildFileOnlyContractContent(Map<String, dynamic> row) {
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+    final url = EmploymentContractAttachmentHelpers.primaryFileUrl(row);
+    final name = EmploymentContractAttachmentHelpers.primaryFileName(row);
+    final hasFile = EmploymentContractAttachmentHelpers.hasAttachment(row);
+    final repo = context.read<StaffManagementRepository>();
+    final fid = EmploymentContractAttachmentHelpers.primaryFileId(row);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.fromLTRB(20, 16, 12, 20),
+          decoration: const BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: Color(0xFFF5F5F7)),
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  _documentTitle(),
+                  style: _docHeadingStyle,
+                ),
+              ),
+              IconButton(
+                onPressed: _delete,
+                icon: Image.asset(
+                  'assets/icons/png/common/trash_icon.png',
+                  width: 24,
+                  height: 24,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (hasFile)
+                  EtcRecordInlineFilePreview(
+                    fileUrl: url ?? '',
+                    height: 360,
+                    displayFileName: name ?? _documentTitle(),
+                    loadBytes: () => repo.getEmploymentContractAttachmentBytes(
+                      branchId: widget.branchId,
+                      employeeId: widget.employeeId,
+                      contractId: widget.contractId,
+                      fileId: fid,
+                    ),
+                  )
+                else
+                  Text(
+                    '등록된 첨부가 없습니다. 목록에서 새로고침 후 다시 시도해 주세요.',
+                    style: AppTypography.bodyMediumR.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                 SizedBox(height: 20 + bottomInset),
               ],
             ),
@@ -887,15 +954,7 @@ class _EmploymentContractDetailScreenState
           ],
         ),
         const SizedBox(height: 12),
-        Wrap(
-          crossAxisAlignment: WrapCrossAlignment.end,
-          spacing: 6,
-          runSpacing: 6,
-          children: [
-            Text('첨 부 : 가족관계증명서 1부 ', style: _docBodyStyle),
-            _u(_fv(fv, 'family_relation_certificate_attached')),
-          ],
-        ),
+        Text('첨 부 : 가족관계증명서 1부', style: _docBodyStyle),
       ],
     );
   }

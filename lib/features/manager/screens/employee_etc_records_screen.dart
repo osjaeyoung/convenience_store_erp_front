@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../data/repositories/staff_management_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import 'employee_etc_record_add_screen.dart';
 
 /// 기타자료 목록 (records/etc)
 class EmployeeEtcRecordsScreen extends StatefulWidget {
@@ -59,10 +60,33 @@ class _EmployeeEtcRecordsScreenState extends State<EmployeeEtcRecordsScreen> {
     }
   }
 
+  static String _formatListDate(Map<String, dynamic> r) {
+    final raw =
+        (r['issued_date'] ?? r['created_at'])?.toString().trim() ?? '';
+    if (raw.isEmpty) return '';
+    final d = DateTime.tryParse(raw);
+    if (d == null) return '';
+    final m = d.month.toString().padLeft(2, '0');
+    final day = d.day.toString().padLeft(2, '0');
+    return '${d.year}.$m.$day';
+  }
+
+  Future<void> _openAdd() async {
+    final ok = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => EmployeeEtcRecordAddScreen(
+          branchId: widget.branchId,
+          employeeId: widget.employeeId,
+        ),
+      ),
+    );
+    if (ok == true && mounted) _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.grey0Alt,
+      backgroundColor: AppColors.grey0,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
@@ -71,62 +95,173 @@ class _EmployeeEtcRecordsScreenState extends State<EmployeeEtcRecordsScreen> {
         title: const Text('기타'),
         backgroundColor: AppColors.grey0,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        titleTextStyle: AppTypography.appBarTitle,
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child: Padding(
+      body: RefreshIndicator(
+        onRefresh: _load,
+        child: _loading
+            ? ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: const [
+                  SizedBox(height: 120),
+                  Center(child: CircularProgressIndicator()),
+                ],
+              )
+            : _error != null
+                ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(24),
-                    child: Text(
-                      _error!,
-                      textAlign: TextAlign.center,
-                      style: AppTypography.bodyMediumR.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                )
-              : _items.isEmpty
-                  ? Center(
-                      child: Text(
-                        '등록된 기타 자료가 없습니다.',
+                    children: [
+                      Text(
+                        _error!,
+                        textAlign: TextAlign.center,
                         style: AppTypography.bodyMediumR.copyWith(
                           color: AppColors.textSecondary,
                         ),
                       ),
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      itemCount: _items.length,
-                      separatorBuilder: (_, __) => const Divider(
-                        height: 1,
-                        thickness: 1,
-                        color: AppColors.grey50,
-                      ),
-                      itemBuilder: (context, i) {
-                        final r = _items[i];
-                        final title = r['title']?.toString() ?? '-';
-                        final note = r['note']?.toString();
-                        return ListTile(
-                          title: Text(
-                            title,
-                            style: AppTypography.bodyMediumM.copyWith(
-                              fontSize: 14,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          subtitle: note != null && note.isNotEmpty
-                              ? Text(
-                                  note,
-                                  style: AppTypography.bodySmall.copyWith(
-                                    color: AppColors.textSecondary,
+                    ],
+                  )
+                : _items.isEmpty
+                    ? LayoutBuilder(
+                        builder: (context, constraints) {
+                          return SingleChildScrollView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                minHeight: constraints.maxHeight,
+                              ),
+                              child: Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
                                   ),
-                                )
-                              : null,
-                        );
-                      },
-                    ),
+                                  child: Text(
+                                    '등록된 기타 자료가 없습니다.',
+                                    textAlign: TextAlign.center,
+                                    style: AppTypography.bodyLargeM.copyWith(
+                                      color: AppColors.textTertiary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        itemCount: _items.length,
+                        separatorBuilder: (_, __) => const Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: AppColors.divider,
+                        ),
+                        itemBuilder: (context, i) {
+                          final r = _items[i];
+                          final title = r['title']?.toString() ?? '-';
+                          final dateLine = _formatListDate(r);
+                          return Material(
+                            color: AppColors.grey0,
+                            child: InkWell(
+                              onTap: () async {
+                                final changed =
+                                    await Navigator.of(context).push<bool>(
+                                  MaterialPageRoute<bool>(
+                                    builder: (_) => EmployeeEtcRecordAddScreen(
+                                      branchId: widget.branchId,
+                                      employeeId: widget.employeeId,
+                                      viewRecord: r,
+                                    ),
+                                  ),
+                                );
+                                if (changed == true && mounted) _load();
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 16,
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            title,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: AppTypography.bodyMediumM
+                                                .copyWith(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w600,
+                                              height: 22 / 15,
+                                              color: AppColors.textPrimary,
+                                            ),
+                                          ),
+                                          if (dateLine.isNotEmpty) ...[
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              '작성일 $dateLine',
+                                              style: AppTypography.bodySmall
+                                                  .copyWith(
+                                                fontSize: 13,
+                                                height: 18 / 13,
+                                                color: AppColors.textSecondary,
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.chevron_right_rounded,
+                                      color: AppColors.textTertiary,
+                                      size: 22,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+      ),
+      bottomNavigationBar: Material(
+        color: AppColors.grey0,
+        child: SafeArea(
+          minimum: const EdgeInsets.only(bottom: 8),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+            child: SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: FilledButton(
+                onPressed: _openAdd,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.grey0,
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text(
+                  '추가하기',
+                  style: AppTypography.bodyMediumB.copyWith(
+                    color: AppColors.grey0,
+                    fontSize: 16,
+                    height: 24 / 16,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

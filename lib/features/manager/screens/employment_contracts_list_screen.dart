@@ -5,6 +5,7 @@ import '../../../data/repositories/staff_management_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import 'employment_contract_add_method_screen.dart';
+import 'employment_contract_attachment_helpers.dart';
 import 'employment_contract_detail_screen.dart';
 
 /// 근로계약서 목록 (템플릿별 필터 + 추가하기 + 상세)
@@ -46,8 +47,11 @@ class _EmploymentContractsListScreenState
 
   static String _listSubtitle(Map<String, dynamic> c) {
     final status = c['status']?.toString();
-    if (status == 'completed') {
-      final at = c['finalized_at'] ?? c['updated_at'];
+    final fileOnly =
+        EmploymentContractAttachmentHelpers.isFileOnlyRegistration(c);
+    if (status == 'completed' || fileOnly) {
+      final at =
+          c['finalized_at'] ?? c['updated_at'] ?? c['created_at'];
       return '완료일 ${_formatYmd(at)}';
     }
     final at = c['updated_at'];
@@ -125,6 +129,12 @@ class _EmploymentContractsListScreenState
     if (changed == true && mounted) _load();
   }
 
+  bool get _isGuardianList => widget.templateVersion == 'guardian_consent_v1';
+
+  String get _emptyMessage => _isGuardianList
+      ? '등록된 친권자(후견인) 동의서가 없습니다'
+      : '등록된 근로계약서가 없습니다.';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -138,162 +148,163 @@ class _EmploymentContractsListScreenState
         backgroundColor: AppColors.grey0,
         elevation: 0,
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _load,
-              child: _loading
-                  ? ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: const [
-                        SizedBox(height: 120),
-                        Center(child: CircularProgressIndicator()),
-                      ],
-                    )
-                  : _error != null
-                      ? ListView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.all(24),
-                          children: [
-                            Text(
-                              _error!,
-                              textAlign: TextAlign.center,
-                              style: AppTypography.bodyMediumR.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        )
-                      : _items.isEmpty
-                          ? CustomScrollView(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              slivers: [
-                                SliverFillRemaining(
-                                  hasScrollBody: false,
-                                  child: ColoredBox(
-                                    color: AppColors.grey0,
-                                    child: Center(
-                                      child: Text(
-                                        '등록된 근로계약서가 없습니다.',
-                                        textAlign: TextAlign.center,
-                                        style: AppTypography.bodyLargeM
-                                            .copyWith(
-                                          color: AppColors.textTertiary,
-                                          height: 20 / 16,
-                                        ),
-                                      ),
-                                    ),
+      body: RefreshIndicator(
+        onRefresh: _load,
+        child: _loading
+            ? ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: const [
+                  SizedBox(height: 120),
+                  Center(child: CircularProgressIndicator()),
+                ],
+              )
+            : _error != null
+                ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(24),
+                    children: [
+                      Text(
+                        _error!,
+                        textAlign: TextAlign.center,
+                        style: AppTypography.bodyMediumR.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  )
+                : _items.isEmpty
+                    ? CustomScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        slivers: [
+                          SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: ColoredBox(
+                              color: AppColors.grey0,
+                              child: Center(
+                                child: Text(
+                                  _emptyMessage,
+                                  textAlign: TextAlign.center,
+                                  style: AppTypography.bodyLargeM.copyWith(
+                                    color: AppColors.textTertiary,
+                                    height: 20 / 16,
                                   ),
                                 ),
-                              ],
-                            )
-                          : ListView.separated(
-                              padding:
-                                  const EdgeInsets.fromLTRB(0, 0, 0, 100),
-                              itemCount: _items.length,
-                              separatorBuilder: (_, __) => const Divider(
-                                height: 1,
-                                thickness: 1,
-                                color: AppColors.divider,
                               ),
-                              itemBuilder: (context, i) {
-                                final c = _items[i];
-                                final title = c['title']?.toString() ?? '-';
-                                final status = c['status']?.toString() ?? '';
-                                final completed = status == 'completed';
-                                return Material(
-                                  color: AppColors.grey0,
-                                  child: InkWell(
-                                    onTap: () => _openDetail(c),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 20,
-                                        vertical: 16,
-                                      ),
-                                      child: Row(
+                            ),
+                          ),
+                        ],
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        itemCount: _items.length,
+                        separatorBuilder: (_, __) => const Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: AppColors.divider,
+                        ),
+                        itemBuilder: (context, i) {
+                          final c = _items[i];
+                          final title = c['title']?.toString() ?? '-';
+                          final status = c['status']?.toString() ?? '';
+                          final completed = status == 'completed' ||
+                              EmploymentContractAttachmentHelpers
+                                  .isFileOnlyRegistration(c);
+                          return Material(
+                            color: AppColors.grey0,
+                            child: InkWell(
+                              onTap: () => _openDetail(c),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 16,
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
                                         crossAxisAlignment:
-                                            CrossAxisAlignment.center,
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  title,
-                                                  maxLines: 2,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: AppTypography
-                                                      .bodyMediumM
-                                                      .copyWith(
-                                                    fontSize: 15,
-                                                    fontWeight: FontWeight.w600,
-                                                    height: 22 / 15,
-                                                    color:
-                                                        AppColors.textPrimary,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  _listSubtitle(c),
-                                                  style: AppTypography
-                                                      .bodySmall
-                                                      .copyWith(
-                                                    fontSize: 13,
-                                                    height: 18 / 13,
-                                                    color: AppColors
-                                                        .textSecondary,
-                                                  ),
-                                                ),
-                                              ],
+                                          Text(
+                                            title,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: AppTypography.bodyMediumM
+                                                .copyWith(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w600,
+                                              height: 22 / 15,
+                                              color: AppColors.textPrimary,
                                             ),
                                           ),
-                                          const SizedBox(width: 12),
-                                          _ContractStatusChip(
-                                              completed: completed),
-                                          const SizedBox(width: 4),
-                                          Icon(
-                                            Icons.chevron_right_rounded,
-                                            color: AppColors.textTertiary,
-                                            size: 22,
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            _listSubtitle(c),
+                                            style:
+                                                AppTypography.bodySmall.copyWith(
+                                              fontSize: 13,
+                                              height: 18 / 13,
+                                              color: AppColors.textSecondary,
+                                            ),
                                           ),
                                         ],
                                       ),
                                     ),
-                                  ),
-                                );
-                              },
+                                    const SizedBox(width: 12),
+                                    _ContractStatusChip(completed: completed),
+                                    const SizedBox(width: 4),
+                                    Icon(
+                                      Icons.chevron_right_rounded,
+                                      color: AppColors.textTertiary,
+                                      size: 22,
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
+                          );
+                        },
+                      ),
+      ),
+      bottomNavigationBar: Material(
+        color: AppColors.grey0,
+        child: SafeArea(
+          minimum: const EdgeInsets.only(bottom: 8),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              _isGuardianList ? 20 : 16,
+              8,
+              _isGuardianList ? 20 : 16,
+              16,
             ),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton(
-                  onPressed: _openAdd,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: FilledButton(
+                onPressed: _openAdd,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.grey0,
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      _isGuardianList ? 8 : 12,
                     ),
                   ),
-                  child: Text(
-                    '추가하기',
-                    style: AppTypography.bodyMediumB.copyWith(
-                      color: AppColors.grey0,
-                      fontSize: 16,
-                    ),
+                ),
+                child: Text(
+                  '추가하기',
+                  style: AppTypography.bodyMediumB.copyWith(
+                    color: AppColors.grey0,
+                    fontSize: 16,
+                    height: 24 / 16,
                   ),
                 ),
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }

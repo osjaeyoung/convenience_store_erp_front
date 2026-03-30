@@ -29,9 +29,10 @@ class MonthlyLaborDetail {
       totalEmployeeCount: json['total_employee_count'] as int,
       totalWorkMinutes: json['total_work_minutes'] as int,
       totalCost: json['total_cost'] as int,
-      employees: (json['employees'] as List<dynamic>)
-          .map((e) => EmployeeLaborDetail.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      employees: (json['employees'] as List<dynamic>?)
+              ?.map((e) => EmployeeLaborDetail.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 }
