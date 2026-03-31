@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../features/auth/widgets/auth_input_field.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// Figma 저장 형태 모달 — 제목 / 양식명 입력 / 닫기·저장
 Future<String?> showFileFormNameSaveDialog(
@@ -49,11 +50,11 @@ class _FileFormNameSaveDialogState extends State<_FileFormNameSaveDialog> {
       backgroundColor: AppColors.grey0,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
       ),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+      insetPadding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+        padding: EdgeInsets.fromLTRB(16.w, 24.h, 16.w, 16.h),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -62,21 +63,21 @@ class _FileFormNameSaveDialogState extends State<_FileFormNameSaveDialog> {
               '제목',
               textAlign: TextAlign.center,
               style: AppTypography.bodyLargeM.copyWith(
-                fontSize: 18,
+                fontSize: 18.sp,
                 height: 24 / 18,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
             Text(
               '양식명',
               style: AppTypography.bodyMediumM.copyWith(
-                fontSize: 14,
+                fontSize: 14.sp,
                 height: 16 / 14,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             AuthInputField(
               controller: _ctrl,
               hintText: '입력해주세요.',
@@ -84,14 +85,14 @@ class _FileFormNameSaveDialogState extends State<_FileFormNameSaveDialog> {
               maxLines: 5,
               fillColor: AppColors.grey0Alt,
               hintStyle: AppTypography.bodyMediumR.copyWith(
-                fontSize: 14,
+                fontSize: 14.sp,
                 height: 19 / 14,
                 color: AppColors.grey100,
               ),
               focusedBorderColor: AppColors.primaryDark,
-              contentPadding: const EdgeInsets.all(16),
+              contentPadding: EdgeInsets.all(16.r),
             ),
-            const SizedBox(height: 36),
+            SizedBox(height: 36.h),
             Row(
               children: [
                 Expanded(
@@ -104,21 +105,21 @@ class _FileFormNameSaveDialogState extends State<_FileFormNameSaveDialog> {
                         foregroundColor: AppColors.textTertiary,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(12.r),
                         ),
                       ),
                       child: Text(
                         '닫기',
                         style: AppTypography.bodyLargeB.copyWith(
                           color: AppColors.textTertiary,
-                          fontSize: 16,
+                          fontSize: 16.sp,
                           height: 24 / 16,
                         ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16.w),
                 Expanded(
                   child: SizedBox(
                     height: 52,
@@ -140,14 +141,14 @@ class _FileFormNameSaveDialogState extends State<_FileFormNameSaveDialog> {
                         foregroundColor: AppColors.grey0,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(12.r),
                         ),
                       ),
                       child: Text(
                         '저장',
                         style: AppTypography.bodyLargeB.copyWith(
                           color: AppColors.grey0,
-                          fontSize: 16,
+                          fontSize: 16.sp,
                           height: 24 / 16,
                         ),
                       ),

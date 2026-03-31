@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class AuthInputField extends StatelessWidget {
   const AuthInputField({
@@ -86,7 +87,7 @@ class AuthInputField extends StatelessWidget {
         filled: true,
         fillColor: fillColor ?? AppColors.grey0Alt,
         contentPadding:
-            contentPadding ?? const EdgeInsets.all(16),
+            contentPadding ?? EdgeInsets.all(16.r),
         suffixText: suffixText,
         suffixStyle: AppTypography.bodyMediumR.copyWith(
           color: AppColors.textSecondary,
@@ -96,7 +97,7 @@ class AuthInputField extends StatelessWidget {
             (prefixIconPath == null
                 ? null
                 : Padding(
-                    padding: const EdgeInsets.all(14),
+                    padding: EdgeInsets.all(14.r),
                     child: Image.asset(prefixIconPath!, width: 18, height: 18),
                   )),
         prefixIconConstraints:
@@ -105,19 +106,19 @@ class AuthInputField extends StatelessWidget {
                 : const BoxConstraints(minWidth: 52),
         suffixIcon: suffix,
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
           borderSide: const BorderSide(color: AppColors.grey50),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
           borderSide: BorderSide(color: focusedBorderColor),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
           borderSide: const BorderSide(color: _errorColor),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
           borderSide: const BorderSide(color: _errorColor),
         ),
         errorMaxLines: 2,

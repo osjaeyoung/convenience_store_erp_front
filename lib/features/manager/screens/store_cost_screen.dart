@@ -14,6 +14,7 @@ import '../bloc/store_expense_bloc.dart';
 import '../widgets/home_common_app_bar.dart';
 import 'store_expense_add_item_screen.dart';
 import 'store_expense_add_month_screen.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 매장·비용 화면 (월간 표시 / 월별 점내 비용 내역)
 class StoreCostScreen extends StatefulWidget {
@@ -282,7 +283,7 @@ class _StoreExpenseTopTabs extends StatelessWidget {
         isScrollable: true,
         tabAlignment: TabAlignment.start,
         padding: EdgeInsets.zero,
-        labelPadding: const EdgeInsets.symmetric(horizontal: 12),
+        labelPadding: EdgeInsets.symmetric(horizontal: 12.w),
         dividerColor: AppColors.grey25,
         dividerHeight: 1,
         indicatorColor: AppColors.textPrimary,
@@ -346,7 +347,7 @@ class _DashboardTab extends StatelessWidget {
                 );
           },
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 24.h),
             children: [
               Row(
                 children: [
@@ -355,51 +356,51 @@ class _DashboardTab extends StatelessWidget {
                     width: 88,
                     onTap: () => _pickYear(context),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8.w),
                   Text(
                     '년',
                     style: AppTypography.bodyMediumR.copyWith(
-                      fontSize: 14,
+                      fontSize: 14.sp,
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16.w),
                   _YearMonthDrop(
                     text: '$month',
                     width: 66,
                     onTap: () => _pickMonth(context),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8.w),
                   Text(
                     '월',
                     style: AppTypography.bodyMediumR.copyWith(
-                      fontSize: 14,
+                      fontSize: 14.sp,
                       color: AppColors.textPrimary,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12.h),
               Row(
                 children: [
                   const _DashboardMoneyIcon(),
-                  const SizedBox(width: 2),
+                  SizedBox(width: 2.w),
                   Text(
                     '${d.month}월 ${d.baseDay}일 기준 예상 점내 비용',
                     style: AppTypography.bodyLargeM.copyWith(
-                      fontSize: 16,
+                      fontSize: 16.sp,
                       height: 20 / 16,
                       color: AppColors.textPrimary,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12.h),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20.r),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(16.r),
                   gradient: const LinearGradient(
                     begin: Alignment(-0.35, 0.2),
                     end: Alignment(1, 1),
@@ -419,17 +420,17 @@ class _DashboardTab extends StatelessWidget {
                     Text(
                       '총 ${_StoreCostScreenState.won(d.currentMonthToDateTotal).replaceAll('원', ' 원')}',
                       style: AppTypography.heading1.copyWith(
-                        fontSize: 24,
+                        fontSize: 24.sp,
                         fontWeight: FontWeight.w400,
                         height: 32 / 24,
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6.h),
                     Text.rich(
                       TextSpan(
                         style: AppTypography.bodyMediumM.copyWith(
-                          fontSize: 14,
+                          fontSize: 14.sp,
                           height: 16 / 14,
                           color: AppColors.textSecondary,
                         ),
@@ -443,7 +444,7 @@ class _DashboardTab extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16.h),
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -459,9 +460,9 @@ class _DashboardTab extends StatelessWidget {
                   return Container(
                     decoration: BoxDecoration(
                       color: AppColors.grey0Alt,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(16.r),
                     ),
-                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
+                    padding: EdgeInsets.fromLTRB(12.w, 12.h, 12.w, 16.h),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -469,27 +470,27 @@ class _DashboardTab extends StatelessWidget {
                           c.categoryLabel,
                           textAlign: TextAlign.center,
                           style: AppTypography.bodySmallM.copyWith(
-                            fontSize: 12,
+                            fontSize: 12.sp,
                             height: 16 / 12,
                             color: AppColors.textTertiary,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4.h),
                         Text(
                           _compactAmountLabel(c.monthAmount),
                           textAlign: TextAlign.center,
                           style: AppTypography.bodyLargeM.copyWith(
-                            fontSize: 16,
+                            fontSize: 16.sp,
                             height: 20 / 16,
                             color: AppColors.textPrimary,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        SizedBox(height: 2.h),
                         Text(
                           c.summaryLabel ?? '${c.transactionCount}회',
                           textAlign: TextAlign.center,
                           style: AppTypography.bodyMediumR.copyWith(
-                            fontSize: 14,
+                            fontSize: 14.sp,
                             height: 19 / 14,
                             color: AppColors.textTertiary,
                           ),
@@ -499,7 +500,7 @@ class _DashboardTab extends StatelessWidget {
                   );
                 },
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16.h),
               _ExpenseCalendar(dashboard: d),
             ],
           ),
@@ -568,14 +569,14 @@ class _YearMonthDrop extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(10.r),
       child: Container(
         width: width,
         height: 42,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: EdgeInsets.symmetric(horizontal: 12.w),
         decoration: BoxDecoration(
           color: AppColors.grey0,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(10.r),
           border: Border.all(color: AppColors.grey50),
         ),
         child: Row(
@@ -584,7 +585,7 @@ class _YearMonthDrop extends StatelessWidget {
               child: Text(
                 text,
                 style: AppTypography.bodyMediumR.copyWith(
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   height: 19 / 14,
                   color: AppColors.textPrimary,
                 ),
@@ -636,27 +637,27 @@ class _MonthlyExpenseTab extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: onRefresh,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 24.h),
         children: [
           InkWell(
             onTap: onAddMonth,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(12.r),
             child: Container(
               height: 96,
               decoration: BoxDecoration(
                 color: AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12.r),
                 border: Border.all(color: AppColors.primary),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.add_circle, color: AppColors.primary, size: 28),
-                  const SizedBox(height: 8),
+                  Icon(Icons.add_circle, color: AppColors.primary, size: 28),
+                  SizedBox(height: 8.h),
                   Text(
                     '월별 점내 비용 추가',
                     style: AppTypography.bodyMediumB.copyWith(
-                      fontSize: 14,
+                      fontSize: 14.sp,
                       height: 16 / 14,
                       color: AppColors.primary,
                     ),
@@ -665,7 +666,7 @@ class _MonthlyExpenseTab extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20.h),
           for (final month in months) ...[
             _MonthExpenseCard(
               month: month,
@@ -674,14 +675,14 @@ class _MonthlyExpenseTab extends StatelessWidget {
               onEdit: () => onEditMonth(month),
               onDelete: () => onDeleteMonth(month.expenseMonthId),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20.h),
           ],
           if (months.isEmpty)
             Container(
-              padding: const EdgeInsets.all(28),
+              padding: EdgeInsets.all(28.r),
               decoration: BoxDecoration(
                 color: AppColors.grey0Alt,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12.r),
               ),
               child: Text(
                 '생성된 월별 점내 비용이 없습니다.',
@@ -719,7 +720,7 @@ class _MonthExpenseCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: AppColors.grey0,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: AppColors.grey50),
       ),
       child: Column(
@@ -727,11 +728,11 @@ class _MonthExpenseCard extends StatelessWidget {
           Row(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 0, 12),
+                padding: EdgeInsets.fromLTRB(16.w, 12.h, 0.w, 12.h),
                 child: Text(
                   month.periodLabel,
                   style: AppTypography.bodyLargeB.copyWith(
-                    fontSize: 16,
+                    fontSize: 16.sp,
                     height: 24 / 16,
                     color: AppColors.textPrimary,
                   ),
@@ -739,14 +740,14 @@ class _MonthExpenseCard extends StatelessWidget {
               ),
               const Spacer(),
               Padding(
-                padding: const EdgeInsets.only(right: 16),
+                padding: EdgeInsets.only(right: 16.w),
                 child: Row(
                   children: [
                     InkWell(
                       onTap: onEdit,
-                      borderRadius: BorderRadius.circular(12),
-                      child: const Padding(
-                        padding: EdgeInsets.all(2),
+                      borderRadius: BorderRadius.circular(12.r),
+                      child: Padding(
+                        padding: EdgeInsets.all(2.r),
                         child: Icon(
                           Icons.edit_outlined,
                           size: 24,
@@ -754,12 +755,12 @@ class _MonthExpenseCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12.w),
                     InkWell(
                       onTap: onDelete,
-                      borderRadius: BorderRadius.circular(12),
-                      child: const Padding(
-                        padding: EdgeInsets.all(2),
+                      borderRadius: BorderRadius.circular(12.r),
+                      child: Padding(
+                        padding: EdgeInsets.all(2.r),
                         child: Icon(
                           Icons.delete_outline_rounded,
                           size: 24,
@@ -775,30 +776,30 @@ class _MonthExpenseCard extends StatelessWidget {
           Container(
             width: double.infinity,
             color: AppColors.grey0Alt,
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+            padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 16.h),
             child: Column(
               children: [
                 InkWell(
                   onTap: onAddItem,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(12.r),
                   child: Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(16.r),
                     decoration: BoxDecoration(
                       color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12.r),
                       border: Border.all(color: AppColors.primary),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.add_circle, size: 16, color: AppColors.primary),
-                        const SizedBox(width: 8),
+                        Icon(Icons.add_circle, size: 16, color: AppColors.primary),
+                        SizedBox(width: 8.w),
                         Text(
                           '항목 추가',
                           style: AppTypography.bodyMediumB.copyWith(
-                            fontSize: 14,
+                            fontSize: 14.sp,
                             height: 16 / 14,
                             color: AppColors.primary,
                           ),
@@ -808,12 +809,12 @@ class _MonthExpenseCard extends StatelessWidget {
                   ),
                 ),
                 for (final item in items) ...[
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8.h),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
                     decoration: BoxDecoration(
                       color: AppColors.grey0,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12.r),
                       border: Border.all(color: AppColors.grey25),
                     ),
                     child: Row(
@@ -821,7 +822,7 @@ class _MonthExpenseCard extends StatelessWidget {
                         Text(
                           _toMmDd(item.expenseDate),
                           style: AppTypography.bodyMediumR.copyWith(
-                            fontSize: 14,
+                            fontSize: 14.sp,
                             height: 19 / 14,
                           color: AppColors.textSecondary,
                           ),
@@ -834,11 +835,11 @@ class _MonthExpenseCard extends StatelessWidget {
                               label: item.categoryLabel,
                               categoryCode: item.categoryCode,
                             ),
-                            const SizedBox(width: 12),
+                            SizedBox(width: 12.w),
                             Text(
                               _StoreCostScreenState.won(item.amount),
                               style: AppTypography.bodyMediumR.copyWith(
-                                fontSize: 14,
+                                fontSize: 14.sp,
                                 height: 19 / 14,
                                 color: AppColors.textPrimary,
                               ),
@@ -853,13 +854,13 @@ class _MonthExpenseCard extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16.r),
             child: Row(
               children: [
                 Text(
                   '합계',
                   style: AppTypography.bodyMediumM.copyWith(
-                    fontSize: 14,
+                    fontSize: 14.sp,
                     height: 16 / 14,
                     color: AppColors.textTertiary,
                   ),
@@ -868,7 +869,7 @@ class _MonthExpenseCard extends StatelessWidget {
                 Text(
                   _wonWithoutSuffix(detail?.totalAmount ?? month.totalAmount),
                   style: AppTypography.bodyLargeB.copyWith(
-                    fontSize: 16,
+                    fontSize: 16.sp,
                     height: 24 / 16,
                     color: AppColors.textPrimary,
                   ),
@@ -903,15 +904,15 @@ class _CategoryChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = _categoryColor(categoryCode);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(5),
+        borderRadius: BorderRadius.circular(5.r),
       ),
       child: Text(
         label,
         style: AppTypography.bodySmallM.copyWith(
-          fontSize: 12,
+          fontSize: 12.sp,
           color: AppColors.grey0,
         ),
       ),
@@ -956,8 +957,8 @@ class _ExpenseCalendar extends StatelessWidget {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: const BoxDecoration(
+          padding: EdgeInsets.symmetric(vertical: 10.h),
+          decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: AppColors.grey25),
             ),
@@ -970,7 +971,7 @@ class _ExpenseCalendar extends StatelessWidget {
                     child: Text(
                       week[i],
                       style: AppTypography.bodyMediumR.copyWith(
-                        fontSize: 14,
+                        fontSize: 14.sp,
                         height: 20 / 14,
                         color: i == 0
                             ? const Color(0xFFFF4834)
@@ -984,7 +985,7 @@ class _ExpenseCalendar extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: 10.h),
         Column(
           children: [
             for (var weekIndex = 0; weekIndex < totalCells ~/ 7; weekIndex++)
@@ -1033,18 +1034,18 @@ class _ExpenseCalendar extends StatelessWidget {
                                         child: Text(
                                           label.padLeft(2, '0'),
                                           style: AppTypography.bodySmallR.copyWith(
-                                            fontSize: 12,
+                                            fontSize: 12.sp,
                                             height: 18 / 12,
                                             color: dayColor,
                                           ),
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(height: 5),
+                                    SizedBox(height: 5.h),
                                     if (expense != null && expense.items.isNotEmpty)
                                       ...expense.items.take(2).map(
                                             (it) => Padding(
-                                              padding: const EdgeInsets.only(bottom: 5),
+                                              padding: EdgeInsets.only(bottom: 5.h),
                                               child: _CalendarExpenseBadge(item: it),
                                             ),
                                           ),
@@ -1080,7 +1081,7 @@ class _DashboardMoneyIcon extends StatelessWidget {
     return Container(
       width: 16,
       height: 16,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.textPrimary,
         shape: BoxShape.circle,
       ),
@@ -1088,7 +1089,7 @@ class _DashboardMoneyIcon extends StatelessWidget {
       child: Text(
         '\$',
         style: AppTypography.bodyXSmallM.copyWith(
-          fontSize: 10,
+          fontSize: 10.sp,
           height: 16 / 10,
           color: AppColors.grey0,
         ),
@@ -1105,7 +1106,7 @@ class _CalendarExpenseBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: BorderRadius.circular(4.r),
       child: SizedBox(
         width: 43,
         child: Column(
@@ -1119,7 +1120,7 @@ class _CalendarExpenseBadge extends StatelessWidget {
               child: Text(
                 item.categoryLabel,
                 style: AppTypography.bodyXSmallM.copyWith(
-                  fontSize: 10,
+                  fontSize: 10.sp,
                   height: 16 / 10,
                   color: AppColors.grey0,
                 ),
@@ -1128,12 +1129,12 @@ class _CalendarExpenseBadge extends StatelessWidget {
             Container(
               width: double.infinity,
               color: AppColors.grey25,
-              padding: const EdgeInsets.fromLTRB(2, 2, 2, 4),
+              padding: EdgeInsets.fromLTRB(2.w, 2.h, 2.w, 4.h),
               alignment: Alignment.center,
               child: Text(
                 _compactAmountLabel(item.amount),
                 style: AppTypography.bodyXSmallM.copyWith(
-                  fontSize: 10,
+                  fontSize: 10.sp,
                   height: 16 / 10,
                   color: AppColors.textSecondary,
                 ),
@@ -1182,7 +1183,7 @@ class _ErrorRetryView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24.r),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1193,7 +1194,7 @@ class _ErrorRetryView extends StatelessWidget {
                 color: AppColors.textSecondary,
               ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16.h),
             FilledButton(
                         onPressed: () {
                 final branchId = context.read<SelectedBranchCubit>().state;

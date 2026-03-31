@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../theme/app_colors.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class AccountFigmaStyles {
   AccountFigmaStyles._();
@@ -11,58 +12,58 @@ class AccountFigmaStyles {
   static const Color mutedValueColor = Color(0xFFC7C9D7);
   static const Color footerMutedColor = Color(0xFFA3A4AF);
 
-  static const TextStyle appBarTitle = TextStyle(
+  static TextStyle get appBarTitle => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 18,
+    fontSize: 18.sp,
     fontWeight: FontWeight.w600,
     height: 26 / 18,
     letterSpacing: -0.3,
     color: titleColor,
   );
 
-  static const TextStyle rowTitle = TextStyle(
+  static TextStyle get rowTitle => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 14,
+    fontSize: 14.sp,
     fontWeight: FontWeight.w500,
     height: 20 / 14,
     color: rowLabelColor,
   );
 
-  static const TextStyle footerAction = TextStyle(
+  static TextStyle get footerAction => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 14,
+    fontSize: 14.sp,
     fontWeight: FontWeight.w600,
     height: 16 / 14,
     color: footerMutedColor,
   );
 
-  static const TextStyle fieldCaption = TextStyle(
+  static TextStyle get fieldCaption => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 12,
+    fontSize: 12.sp,
     fontWeight: FontWeight.w500,
     height: 16 / 12,
     color: fieldLabelColor,
   );
 
-  static const TextStyle fieldValue = TextStyle(
+  static TextStyle get fieldValue => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 14,
+    fontSize: 14.sp,
     fontWeight: FontWeight.w400,
     height: 20 / 14,
     color: titleColor,
   );
 
-  static const TextStyle fieldValueMuted = TextStyle(
+  static TextStyle get fieldValueMuted => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 14,
+    fontSize: 14.sp,
     fontWeight: FontWeight.w400,
     height: 20 / 14,
     color: mutedValueColor,
   );
 
-  static const TextStyle verifyHeadline = TextStyle(
+  static TextStyle get verifyHeadline => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 24,
+    fontSize: 24.sp,
     fontWeight: FontWeight.w400,
     height: 32 / 24,
     color: titleColor,
@@ -77,18 +78,18 @@ class AccountFigmaStyles {
   }
 
   /// Figma: 민트 작은 액션 (변경 / 전송 등), 높이 24, radius 4, 12 Semibold (최소 가로 43)
-  static ButtonStyle mintSmallActionStyle = TextButton.styleFrom(
-    backgroundColor: AppColors.primary,
-    foregroundColor: AppColors.grey0,
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-    minimumSize: const Size(43, 24),
-    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-  );
+  static ButtonStyle get mintSmallActionStyle => TextButton.styleFrom(
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.grey0,
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 0.h),
+        minimumSize: Size(43.w, 24.h),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.r)),
+      );
 
-  static const TextStyle mintSmallActionLabel = TextStyle(
+  static TextStyle get mintSmallActionLabel => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 12,
+    fontSize: 12.sp,
     fontWeight: FontWeight.w600,
     height: 1,
     color: AppColors.grey0,
@@ -104,7 +105,7 @@ PreferredSizeWidget accountFigmaAppBar({
     toolbarHeight: 60,
     leadingWidth: 48,
     leading: IconButton(
-      padding: const EdgeInsets.only(left: 20),
+      padding: EdgeInsets.only(left: 20.w),
       icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
       color: AccountFigmaStyles.titleColor,
       onPressed: () => Navigator.of(context).pop(),

@@ -12,6 +12,7 @@ import '../../../theme/app_typography.dart';
 import '../bloc/auth_bloc.dart';
 import '../widgets/auth_input_field.dart';
 import '../widgets/mint_add_button.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 회원가입 2차 - 역할별 추가 정보
 /// 경영주: 지점명, 점장: 지점 검색/선택 또는 사전등록, 근무자: 없음
@@ -105,7 +106,7 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
           backgroundColor: AppColors.grey0,
           appBar: AppBar(
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded),
+              icon: Icon(Icons.arrow_back_ios_new_rounded),
               onPressed: () => context.pop(),
             ),
             title: Text(widget.role == UserRole.manager ? '사업주 회원가입' : '회원가입'),
@@ -124,7 +125,7 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 _buildHeader(),
-                                const SizedBox(height: 28),
+                                SizedBox(height: 28.h),
                                 _buildRoleFields(),
                               ],
                             ),
@@ -132,20 +133,20 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(
+                        padding: EdgeInsets.fromLTRB(
                           AppSpacing.xl,
-                          8,
+                          8.h,
                           AppSpacing.xl,
-                          20,
+                          20.h,
                         ),
                         child: FilledButton(
                           onPressed:
                               state.status == AuthStatus.loading ? null : _onSubmit,
                           style: FilledButton.styleFrom(
-                            minimumSize: const Size.fromHeight(56),
+                            minimumSize: Size.fromHeight(56.h),
                             backgroundColor: AppColors.primary,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(12.r),
                             ),
                           ),
                           child: Text(
@@ -168,9 +169,9 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
     if (widget.role == UserRole.manager) {
       return Text.rich(
         TextSpan(
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'Pretendard',
-            fontSize: 24,
+            fontSize: 24.sp,
             fontWeight: FontWeight.w400,
             height: 32 / 24,
             color: AppColors.textPrimary,
@@ -190,9 +191,9 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
     if (widget.role == UserRole.storeManager) {
       return Text(
         '점장 회원가입을 위해\n지점을 등록해주세요.',
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: 'Pretendard',
-          fontSize: 24,
+          fontSize: 24.sp,
           fontWeight: FontWeight.w400,
           height: 32 / 24,
           color: AppColors.textPrimary,
@@ -213,7 +214,7 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             ..._buildOwnerBranchFields(),
-            const SizedBox(height: 20),
+            SizedBox(height: 20.h),
             MintAddButton(
               onPressed: () {
                 setState(() {
@@ -233,7 +234,7 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
               hintText: '회사를 검색해주세요.',
               focusedBorderColor: AppColors.primary,
               prefixIconWidget: Padding(
-                padding: const EdgeInsets.all(14),
+                padding: EdgeInsets.all(14.r),
                 child: SvgPicture.asset(
                   'assets/icons/svg/icon/search_mint_20.svg',
                   width: 20,
@@ -248,7 +249,7 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                 }
               },
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10.h),
             BlocBuilder<AuthBloc, AuthState>(
               buildWhen: (a, b) =>
                   b.status == AuthStatus.branchesLoaded ||
@@ -257,7 +258,7 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                 return Container(
                   constraints: const BoxConstraints(minHeight: 64),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12.r),
                     border: Border.all(color: AppColors.grey50),
                     color: AppColors.grey0Alt,
                   ),
@@ -285,11 +286,11 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                 );
               },
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20.h),
             const MintAddButton(),
             if (_selectedBranch != null)
               Padding(
-                padding: const EdgeInsets.only(top: 8),
+                padding: EdgeInsets.only(top: 8.h),
                 child: Text(
                   '선택: ${_selectedBranch!.name}',
                   style: AppTypography.bodySmallM.copyWith(
@@ -311,7 +312,7 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
 
   Widget _buildFieldLabel(String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: 8.h),
       child: Text(
         text,
         style: AppTypography.bodyLargeB.copyWith(color: AppColors.textPrimary),
@@ -331,7 +332,7 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
           focusedBorderColor: AppColors.primary,
         ),
       );
-      widgets.add(const SizedBox(height: 20));
+      widgets.add(SizedBox(height: 20.h));
       widgets.add(_buildFieldLabel('사업자 등록 번호'));
       widgets.add(
         AuthInputField(
@@ -358,9 +359,9 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
         );
       }
       if (index != _ownerBranchForms.length - 1) {
-        widgets.add(const SizedBox(height: 8));
+        widgets.add(SizedBox(height: 8.h));
         widgets.add(const Divider(color: AppColors.grey25, height: 1));
-        widgets.add(const SizedBox(height: 12));
+        widgets.add(SizedBox(height: 12.h));
       }
     }
     return widgets;
@@ -371,9 +372,9 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
       context: context,
       barrierColor: Colors.black54,
       builder: (_) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 18),
+          padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 18.h),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -381,13 +382,13 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                 '알림',
                 style: AppTypography.heading3.copyWith(color: AppColors.textPrimary),
               ),
-              const SizedBox(height: 20),
-              const Icon(
+              SizedBox(height: 20.h),
+              Icon(
                 Icons.warning_amber_rounded,
                 color: Color(0xFFF2C94C),
                 size: 56,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16.h),
               Text(
                 '해당 지점에 점장으로\n등록되지 않았습니다.',
                 style: AppTypography.bodyLargeB.copyWith(
@@ -395,26 +396,26 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20.h),
               Row(
                 children: [
                   Expanded(
                     child: FilledButton(
                       onPressed: () => Navigator.of(context).pop(),
                       style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(48),
+                        minimumSize: Size.fromHeight(48.h),
                         backgroundColor: AppColors.grey25,
                         foregroundColor: AppColors.grey150,
                       ),
                       child: const Text('취소'),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: 10.w),
                   Expanded(
                     child: FilledButton(
                       onPressed: () => Navigator.of(context).pop(),
                       style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(48),
+                        minimumSize: Size.fromHeight(48.h),
                         backgroundColor: AppColors.primary,
                         foregroundColor: AppColors.grey0,
                       ),

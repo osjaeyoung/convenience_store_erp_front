@@ -13,6 +13,7 @@ import '../bloc/selected_branch_cubit.dart';
 import '../widgets/home_common_app_bar.dart';
 import 'recruitment_job_seeker_detail_screen.dart';
 import 'recruitment_posting_list_tab.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 const String _recentViewedHeaderIconSvg = '''
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -139,20 +140,20 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(height: 8),
+              SizedBox(height: 8.h),
               Container(
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
                   color: AppColors.grey100,
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(999.r),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12.h),
               option(title: '전체', value: null),
               option(title: '남성', value: 'male'),
               option(title: '여성', value: 'female'),
-              const SizedBox(height: 8),
+              SizedBox(height: 8.h),
             ],
           ),
         );
@@ -194,7 +195,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
                   hintText: '14-99',
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12.h),
               TextField(
                 controller: maxController,
                 keyboardType: TextInputType.number,
@@ -304,16 +305,16 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(height: 8),
+              SizedBox(height: 8.h),
               Container(
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
                   color: AppColors.grey100,
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(999.r),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12.h),
               ListTile(
                 title: const Text('전체'),
                 trailing: _minRating == null
@@ -325,11 +326,11 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
                 ListTile(
                   title: Text('$value점 이상'),
                   trailing: _minRating == value.toDouble()
-                      ? const Icon(Icons.check_rounded, color: AppColors.primaryDark)
+                      ? Icon(Icons.check_rounded, color: AppColors.primaryDark)
                       : null,
                   onTap: () => Navigator.of(context).pop(value.toDouble()),
                 ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8.h),
             ],
           ),
         );
@@ -515,7 +516,7 @@ class _RecruitmentTopTabs extends StatelessWidget {
     const tabs = ['채용 홈', '채용 게시판', '내 채용 게시글'];
 
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.grey0,
         border: Border(
           bottom: BorderSide(color: AppColors.grey25),
@@ -561,7 +562,7 @@ class _RecruitmentTopTabItem extends StatelessWidget {
       onTap: onTap,
       child: Container(
         height: 52,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: 16.w),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           border: Border(
@@ -645,16 +646,16 @@ class _RecruitmentHomeTab extends StatelessWidget {
           onTapProfile: onTapProfile,
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+          padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 0.h),
           child: _RecruitmentSearchField(
             controller: searchController,
             onSubmitted: (_) => onSubmittedSearch(),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12.h),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: EdgeInsets.symmetric(horizontal: 20.w),
           child: Row(
             children: [
               _RecruitmentFilterChip(
@@ -662,19 +663,19 @@ class _RecruitmentHomeTab extends StatelessWidget {
                 active: genderLabel != '성별',
                 onTap: onTapGender,
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8.w),
               _RecruitmentFilterChip(
                 label: ageLabel,
                 active: ageLabel != '연령',
                 onTap: onTapAge,
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8.w),
               _RecruitmentFilterChip(
                 label: regionLabel,
                 active: regionLabel != '지역',
                 onTap: onTapRegion,
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8.w),
               _RecruitmentFilterChip(
                 label: ratingLabel,
                 active: ratingLabel != '평점',
@@ -685,7 +686,7 @@ class _RecruitmentHomeTab extends StatelessWidget {
         ),
         if (state.status == RecruitmentBlocStatus.failure)
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+            padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 0.h),
             child: Text(
               state.errorMessage ?? '검색 결과를 새로 불러오지 못했습니다.',
               style: AppTypography.bodySmallR.copyWith(
@@ -694,7 +695,7 @@ class _RecruitmentHomeTab extends StatelessWidget {
             ),
           ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 24.h),
           child: _SearchResultsSection(
             items: data.searchResults,
             onTapProfile: onTapProfile,
@@ -718,14 +719,14 @@ class _RecentViewedSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.only(left: 20),
-      decoration: const BoxDecoration(
+      padding: EdgeInsets.only(left: 20.w),
+      decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(color: AppColors.grey25),
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 20),
+        padding: EdgeInsets.symmetric(vertical: 20.h),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -737,21 +738,21 @@ class _RecentViewedSection extends StatelessWidget {
                   width: 16,
                   height: 16,
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: 4.w),
                 Text(
                   '최근 열람 구직자',
                   style: AppTypography.bodyLargeM.copyWith(
-                    fontSize: 16,
+                    fontSize: 16.sp,
                     height: 20 / 16,
                     color: AppColors.textPrimary,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
             if (items.isEmpty)
               Padding(
-                padding: const EdgeInsets.only(right: 20),
+                padding: EdgeInsets.only(right: 20.w),
                 child: Text(
                   '최근 열람한 구직자가 없습니다.',
                   style: AppTypography.bodySmallR.copyWith(
@@ -762,7 +763,7 @@ class _RecentViewedSection extends StatelessWidget {
             else
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.only(right: 20),
+                padding: EdgeInsets.only(right: 20.w),
                 child: Row(
                   children: [
                     for (var i = 0; i < items.length; i++) ...[
@@ -770,7 +771,7 @@ class _RecentViewedSection extends StatelessWidget {
                         item: items[i],
                         onTap: () => onTapProfile(items[i].employeeId),
                       ),
-                      if (i != items.length - 1) const SizedBox(width: 16),
+                      if (i != items.length - 1) SizedBox(width: 16.w),
                     ],
                   ],
                 ),
@@ -795,17 +796,17 @@ class _RecentViewedCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(12.r),
       child: SizedBox(
         width: 82,
         child: Column(
           children: [
             const _PersonAvatar(size: 60),
-            const SizedBox(height: 4),
+            SizedBox(height: 4.h),
             Text(
               item.nameWithAge,
               style: AppTypography.bodySmallR.copyWith(
-                fontSize: 12,
+                fontSize: 12.sp,
                 height: 18 / 12,
                 color: AppColors.textPrimary,
               ),
@@ -837,21 +838,21 @@ class _RecruitmentSearchField extends StatelessWidget {
       onSubmitted: onSubmitted,
       style: AppTypography.bodyMediumR.copyWith(
         color: AppColors.textPrimary,
-        fontSize: 14,
+        fontSize: 14.sp,
         height: 19 / 14,
       ),
       decoration: InputDecoration(
         hintText: '검색',
         hintStyle: AppTypography.bodyMediumR.copyWith(
           color: AppColors.grey100,
-          fontSize: 14,
+          fontSize: 14.sp,
           height: 19 / 14,
         ),
         filled: true,
         fillColor: AppColors.grey0Alt,
-        contentPadding: const EdgeInsets.symmetric(vertical: 16),
+        contentPadding: EdgeInsets.symmetric(vertical: 16.h),
         prefixIcon: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: EdgeInsets.all(14.r),
           child: SvgPicture.asset(
             'assets/icons/svg/icon/search_mint_20.svg',
             width: 20,
@@ -860,11 +861,11 @@ class _RecruitmentSearchField extends StatelessWidget {
         ),
         prefixIconConstraints: const BoxConstraints(minWidth: 52),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
           borderSide: const BorderSide(color: AppColors.grey50),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
           borderSide: const BorderSide(color: AppColors.primary),
         ),
       ),
@@ -887,13 +888,13 @@ class _RecruitmentFilterChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(100),
+      borderRadius: BorderRadius.circular(100.r),
       child: Container(
         constraints: const BoxConstraints(minWidth: 72),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
         decoration: BoxDecoration(
           color: active ? AppColors.primaryLight : AppColors.grey0,
-          borderRadius: BorderRadius.circular(100),
+          borderRadius: BorderRadius.circular(100.r),
           border: Border.all(
             color: active ? AppColors.primary : AppColors.grey50,
           ),
@@ -904,12 +905,12 @@ class _RecruitmentFilterChip extends StatelessWidget {
             Text(
               label,
               style: AppTypography.bodySmallR.copyWith(
-                fontSize: 12,
+                fontSize: 12.sp,
                 height: 18 / 12,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8.w),
             Icon(
               Icons.keyboard_arrow_down_rounded,
               size: 14,
@@ -935,7 +936,7 @@ class _SearchResultsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     if (items.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 60),
+        padding: EdgeInsets.symmetric(vertical: 60.h),
         child: Text(
           '검색 결과가 없습니다.',
           style: AppTypography.bodyMediumR.copyWith(
@@ -975,7 +976,7 @@ class _SearchResultCard extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
+        padding: EdgeInsets.symmetric(vertical: 20.h),
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
@@ -986,7 +987,7 @@ class _SearchResultCard extends StatelessWidget {
         child: Row(
           children: [
             const _PersonAvatar(size: 48),
-            const SizedBox(width: 12),
+            SizedBox(width: 12.w),
             Expanded(
                   child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -994,12 +995,12 @@ class _SearchResultCard extends StatelessWidget {
                   Text(
                     item.employeeName,
                     style: AppTypography.bodyLargeM.copyWith(
-                      fontSize: 16,
+                      fontSize: 16.sp,
                       height: 20 / 16,
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8.h),
                   Wrap(
                     crossAxisAlignment: WrapCrossAlignment.center,
                     spacing: 8,
@@ -1008,7 +1009,7 @@ class _SearchResultCard extends StatelessWidget {
                       Text(
                         item.desiredLocation ?? '-',
                         style: AppTypography.bodySmallR.copyWith(
-                          fontSize: 12,
+                          fontSize: 12.sp,
                           height: 18 / 12,
                           color: AppColors.textTertiary,
                         ),
@@ -1016,7 +1017,7 @@ class _SearchResultCard extends StatelessWidget {
                       Container(
                         width: 2,
                         height: 2,
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           color: AppColors.grey100,
                           shape: BoxShape.circle,
                         ),
@@ -1032,11 +1033,11 @@ class _SearchResultCard extends StatelessWidget {
                             maxStars: 3,
                             color: AppColors.primary,
                           ),
-                          const SizedBox(width: 4),
+                          SizedBox(width: 4.w),
                           Text(
                             '(${item.reviewCount})',
                             style: AppTypography.bodySmallR.copyWith(
-                              fontSize: 12,
+                              fontSize: 12.sp,
                               height: 18 / 12,
                               color: AppColors.textTertiary,
                             ),
@@ -1068,7 +1069,7 @@ class _RecruitmentErrorView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24.r),
                 child: Column(
           mainAxisSize: MainAxisSize.min,
                   children: [
@@ -1079,7 +1080,7 @@ class _RecruitmentErrorView extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16.h),
             TextButton(
               onPressed: onRetry,
               child: const Text('다시 시도'),
@@ -1120,7 +1121,7 @@ class _PersonAvatar extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.grey25,
         shape: BoxShape.circle,
       ),

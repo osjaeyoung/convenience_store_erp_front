@@ -6,6 +6,7 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../auth/widgets/auth_input_field.dart';
 import '../../auth/widgets/mint_add_button.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ManagerRegistrationScreen extends StatefulWidget {
   const ManagerRegistrationScreen({
@@ -74,9 +75,9 @@ class _ManagerRegistrationScreenState extends State<ManagerRegistrationScreen> {
       barrierDismissible: false,
       builder: (dialogContext) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+            padding: EdgeInsets.fromLTRB(20.w, 18.h, 20.w, 16.h),
             child: Form(
               key: formKey,
               child: Column(
@@ -90,14 +91,14 @@ class _ManagerRegistrationScreenState extends State<ManagerRegistrationScreen> {
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 18),
+                  SizedBox(height: 18.h),
                   Text(
                     '이름',
                     style: AppTypography.bodyLargeB.copyWith(
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8.h),
                   AuthInputField(
                     controller: nameController,
                     hintText: '이름을 입력해주세요.',
@@ -105,14 +106,14 @@ class _ManagerRegistrationScreenState extends State<ManagerRegistrationScreen> {
                     validator: (v) =>
                         (v == null || v.trim().isEmpty) ? '이름을 입력해주세요.' : null,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16.h),
                   Text(
                     '전화번호',
                     style: AppTypography.bodyLargeB.copyWith(
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8.h),
                   AuthInputField(
                     controller: phoneController,
                     hintText: '전화번호를 입력해주세요.',
@@ -121,7 +122,7 @@ class _ManagerRegistrationScreenState extends State<ManagerRegistrationScreen> {
                     validator: (v) =>
                         (v == null || v.trim().isEmpty) ? '전화번호를 입력해주세요.' : null,
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20.h),
                   Row(
                     children: [
                       Expanded(
@@ -130,15 +131,15 @@ class _ManagerRegistrationScreenState extends State<ManagerRegistrationScreen> {
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.grey25,
                             foregroundColor: AppColors.grey150,
-                            minimumSize: const Size.fromHeight(52),
+                            minimumSize: Size.fromHeight(52.h),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(12.r),
                             ),
                           ),
                           child: const Text('취소'),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12.w),
                       Expanded(
                         child: FilledButton(
                           onPressed: () {
@@ -148,9 +149,9 @@ class _ManagerRegistrationScreenState extends State<ManagerRegistrationScreen> {
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: AppColors.grey0,
-                            minimumSize: const Size.fromHeight(52),
+                            minimumSize: Size.fromHeight(52.h),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(12.r),
                             ),
                           ),
                           child: const Text('확인'),
@@ -194,9 +195,9 @@ class _ManagerRegistrationScreenState extends State<ManagerRegistrationScreen> {
       context: context,
       builder: (dialogContext) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+            padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 16.h),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -206,13 +207,13 @@ class _ManagerRegistrationScreenState extends State<ManagerRegistrationScreen> {
                   textAlign: TextAlign.center,
                   style: AppTypography.heading3.copyWith(color: AppColors.textPrimary),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16.h),
                 Center(
                   child: SizedBox.square(
                     dimension: 80,
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(100),
+                        borderRadius: BorderRadius.circular(100.r),
                         color: AppColors.grey0Alt,
                       ),
                       child: Center(
@@ -226,18 +227,18 @@ class _ManagerRegistrationScreenState extends State<ManagerRegistrationScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12.h),
                 Text(
                   '삭제하시겠습니까?\n해당 권한이 사라지게 됩니다.',
                   textAlign: TextAlign.center,
                   style: AppTypography.bodyMediumM.copyWith(
                     color: AppColors.textPrimary,
-                    fontSize: 14,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.w500,
                     height: 1.0,
                   ),
                 ),
-                const SizedBox(height: 18),
+                SizedBox(height: 18.h),
                 Row(
                   children: [
                     Expanded(
@@ -246,24 +247,24 @@ class _ManagerRegistrationScreenState extends State<ManagerRegistrationScreen> {
                         style: FilledButton.styleFrom(
                           backgroundColor: AppColors.grey25,
                           foregroundColor: AppColors.grey150,
-                          minimumSize: const Size.fromHeight(52),
+                          minimumSize: Size.fromHeight(52.h),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(12.r),
                           ),
                         ),
                         child: const Text('취소'),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12.w),
                     Expanded(
                       child: FilledButton(
                         onPressed: () => Navigator.of(dialogContext).pop(true),
                         style: FilledButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: AppColors.grey0,
-                          minimumSize: const Size.fromHeight(52),
+                          minimumSize: Size.fromHeight(52.h),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(12.r),
                           ),
                         ),
                         child: const Text('확인'),
@@ -315,7 +316,7 @@ class _ManagerRegistrationScreenState extends State<ManagerRegistrationScreen> {
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+                      padding: EdgeInsets.fromLTRB(20.w, 14.h, 20.w, 20.h),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -324,14 +325,14 @@ class _ManagerRegistrationScreenState extends State<ManagerRegistrationScreen> {
                           else
                             ..._rows.map(
                               (row) => Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
+                                padding: EdgeInsets.only(bottom: 12.h),
                                 child: _ManagerInfoCard(
                                   row: row,
                                   onDelete: () => _confirmDelete(row),
                                 ),
                               ),
                             ),
-                          const SizedBox(height: 6),
+                          SizedBox(height: 6.h),
                           MintAddButton(
                             label: '추가하기',
                             onPressed: _saving ? null : _showAddDialog,
@@ -341,14 +342,14 @@ class _ManagerRegistrationScreenState extends State<ManagerRegistrationScreen> {
                     ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+              padding: EdgeInsets.fromLTRB(20.w, 10.h, 20.w, 20.h),
               child: FilledButton(
                 onPressed: _saving ? null : () => Navigator.of(context).pop(true),
                 style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(56),
+                  minimumSize: Size.fromHeight(56.h),
                   backgroundColor: AppColors.primary,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
                 ),
                 child: Text(
@@ -376,10 +377,10 @@ class _ManagerInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+      padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 14.h),
       decoration: BoxDecoration(
         color: AppColors.grey0,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(14.r),
         boxShadow: const [
           BoxShadow(
             color: Color(0x14000000),
@@ -392,13 +393,13 @@ class _ManagerInfoCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text('이름', style: AppTypography.bodyLargeB.copyWith(color: AppColors.textPrimary)),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           _ReadonlyField(text: row.managerName),
-          const SizedBox(height: 14),
+          SizedBox(height: 14.h),
           Text('전화번호', style: AppTypography.bodyLargeB.copyWith(color: AppColors.textPrimary)),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           _ReadonlyField(text: row.managerPhoneNumber),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           Align(
             alignment: Alignment.centerRight,
             child: SizedBox(
@@ -409,7 +410,7 @@ class _ManagerInfoCard extends StatelessWidget {
                   backgroundColor: const Color(0xFFFF4834),
                   foregroundColor: AppColors.grey0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(8.r),
                   ),
                 ),
                 child: Text(
@@ -434,10 +435,10 @@ class _ReadonlyField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 56,
-      padding: const EdgeInsets.symmetric(horizontal: 14),
+      padding: EdgeInsets.symmetric(horizontal: 14.w),
       alignment: Alignment.centerLeft,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: AppColors.grey50),
         color: AppColors.grey0Alt,
       ),

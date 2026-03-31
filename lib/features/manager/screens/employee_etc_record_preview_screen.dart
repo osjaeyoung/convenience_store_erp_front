@@ -9,6 +9,7 @@ import '../../../data/repositories/staff_management_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import 'employee_etc_file_preview_common.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 기타자료: 제목·작성일 + 파일 미리보기
 class EmployeeEtcRecordPreviewScreen extends StatefulWidget {
@@ -117,8 +118,8 @@ class _EmployeeEtcRecordPreviewScreenState
             fit: BoxFit.contain,
             loadingBuilder: (context, child, loadingProgress) {
               if (loadingProgress == null) return child;
-              return const Padding(
-                padding: EdgeInsets.all(48),
+              return Padding(
+                padding: EdgeInsets.all(48.r),
                 child: CircularProgressIndicator(),
               );
             },
@@ -208,7 +209,7 @@ class _EmployeeEtcRecordPreviewScreenState
   Widget _previewError(Object e) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24.r),
         child: Text(
           '미리보기를 불러오지 못했습니다.\n$e',
           textAlign: TextAlign.center,
@@ -242,7 +243,7 @@ class _EmployeeEtcRecordPreviewScreenState
   Widget _unsupportedPreview(String url) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24.r),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -253,7 +254,7 @@ class _EmployeeEtcRecordPreviewScreenState
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
             TextButton(
               onPressed: () async {
                 final uri =
@@ -291,7 +292,7 @@ class _EmployeeEtcRecordPreviewScreenState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+            padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 12.h),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -299,17 +300,17 @@ class _EmployeeEtcRecordPreviewScreenState
                   Text(
                     '작성일 $dateLine',
                     style: AppTypography.bodySmall.copyWith(
-                      fontSize: 14,
+                      fontSize: 14.sp,
                       height: 20 / 14,
                       color: AppColors.textSecondary,
                     ),
                   ),
                 if (_row['note']?.toString().trim().isNotEmpty == true) ...[
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8.h),
                   Text(
                     _row['note'].toString().trim(),
                     style: AppTypography.bodySmall.copyWith(
-                      fontSize: 14,
+                      fontSize: 14.sp,
                       height: 20 / 14,
                       color: AppColors.textPrimary,
                     ),

@@ -11,6 +11,7 @@ import '../account_dio_message.dart';
 import '../widgets/account_confirm_dialogs.dart';
 import '../widgets/account_figma_styles.dart';
 import 'account_password_verify_screen.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 내 정보 변경 (Figma 2634:16280 / 소셜 2634:16329)
 class AccountProfileScreen extends StatefulWidget {
@@ -104,10 +105,10 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
         title: Text(
           '전화번호',
-          style: AccountFigmaStyles.appBarTitle.copyWith(fontSize: 18),
+          style: AccountFigmaStyles.appBarTitle.copyWith(fontSize: 18.sp),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -119,7 +120,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                 color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
             TextField(
               controller: ctrl,
               keyboardType: TextInputType.phone,
@@ -132,7 +133,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                 filled: true,
                 fillColor: AppColors.grey25,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(12.r),
                   borderSide: BorderSide.none,
                 ),
                 hintText: '01012345678',
@@ -227,7 +228,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(caption, style: AccountFigmaStyles.fieldCaption),
-        const SizedBox(height: 4),
+        SizedBox(height: 4.h),
         child,
       ],
     );
@@ -245,7 +246,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
           : _error != null
               ? Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(24.r),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -256,7 +257,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                             color: AppColors.textSecondary,
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16.h),
                         FilledButton(
                           onPressed: _load,
                           child: const Text('다시 시도'),
@@ -268,7 +269,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
               : Stack(
                   children: [
                     ListView(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                      padding: EdgeInsets.fromLTRB(20.w, 0.h, 20.w, 32.h),
                       children: [
                         _fieldBlock(
                           caption: '이름',
@@ -279,37 +280,37 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                             ),
                             decoration: BoxDecoration(
                               color: AppColors.grey25,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(12.r),
                             ),
                             child: TextField(
                               controller: _nameCtrl,
                               onEditingComplete: _saveNameIfChanged,
                               style: AccountFigmaStyles.fieldValue,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 isDense: true,
                                 border: InputBorder.none,
                                 hintText: '이름을 입력해주세요.',
                                 hintStyle: TextStyle(
                                   fontFamily: 'Pretendard',
-                                  fontSize: 14,
+                                  fontSize: 14.sp,
                                   color: AppColors.textTertiary,
                                 ),
                               ),
                             ),
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        SizedBox(height: 20.h),
                         _fieldBlock(
                           caption: '사용 유형',
                           child: Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16.w,
+                              vertical: 12.h,
                             ),
                             decoration: BoxDecoration(
                               color: AppColors.grey25,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(12.r),
                             ),
                             child: Text(
                               p?.usageTypeLabelKo ?? '—',
@@ -317,7 +318,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        SizedBox(height: 20.h),
                         _fieldBlock(
                           caption: '전화번호',
                           child: Row(
@@ -325,13 +326,13 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                             children: [
                               Expanded(
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 12,
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 16.w,
+                                    vertical: 12.h,
                                   ),
                                   decoration: BoxDecoration(
                                     color: AppColors.grey25,
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(12.r),
                                   ),
                                   child: Text(
                                     (p?.phoneNumberMasked ?? p?.phoneNumber)
@@ -349,11 +350,11 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 8),
+                              SizedBox(width: 8.w),
                               TextButton(
                                 onPressed: _saving ? null : _showPhoneDialog,
                                 style: AccountFigmaStyles.mintSmallActionStyle,
-                                child: const Text(
+                                child: Text(
                                   '변경',
                                   style:
                                       AccountFigmaStyles.mintSmallActionLabel,
@@ -363,17 +364,17 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                           ),
                         ),
                         if (p?.hasPasswordLogin == true) ...[
-                          const SizedBox(height: 20),
+                          SizedBox(height: 20.h),
                           _fieldBlock(
                             caption: '비밀번호',
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16.w,
+                                vertical: 12.h,
                               ),
                               decoration: BoxDecoration(
                                 color: AppColors.grey25,
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(12.r),
                               ),
                               child: Row(
                                 children: [
@@ -397,7 +398,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                                           },
                                     style:
                                         AccountFigmaStyles.mintSmallActionStyle,
-                                    child: const Text(
+                                    child: Text(
                                       '변경',
                                       style: AccountFigmaStyles
                                           .mintSmallActionLabel,
@@ -408,7 +409,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                             ),
                           ),
                         ],
-                        const SizedBox(height: 40),
+                        SizedBox(height: 40.h),
                         Center(
                           child: TextButton(
                             onPressed: _withdrawing ? null : _onWithdraw,
@@ -418,11 +419,11 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                               minimumSize: Size.zero,
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
-                            child: const Text(
+                            child: Text(
                               '탈퇴하기',
                               style: TextStyle(
                                 fontFamily: 'Pretendard',
-                                fontSize: 14,
+                                fontSize: 14.sp,
                                 fontWeight: FontWeight.w500,
                                 height: 20 / 14,
                                 decoration: TextDecoration.underline,

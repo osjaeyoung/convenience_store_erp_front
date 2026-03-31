@@ -18,6 +18,20 @@ import '../widgets/home_common_app_bar.dart';
 import '../../account/account_routes.dart';
 import '../widgets/home_shared_sections.dart';
 import '../widgets/branch_select_card.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+const String _registeredManagerIconSvg = '''
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+  <g clip-path="url(#clip0_2437_29560)">
+    <path d="M15.4574 1.95801H4.54618C3.59251 1.95801 2.82031 2.73407 2.82031 3.68388V16.3171C2.82031 17.2707 3.59637 18.0429 4.54618 18.0429H15.4574C16.411 18.0429 17.1832 17.2669 17.1832 16.3171V3.68388C17.1832 2.73021 16.4072 1.95801 15.4574 1.95801ZM10.052 4.8499C11.4188 4.8499 12.5346 5.96187 12.5346 7.33253C12.5346 8.70318 11.4226 9.81515 10.052 9.81515C8.68132 9.81515 7.56935 8.70318 7.56935 7.33253C7.56935 5.96187 8.68132 4.8499 10.052 4.8499ZM13.8396 13.9271L13.7122 14.6221C13.6543 14.9271 13.3879 15.1511 13.079 15.1511H7.02108C6.70834 15.1511 6.44193 14.9271 6.38788 14.6221L6.26047 13.9271C6.12147 13.1742 6.3261 12.4059 6.81645 11.819C7.3068 11.2321 8.02495 10.8962 8.78942 10.8962H11.3107C12.0751 10.8962 12.7933 11.2321 13.2836 11.819C13.774 12.4059 13.9748 13.1742 13.8396 13.9271Z" fill="black"/>
+  </g>
+  <defs>
+    <clipPath id="clip0_2437_29560">
+      <rect width="20" height="20" fill="white"/>
+    </clipPath>
+  </defs>
+</svg>
+''';
 
 /// 경영주/점장 공용 홈 화면
 class HomeScreen extends StatefulWidget {
@@ -116,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 14),
+            SizedBox(height: 14.h),
             TextButton(
               onPressed: () =>
                   context.read<HomeBloc>().add(const HomeBranchesRequested()),
@@ -128,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -162,7 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                 : null,
           ),
-          const SizedBox(height: 28),
+          SizedBox(height: 28.h),
           if (selectedBranch == null)
             _EmptyBranchView(
               hasBranches: branches.isNotEmpty,
@@ -282,13 +296,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: OutlinedButton(
                   onPressed: () => setModalState(() => selectedStatus = label),
                   style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(56),
+                    minimumSize: Size.fromHeight(56.h),
                     side: BorderSide(
                       color: selected ? AppColors.primary : AppColors.grey50,
                     ),
                     backgroundColor: selected ? const Color(0xFFE2F6F0) : AppColors.grey0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12.r),
                     ),
                   ),
                   child: Text(
@@ -302,9 +316,9 @@ class _HomeScreenState extends State<HomeScreen> {
             }
 
             return Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 28, 20, 18),
+                padding: EdgeInsets.fromLTRB(20.w, 28.h, 20.w, 18.h),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -317,23 +331,23 @@ class _HomeScreenState extends State<HomeScreen> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24.h),
                     Row(
                       children: [
                         statusButton('근무완료'),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12.w),
                         statusButton('근무예정'),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12.h),
                     Row(
                       children: [
                         statusButton('결근'),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12.w),
                         statusButton('미정'),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12.h),
                     OutlinedButton(
                       onPressed: () {
                         Navigator.of(dialogContext).pop();
@@ -348,11 +362,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         });
                       },
                       style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(56),
+                        minimumSize: Size.fromHeight(56.h),
                         side: const BorderSide(color: AppColors.primary),
                         backgroundColor: AppColors.primaryLight,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(12.r),
                         ),
                       ),
                       child: Row(
@@ -363,12 +377,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             width: 16,
                             height: 16,
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8.w),
                           Text(
                             '메모 함께 기재하기',
                             style: AppTypography.bodyMediumB.copyWith(
                               color: AppColors.primary,
-                              fontSize: 14,
+                              fontSize: 14.sp,
                               fontWeight: FontWeight.w600,
                               height: 16 / 14,
                             ),
@@ -376,24 +390,24 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 18),
+                    SizedBox(height: 18.h),
                     Row(
                       children: [
                         Expanded(
                           child: FilledButton(
                             onPressed: () => Navigator.of(dialogContext).pop(),
                             style: FilledButton.styleFrom(
-                              minimumSize: const Size.fromHeight(56),
+                              minimumSize: Size.fromHeight(56.h),
                               backgroundColor: AppColors.grey25,
                               foregroundColor: AppColors.grey150,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(12.r),
                               ),
                             ),
                             child: const Text('취소'),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12.w),
                         Expanded(
                           child: FilledButton(
                             onPressed: () {
@@ -405,11 +419,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               );
                             },
                             style: FilledButton.styleFrom(
-                              minimumSize: const Size.fromHeight(56),
+                              minimumSize: Size.fromHeight(56.h),
                               backgroundColor: AppColors.primary,
                               foregroundColor: AppColors.grey0,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(12.r),
                               ),
                             ),
                             child: const Text('확인'),
@@ -439,9 +453,9 @@ class _HomeScreenState extends State<HomeScreen> {
       barrierColor: Colors.black54,
       builder: (dialogContext) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 22, 18, 16),
+            padding: EdgeInsets.fromLTRB(18.w, 22.h, 18.w, 16.h),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -450,13 +464,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   '근무 상태 메모를\n입력해 주세요.',
                   style: AppTypography.heading3.copyWith(color: AppColors.textPrimary),
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14.h),
                 Container(
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: AppColors.grey25,
                     border: Border(top: BorderSide(color: Color(0xFF666874), width: 1)),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                  padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 8.w),
                   child: Row(
                     children: const [
                       Expanded(child: Text('시간', textAlign: TextAlign.center)),
@@ -467,8 +481,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-                  decoration: const BoxDecoration(
+                  padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 8.w),
+                  decoration: BoxDecoration(
                     border: Border(bottom: BorderSide(color: AppColors.grey25)),
                   ),
                   child: Row(
@@ -483,9 +497,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: Center(
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(4.r),
                               border:
                                   status == '완료' ? null : Border.all(color: AppColors.primary),
                               color: status == '완료'
@@ -506,9 +520,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14.h),
                 Text('메모', style: AppTypography.bodyLargeB.copyWith(color: AppColors.textPrimary)),
-                const SizedBox(height: 8),
+                SizedBox(height: 8.h),
                 TextFormField(
                   controller: controller,
                   minLines: 3,
@@ -518,33 +532,33 @@ class _HomeScreenState extends State<HomeScreen> {
                     filled: true,
                     fillColor: AppColors.grey0Alt,
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(16.r),
                       borderSide: const BorderSide(color: AppColors.grey50),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(16.r),
                       borderSide: const BorderSide(color: AppColors.primary),
                     ),
                   ),
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14.h),
                 Row(
                   children: [
                     Expanded(
                       child: FilledButton(
                         onPressed: () => Navigator.of(dialogContext).pop(),
                         style: FilledButton.styleFrom(
-                          minimumSize: const Size.fromHeight(56),
+                          minimumSize: Size.fromHeight(56.h),
                           backgroundColor: AppColors.grey25,
                           foregroundColor: AppColors.grey150,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(12.r),
                           ),
                         ),
                         child: const Text('취소'),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12.w),
                     Expanded(
                       child: FilledButton(
                         onPressed: () {
@@ -558,11 +572,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           );
                         },
                         style: FilledButton.styleFrom(
-                          minimumSize: const Size.fromHeight(56),
+                          minimumSize: Size.fromHeight(56.h),
                           backgroundColor: AppColors.primary,
                           foregroundColor: AppColors.grey0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(12.r),
                           ),
                         ),
                         child: const Text('확인'),
@@ -589,9 +603,9 @@ class _HomeScreenState extends State<HomeScreen> {
       barrierColor: Colors.black54,
       builder: (dialogContext) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 22, 18, 16),
+            padding: EdgeInsets.fromLTRB(18.w, 22.h, 18.w, 16.h),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -601,13 +615,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   textAlign: TextAlign.center,
                   style: AppTypography.heading3.copyWith(color: AppColors.textPrimary),
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14.h),
                 Container(
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: AppColors.grey25,
                     border: Border(top: BorderSide(color: Color(0xFF666874), width: 1)),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                  padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 8.w),
                   child: Row(
                     children: const [
                       Expanded(child: Text('시간', textAlign: TextAlign.center)),
@@ -618,8 +632,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-                  decoration: const BoxDecoration(
+                  padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 8.w),
+                  decoration: BoxDecoration(
                     border: Border(bottom: BorderSide(color: AppColors.grey25)),
                   ),
                   child: Row(
@@ -634,9 +648,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: Center(
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(4.r),
                               border: _displayStatusLabel(row.status) == '완료'
                                   ? null
                                   : Border.all(color: AppColors.primary),
@@ -658,9 +672,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14.h),
                 Text('메모', style: AppTypography.bodyLargeB.copyWith(color: AppColors.textPrimary)),
-                const SizedBox(height: 8),
+                SizedBox(height: 8.h),
                 TextFormField(
                   controller: controller,
                   readOnly: true,
@@ -671,16 +685,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     filled: true,
                     fillColor: AppColors.grey0Alt,
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(16.r),
                       borderSide: const BorderSide(color: AppColors.grey50),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(16.r),
                       borderSide: const BorderSide(color: AppColors.grey50),
                     ),
                   ),
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14.h),
                 Row(
                   children: [
                     Expanded(
@@ -690,26 +704,26 @@ class _HomeScreenState extends State<HomeScreen> {
                           _deleteTodayWorkerMemo(homeBloc, row: row);
                         },
                         style: FilledButton.styleFrom(
-                          minimumSize: const Size.fromHeight(56),
+                          minimumSize: Size.fromHeight(56.h),
                           backgroundColor: const Color(0xFFFF453A),
                           foregroundColor: AppColors.grey0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(16.r),
                           ),
                         ),
                         child: const Text('삭제'),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12.w),
                     Expanded(
                       child: FilledButton(
                         onPressed: () => Navigator.of(dialogContext).pop(),
                         style: FilledButton.styleFrom(
-                          minimumSize: const Size.fromHeight(56),
+                          minimumSize: Size.fromHeight(56.h),
                           backgroundColor: AppColors.grey25,
                           foregroundColor: AppColors.grey150,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(16.r),
                           ),
                         ),
                         child: const Text('닫기'),
@@ -778,7 +792,7 @@ class _EmptyBranchView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 56),
+      padding: EdgeInsets.only(top: 56.h),
       child: Column(
         children: [
           Image.asset(
@@ -787,7 +801,7 @@ class _EmptyBranchView extends StatelessWidget {
             height: 124,
             fit: BoxFit.contain,
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20.h),
           Text(
             hasBranches ? '점포를 선택해주세요!' : '등록된 점포가 없습니다.',
             style: AppTypography.bodyLargeM.copyWith(
@@ -857,23 +871,23 @@ class _SelectedBranchOverview extends StatelessWidget {
           managerName: managerName,
           onDetailTap: () => _openManagerRegistration(context),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24.h),
         _RecruitmentStatusCard(
           waitingInterview: waitingInterview,
           newApplicants: newApplicants,
           newContacts: newContacts,
           onDetailTap: () => _openRecruitment(context),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24.h),
         _TodayAlertCard(
           alertCount: alertCount,
           alertTitle: detail?.alertTitle,
           onDetailTap: () => _openAlerts(context),
         ),
-        const SizedBox(height: 28),
+        SizedBox(height: 28.h),
         if (detailLoading)
-          const Padding(
-            padding: EdgeInsets.only(bottom: 12),
+          Padding(
+            padding: EdgeInsets.only(bottom: 12.h),
             child: Center(child: CircularProgressIndicator()),
           ),
         HomeTodayWorkersSection(
@@ -903,15 +917,15 @@ class _SelectedBranchOverview extends StatelessWidget {
                   }
                 },
         ),
-        const SizedBox(height: 28),
+        SizedBox(height: 28.h),
         const Divider(height: 1, color: AppColors.grey50),
-        const SizedBox(height: 28),
+        SizedBox(height: 28.h),
         HomeMonthlyLaborCostCard(
           totalAmountText: detail?.expectedTotalAmountText ?? '총 - 원',
           changeText: detail?.expectedChangeText ?? '전월 대비 데이터가 없습니다',
           onDetailTap: () => _openLaborCost(context),
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: 32.h),
         HomeLaborSavingPointCard(
           points: _buildSavingPointSpans(),
           onDetailTap: () => _openLaborSaving(context),
@@ -999,32 +1013,36 @@ class _RegisteredManagerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: AppColors.primary),
-        color: AppColors.grey0Alt,
+        color: AppColors.grey0,
       ),
       child: Row(
         children: [
-          const Icon(Icons.account_box_outlined, size: 18, color: AppColors.textPrimary),
-          const SizedBox(width: 6),
+          SvgPicture.string(
+            _registeredManagerIconSvg,
+            width: 20.w,
+            height: 20.h,
+          ),
+          SizedBox(width: 10.w),
           Text(
             '등록된 점장',
             style: AppTypography.bodySmallM.copyWith(
               color: AppColors.textSecondary,
-              fontSize: 12,
+              fontSize: 12.sp,
               fontWeight: FontWeight.w500,
               height: 16 / 12,
             ),
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: 10.w),
           Expanded(
             child: Text(
               '',
               style: AppTypography.bodyMediumR.copyWith(
                 color: AppColors.textPrimary,
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w400,
                 height: 19 / 14,
               ),
@@ -1053,9 +1071,9 @@ class _RecruitmentStatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+      padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 12.h),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
         color: AppColors.grey0Alt,
         boxShadow: const [
           BoxShadow(
@@ -1075,49 +1093,49 @@ class _RecruitmentStatusCard extends StatelessWidget {
                 height: 18,
                 fit: BoxFit.contain,
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: 6.w),
               Text(
                 '채용 현황',
                 style: AppTypography.bodySmallM.copyWith(
                   color: AppColors.textSecondary,
-                  fontSize: 12,
+                  fontSize: 12.sp,
                   fontWeight: FontWeight.w500,
                   height: 16 / 12,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           _RecruitmentRow(
             label: '구인게시물 ',
             value: '$waitingInterview건',
             onDetailTap: onDetailTap,
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           _RecruitmentRow(
             label: '새로운 지원자 ',
             value: '$newApplicants명',
             onDetailTap: onDetailTap,
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           _RecruitmentRow(
             label: '새로운 연락 ',
             value: '$newContacts건',
             onDetailTap: onDetailTap,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(12.r),
               border: Border.all(color: AppColors.grey50),
               color: AppColors.grey0,
             ),
             child: TextButton(
               onPressed: onDetailTap,
               style: TextButton.styleFrom(
-                minimumSize: const Size.fromHeight(46),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                minimumSize: Size.fromHeight(46.h),
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 0.h),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1126,12 +1144,12 @@ class _RecruitmentStatusCard extends StatelessWidget {
                     '열어보기',
                     style: AppTypography.bodySmallM.copyWith(
                       color: AppColors.grey150,
-                      fontSize: 12,
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.w500,
                       height: 16 / 12,
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6.w),
                   SvgPicture.asset(
                     'assets/icons/svg/icon/chevron_down_grey_14.svg',
                     width: 14,
@@ -1167,7 +1185,7 @@ class _RecruitmentRow extends StatelessWidget {
             TextSpan(
               style: AppTypography.bodyMediumR.copyWith(
                 color: AppColors.textPrimary,
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w400,
                 height: 19 / 14,
               ),
@@ -1175,7 +1193,7 @@ class _RecruitmentRow extends StatelessWidget {
                 TextSpan(text: label),
                 TextSpan(
                   text: value,
-                  style: const TextStyle(color: AppColors.primary),
+                  style: TextStyle(color: AppColors.primary),
                 ),
               ],
             ),
@@ -1201,9 +1219,9 @@ class _TodayAlertCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+      padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 12.h),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
         color: AppColors.grey0Alt,
         boxShadow: const [
           BoxShadow(
@@ -1224,7 +1242,7 @@ class _TodayAlertCard extends StatelessWidget {
                 height: 18,
                 fit: BoxFit.contain,
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: 6.w),
               Text(
                 '오늘의 알림',
                 style: AppTypography.bodySmallM.copyWith(
@@ -1233,7 +1251,7 @@ class _TodayAlertCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           Text(
             alertTitle ??
                 (alertCount > 0 ? '주의 알림 $alertCount건' : '퇴직금 발생'),
@@ -1241,19 +1259,19 @@ class _TodayAlertCard extends StatelessWidget {
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(12.r),
               border: Border.all(color: AppColors.grey50),
               color: AppColors.grey0,
             ),
             child: TextButton(
               onPressed: onDetailTap,
               style: TextButton.styleFrom(
-                minimumSize: const Size.fromHeight(46),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                minimumSize: Size.fromHeight(46.h),
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 0.h),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1262,12 +1280,12 @@ class _TodayAlertCard extends StatelessWidget {
                     '열어보기',
                     style: AppTypography.bodySmallM.copyWith(
                       color: AppColors.grey150,
-                      fontSize: 12,
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.w500,
                       height: 16 / 12,
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6.w),
                   SvgPicture.asset(
                     'assets/icons/svg/icon/chevron_down_grey_14.svg',
                     width: 14,
@@ -1296,13 +1314,13 @@ class _OutlineDetailButton extends StatelessWidget {
         onPressed: onTap,
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(78, 28),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 0.h),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           alignment: Alignment.center,
           side: const BorderSide(color: AppColors.primary),
           backgroundColor: const Color(0xFFE2F6F0),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(5),
+            borderRadius: BorderRadius.circular(5.r),
           ),
         ),
         child: Center(
@@ -1311,7 +1329,7 @@ class _OutlineDetailButton extends StatelessWidget {
             textAlign: TextAlign.center,
             style: AppTypography.bodyXSmallM.copyWith(
               color: AppColors.primary,
-              fontSize: 10,
+              fontSize: 10.sp,
               fontWeight: FontWeight.w500,
               height: 16 / 10,
             ),

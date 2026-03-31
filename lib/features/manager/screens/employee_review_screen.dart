@@ -5,6 +5,7 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../../data/repositories/staff_management_repository.dart';
 import '../widgets/employee_profile_box.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 리뷰 작성/수정 화면 - 직원 상세에서 "리뷰작성" 탭 시 이동
 /// [initialMyRating] 내가 이전에 매긴 별점 (있으면 초기값으로 사용, 없으면 3)
@@ -126,7 +127,7 @@ class _EmployeeReviewScreenState extends State<EmployeeReviewScreen> {
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16.r),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -139,16 +140,16 @@ class _EmployeeReviewScreenState extends State<EmployeeReviewScreen> {
               profileImageUrl: widget.profileImageUrl,
               starCount: _rating, // 내가 선택한 별점 표시
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24.h),
             Text(
               '평점',
               style: AppTypography.bodyMediumB.copyWith(
                 color: AppColors.textPrimary,
-                fontSize: 14,
+                fontSize: 14.sp,
                 height: 16 / 14,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(3, (i) {
@@ -156,7 +157,7 @@ class _EmployeeReviewScreenState extends State<EmployeeReviewScreen> {
                 return GestureDetector(
                   onTap: () => setState(() => _rating = i + 1),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    padding: EdgeInsets.symmetric(horizontal: 6.w),
                     child: SizedBox(
                       width: 40,
                       height: 40,
@@ -173,16 +174,16 @@ class _EmployeeReviewScreenState extends State<EmployeeReviewScreen> {
                 );
               }),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24.h),
             Text(
               '평가 코멘트',
               style: AppTypography.bodyMediumB.copyWith(
                 color: AppColors.textPrimary,
-                fontSize: 14,
+                fontSize: 14.sp,
                 height: 16 / 14,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             TextField(
               controller: _commentController,
               maxLines: 5,
@@ -191,39 +192,39 @@ class _EmployeeReviewScreenState extends State<EmployeeReviewScreen> {
                 hintText: '근무자에 대한 평가를 작성해 주세요.',
                 hintStyle: AppTypography.bodyMediumR.copyWith(
                   color: AppColors.grey100,
-                  fontSize: 14,
+                  fontSize: 14.sp,
                 ),
                 filled: true,
                 fillColor: AppColors.grey0,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(16.r),
                   borderSide: const BorderSide(color: AppColors.grey50),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(16.r),
                   borderSide: const BorderSide(color: AppColors.grey50),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(16.r),
                   borderSide: const BorderSide(color: AppColors.primary),
                 ),
-                contentPadding: const EdgeInsets.all(16),
+                contentPadding: EdgeInsets.all(16.r),
               ),
               style: AppTypography.bodyMediumR.copyWith(
                 color: AppColors.textPrimary,
-                fontSize: 14,
+                fontSize: 14.sp,
                 height: 1.5,
               ),
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: 32.h),
             FilledButton(
               onPressed: _isSubmitting ? null : _submitReview,
               style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(56),
+                minimumSize: Size.fromHeight(56.h),
                 backgroundColor: AppColors.primaryDark,
                 foregroundColor: AppColors.grey0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(12.r),
                 ),
               ),
               child: _isSubmitting

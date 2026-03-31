@@ -5,6 +5,7 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../widgets/employee_profile_box.dart';
 import '../widgets/work_status_badge.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class EmployeeWorkHistoryScreen extends StatelessWidget {
   const EmployeeWorkHistoryScreen({
@@ -40,7 +41,7 @@ class EmployeeWorkHistoryScreen extends StatelessWidget {
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16.r),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -52,14 +53,14 @@ class EmployeeWorkHistoryScreen extends StatelessWidget {
               showEditButton: false,
               starCount: starCount,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
             Row(
               children: [
                 Text(
                   '근무 이력',
                   style: AppTypography.heading3.copyWith(
                     color: const Color(0xFF1D1D1F),
-                    fontSize: 18,
+                    fontSize: 18.sp,
                     fontWeight: FontWeight.w500,
                     height: 24 / 18,
                   ),
@@ -76,21 +77,21 @@ class EmployeeWorkHistoryScreen extends StatelessWidget {
                       vertical: 6,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(10.r),
                     ),
                   ),
                   child: Text(
                     '수정',
                     style: AppTypography.bodySmallB.copyWith(
                       color: AppColors.grey0,
-                      fontSize: 16,
+                      fontSize: 16.sp,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10.h),
             _WorkHistoryTable(
               branchName: branchName,
               rows: workHistories,
@@ -114,14 +115,14 @@ class _WorkHistoryTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(top: BorderSide(color: Color(0xFF666874), width: 1)),
       ),
       child: Column(
         children: [
           Container(
             color: AppColors.grey25,
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+            padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 8.w),
             child: const Row(
               children: [
                 _HeaderCell('근무지점'),
@@ -135,8 +136,8 @@ class _WorkHistoryTable extends StatelessWidget {
           if (rows.isEmpty)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              decoration: const BoxDecoration(
+              padding: EdgeInsets.symmetric(vertical: 20.h),
+              decoration: BoxDecoration(
                 border: Border(bottom: BorderSide(color: AppColors.grey25)),
               ),
               child: Text(
@@ -151,8 +152,8 @@ class _WorkHistoryTable extends StatelessWidget {
             ...rows.map((row) {
               final memo = (row['memo'] as String?)?.trim() ?? '';
               return Container(
-                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-                decoration: const BoxDecoration(
+                padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 8.w),
+                decoration: BoxDecoration(
                   border: Border(bottom: BorderSide(color: AppColors.grey25)),
                 ),
                 child: Row(
@@ -234,14 +235,14 @@ class _MemoButton extends StatelessWidget {
               );
             }
           : null,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(8.r),
       child: Opacity(
         opacity: hasMemo ? 1 : 0.4,
         child: Container(
           width: 28,
           height: 28,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(8.r),
             border: Border.all(color: AppColors.grey50),
             color: AppColors.grey25,
           ),
@@ -270,7 +271,7 @@ class _HeaderCell extends StatelessWidget {
         textAlign: TextAlign.center,
         style: AppTypography.bodySmallB.copyWith(
           color: AppColors.textSecondary,
-          fontSize: 12,
+          fontSize: 12.sp,
           fontWeight: FontWeight.w600,
           height: 16 / 12,
         ),
@@ -292,7 +293,7 @@ class _BodyCell extends StatelessWidget {
         textAlign: TextAlign.center,
         style: AppTypography.bodyMediumR.copyWith(
           color: AppColors.textPrimary,
-          fontSize: 14,
+          fontSize: 14.sp,
           fontWeight: FontWeight.w400,
           height: 19 / 14,
         ),

@@ -5,6 +5,7 @@ import '../../../data/repositories/auth_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../account_dio_message.dart';
 import '../widgets/account_figma_styles.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 비밀번호 재설정 (Figma 2634:16243) — `POST /me/account/password`
 class AccountChangePasswordScreen extends StatefulWidget {
@@ -69,12 +70,12 @@ class _AccountChangePasswordScreenState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(caption, style: AccountFigmaStyles.fieldCaption),
-        const SizedBox(height: 4),
+        SizedBox(height: 4.h),
         Container(
-          padding: const EdgeInsets.fromLTRB(16, 4, 8, 4),
+          padding: EdgeInsets.fromLTRB(16.w, 4.h, 8.w, 4.h),
           decoration: BoxDecoration(
             color: AppColors.grey25,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(12.r),
           ),
           child: TextFormField(
             controller: controller,
@@ -117,7 +118,7 @@ class _AccountChangePasswordScreenState
         children: [
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+              padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 24.h),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -138,7 +139,7 @@ class _AccountChangePasswordScreenState
                         return null;
                       },
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20.h),
                     _pwdField(
                       caption: '새 비밀번호',
                       controller: _newCtrl,
@@ -153,7 +154,7 @@ class _AccountChangePasswordScreenState
                         return null;
                       },
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20.h),
                     _pwdField(
                       caption: '새 비밀번호 확인',
                       controller: _confirmCtrl,
@@ -175,7 +176,7 @@ class _AccountChangePasswordScreenState
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+            padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 32.h),
             child: SizedBox(
               width: double.infinity,
               height: 52,
@@ -185,7 +186,7 @@ class _AccountChangePasswordScreenState
                   backgroundColor: AppColors.primary,
                   foregroundColor: AppColors.grey0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
                 ),
                 child: _submitting
@@ -197,11 +198,11 @@ class _AccountChangePasswordScreenState
                           color: AppColors.grey0,
                         ),
                       )
-                    : const Text(
+                    : Text(
                         '완료',
                         style: TextStyle(
                           fontFamily: 'Pretendard',
-                          fontSize: 16,
+                          fontSize: 16.sp,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

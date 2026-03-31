@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../theme/app_colors.dart';
 import 'account_figma_styles.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 Future<bool> showLogoutConfirmDialog(BuildContext context) async {
   final ok = await _showAccountActionConfirmDialog(
@@ -52,17 +53,17 @@ class _AccountActionConfirmDialog extends StatelessWidget {
   final String message;
   final String confirmLabel;
 
-  static const TextStyle _messageStyle = TextStyle(
+  static TextStyle get _messageStyle => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 18,
+    fontSize: 18.sp,
     fontWeight: FontWeight.w600,
     height: 24 / 18,
     color: AccountFigmaStyles.titleColor,
   );
 
-  static const TextStyle _buttonLabel = TextStyle(
+  static TextStyle get _buttonLabel => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 16,
+    fontSize: 16.sp,
     fontWeight: FontWeight.w600,
     height: 24 / 16,
   );
@@ -72,7 +73,7 @@ class _AccountActionConfirmDialog extends StatelessWidget {
     return Dialog(
       backgroundColor: Colors.transparent,
       elevation: 0,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+      insetPadding: EdgeInsets.symmetric(horizontal: 24.w),
       child: Container(
         width: double.infinity,
         constraints: const BoxConstraints(maxWidth: 320),
@@ -84,7 +85,7 @@ class _AccountActionConfirmDialog extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: AppColors.grey0,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(24.r),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -95,14 +96,14 @@ class _AccountActionConfirmDialog extends StatelessWidget {
                 width: 60,
                 height: 60,
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20.h),
             ],
             Text(
               message,
               textAlign: TextAlign.center,
               style: _messageStyle,
             ),
-            const SizedBox(height: 28),
+            SizedBox(height: 28.h),
             Row(
               children: [
                 Expanded(
@@ -114,7 +115,7 @@ class _AccountActionConfirmDialog extends StatelessWidget {
                         backgroundColor: AppColors.grey25,
                         foregroundColor: AppColors.textSecondary,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(12.r),
                         ),
                       ),
                       child: Text(
@@ -127,7 +128,7 @@ class _AccountActionConfirmDialog extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8.w),
                 Expanded(
                   child: SizedBox(
                     height: 52,
@@ -137,7 +138,7 @@ class _AccountActionConfirmDialog extends StatelessWidget {
                         backgroundColor: AppColors.primary,
                         foregroundColor: AppColors.grey0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(12.r),
                         ),
                         elevation: 0,
                       ),

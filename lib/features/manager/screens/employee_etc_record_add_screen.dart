@@ -15,6 +15,7 @@ import '../../../widgets/file_or_gallery_picker.dart';
 import 'employee_etc_record_file_bytes.dart';
 import 'employee_etc_record_inline_preview.dart';
 import 'picked_file_inline_preview.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 기타자료 — 추가 또는 조회(폼) — 스펙 ##21
 /// - [viewRecord]가 있으면 조회 모드: 필드 읽기 전용, 첨부 **인라인 미리보기**, 하단 **삭제**만.
@@ -289,14 +290,13 @@ class _EmployeeEtcRecordAddScreenState extends State<EmployeeEtcRecordAddScreen>
     }
   }
 
-  static const EdgeInsets _fieldPadding =
-      EdgeInsets.symmetric(horizontal: 14, vertical: 12);
+  static EdgeInsets get _fieldPadding => EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h);
 
   @override
   Widget build(BuildContext context) {
     final labelStyle = AppTypography.bodySmallB.copyWith(
       color: AppColors.textPrimary,
-      fontSize: 14,
+      fontSize: 14.sp,
       height: 20 / 14,
     );
 
@@ -314,12 +314,12 @@ class _EmployeeEtcRecordAddScreenState extends State<EmployeeEtcRecordAddScreen>
         titleTextStyle: AppTypography.appBarTitle,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 24.h),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text('제목', style: labelStyle),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             AuthInputField(
               controller: _titleCtrl,
               hintText: '제목을 입력해주세요.',
@@ -328,9 +328,9 @@ class _EmployeeEtcRecordAddScreenState extends State<EmployeeEtcRecordAddScreen>
               focusedBorderColor: AppColors.primaryDark,
               contentPadding: _fieldPadding,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20.h),
             Text('작성일', style: labelStyle),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             Stack(
               children: [
                 AuthInputField(
@@ -346,7 +346,7 @@ class _EmployeeEtcRecordAddScreenState extends State<EmployeeEtcRecordAddScreen>
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                         onTap: _pickDate,
                       ),
                     ),
@@ -370,13 +370,13 @@ class _EmployeeEtcRecordAddScreenState extends State<EmployeeEtcRecordAddScreen>
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: AppColors.grey25,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Text(
                     '첨부된 파일이 없습니다.',
                     style: AppTypography.bodyMediumR.copyWith(
                       color: AppColors.textSecondary,
-                      fontSize: 14,
+                      fontSize: 14.sp,
                     ),
                   ),
                 ),
@@ -406,7 +406,7 @@ class _EmployeeEtcRecordAddScreenState extends State<EmployeeEtcRecordAddScreen>
                       '첨부 제거',
                       style: AppTypography.bodyMediumR.copyWith(
                         color: AppColors.textSecondary,
-                        fontSize: 14,
+                        fontSize: 14.sp,
                       ),
                     ),
                   ),
@@ -419,9 +419,9 @@ class _EmployeeEtcRecordAddScreenState extends State<EmployeeEtcRecordAddScreen>
       bottomNavigationBar: Material(
         color: AppColors.grey0,
         child: SafeArea(
-          minimum: const EdgeInsets.only(bottom: 8),
+          minimum: EdgeInsets.only(bottom: 8.h),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+            padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 16.h),
             child: _isViewMode
                 ? SizedBox(
                     width: double.infinity,
@@ -433,7 +433,7 @@ class _EmployeeEtcRecordAddScreenState extends State<EmployeeEtcRecordAddScreen>
                         foregroundColor: AppColors.grey0,
                         padding: EdgeInsets.zero,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(12.r),
                         ),
                       ),
                       child: _submitting
@@ -449,7 +449,7 @@ class _EmployeeEtcRecordAddScreenState extends State<EmployeeEtcRecordAddScreen>
                               '삭제',
                               style: AppTypography.bodyMediumB.copyWith(
                                 color: AppColors.grey0,
-                                fontSize: 16,
+                                fontSize: 16.sp,
                                 height: 24 / 16,
                               ),
                             ),
@@ -465,7 +465,7 @@ class _EmployeeEtcRecordAddScreenState extends State<EmployeeEtcRecordAddScreen>
                         foregroundColor: AppColors.grey0,
                         padding: EdgeInsets.zero,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(12.r),
                         ),
                       ),
                       child: _submitting
@@ -481,7 +481,7 @@ class _EmployeeEtcRecordAddScreenState extends State<EmployeeEtcRecordAddScreen>
                               '추가하기',
                               style: AppTypography.bodyMediumB.copyWith(
                                 color: AppColors.grey0,
-                                fontSize: 16,
+                                fontSize: 16.sp,
                                 height: 24 / 16,
                               ),
                             ),

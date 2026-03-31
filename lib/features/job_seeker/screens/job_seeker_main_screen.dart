@@ -7,6 +7,7 @@ import '../../../core/router/app_router.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../auth/bloc/auth_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 구직자 메인 화면
 /// 경영자/점장과 전혀 다른 화면 구조 (바텀바 없음)
@@ -23,7 +24,7 @@ class JobSeekerMainScreen extends StatelessWidget {
         title: const Text('구직자'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: Icon(Icons.logout),
             onPressed: () {
               context.read<AuthBloc>().add(const AuthLogoutRequested());
               context.go(AppRouter.login);
@@ -41,7 +42,7 @@ class JobSeekerMainScreen extends StatelessWidget {
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             Text(
               '경영자/점장과 다른 화면 구조',
               style: AppTypography.bodyMedium.copyWith(
@@ -49,7 +50,7 @@ class JobSeekerMainScreen extends StatelessWidget {
               ),
             ),
             if (user != null) ...[
-              const SizedBox(height: 16),
+              SizedBox(height: 16.h),
               Text(
                 user.email,
                 style: AppTypography.bodySmall.copyWith(

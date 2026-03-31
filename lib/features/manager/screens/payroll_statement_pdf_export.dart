@@ -5,6 +5,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import '../payroll/payroll_formatters.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 const _deductionLabels = <String, String>{
   'national_pension': '국민연금',
@@ -84,7 +85,7 @@ List<pw.Widget> _linesToPdfWidgets(
     } else {
       widgets.add(
         pw.Padding(
-          padding: const pw.EdgeInsets.only(bottom: 1),
+          padding: pw.EdgeInsets.only(bottom: 1),
           child: pw.Text(line, style: style),
         ),
       );
@@ -113,7 +114,7 @@ Future<Uint8List> buildPayrollStatementPdfBytes({
       build: (context) => [
         pw.Text(
           title,
-          style: pw.TextStyle(font: fontMedium, fontSize: 14),
+          style: pw.TextStyle(font: fontMedium, fontSize: 14.sp),
         ),
         pw.SizedBox(height: 14),
         ..._linesToPdfWidgets(body, font),

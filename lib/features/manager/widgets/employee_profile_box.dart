@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../theme/app_colors.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 직원 프로필 박스 - 직원 상세, 리뷰 작성 등 여러 화면에서 공통 사용
 ///
@@ -62,7 +63,7 @@ class EmployeeProfileBox extends StatelessWidget {
         : null;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
@@ -72,7 +73,7 @@ class EmployeeProfileBox extends StatelessWidget {
             Color(0xFFE1F0B8),
           ],
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF1D1D1F).withValues(alpha: 0.12),
@@ -88,13 +89,13 @@ class EmployeeProfileBox extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildProfileImage(),
-              const SizedBox(width: 16),
+              SizedBox(width: 16.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _buildInfoRow('근무자명', _buildNameValue()),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8.h),
                     _buildInfoRow(
                       '입사일',
                       isEditMode && hireDateInputWidget != null
@@ -102,10 +103,10 @@ class EmployeeProfileBox extends StatelessWidget {
                           : Text(formattedHire, style: _valueStyle),
                     ),
                     if (formattedResign != null) ...[
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8.h),
                       _buildInfoRow('퇴사일', formattedResign),
                     ],
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8.h),
                     _buildInfoRow('연락처', contact.isEmpty ? '-' : contact),
                   ],
                 ),
@@ -113,7 +114,7 @@ class EmployeeProfileBox extends StatelessWidget {
             ],
           ),
           if (showEditButton) ...[
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
             SizedBox(
               width: double.infinity,
               child: FilledButton(
@@ -122,7 +123,7 @@ class EmployeeProfileBox extends StatelessWidget {
                   backgroundColor: AppColors.primaryDark,
                   foregroundColor: AppColors.grey0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(8.r),
                   ),
                 ),
                 child: Text(isEditMode ? '취소' : '수정'),
@@ -140,7 +141,7 @@ class EmployeeProfileBox extends StatelessWidget {
       height: 64,
       child: profileImageUrl != null && profileImageUrl!.isNotEmpty
           ? ClipRRect(
-              borderRadius: BorderRadius.circular(32),
+              borderRadius: BorderRadius.circular(32.r),
               child: Image.network(
                 profileImageUrl!,
                 fit: BoxFit.cover,
@@ -153,7 +154,7 @@ class EmployeeProfileBox extends StatelessWidget {
 
   Widget _buildPlaceholderIcon() {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(32),
+      borderRadius: BorderRadius.circular(32.r),
       child: SvgPicture.asset(
         'assets/icons/svg/icon/profile_default_80.svg',
         width: 64,
@@ -164,18 +165,18 @@ class EmployeeProfileBox extends StatelessWidget {
   }
 
   /// 라벨 스타일: #666874, 14px, weight 500, line-height 16px
-  static const TextStyle _labelStyle = TextStyle(
+  static TextStyle get _labelStyle => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 14,
+    fontSize: 14.sp,
     fontWeight: FontWeight.w500,
     height: 16 / 14,
     color: Color(0xFF666874),
   );
 
   /// 값 스타일: #000, 14px, weight 400, line-height 19px
-  static const TextStyle _valueStyle = TextStyle(
+  static TextStyle get _valueStyle => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 14,
+    fontSize: 14.sp,
     fontWeight: FontWeight.w400,
     height: 19 / 14,
     color: Color(0xFF000000),
@@ -190,7 +191,7 @@ class EmployeeProfileBox extends StatelessWidget {
           ...List.generate(
             starCount!.clamp(0, 3),
             (_) => Padding(
-              padding: const EdgeInsets.only(right: 4),
+              padding: EdgeInsets.only(right: 4.w),
               child: SizedBox(
                 width: 16,
                 height: 16,
@@ -203,7 +204,7 @@ class EmployeeProfileBox extends StatelessWidget {
               ),
             ),
           ),
-        if (starCount != null && starCount! > 0) const SizedBox(width: 6),
+        if (starCount != null && starCount! > 0) SizedBox(width: 6.w),
         Text(name.isEmpty ? '-' : name, style: _valueStyle),
       ],
     );

@@ -9,6 +9,7 @@ import '../account_dio_message.dart';
 import '../widgets/account_confirm_dialogs.dart';
 import '../widgets/account_figma_styles.dart';
 import 'account_profile_screen.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 내 정보 설정 (Figma 2634:16115)
 class AccountMyInfoSettingsScreen extends StatefulWidget {
@@ -48,12 +49,12 @@ class _AccountMyInfoSettingsScreenState
       backgroundColor: AppColors.grey0Alt,
       appBar: accountFigmaAppBar(context: context, title: '내 정보 설정'),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        padding: EdgeInsets.fromLTRB(20.w, 0.h, 20.w, 16.h),
         children: [
           Container(
             decoration: BoxDecoration(
               color: AppColors.grey0,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(16.r),
             ),
             clipBehavior: Clip.antiAlias,
             child: Column(
@@ -95,7 +96,7 @@ class _AccountMyInfoSettingsScreenState
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
+          padding: EdgeInsets.symmetric(vertical: 20.h),
           child: Row(
             children: [
               Expanded(

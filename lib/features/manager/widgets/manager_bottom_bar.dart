@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 경영자/점장용 바텀 네비게이션 바
 /// 홈, 직원관리, 인건비, 매장·비용, 구인·채용
@@ -54,7 +55,7 @@ class ManagerBottomBar extends StatelessWidget {
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: EdgeInsets.symmetric(vertical: 8.h),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: List.generate(
@@ -100,7 +101,7 @@ class _BottomNavItem extends StatelessWidget {
     return Expanded(
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(8.r),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -111,7 +112,7 @@ class _BottomNavItem extends StatelessWidget {
               height: 24,
               fit: BoxFit.contain,
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4.h),
             Text(
               item.label,
               style: AppTypography.labelSmall.copyWith(

@@ -9,6 +9,7 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import 'employee_etc_file_preview_common.dart';
 import 'employee_etc_record_file_bytes.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 파일 선택 직후(로컬 [PlatformFile]) 인라인 미리보기 — 이미지·PDF
 class PickedFileInlinePreview extends StatefulWidget {
@@ -121,16 +122,16 @@ class _PickedFileInlinePreviewState extends State<PickedFileInlinePreview> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: AppTypography.bodySmall.copyWith(
-            fontSize: 13,
+            fontSize: 13.sp,
             color: AppColors.textSecondary,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         SizedBox(
           height: widget.height,
           width: double.infinity,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(8.r),
             child: ColoredBox(
               color: AppColors.grey25,
               child: widget.onTapReplace == null
@@ -179,7 +180,7 @@ class _PickedFileInlinePreviewState extends State<PickedFileInlinePreview> {
                                       ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius:
-                                            BorderRadius.circular(10),
+                                            BorderRadius.circular(10.r),
                                       ),
                                     ),
                                     child: Text(
@@ -187,7 +188,7 @@ class _PickedFileInlinePreviewState extends State<PickedFileInlinePreview> {
                                       style:
                                           AppTypography.bodyMediumB.copyWith(
                                         color: AppColors.grey0,
-                                        fontSize: 15,
+                                        fontSize: 15.sp,
                                       ),
                                     ),
                                   ),
@@ -256,7 +257,7 @@ class _PickedFileInlinePreviewState extends State<PickedFileInlinePreview> {
   Widget _errorText(Object e) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16.r),
         child: Text(
           '불러오지 못했습니다.\n$e',
           textAlign: TextAlign.center,

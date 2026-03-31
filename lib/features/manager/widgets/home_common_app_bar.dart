@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_assets.dart';
 import '../../../theme/app_colors.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class HomeCommonAppBar extends StatelessWidget implements PreferredSizeWidget {
   const HomeCommonAppBar({
@@ -27,7 +28,7 @@ class HomeCommonAppBar extends StatelessWidget implements PreferredSizeWidget {
       surfaceTintColor: AppColors.grey0,
       leadingWidth: 140,
       leading: Padding(
-        padding: const EdgeInsets.only(left: 12),
+        padding: EdgeInsets.only(left: 12.w),
         child: Align(
           alignment: Alignment.centerLeft,
           child: Image.asset(
@@ -59,7 +60,7 @@ class HomeCommonAppBar extends StatelessWidget implements PreferredSizeWidget {
             fit: BoxFit.contain,
           ),
         ),
-        const SizedBox(width: 6),
+        SizedBox(width: 6.w),
       ],
     );
   }

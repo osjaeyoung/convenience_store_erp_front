@@ -6,6 +6,7 @@ import '../../../data/repositories/auth_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../widgets/account_figma_styles.dart';
 import 'account_change_password_screen.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 비밀번호 변경 전 본인 확인 (Figma 2634:16196)
 class AccountPasswordVerifyScreen extends StatefulWidget {
@@ -96,26 +97,26 @@ class _AccountPasswordVerifyScreenState
         children: [
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+              padding: EdgeInsets.fromLTRB(20.w, 0.h, 20.w, 24.h),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     '이용하실 회원정보를\n입력해주세요.',
                     style: AccountFigmaStyles.verifyHeadline,
                   ),
-                  const SizedBox(height: 28),
+                  SizedBox(height: 28.h),
                   Text('전화번호', style: AccountFigmaStyles.fieldCaption.copyWith(color: AccountFigmaStyles.titleColor)),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4.h),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
                         width: 80,
-                        padding: const EdgeInsets.fromLTRB(16, 16, 12, 16),
+                        padding: EdgeInsets.fromLTRB(16.w, 16.h, 12.w, 16.h),
                         decoration: BoxDecoration(
                           color: AppColors.grey25,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(12.r),
                         ),
                         alignment: Alignment.centerLeft,
                         child: Text(
@@ -123,13 +124,13 @@ class _AccountPasswordVerifyScreenState
                           style: AccountFigmaStyles.fieldValue,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8.w),
                       Expanded(
                         child: Container(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+                          padding: EdgeInsets.fromLTRB(16.w, 8.h, 8.w, 8.h),
                           decoration: BoxDecoration(
                             color: AppColors.grey25,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(12.r),
                           ),
                           child: Row(
                             children: [
@@ -141,13 +142,13 @@ class _AccountPasswordVerifyScreenState
                                     FilteringTextInputFormatter.digitsOnly,
                                   ],
                                   style: AccountFigmaStyles.fieldValue,
-                                  decoration: const InputDecoration(
+                                  decoration: InputDecoration(
                                     isDense: true,
                                     border: InputBorder.none,
                                     hintText: "'-'를 제외하고 입력",
                                     hintStyle: TextStyle(
                                       fontFamily: 'Pretendard',
-                                      fontSize: 16,
+                                      fontSize: 16.sp,
                                       color: AppColors.textTertiary,
                                     ),
                                   ),
@@ -156,7 +157,7 @@ class _AccountPasswordVerifyScreenState
                               TextButton(
                                 onPressed: _onSendSms,
                                 style: AccountFigmaStyles.mintSmallActionStyle,
-                                child: const Text(
+                                child: Text(
                                   '전송',
                                   style:
                                       AccountFigmaStyles.mintSmallActionLabel,
@@ -168,25 +169,25 @@ class _AccountPasswordVerifyScreenState
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20.h),
                   Text('이름', style: AccountFigmaStyles.fieldCaption.copyWith(color: AccountFigmaStyles.titleColor)),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4.h),
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(16.r),
                     decoration: BoxDecoration(
                       color: AppColors.grey25,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12.r),
                     ),
                     child: TextField(
                       controller: _nameCtrl,
-                      style: AccountFigmaStyles.fieldValue.copyWith(fontSize: 14, height: 24 / 14),
-                      decoration: const InputDecoration(
+                      style: AccountFigmaStyles.fieldValue.copyWith(fontSize: 14.sp, height: 24 / 14),
+                      decoration: InputDecoration(
                         isDense: true,
                         border: InputBorder.none,
                         hintText: '이름을 입력해주세요.',
                         hintStyle: TextStyle(
                           fontFamily: 'Pretendard',
-                          fontSize: 14,
+                          fontSize: 14.sp,
                           color: AppColors.textTertiary,
                         ),
                       ),
@@ -197,7 +198,7 @@ class _AccountPasswordVerifyScreenState
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+            padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 32.h),
             child: SizedBox(
               width: double.infinity,
               height: 52,
@@ -207,7 +208,7 @@ class _AccountPasswordVerifyScreenState
                   backgroundColor: AppColors.primary,
                   foregroundColor: AppColors.grey0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
                 ),
                 child: _submitting
@@ -219,11 +220,11 @@ class _AccountPasswordVerifyScreenState
                           color: AppColors.grey0,
                         ),
                       )
-                    : const Text(
+                    : Text(
                         '완료',
                         style: TextStyle(
                           fontFamily: 'Pretendard',
-                          fontSize: 16,
+                          fontSize: 16.sp,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

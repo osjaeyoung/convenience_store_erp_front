@@ -6,6 +6,7 @@ import 'package:printing/printing.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import 'employee_etc_file_preview_common.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 기타자료 조회 — 파일을 테두리 없이 바로 표시
 class EtcRecordInlineFilePreview extends StatefulWidget {
@@ -95,8 +96,8 @@ class _EtcRecordInlineFilePreviewState extends State<EtcRecordInlineFilePreview>
             fit: BoxFit.contain,
             loadingBuilder: (context, child, loadingProgress) {
               if (loadingProgress == null) return child;
-              return const Padding(
-                padding: EdgeInsets.all(32),
+              return Padding(
+                padding: EdgeInsets.all(32.r),
                 child: CircularProgressIndicator(),
               );
             },
@@ -154,17 +155,17 @@ class _EtcRecordInlineFilePreviewState extends State<EtcRecordInlineFilePreview>
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppTypography.bodySmall.copyWith(
-              fontSize: 13,
+              fontSize: 13.sp,
               color: AppColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
         ],
         SizedBox(
           height: widget.height,
           width: double.infinity,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(8.r),
             child: ColoredBox(
               color: AppColors.grey25,
               child: body,
@@ -234,7 +235,7 @@ class _EtcRecordInlineFilePreviewState extends State<EtcRecordInlineFilePreview>
   Widget _errorText(Object e) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16.r),
         child: Text(
           '불러오지 못했습니다.\n$e',
           textAlign: TextAlign.center,

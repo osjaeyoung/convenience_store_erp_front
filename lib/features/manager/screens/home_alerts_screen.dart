@@ -6,6 +6,7 @@ import '../../../data/repositories/manager_home_repository.dart';
 import '../../../data/repositories/owner_home_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class HomeAlertsScreen extends StatefulWidget {
   const HomeAlertsScreen({
@@ -128,7 +129,7 @@ class _HomeAlertsScreenState extends State<HomeAlertsScreen> {
           : _error != null
               ? Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(24.r),
                     child: Text(
                       _error!,
                       style: AppTypography.bodyMediumR.copyWith(
@@ -150,15 +151,15 @@ class _HomeAlertsScreenState extends State<HomeAlertsScreen> {
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+                        padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 24.h),
                         itemCount: _alerts.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        separatorBuilder: (_, __) => SizedBox(height: 12.h),
                         itemBuilder: (context, index) {
                           final alert = _alerts[index];
                           return Container(
                             decoration: BoxDecoration(
                               color: AppColors.grey0,
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(16.r),
                               border: Border.all(color: AppColors.grey50),
                             ),
                             child: Theme(
@@ -166,13 +167,13 @@ class _HomeAlertsScreenState extends State<HomeAlertsScreen> {
                                 dividerColor: Colors.transparent,
                               ),
                               child: ExpansionTile(
-                                tilePadding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-                                childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                tilePadding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 10.h),
+                                childrenPadding: EdgeInsets.fromLTRB(16.w, 0.h, 16.w, 16.h),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(16.r),
                                 ),
                                 collapsedShape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(16.r),
                                 ),
                                 initiallyExpanded: alert.isOpen,
                                 onExpansionChanged: (expanded) => _toggleOpen(alert, expanded),
@@ -180,19 +181,19 @@ class _HomeAlertsScreenState extends State<HomeAlertsScreen> {
                                   alert.title,
                                   style: AppTypography.bodyLargeM.copyWith(
                                     color: AppColors.textPrimary,
-                                    fontSize: 16,
+                                    fontSize: 16.sp,
                                     height: 20 / 16,
                                   ),
                                 ),
                                 subtitle: alert.createdAt == null
                                     ? null
                                     : Padding(
-                                        padding: const EdgeInsets.only(top: 4),
+                                        padding: EdgeInsets.only(top: 4.h),
                                         child: Text(
                                           alert.createdAt!,
                                           style: AppTypography.bodySmallR.copyWith(
                                             color: AppColors.textTertiary,
-                                            fontSize: 12,
+                                            fontSize: 12.sp,
                                             height: 18 / 12,
                                           ),
                                         ),
@@ -204,7 +205,7 @@ class _HomeAlertsScreenState extends State<HomeAlertsScreen> {
                                       alert.content,
                                       style: AppTypography.bodyMediumR.copyWith(
                                         color: AppColors.textPrimary,
-                                        fontSize: 14,
+                                        fontSize: 14.sp,
                                         height: 20 / 14,
                                       ),
                                     ),

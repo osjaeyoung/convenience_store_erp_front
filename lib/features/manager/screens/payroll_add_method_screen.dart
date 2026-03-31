@@ -5,6 +5,7 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import 'payroll_file_attach_screen.dart';
 import 'payroll_statement_form_screen.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 급여명세 추가: 작성 vs 파일 첨부 (Figma 카드 2행)
 class PayrollAddMethodScreen extends StatelessWidget {
@@ -34,11 +35,11 @@ class PayrollAddMethodScreen extends StatelessWidget {
         scrolledUnderElevation: 0,
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
         child: Container(
           decoration: BoxDecoration(
             color: AppColors.grey0,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(16.r),
             border: Border.all(color: AppColors.grey50),
           ),
           child: Column(
@@ -105,18 +106,18 @@ class _MethodRow extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+          padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 14.w),
           child: Row(
             children: [
               Container(
                 width: 42,
                 height: 42,
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(10.r),
                 decoration: BoxDecoration(
                   color: AppColors.grey0Alt,
-                  borderRadius: BorderRadius.circular(100),
+                  borderRadius: BorderRadius.circular(100.r),
                 ),
                 alignment: Alignment.center,
                 child: SvgPicture.asset(
@@ -126,12 +127,12 @@ class _MethodRow extends StatelessWidget {
                   fit: BoxFit.contain,
                 ),
               ),
-              const SizedBox(width: 14),
+              SizedBox(width: 14.w),
               Expanded(
                 child: Text(
                   title,
                   style: AppTypography.bodyMediumM.copyWith(
-                    fontSize: 16,
+                    fontSize: 16.sp,
                     fontWeight: FontWeight.w500,
                     color: AppColors.textPrimary,
                   ),

@@ -8,6 +8,7 @@ import '../../../theme/app_typography.dart';
 import '../payroll/payroll_formatters.dart';
 import 'payroll_add_method_screen.dart';
 import 'payroll_statement_detail_screen.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 급여명세 목록 (빈 목록 / 리스트 + 하단 추가하기)
 class PayrollStatementListScreen extends StatefulWidget {
@@ -32,9 +33,9 @@ class PayrollStatementListScreen extends StatefulWidget {
 
 class _PayrollStatementListScreenState extends State<PayrollStatementListScreen> {
   /// Figma Body medium_M — 목록 행 제목 (`2025년 12월 급여명세`)
-  static const TextStyle _rowTitleStyle = TextStyle(
+  static TextStyle get _rowTitleStyle => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 14,
+    fontSize: 14.sp,
     fontWeight: FontWeight.w500,
     height: 16 / 14,
     color: Color(0xFF000000),
@@ -140,7 +141,7 @@ class _PayrollStatementListScreenState extends State<PayrollStatementListScreen>
                 : _error != null && _items.isEmpty
                     ? Center(
                         child: Padding(
-                          padding: const EdgeInsets.all(24),
+                          padding: EdgeInsets.all(24.r),
                           child: Text(
                             _error!,
                             textAlign: TextAlign.center,
@@ -160,10 +161,10 @@ class _PayrollStatementListScreenState extends State<PayrollStatementListScreen>
                             ),
                           )
                         : ListView.separated(
-                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                            padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 100.h),
                             itemCount: _items.length,
                             separatorBuilder: (_, __) =>
-                                const SizedBox(height: 0),
+                                SizedBox(height: 0.h),
                             itemBuilder: (context, i) {
                               final row = _items[i];
                               final y = (row['year'] as num?)?.toInt() ?? 0;
@@ -182,11 +183,11 @@ class _PayrollStatementListScreenState extends State<PayrollStatementListScreen>
                                         Container(
                                           width: 42,
                                           height: 42,
-                                          padding: const EdgeInsets.all(10),
+                                          padding: EdgeInsets.all(10.r),
                                           decoration: BoxDecoration(
                                             color: AppColors.grey0Alt,
                                             borderRadius:
-                                                BorderRadius.circular(100),
+                                                BorderRadius.circular(100.r),
                                           ),
                                           alignment: Alignment.center,
                                           child: SvgPicture.asset(
@@ -196,7 +197,7 @@ class _PayrollStatementListScreenState extends State<PayrollStatementListScreen>
                                             fit: BoxFit.contain,
                                           ),
                                         ),
-                                        const SizedBox(width: 12),
+                                        SizedBox(width: 12.w),
                                         Expanded(
                                           child: Text(
                                             '$y년 $m월 급여명세',
@@ -220,9 +221,9 @@ class _PayrollStatementListScreenState extends State<PayrollStatementListScreen>
       bottomNavigationBar: Material(
         color: AppColors.grey0,
         child: SafeArea(
-          minimum: const EdgeInsets.only(bottom: 8),
+          minimum: EdgeInsets.only(bottom: 8.h),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 16.h),
             child: SizedBox(
               width: double.infinity,
               height: 52,
@@ -233,14 +234,14 @@ class _PayrollStatementListScreenState extends State<PayrollStatementListScreen>
                   foregroundColor: AppColors.grey0,
                   padding: EdgeInsets.zero,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(8.r),
                   ),
                 ),
                 child: Text(
                   '추가하기',
                   style: AppTypography.bodyMediumB.copyWith(
                     color: AppColors.grey0,
-                    fontSize: 16,
+                    fontSize: 16.sp,
                     height: 24 / 16,
                   ),
                 ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'app_colors.dart';
 import 'app_spacing.dart';
@@ -21,9 +22,9 @@ class AppTheme {
         outlinedButtonTheme: _outlinedButtonTheme,
         textButtonTheme: _textButtonTheme,
         inputDecorationTheme: _inputDecorationTheme,
-        dividerTheme: const DividerThemeData(
+        dividerTheme: DividerThemeData(
           color: AppColors.divider,
-          thickness: 1,
+          thickness: 1.w,
         ),
       );
 
@@ -55,9 +56,9 @@ class AppTheme {
         centerTitle: false,
         titleSpacing: 0,
         titleTextStyle: AppTypography.appBarTitle,
-        iconTheme: const IconThemeData(
+        iconTheme: IconThemeData(
           color: _appBarForeground,
-          size: 22,
+          size: 22.r,
         ),
       );
 
@@ -66,7 +67,7 @@ class AppTheme {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-          side: const BorderSide(color: AppColors.border, width: 1),
+          side: BorderSide(color: AppColors.border, width: 1.w),
         ),
         margin: EdgeInsets.zero,
         clipBehavior: Clip.antiAlias,
@@ -78,7 +79,7 @@ class AppTheme {
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(
+          padding: EdgeInsets.symmetric(
             horizontal: AppSpacing.lg,
             vertical: AppSpacing.md,
           ),
@@ -93,8 +94,8 @@ class AppTheme {
       OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primary,
-          side: const BorderSide(color: AppColors.border),
-          padding: const EdgeInsets.symmetric(
+          side: BorderSide(color: AppColors.border, width: 1.w),
+          padding: EdgeInsets.symmetric(
             horizontal: AppSpacing.lg,
             vertical: AppSpacing.md,
           ),
@@ -108,7 +109,7 @@ class AppTheme {
   static TextButtonThemeData get _textButtonTheme => TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
-          padding: const EdgeInsets.symmetric(
+          padding: EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
             vertical: AppSpacing.sm,
           ),
@@ -119,7 +120,7 @@ class AppTheme {
   static InputDecorationTheme get _inputDecorationTheme => InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surface,
-        contentPadding: const EdgeInsets.symmetric(
+        contentPadding: EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
           vertical: AppSpacing.md,
         ),
@@ -128,15 +129,15 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: AppColors.border, width: 1.w),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          borderSide: BorderSide(color: AppColors.primary, width: 2.w),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-          borderSide: const BorderSide(color: AppColors.error),
+          borderSide: BorderSide(color: AppColors.error, width: 1.w),
         ),
         hintStyle: AppTypography.bodyMedium.copyWith(
           color: AppColors.textTertiary,

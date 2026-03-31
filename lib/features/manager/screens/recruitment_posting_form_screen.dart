@@ -10,6 +10,7 @@ import '../../../theme/app_typography.dart';
 import '../../../widgets/file_or_gallery_picker.dart';
 import '../../auth/widgets/auth_input_field.dart';
 import 'recruitment_posting_detail_screen.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class RecruitmentPostingFormScreen extends StatefulWidget {
   const RecruitmentPostingFormScreen({
@@ -293,7 +294,7 @@ class _RecruitmentPostingFormScreenState
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                padding: EdgeInsets.fromLTRB(20.w, 0.h, 20.w, 24.h),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -349,7 +350,7 @@ class _RecruitmentPostingFormScreenState
                                         onTap: () => setState(() => _payType = '시급'),
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
+                                    SizedBox(width: 12.w),
                                     Expanded(
                                       child: _PayTypeButton(
                                         label: '월급',
@@ -359,7 +360,7 @@ class _RecruitmentPostingFormScreenState
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 12),
+                                SizedBox(height: 12.h),
                                 _textField(
                                   _payAmountCtrl,
                                   hint: '입력해주세요.',
@@ -381,7 +382,7 @@ class _RecruitmentPostingFormScreenState
                                   _workDaysCtrl,
                                   hint: '입력해주세요. ex) 요일협의',
                                 ),
-                                const SizedBox(height: 12),
+                                SizedBox(height: 12.h),
                                 _textField(
                                   _workDaysDetailCtrl,
                                   hint: '상세 설명을 입력해주세요.',
@@ -399,7 +400,7 @@ class _RecruitmentPostingFormScreenState
                                   _workTimeCtrl,
                                   hint: '입력해주세요. ex) 시간협의',
                                 ),
-                                const SizedBox(height: 12),
+                                SizedBox(height: 12.h),
                                 _textField(
                                   _workTimeDetailCtrl,
                                   hint: '상세 설명을 입력해주세요.',
@@ -431,7 +432,7 @@ class _RecruitmentPostingFormScreenState
                             child: Column(
                               children: [
                                 _textField(_headcountCtrl, hint: '입력해주세요.'),
-                                const SizedBox(height: 12),
+                                SizedBox(height: 12.h),
                                 _textField(
                                   _headcountDetailCtrl,
                                   hint: '상세 설명을 입력해주세요.',
@@ -446,7 +447,7 @@ class _RecruitmentPostingFormScreenState
                             child: Column(
                               children: [
                                 _textField(_educationCtrl, hint: '입력해주세요.'),
-                                const SizedBox(height: 12),
+                                SizedBox(height: 12.h),
                                 _textField(
                                   _educationDetailCtrl,
                                   hint: '상세 설명을 입력해주세요.',
@@ -498,7 +499,7 @@ class _RecruitmentPostingFormScreenState
             ),
             Container(
               color: AppColors.grey0,
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
+              padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 36.h),
               child: SafeArea(
                 top: false,
                 child: SizedBox(
@@ -510,7 +511,7 @@ class _RecruitmentPostingFormScreenState
                       backgroundColor: AppColors.primary,
                       foregroundColor: AppColors.grey0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(8.r),
                       ),
                     ),
                     child: _saving
@@ -526,7 +527,7 @@ class _RecruitmentPostingFormScreenState
                             _isEditing ? '저장' : '다음',
                             style: AppTypography.bodyLargeB.copyWith(
                               color: AppColors.grey0,
-                              fontSize: 16,
+                              fontSize: 16.sp,
                             ),
                           ),
                   ),
@@ -582,7 +583,7 @@ class _RecruitmentPostingFormScreenState
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(12.r),
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('현재 선택된 매장으로 등록됩니다.')),
@@ -606,7 +607,7 @@ class _SectionLabel extends StatelessWidget {
     return Text(
       text,
       style: AppTypography.bodyLargeM.copyWith(
-        fontSize: 18,
+        fontSize: 18.sp,
         height: 24 / 18,
         color: AppColors.textPrimary,
       ),
@@ -635,7 +636,7 @@ class _SectionBlock extends StatelessWidget {
       width: double.infinity,
       padding: EdgeInsets.only(
         top: hasTitle ? 20 : 0,
-        bottom: 32,
+        bottom: 32.h,
       ),
       decoration: BoxDecoration(
         border: showDivider
@@ -702,7 +703,7 @@ class _InputGroup extends StatelessWidget {
         Text(
           label,
           style: AppTypography.bodyMediumM.copyWith(
-            fontSize: 14,
+            fontSize: 14.sp,
             height: 16 / 14,
             color: AppColors.textPrimary,
           ),
@@ -729,13 +730,13 @@ class _PayTypeButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(12.r),
       child: Container(
         height: 56,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: selected ? AppColors.primaryLight : AppColors.grey0,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
           border: Border.all(
             color: selected ? AppColors.primary : AppColors.grey50,
           ),
@@ -743,7 +744,7 @@ class _PayTypeButton extends StatelessWidget {
         child: Text(
           label,
           style: AppTypography.bodyMediumM.copyWith(
-            fontSize: 14,
+            fontSize: 14.sp,
             height: 16 / 14,
             color: selected ? AppColors.primary : AppColors.textSecondary,
           ),
@@ -773,13 +774,13 @@ class _ImageAttachmentBox extends StatelessWidget {
     final hasImage = hasLocalImage || hasRemoteImage;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(12.r),
       child: Container(
         width: 92,
         height: 92,
         decoration: BoxDecoration(
           color: AppColors.primaryLight,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
           border: Border.all(color: AppColors.primary),
           image: hasImage
               ? DecorationImage(
@@ -793,18 +794,18 @@ class _ImageAttachmentBox extends StatelessWidget {
         child: hasImage
             ? Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(12.r),
                   color: Colors.black.withValues(alpha: 0.15),
                 ),
                 alignment: Alignment.bottomCenter,
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(8.r),
                 child: Text(
                   fileName ?? '이미지 변경',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTypography.bodySmallM.copyWith(
                     color: AppColors.grey0,
-                    fontSize: 10,
+                    fontSize: 10.sp,
                     height: 16 / 10,
                   ),
                 ),

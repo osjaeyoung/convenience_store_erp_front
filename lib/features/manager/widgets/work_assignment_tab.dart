@@ -5,6 +5,7 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../bloc/staff_management_bloc.dart';
 import 'schedule_date_selector.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 30분 슬롯 시간 라벨 (00:00 ~ 23:30)
 const _slotTimes = [
@@ -206,21 +207,21 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
 
   Widget _buildDailyView() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+      padding: EdgeInsets.fromLTRB(16.w, 24.h, 16.w, 0.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _buildSelectorRow(),
           if (_isDragMode) ...[
-            const SizedBox(height: 24),
+            SizedBox(height: 24.h),
             _buildDragInstruction(),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
           ],
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           _buildDateLabel(),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           _buildSlotGridContent(),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
         ],
       ),
     );
@@ -230,7 +231,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     final weekStart = _getWeekStart(_weekSelectedDate);
     final weekDays = _getWeekDays(weekStart);
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 16.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -243,9 +244,9 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
               });
             },
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           _buildSelectorRow(),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           if (_isDragMode)
             _buildWeeklyGridContent(weekDays)
           else
@@ -315,12 +316,12 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(0, 0, 0, 12),
+                        padding: EdgeInsets.fromLTRB(0.w, 0.h, 0.w, 12.h),
                         child: Center(
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(100),
+                              borderRadius: BorderRadius.circular(100.r),
                               border: Border.all(color: AppColors.grey25),
                               color: AppColors.grey0Alt,
                             ),
@@ -328,7 +329,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
                               dateLabel,
                               style: AppTypography.bodyMediumM.copyWith(
                                 color: AppColors.textPrimary,
-                                fontSize: 12,
+                                fontSize: 12.sp,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -338,7 +339,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
                       ..._slotTimes.map((time) {
                         final isSelected = _dragSelectedSlots.contains(_dragSlotKey(dateStr, time));
                         return Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
+                          padding: EdgeInsets.only(bottom: 8.h),
                           child: _SlotCard(
                             startTime: time,
                             endTime: _slotEndTime(time),
@@ -390,7 +391,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
       dateLabel,
       style: AppTypography.bodyLargeM.copyWith(
         color: AppColors.textPrimary,
-        fontSize: 16,
+        fontSize: 16.sp,
         fontWeight: FontWeight.w500,
         height: 20 / 16,
       ),
@@ -400,12 +401,12 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
   Widget _buildDragInstruction() {
     final name = _dragFilterEmployee?.name ?? '';
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
       child: RichText(
         text: TextSpan(
           style: AppTypography.heading1.copyWith(
             color: AppColors.textPrimary,
-            fontSize: 24,
+            fontSize: 24.sp,
             fontWeight: FontWeight.w400,
             height: 32 / 24,
           ),
@@ -413,7 +414,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
             const TextSpan(text: '현 근무자 '),
             TextSpan(
               text: '$name',
-              style: const TextStyle(color: AppColors.primary),
+              style: TextStyle(color: AppColors.primary),
             ),
             const TextSpan(text: ' 사원의\n근무 배정 시간대를\n드래그 해주세요.'),
           ],
@@ -456,7 +457,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     final isComplete = _isDragMode;
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 16.h),
         child: SizedBox(
           width: double.infinity,
           height: 52,
@@ -466,7 +467,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
               backgroundColor: AppColors.primary,
               foregroundColor: AppColors.grey0,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12.r),
               ),
             ),
             child: Text(
@@ -658,12 +659,12 @@ class _WeekDayTable extends StatelessWidget {
         children: [
           // 날짜 헤더 - 근무일정과 동일한 pill 스타일
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+            padding: EdgeInsets.fromLTRB(12.w, 12.h, 12.w, 8.h),
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(100),
+                  borderRadius: BorderRadius.circular(100.r),
                   border: Border.all(color: AppColors.grey25),
                   color: AppColors.grey0Alt,
                 ),
@@ -671,7 +672,7 @@ class _WeekDayTable extends StatelessWidget {
                   dateLabel,
                   style: AppTypography.bodyMediumM.copyWith(
                     color: AppColors.textPrimary,
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -680,11 +681,11 @@ class _WeekDayTable extends StatelessWidget {
           ),
           // 테이블 헤더 - 시간, 직원 (근무일정 스타일)
           Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppColors.grey25,
               border: Border(top: BorderSide(color: Color(0xFF666874), width: 1)),
             ),
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+            padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 8.w),
             child: Row(
               children: [
                 SizedBox(
@@ -694,7 +695,7 @@ class _WeekDayTable extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: AppTypography.bodySmallB.copyWith(
                       color: AppColors.textSecondary,
-                      fontSize: 12,
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -705,7 +706,7 @@ class _WeekDayTable extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: AppTypography.bodySmallB.copyWith(
                       color: AppColors.textSecondary,
-                      fontSize: 12,
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -719,7 +720,7 @@ class _WeekDayTable extends StatelessWidget {
             final assigned = isDragMode ? <({int id, String name})>[] : (assignments[time] ?? []);
             final isDragSelected = dragSelectedSlots.contains('$dateStr\_$time');
             return Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 border: Border(bottom: BorderSide(color: AppColors.grey25)),
               ),
               child: _SlotRow(
@@ -761,11 +762,11 @@ class _SlotRow extends StatelessWidget {
     final timeColor = isDragSelected ? AppColors.primary : AppColors.textPrimary;
     return Container(
       constraints: const BoxConstraints(minHeight: 44),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: isDragSelected
           ? BoxDecoration(
               color: AppColors.primaryLight,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(8.r),
               border: Border.all(color: AppColors.primary),
             )
           : null,
@@ -784,15 +785,15 @@ class _SlotRow extends StatelessWidget {
                     startTime,
                     style: AppTypography.bodyMediumR.copyWith(
                       color: timeColor,
-                      fontSize: 12,
+                      fontSize: 12.sp,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4.h),
                   Text(
                     endTime,
                     style: AppTypography.bodyMediumR.copyWith(
                       color: timeColor,
-                      fontSize: 12,
+                      fontSize: 12.sp,
                     ),
                   ),
                 ],
@@ -850,7 +851,7 @@ class _StaffSlotCell extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ...names.map((name) => Padding(
-              padding: const EdgeInsets.only(bottom: 4),
+              padding: EdgeInsets.only(bottom: 4.h),
               child: _StaffNameChip(name: name),
             )),
         if (showPlusButton)
@@ -874,10 +875,10 @@ class _StaffNameChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
         color: AppColors.grey25,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(8.r),
         border: Border.all(color: AppColors.grey50),
       ),
       alignment: Alignment.center,
@@ -885,7 +886,7 @@ class _StaffNameChip extends StatelessWidget {
         name,
         style: AppTypography.bodySmallR.copyWith(
           color: AppColors.textPrimary,
-          fontSize: 12,
+          fontSize: 12.sp,
         ),
         overflow: TextOverflow.ellipsis,
         textAlign: TextAlign.center,
@@ -902,10 +903,10 @@ class _AddEmployeeChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
         color: AppColors.primaryLight,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(8.r),
         border: Border.all(color: AppColors.primary),
       ),
       alignment: Alignment.center,
@@ -929,10 +930,10 @@ class _SelectorChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
         decoration: BoxDecoration(
           color: AppColors.grey0,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(10.r),
           border: Border.all(color: AppColors.grey50),
         ),
         child: Row(
@@ -942,12 +943,12 @@ class _SelectorChip extends StatelessWidget {
               label,
               style: AppTypography.bodyMediumR.copyWith(
                 color: AppColors.textPrimary,
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w400,
                 height: 19 / 14,
               ),
             ),
-            const SizedBox(width: 4),
+            SizedBox(width: 4.w),
             Icon(
               Icons.keyboard_arrow_down_rounded,
               size: 20,
@@ -991,7 +992,7 @@ class _SlotCard extends StatelessWidget {
           color: isDragSelected
               ? AppColors.primaryLight
               : AppColors.grey0,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
           border: Border.all(
             color: isDragSelected ? AppColors.primary : AppColors.grey50,
           ),
@@ -1006,32 +1007,32 @@ class _SlotCard extends StatelessWidget {
               textAlign: TextAlign.center,
               style: AppTypography.bodyMediumM.copyWith(
                 color: isDragSelected ? AppColors.primary : AppColors.grey200,
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w500,
                 height: 16 / 14,
               ),
             ),
-            if (isDragSlot) const SizedBox(height: 8),
+            if (isDragSlot) SizedBox(height: 8.h),
             Text(
               endTime,
               textAlign: TextAlign.center,
               style: AppTypography.bodyMediumM.copyWith(
                 color: isDragSelected ? AppColors.primary : AppColors.grey200,
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w500,
                 height: 16 / 14,
               ),
             ),
             if (assignedNames.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(top: 6),
+                padding: EdgeInsets.only(top: 6.h),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: assignedNames
                       .map(
                         (n) => Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
+                          padding: EdgeInsets.only(bottom: 6.h),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,
@@ -1039,7 +1040,7 @@ class _SlotCard extends StatelessWidget {
                             ),
                             decoration: BoxDecoration(
                               color: AppColors.grey0Alt,
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(8.r),
                               border: Border.all(color: AppColors.grey150),
                             ),
                             child: Text(
@@ -1047,7 +1048,7 @@ class _SlotCard extends StatelessWidget {
                               textAlign: TextAlign.center,
                               style: AppTypography.bodyMediumM.copyWith(
                                 color: AppColors.grey200,
-                                fontSize: 14,
+                                fontSize: 14.sp,
                                 height: 16 / 14,
                               ),
                               overflow: TextOverflow.ellipsis,
@@ -1060,14 +1061,14 @@ class _SlotCard extends StatelessWidget {
               ),
             if (showPlusButton)
               Padding(
-                padding: const EdgeInsets.only(top: 6),
+                padding: EdgeInsets.only(top: 6.h),
                 child: GestureDetector(
                   onTap: onPlusTap,
                   child: Container(
                     height: 32,
                     decoration: BoxDecoration(
                       color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(8.r),
                       border: Border.all(color: AppColors.primary),
                     ),
                     child: const Center(
@@ -1122,9 +1123,9 @@ class _EmployeeSelectionModalState extends State<_EmployeeSelectionModal>
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24.r),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1136,7 +1137,7 @@ class _EmployeeSelectionModalState extends State<_EmployeeSelectionModal>
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20.h),
             TabBar(
               controller: _tabController,
               labelColor: AppColors.textPrimary,
@@ -1177,36 +1178,36 @@ class _EmployeeSelectionModalState extends State<_EmployeeSelectionModal>
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20.h),
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(48),
+                      minimumSize: Size.fromHeight(48.h),
                       backgroundColor: AppColors.grey0,
                       foregroundColor: AppColors.grey150,
                       side: const BorderSide(color: AppColors.grey25),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                       ),
                     ),
                     child: const Text('취소'),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12.w),
                 Expanded(
                   child: FilledButton(
                     onPressed: _selected != null
                         ? () => Navigator.of(context).pop(_selected)
                         : null,
                     style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(48),
+                      minimumSize: Size.fromHeight(48.h),
                       backgroundColor: AppColors.primary,
                       foregroundColor: AppColors.grey0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                       ),
                     ),
                     child: const Text('확인'),
@@ -1244,7 +1245,7 @@ class _EmployeeGrid extends StatelessWidget {
       );
     }
     return GridView.builder(
-      padding: const EdgeInsets.only(top: 16),
+      padding: EdgeInsets.only(top: 16.h),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         mainAxisSpacing: 10,
@@ -1258,7 +1259,7 @@ class _EmployeeGrid extends StatelessWidget {
         return GestureDetector(
           onTap: () => onSelect(w),
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 12),
+            padding: EdgeInsets.symmetric(vertical: 12.h),
             decoration: BoxDecoration(
               color: isSelected ? AppColors.primaryLight : AppColors.grey0Alt,
               borderRadius: BorderRadius.circular(isSelected ? 12 : 8),

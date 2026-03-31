@@ -5,6 +5,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import 'employment_contract_read_plain_text.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// `MultiPage`는 **한 위젯**이 페이지 높이를 넘으면 예외가 납니다.
 /// 본문을 줄 단위로 나눠 배치해 여러 페이지에 자연스럽게 이어지게 합니다.
@@ -27,7 +28,7 @@ List<pw.Widget> _bodyLinesToWidgets(
     } else {
       widgets.add(
         pw.Padding(
-          padding: const pw.EdgeInsets.only(bottom: 1),
+          padding: pw.EdgeInsets.only(bottom: 1),
           child: pw.Text(line, style: style),
         ),
       );
@@ -63,7 +64,7 @@ Future<Uint8List> buildEmploymentContractPdfBytes({
       build: (context) => [
         pw.Text(
           documentTitle,
-          style: pw.TextStyle(font: fontMedium, fontSize: 14),
+          style: pw.TextStyle(font: fontMedium, fontSize: 14.sp),
         ),
         pw.SizedBox(height: 14),
         ..._bodyLinesToWidgets(body, font),

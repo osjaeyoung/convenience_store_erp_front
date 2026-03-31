@@ -11,6 +11,7 @@ import '../../../widgets/app_styled_confirm_dialog.dart';
 import '../widgets/employee_profile_box.dart';
 import 'employee_document_menu_actions.dart';
 import 'employee_review_screen.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 직원 상세 화면 - 직원정보 탭에서 직원 클릭 시 별도 화면으로 표시
 class EmployeeDetailScreen extends StatefulWidget {
@@ -168,7 +169,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
           : _error != null
               ? Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(16.r),
                     child: Text(
                       _error!,
                       style: AppTypography.bodySmall.copyWith(
@@ -181,7 +182,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
               : _detail == null
                   ? const Center(child: Text('데이터를 불러올 수 없습니다.'))
                   : SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(16.r),
                       child: _buildDetailContent(),
                     ),
     );
@@ -263,13 +264,13 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
             }
           },
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16.h),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(3, (i) {
             final filled = i < ratingInt;
             return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
+              padding: EdgeInsets.symmetric(horizontal: 4.w),
               child: SizedBox(
                 width: 40,
                 height: 40,
@@ -285,7 +286,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
             );
           }),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12.h),
         GestureDetector(
           onTap: () async {
             final refreshed = await Navigator.of(context).push<bool>(
@@ -313,7 +314,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
               '리뷰작성',
               style: AppTypography.bodyMediumB.copyWith(
                 color: const Color(0xFFA3A4AF),
-                fontSize: 14,
+                fontSize: 14.sp,
                 height: 16 / 14,
                 fontWeight: FontWeight.w600,
                 decoration: TextDecoration.underline,
@@ -322,7 +323,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16.h),
         _buildDocumentList(
           branchName: branchDisplayName,
           employeeName: empName,
@@ -333,7 +334,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
           workHistories: workHistoriesForUi,
           payrollStatementsRaw: _detail?['payroll_statements'],
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16.h),
         GestureDetector(
           onTap: isRetired ? null : _onRetirementTap,
           child: Center(
@@ -369,9 +370,9 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
     return '${d.year}년 ${d.month}월 ${d.day}일';
   }
 
-  static const TextStyle _hireDateButtonStyle = TextStyle(
+  static TextStyle get _hireDateButtonStyle => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 12,
+    fontSize: 12.sp,
     fontWeight: FontWeight.w400,
     height: 20 / 12,
     letterSpacing: -0.3,
@@ -387,14 +388,14 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         height: 280,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.grey0,
           borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
         ),
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -404,7 +405,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
                       '취소',
                       style: AppTypography.bodyMediumM.copyWith(
                         color: AppColors.grey150,
-                        fontSize: 14,
+                        fontSize: 14.sp,
                       ),
                     ),
                   ),
@@ -442,7 +443,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
                       '확인',
                       style: AppTypography.bodyMediumB.copyWith(
                         color: AppColors.primaryDark,
-                fontSize: 14,
+                fontSize: 14.sp,
                       ),
                     ),
                   ),
@@ -455,7 +456,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
                   brightness: Brightness.light,
                   textTheme: CupertinoTextThemeData(
                     dateTimePickerTextStyle: AppTypography.bodyMediumR.copyWith(
-                      fontSize: 20,
+                      fontSize: 20.sp,
                       color: AppColors.textPrimary,
                     ),
                   ),
@@ -483,10 +484,10 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
       onTap: () => _showDatePickerBottomSheet(currentValue),
       child: IntrinsicWidth(
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
       decoration: BoxDecoration(
             color: const Color(0xFFF5F5F7),
-            borderRadius: BorderRadius.circular(5),
+            borderRadius: BorderRadius.circular(5.r),
       ),
       child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -497,7 +498,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
                 width: 18,
                 height: 18,
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8.w),
               Text(
                 displayText,
                 style: currentValue.isEmpty
@@ -533,10 +534,10 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
       '기타',
     ];
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: 8.h),
       decoration: BoxDecoration(
         color: AppColors.grey0,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: AppColors.grey50),
       ),
       child: Column(
@@ -546,7 +547,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
               title,
               style: AppTypography.bodyMediumM.copyWith(
                 color: AppColors.textPrimary,
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w500,
                 height: 16 / 14,
               ),

@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import 'work_status_badge.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class HomeTodayWorkersSection extends StatelessWidget {
   const HomeTodayWorkersSection({
@@ -63,12 +64,12 @@ class HomeTodayWorkersSection extends StatelessWidget {
                 height: 18,
                 fit: BoxFit.contain,
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: 6.w),
               Text(
                 '오늘의 근무자 현황',
                 style: AppTypography.bodyLargeM.copyWith(
                   color: AppColors.textPrimary,
-                  fontSize: 16,
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.w500,
                   height: 20 / 16,
                 ),
@@ -76,9 +77,9 @@ class HomeTodayWorkersSection extends StatelessWidget {
               const Spacer(),
               InkWell(
                 onTap: onTapHeader,
-                borderRadius: BorderRadius.circular(16),
-                child: const Padding(
-                  padding: EdgeInsets.all(4),
+                borderRadius: BorderRadius.circular(16.r),
+                child: Padding(
+                  padding: EdgeInsets.all(4.r),
                   child: Icon(
                     Icons.chevron_right_rounded,
                     size: 26,
@@ -88,13 +89,13 @@ class HomeTodayWorkersSection extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24.h),
         ],
         Center(
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(100),
+              borderRadius: BorderRadius.circular(100.r),
               border: Border.all(color: AppColors.grey25),
               color: AppColors.grey0Alt,
             ),
@@ -102,16 +103,16 @@ class HomeTodayWorkersSection extends StatelessWidget {
               dateLabel,
               style: AppTypography.bodyMediumM.copyWith(
                 color: AppColors.textPrimary,
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w500,
                 height: 16 / 14,
               ),
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12.h),
         Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: AppColors.grey25,
             border: Border(top: BorderSide(color: Color(0xFF666874), width: 1)),
           ),
@@ -137,7 +138,7 @@ class HomeTodayWorkersSection extends StatelessWidget {
                 vertical: 10,
                 horizontal: tableHorizontalPadding,
               ),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 border: Border(bottom: BorderSide(color: AppColors.grey25)),
               ),
               child: Row(
@@ -167,7 +168,7 @@ class HomeTodayWorkersSection extends StatelessWidget {
               vertical: 18,
               horizontal: tableHorizontalPadding,
             ),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               border: Border(bottom: BorderSide(color: AppColors.grey25)),
             ),
             child: Text(
@@ -175,7 +176,7 @@ class HomeTodayWorkersSection extends StatelessWidget {
               textAlign: TextAlign.center,
               style: AppTypography.bodyMediumR.copyWith(
                 color: AppColors.textTertiary,
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w400,
               ),
             ),
@@ -210,23 +211,23 @@ class HomeMonthlyLaborCostCard extends StatelessWidget {
               height: 18,
               fit: BoxFit.contain,
             ),
-            const SizedBox(width: 6),
+            SizedBox(width: 6.w),
             Text(
               '이번 달 예상 인건비',
               style: AppTypography.bodyLargeM.copyWith(
                 color: AppColors.textPrimary,
-                fontSize: 16,
+                fontSize: 16.sp,
                 fontWeight: FontWeight.w500,
                 height: 20 / 16,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: 10.h),
         Container(
-          padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
+          padding: EdgeInsets.fromLTRB(18.w, 18.h, 18.w, 14.h),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(16.r),
             gradient: const LinearGradient(
               begin: Alignment(-0.2, 0.2),
               end: Alignment(1.0, 1.0),
@@ -247,23 +248,23 @@ class HomeMonthlyLaborCostCard extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: AppTypography.heading2.copyWith(
                   color: AppColors.textPrimary,
-                  fontSize: 20,
+                  fontSize: 20.sp,
                   fontWeight: FontWeight.w600,
                   height: 26 / 20,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8.h),
               Text(
                 changeText,
                 textAlign: TextAlign.center,
                 style: AppTypography.bodyMediumM.copyWith(
                   color: AppColors.textSecondary,
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   fontWeight: FontWeight.w500,
                   height: 16 / 14,
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12.h),
               _LearnMoreButton(onTap: onDetailTap),
             ],
           ),
@@ -286,9 +287,9 @@ class HomeLaborSavingPointCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.all(14.r),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
         color: AppColors.primaryLight,
         border: Border.all(color: AppColors.primary),
       ),
@@ -303,27 +304,27 @@ class HomeLaborSavingPointCard extends StatelessWidget {
                 height: 18,
                 fit: BoxFit.contain,
               ),
-              const SizedBox(width: 4),
+              SizedBox(width: 4.w),
               Text(
                 '인건비 절감 Point',
                 style: AppTypography.bodySmallM.copyWith(
                   color: AppColors.textSecondary,
-                  fontSize: 12,
+                  fontSize: 12.sp,
                   fontWeight: FontWeight.w500,
                   height: 16 / 12,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10.h),
           ...points.map(
             (point) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+              padding: EdgeInsets.only(bottom: 8.h),
               child: RichText(
                 text: TextSpan(
                   style: AppTypography.bodyMediumM.copyWith(
                     color: AppColors.textPrimary,
-                    fontSize: 14,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.w500,
                     height: 16 / 14,
                   ),
@@ -332,7 +333,7 @@ class HomeLaborSavingPointCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           _LearnMoreButton(onTap: onDetailTap),
         ],
       ),
@@ -352,11 +353,11 @@ class _LearnMoreButton extends StatelessWidget {
       child: FilledButton(
         onPressed: onTap,
         style: FilledButton.styleFrom(
-          minimumSize: const Size.fromHeight(36),
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          minimumSize: Size.fromHeight(36.h),
+          padding: EdgeInsets.symmetric(vertical: 6.h),
           backgroundColor: AppColors.textPrimary,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(8.r),
           ),
         ),
         child: Row(
@@ -367,12 +368,12 @@ class _LearnMoreButton extends StatelessWidget {
               textAlign: TextAlign.center,
               style: AppTypography.bodySmallM.copyWith(
                 color: AppColors.grey0,
-                fontSize: 12,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w500,
                 height: 16 / 12,
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8.w),
             SvgPicture.asset(
               'assets/icons/svg/icon/chevron_right_white_5x9.svg',
               width: 5,
@@ -399,7 +400,7 @@ class _HeaderCell extends StatelessWidget {
         textAlign: textAlign,
         style: AppTypography.bodySmallB.copyWith(
           color: AppColors.textSecondary,
-          fontSize: 12,
+          fontSize: 12.sp,
           fontWeight: FontWeight.w600,
           height: 16 / 12,
         ),
@@ -421,7 +422,7 @@ class _BodyCell extends StatelessWidget {
         textAlign: TextAlign.center,
         style: AppTypography.bodyMediumR.copyWith(
           color: AppColors.textPrimary,
-          fontSize: 14,
+          fontSize: 14.sp,
           fontWeight: FontWeight.w400,
           height: 19 / 14,
         ),
@@ -445,14 +446,14 @@ class _MemoIconCell extends StatelessWidget {
       child: Center(
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(8.r),
           child: Opacity(
             opacity: hasMemo ? 1 : 0,
             child: Container(
               width: 28,
               height: 28,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(8.r),
                 border: Border.all(color: AppColors.grey50),
                 backgroundBlendMode: BlendMode.srcOver,
                 color: AppColors.grey25,
@@ -483,7 +484,7 @@ class _StatusCell extends StatelessWidget {
       child: Center(
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(8.r),
           child: WorkStatusBadge(status: status, compact: true),
         ),
       ),
@@ -508,7 +509,7 @@ class _WorkerNameCell extends StatelessWidget {
             width: 16,
             height: 16,
           ),
-          const SizedBox(width: 4),
+          SizedBox(width: 4.w),
           Flexible(
             child: Text(
               text,
@@ -517,7 +518,7 @@ class _WorkerNameCell extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: AppTypography.bodyMediumR.copyWith(
                 color: AppColors.textPrimary,
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w400,
                 height: 19 / 14,
               ),

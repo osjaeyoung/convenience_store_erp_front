@@ -6,6 +6,7 @@ import '../../../data/repositories/labor_cost_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../labor/labor_cost_formatters.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 월별 인건비 직원 목록 (API 2)
 class LaborCostMonthlyListScreen extends StatefulWidget {
@@ -110,7 +111,7 @@ class _LaborCostMonthlyListScreenState extends State<LaborCostMonthlyListScreen>
         : _error != null
             ? Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(24.r),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -121,7 +122,7 @@ class _LaborCostMonthlyListScreenState extends State<LaborCostMonthlyListScreen>
                           color: AppColors.textSecondary,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16.h),
                       FilledButton(onPressed: _load, child: const Text('다시 시도')),
                     ],
                   ),
@@ -160,22 +161,22 @@ class _LaborCostMonthlyListScreenState extends State<LaborCostMonthlyListScreen>
         context: context,
         removeTop: true,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
+          padding: EdgeInsets.fromLTRB(0.w, 0.h, 0.w, 16.h),
           children: [
           _MonthFilterBar(
             label: _filterDateLabel(),
             businessDays: d.businessDays,
             onTap: _pickMonth,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           if (d.employees.isEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
               child: Container(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(24.r),
                 decoration: BoxDecoration(
                   color: AppColors.grey0,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(16.r),
                 ),
                 child: Text(
                   '해당 월 급여 데이터가 없습니다.',
@@ -189,7 +190,7 @@ class _LaborCostMonthlyListScreenState extends State<LaborCostMonthlyListScreen>
           else
             ...d.employees.map(
               (e) => Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
                 child: _EmployeeAccordionCard(
                   employee: e,
                   expanded: _expandedEmployeeIds.contains(e.employeeId),
@@ -205,7 +206,7 @@ class _LaborCostMonthlyListScreenState extends State<LaborCostMonthlyListScreen>
                 ),
               ),
             ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10.h),
           _MonthlySummaryCard(
             totalWorkMinutes: d.totalWorkMinutes,
             totalCost: d.totalCost,
@@ -236,10 +237,10 @@ class _MonthFilterBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(16.r),
       child: Container(
         height: 72,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: EdgeInsets.symmetric(horizontal: 20.w),
         decoration: BoxDecoration(
           color: AppColors.grey0,
           border: Border.all(color: AppColors.grey50),
@@ -248,27 +249,27 @@ class _MonthFilterBar extends StatelessWidget {
           children: [
             Container(
               height: 48,
-              padding: const EdgeInsets.symmetric(horizontal: 18),
+              padding: EdgeInsets.symmetric(horizontal: 18.w),
               decoration: BoxDecoration(
                 color: AppColors.grey0Alt,
-                borderRadius: BorderRadius.circular(100),
+                borderRadius: BorderRadius.circular(100.r),
                 border: Border.all(color: AppColors.grey25),
               ),
               alignment: Alignment.center,
               child: Text(
                 label,
                 style: AppTypography.bodyMediumM.copyWith(
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   color: AppColors.textPrimary,
                   height: 16 / 14,
                 ),
               ),
             ),
-            const SizedBox(width: 18),
+            SizedBox(width: 18.w),
             Text(
               '영업일수 $businessDays일',
               style: AppTypography.bodyMediumR.copyWith(
-                fontSize: 14,
+                fontSize: 14.sp,
                 color: AppColors.textTertiary,
                 height: 19 / 14,
               ),
@@ -304,22 +305,22 @@ class _EmployeeAccordionCard extends StatelessWidget {
     final badgeText = badgeOn ? '월급' : '시급';
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: 12.h),
       child: InkWell(
         onTap: onToggle,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(16.r),
           child: Container(
             decoration: BoxDecoration(
               color: AppColors.grey0,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(16.r),
               border: Border.all(color: AppColors.grey50),
             ),
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16.r),
                   child: Column(
                     children: [
                     Row(
@@ -331,27 +332,27 @@ class _EmployeeAccordionCard extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             color: badgeOn ? AppColors.primary : AppColors.grey200,
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(8.r),
                           ),
                           child: Text(
                             badgeText,
                             style: AppTypography.bodySmallB.copyWith(
-                              fontSize: 12,
+                              fontSize: 12.sp,
                               color: AppColors.grey0,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        SizedBox(width: 10.w),
                         Image.asset(
                           'assets/icons/png/common/star_green_icon.png',
                           width: 18,
                           height: 18,
                         ),
-                        const SizedBox(width: 10),
+                        SizedBox(width: 10.w),
                         Text(
                           employee.employeeName,
                           style: AppTypography.bodyLargeR.copyWith(
-                            fontSize: 16,
+                            fontSize: 16.sp,
                             fontWeight: FontWeight.w400,
                             height: 16 / 16,
                             color: AppColors.textPrimary,
@@ -367,12 +368,12 @@ class _EmployeeAccordionCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12.h),
                     Row(
                       children: [
                         Expanded(
                           child: Padding(
-                            padding: const EdgeInsets.only(right: 24),
+                            padding: EdgeInsets.only(right: 24.w),
                             child: _metricValue(
                               label: '근무시간',
                               value: '${employee.totalWorkMinutes}',
@@ -386,7 +387,7 @@ class _EmployeeAccordionCard extends StatelessWidget {
                         ),
                         Expanded(
                           child: Padding(
-                            padding: const EdgeInsets.only(left: 24),
+                            padding: EdgeInsets.only(left: 24.w),
                             child: _metricValue(
                               label: '주 근로',
                               value: weeklyHours,
@@ -396,12 +397,12 @@ class _EmployeeAccordionCard extends StatelessWidget {
                       ],
                     ),
                     if (expanded) ...[
-                      const SizedBox(height: 14),
+                      SizedBox(height: 14.h),
                       Container(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                        padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 12.h),
                         decoration: BoxDecoration(
                           color: AppColors.grey0Alt,
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(16.r),
                         ),
                         child: Column(
                           children: [
@@ -430,7 +431,7 @@ class _EmployeeAccordionCard extends StatelessWidget {
                 ),
                 if (expanded)
                   Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: AppColors.grey0Alt,
                       borderRadius: BorderRadius.vertical(
                         bottom: Radius.circular(16),
@@ -439,7 +440,7 @@ class _EmployeeAccordionCard extends StatelessWidget {
                         top: BorderSide(color: AppColors.grey25),
                       ),
                     ),
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(16.r),
                     child: _detailLine(
                       label: '총 급여액',
                       value: LaborCostFormatters.won(employee.totalCost),
@@ -469,7 +470,7 @@ class _EmployeeAccordionCard extends StatelessWidget {
         Text(
           label,
           style: AppTypography.bodySmallB.copyWith(
-            fontSize: 12,
+            fontSize: 12.sp,
             color: AppColors.textTertiary,
             height: 16 / 12,
           ),
@@ -478,7 +479,7 @@ class _EmployeeAccordionCard extends StatelessWidget {
         Text(
           value,
           style: AppTypography.bodyMediumR.copyWith(
-            fontSize: 16,
+            fontSize: 16.sp,
             color: AppColors.textSecondary,
             height: 20 / 16,
           ),
@@ -500,7 +501,7 @@ class _EmployeeAccordionCard extends StatelessWidget {
           Text(
             label,
             style: AppTypography.bodyMediumR.copyWith(
-              fontSize: 14,
+              fontSize: 14.sp,
               color: AppColors.textTertiary,
             ),
           ),
@@ -540,15 +541,15 @@ class _MonthlySummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: AppColors.grey0,
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 0.h),
       child: Column(
         children: [
           Container(
             decoration: BoxDecoration(
               color: AppColors.grey0Alt,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(16.r),
             ),
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 12.h),
             child: Column(
               children: [
                 _summaryLine(label: '총 근무시간 합계', value: '$totalWorkMinutes'),
@@ -561,21 +562,21 @@ class _MonthlySummaryCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           Container(
             height: 52,
             decoration: BoxDecoration(
               color: AppColors.primaryLight,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(16.r),
               border: Border.all(color: AppColors.primary),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
             child: Row(
               children: [
                 Text(
                   '전월대비',
                   style: AppTypography.bodyLargeR.copyWith(
-                    fontSize: 16,
+                    fontSize: 16.sp,
                     fontWeight: FontWeight.w400,
                     color: AppColors.primary,
                   ),
@@ -584,7 +585,7 @@ class _MonthlySummaryCard extends StatelessWidget {
                 Text(
                   '$changePercentText ${changeWentUp ? '증가' : '감소'}',
                   style: AppTypography.bodyLargeR.copyWith(
-                    fontSize: 16,
+                    fontSize: 16.sp,
                     fontWeight: FontWeight.w400,
                     color: AppColors.primary,
                   ),
@@ -607,7 +608,7 @@ class _MonthlySummaryCard extends StatelessWidget {
         Text(
           label,
           style: AppTypography.bodyMediumB.copyWith(
-            fontSize: 14,
+            fontSize: 14.sp,
             color: AppColors.textTertiary,
             height: 16 / 14,
           ),
@@ -619,7 +620,7 @@ class _MonthlySummaryCard extends StatelessWidget {
             value,
             textAlign: TextAlign.right,
             style: AppTypography.bodyLargeR.copyWith(
-              fontSize: 16,
+              fontSize: 16.sp,
               fontWeight: FontWeight.w400,
               color: AppColors.textPrimary,
               height: 16 / 16,

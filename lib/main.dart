@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'firebase_options.dart';
+import 'core/screen/app_design.dart';
 import 'core/router/app_router.dart';
 import 'core/storage/token_storage.dart';
 import 'data/network/api_client.dart';
@@ -91,34 +93,41 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider.value(value: widget.authRepository),
-        RepositoryProvider.value(value: widget.ownerHomeRepository),
-        RepositoryProvider.value(value: widget.managerHomeRepository),
-        RepositoryProvider.value(value: widget.laborCostRepository),
-        RepositoryProvider.value(value: widget.storeExpenseRepository),
-        RepositoryProvider.value(value: widget.staffManagementRepository),
-      ],
-      child: BlocProvider.value(
-        value: _authBloc,
-        child: MaterialApp.router(
-          title: '편의점 ERP',
-          theme: AppTheme.light,
-          debugShowCheckedModeBanner: false,
-          localizationsDelegates: const [
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
+    return ScreenUtilInit(
+      designSize: AppDesign.designSize,
+      minTextAdapt: true,
+      splitScreenMode: true,
+      builder: (context, _) {
+        return MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: widget.authRepository),
+            RepositoryProvider.value(value: widget.ownerHomeRepository),
+            RepositoryProvider.value(value: widget.managerHomeRepository),
+            RepositoryProvider.value(value: widget.laborCostRepository),
+            RepositoryProvider.value(value: widget.storeExpenseRepository),
+            RepositoryProvider.value(value: widget.staffManagementRepository),
           ],
-          supportedLocales: const [
-            Locale('ko', 'KR'),
-            Locale('en', 'US'),
-          ],
-          locale: const Locale('ko', 'KR'),
-          routerConfig: _router,
-        ),
-      ),
+          child: BlocProvider.value(
+            value: _authBloc,
+            child: MaterialApp.router(
+              title: '편의점 ERP',
+              theme: AppTheme.light,
+              debugShowCheckedModeBanner: false,
+              localizationsDelegates: const [
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [
+                Locale('ko', 'KR'),
+                Locale('en', 'US'),
+              ],
+              locale: const Locale('ko', 'KR'),
+              routerConfig: _router,
+            ),
+          ),
+        );
+      },
     );
   }
 }

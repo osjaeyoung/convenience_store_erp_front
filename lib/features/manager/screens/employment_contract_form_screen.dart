@@ -8,6 +8,7 @@ import '../../../utils/modal_title_format.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../auth/widgets/auth_input_field.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 친권 동의서 칩: 색은 민트(사업장)·주황(후견인·연소)만. 빈 칩 문구만 「입력」「근로자」「후견인 입력」.
 enum _ContractChipTone { mint, worker, guardian }
@@ -49,14 +50,12 @@ class _EmploymentContractFormScreenState
   static const Color _mintChipBg = Color(0xFFE2F6F0);
 
   /// 표준·연소·친권 인라인 칩 공통 패딩 (민트/오렌지, 높이 절약)
-  static const EdgeInsets _contractChipPadding =
-      EdgeInsets.symmetric(horizontal: 8, vertical: 3);
-  static const EdgeInsets _contractChipPaddingWide =
-      EdgeInsets.symmetric(horizontal: 10, vertical: 4);
+  static EdgeInsets get _contractChipPadding => EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h);
+  static EdgeInsets get _contractChipPaddingWide => EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h);
 
   /// 모달 하단 취소·확인 (Figma 8px)
   static final OutlinedBorder _modalActionButtonShape =
-      RoundedRectangleBorder(borderRadius: BorderRadius.circular(8));
+      RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r));
 
   static const String _svgPickerChevronDown =
       'assets/icons/svg/icon/contract_picker_chevron_down.svg';
@@ -64,18 +63,18 @@ class _EmploymentContractFormScreenState
       'assets/icons/svg/icon/contract_picker_chevron_up.svg';
 
   /// Figma Heading_3 — 근로계약기간 / 소정근로시간 제목
-  static const TextStyle _figmaModalHeading = TextStyle(
+  static TextStyle get _figmaModalHeading => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 18,
+    fontSize: 18.sp,
     fontWeight: FontWeight.w500,
     height: 24 / 18,
     color: Color(0xFF000000),
   );
 
   /// 시작·종료 (body medium_M)
-  static const TextStyle _figmaSectionLabel = TextStyle(
+  static TextStyle get _figmaSectionLabel => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 14,
+    fontSize: 14.sp,
     fontWeight: FontWeight.w500,
     height: 20 / 14,
     letterSpacing: -0.3,
@@ -83,9 +82,9 @@ class _EmploymentContractFormScreenState
   );
 
   /// 년도·월·일 / 근무시작 등 라벨 pill (Body Small_M)
-  static const TextStyle _figmaPillLabel = TextStyle(
+  static TextStyle get _figmaPillLabel => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 12,
+    fontSize: 12.sp,
     fontWeight: FontWeight.w500,
     letterSpacing: -0.3,
     height: 1.0,
@@ -93,18 +92,18 @@ class _EmploymentContractFormScreenState
   );
 
   /// Inter-regular-18 숫자
-  static const TextStyle _figmaInterValue18 = TextStyle(
+  static TextStyle get _figmaInterValue18 => TextStyle(
     fontFamily: 'Inter',
-    fontSize: 18,
+    fontSize: 18.sp,
     fontWeight: FontWeight.w400,
     height: 1.0,
     color: Color(0xFF454545),
   );
 
   /// · 중복 입력 가능 (body medium_M, muted)
-  static const TextStyle _figmaWorkTimeSubnote = TextStyle(
+  static TextStyle get _figmaWorkTimeSubnote => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 14,
+    fontSize: 14.sp,
     fontWeight: FontWeight.w500,
     height: 20 / 14,
     letterSpacing: -0.3,
@@ -112,18 +111,18 @@ class _EmploymentContractFormScreenState
   );
 
   /// Figma 2534-14920 — 본문 (grey8 #000, 14 / 25)
-  static const TextStyle _contractFigmaBody = TextStyle(
+  static TextStyle get _contractFigmaBody => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 14,
+    fontSize: 14.sp,
     fontWeight: FontWeight.w400,
     height: 25 / 14,
     color: Color(0xFF000000),
   );
 
   /// Figma Accents-Orange — 자동 기입 안내
-  static const TextStyle _contractFigmaAccent = TextStyle(
+  static TextStyle get _contractFigmaAccent => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 14,
+    fontSize: 14.sp,
     fontWeight: FontWeight.w400,
     height: 25 / 14,
     color: Color(0xFFFF8D28),
@@ -149,7 +148,7 @@ class _EmploymentContractFormScreenState
       height: 36,
       decoration: BoxDecoration(
         color: AppColors.grey0,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(18.r),
       ),
       alignment: Alignment.center,
       child: pic,
@@ -480,7 +479,7 @@ class _EmploymentContractFormScreenState
       builder: (ctx) => AlertDialog(
         title: Text(
           '입력이 필요합니다',
-          style: AppTypography.heading3.copyWith(fontSize: 18),
+          style: AppTypography.heading3.copyWith(fontSize: 18.sp),
         ),
         content: SingleChildScrollView(
           child: Column(
@@ -490,14 +489,14 @@ class _EmploymentContractFormScreenState
               Text(
                 '완료 저장 전 아래 항목을 채워 주세요. (직원관리 API 근로계약서 완료 필수 항목 기준)',
                 style: AppTypography.bodyMediumR.copyWith(
-                  fontSize: 13,
+                  fontSize: 13.sp,
                   color: AppColors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 14),
+              SizedBox(height: 14.h),
               ...missing.map(
                 (e) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: EdgeInsets.only(bottom: 8.h),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -511,7 +510,7 @@ class _EmploymentContractFormScreenState
                         child: Text(
                           e,
                           style: AppTypography.bodyMediumR.copyWith(
-                            fontSize: 14,
+                            fontSize: 14.sp,
                             height: 1.35,
                           ),
                         ),
@@ -616,7 +615,7 @@ class _EmploymentContractFormScreenState
   }
 
   Widget _guardianDocHeading(String s) => Padding(
-        padding: const EdgeInsets.only(top: 4, bottom: 10),
+        padding: EdgeInsets.only(top: 4.h, bottom: 10.h),
         child: Text(
           s,
           style: _contractBodyStyle.copyWith(fontWeight: FontWeight.w600),
@@ -630,8 +629,8 @@ class _EmploymentContractFormScreenState
       children: [
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-          decoration: const BoxDecoration(
+          padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 20.h),
+          decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: AppColors.grey25),
             ),
@@ -639,7 +638,7 @@ class _EmploymentContractFormScreenState
           child: Text(
             '친권자(후견인) 동의서',
             style: AppTypography.bodyLargeM.copyWith(
-              fontSize: 18,
+              fontSize: 18.sp,
               height: 24 / 18,
               fontWeight: FontWeight.w500,
               color: AppColors.textPrimary,
@@ -647,7 +646,7 @@ class _EmploymentContractFormScreenState
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+          padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 0.h),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -669,10 +668,10 @@ class _EmploymentContractFormScreenState
                 '연소근로자와의 관계',
                 'relation_to_minor_worker',
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8.h),
               _guardianDocHeading('연소근로자 인적사항'),
               Padding(
-                padding: const EdgeInsets.only(bottom: 10),
+                padding: EdgeInsets.only(bottom: 10.h),
                 child: Wrap(
                   crossAxisAlignment: WrapCrossAlignment.center,
                   spacing: 6,
@@ -703,7 +702,7 @@ class _EmploymentContractFormScreenState
               ),
               _guardianLabeledChipRow('주 소 : ', '연소근로자 주소', 'minor_address',
                   tone: _ContractChipTone.worker, wideChip: true),
-              const SizedBox(height: 8),
+              SizedBox(height: 8.h),
               _guardianDocHeading('사업장 개요'),
               _guardianLabeledChipRow('회사명 : ', '회사명', 'business_name',
                   tone: _ContractChipTone.mint),
@@ -716,7 +715,7 @@ class _EmploymentContractFormScreenState
                   tone: _ContractChipTone.mint),
               _guardianLabeledChipRow('회사전화 : ', '회사전화', 'business_phone_number',
                   tone: _ContractChipTone.mint),
-              const SizedBox(height: 16),
+              SizedBox(height: 16.h),
               Wrap(
                 crossAxisAlignment: WrapCrossAlignment.center,
                 spacing: 6,
@@ -735,7 +734,7 @@ class _EmploymentContractFormScreenState
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20.h),
               Center(
                 child: Builder(
                   builder: (context) {
@@ -770,7 +769,7 @@ class _EmploymentContractFormScreenState
                   },
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20.h),
               Wrap(
                 crossAxisAlignment: WrapCrossAlignment.center,
                 spacing: 6,
@@ -786,9 +785,9 @@ class _EmploymentContractFormScreenState
                   Text(' (인)', style: _contractBodyStyle),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16.h),
               Text('첨 부 : 가족관계증명서 1부', style: _contractBodyStyle),
-              const SizedBox(height: 24),
+              SizedBox(height: 24.h),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
@@ -796,16 +795,16 @@ class _EmploymentContractFormScreenState
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: AppColors.grey0,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: EdgeInsets.symmetric(vertical: 16.h),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(8.r),
                     ),
                   ),
                   child: Text(
                     '다음',
                     style: AppTypography.bodyLargeB.copyWith(
                       color: AppColors.grey0,
-                      fontSize: 16,
+                      fontSize: 16.sp,
                       height: 24 / 16,
                     ),
                   ),
@@ -827,7 +826,7 @@ class _EmploymentContractFormScreenState
     bool wideChip = false,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.only(bottom: 10.h),
       child: Wrap(
         crossAxisAlignment: WrapCrossAlignment.center,
         spacing: 6,
@@ -858,8 +857,9 @@ class _EmploymentContractFormScreenState
     required String? display,
     required VoidCallback onTap,
     _ContractChipTone tone = _ContractChipTone.mint,
-    EdgeInsets padding = _contractChipPadding,
+    EdgeInsets? padding,
   }) {
+    final chipPadding = padding ?? _contractChipPadding;
     final t = display?.trim() ?? '';
     final empty = t.isEmpty;
     final String emptyLabel = switch (tone) {
@@ -877,12 +877,12 @@ class _EmploymentContractFormScreenState
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(8.r),
         child: Container(
-          padding: padding,
+          padding: chipPadding,
           decoration: BoxDecoration(
             color: bg,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(8.r),
             border: Border.all(color: fg.withValues(alpha: 0.45)),
           ),
           child: Text(
@@ -890,7 +890,7 @@ class _EmploymentContractFormScreenState
             style: _contractFigmaBody.copyWith(
               color: fg,
               fontWeight: FontWeight.w500,
-              fontSize: 12,
+              fontSize: 12.sp,
               height: 18 / 12,
             ),
           ),
@@ -905,7 +905,7 @@ class _EmploymentContractFormScreenState
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(12.r),
       child: Container(
         width: 20,
         height: 20,
@@ -1040,10 +1040,10 @@ class _EmploymentContractFormScreenState
     Widget workTimeFieldLabel(String text) {
       return Center(
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
           decoration: BoxDecoration(
             color: const Color(0xFFF5F5F7),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(10.r),
           ),
           child: Text(
             text,
@@ -1065,22 +1065,22 @@ class _EmploymentContractFormScreenState
         children: [
           InkWell(
             onTap: onUp,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(18.r),
             child: _pickerChevron(up: true, whiteCircle: true),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 6.h),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
             child: Text(
               two(value % modulus),
               maxLines: 1,
               style: _figmaInterValue18,
             ),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 6.h),
           InkWell(
             onTap: onDown,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(18.r),
             child: _pickerChevron(up: false, whiteCircle: true),
           ),
         ],
@@ -1104,11 +1104,11 @@ class _EmploymentContractFormScreenState
             onDown: () => onChanged((h + 23) % 24, m),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
+            padding: EdgeInsets.symmetric(horizontal: 6.w),
             child: Text(
               ':',
               style: AppTypography.bodyLargeM.copyWith(
-                fontSize: 20,
+                fontSize: 20.sp,
                 color: const Color(0xFF454545),
               ),
             ),
@@ -1138,7 +1138,7 @@ class _EmploymentContractFormScreenState
                 child: Column(
                   children: [
                     workTimeFieldLabel('근무시작시간'),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8.h),
                     hmRow(
                       h: s.sh,
                       m: s.sm,
@@ -1151,14 +1151,14 @@ class _EmploymentContractFormScreenState
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.only(top: 20),
+                padding: EdgeInsets.only(top: 20.h),
                 child: Text('~', style: AppTypography.bodyLargeM),
               ),
               Expanded(
                 child: Column(
                   children: [
                     workTimeFieldLabel('근무종료시간'),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8.h),
                     hmRow(
                       h: s.eh,
                       m: s.em,
@@ -1172,19 +1172,19 @@ class _EmploymentContractFormScreenState
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           Text('휴게시간', style: AppTypography.bodyMediumM),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           Row(
             children: [
               Expanded(
                 child: InkWell(
                   onTap: () => apply(() => s.breakHas = false),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(8.r),
                   child: Container(
                     height: 40,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(8.r),
                       border: Border.all(
                         color: AppColors.primary.withValues(alpha: 0.45),
                       ),
@@ -1200,22 +1200,22 @@ class _EmploymentContractFormScreenState
                           size: 18,
                           color: !s.breakHas ? AppColors.primary : AppColors.grey100,
                         ),
-                        const SizedBox(width: 6),
+                        SizedBox(width: 6.w),
                         Text('없음', style: AppTypography.bodyMediumM),
                       ],
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8.w),
               Expanded(
                 child: InkWell(
                   onTap: () => apply(() => s.breakHas = true),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(8.r),
                   child: Container(
                     height: 40,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(8.r),
                       border: Border.all(
                         color: AppColors.primary.withValues(alpha: 0.45),
                       ),
@@ -1231,7 +1231,7 @@ class _EmploymentContractFormScreenState
                           size: 18,
                           color: s.breakHas ? AppColors.primary : AppColors.grey100,
                         ),
-                        const SizedBox(width: 6),
+                        SizedBox(width: 6.w),
                         Text('있음', style: AppTypography.bodyMediumM),
                       ],
                     ),
@@ -1241,7 +1241,7 @@ class _EmploymentContractFormScreenState
             ],
           ),
           if (s.breakHas) ...[
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1250,7 +1250,7 @@ class _EmploymentContractFormScreenState
                   child: Column(
                     children: [
                       workTimeFieldLabel('휴게시작시간'),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8.h),
                       hmRow(
                         h: s.bsh,
                         m: s.bsm,
@@ -1263,14 +1263,14 @@ class _EmploymentContractFormScreenState
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.only(top: 20),
+                  padding: EdgeInsets.only(top: 20.h),
                   child: Text('~', style: AppTypography.bodyLargeM),
                 ),
                 Expanded(
                   child: Column(
                     children: [
                       workTimeFieldLabel('휴게종료시간'),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8.h),
                       hmRow(
                         h: s.beh,
                         m: s.bem,
@@ -1303,7 +1303,7 @@ class _EmploymentContractFormScreenState
           }
 
           return Dialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
             child: ConstrainedBox(
               constraints: BoxConstraints(
                 minHeight: 320,
@@ -1311,7 +1311,7 @@ class _EmploymentContractFormScreenState
                 maxWidth: 360,
               ),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 16, 14, 12),
+                padding: EdgeInsets.fromLTRB(14.w, 16.h, 14.w, 12.h),
                 child: Column(
                   mainAxisSize: MainAxisSize.max,
                   children: [
@@ -1323,7 +1323,7 @@ class _EmploymentContractFormScreenState
                         style: _figmaModalHeading,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8.h),
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
@@ -1331,7 +1331,7 @@ class _EmploymentContractFormScreenState
                         style: _figmaWorkTimeSubnote,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12.h),
                     Expanded(
                       child: SingleChildScrollView(
                         child: Column(
@@ -1339,19 +1339,19 @@ class _EmploymentContractFormScreenState
                             for (var i = 0; i < 7; i++) ...[
                               if (!slots[i].open)
                                 Padding(
-                                  padding: const EdgeInsets.only(bottom: 8),
+                                  padding: EdgeInsets.only(bottom: 8.h),
                                   child: Material(
                                     color: AppColors.grey0,
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(10.r),
                                     child: InkWell(
                                       onTap: () => setLocal(() => slots[i].open = true),
-                                      borderRadius: BorderRadius.circular(10),
+                                      borderRadius: BorderRadius.circular(10.r),
                                       child: Container(
                                         width: double.infinity,
                                         height: 48,
                                         alignment: Alignment.center,
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(10),
+                                          borderRadius: BorderRadius.circular(10.r),
                                           border: Border.all(color: AppColors.grey50),
                                         ),
                                         child: Text(
@@ -1364,13 +1364,13 @@ class _EmploymentContractFormScreenState
                                 )
                               else
                                 Padding(
-                                  padding: const EdgeInsets.only(bottom: 10),
+                                  padding: EdgeInsets.only(bottom: 10.h),
                                   child: Container(
                                     width: double.infinity,
-                                    padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                                    padding: EdgeInsets.fromLTRB(12.w, 10.h, 12.w, 12.h),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFF3FBF8),
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(12.r),
                                       border: Border.all(
                                         color: AppColors.primary.withValues(alpha: 0.55),
                                       ),
@@ -1388,7 +1388,7 @@ class _EmploymentContractFormScreenState
                                                   color: AppColors.primary,
                                                 ),
                                               ),
-                                              const SizedBox(width: 4),
+                                              SizedBox(width: 4.w),
                                               Icon(
                                                 Icons.expand_less_rounded,
                                                 size: 22,
@@ -1397,7 +1397,7 @@ class _EmploymentContractFormScreenState
                                             ],
                                           ),
                                         ),
-                                        const SizedBox(height: 8),
+                                        SizedBox(height: 8.h),
                                         workTimeBlock(slots[i], (fn) => slot(i, fn)),
                                       ],
                                     ),
@@ -1408,7 +1408,7 @@ class _EmploymentContractFormScreenState
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12.h),
                     Row(
                       children: [
                         Expanded(
@@ -1422,7 +1422,7 @@ class _EmploymentContractFormScreenState
                             child: const Text('취소'),
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        SizedBox(width: 10.w),
                         Expanded(
                           child: FilledButton(
                             onPressed: () => Navigator.pop(ctx, true),
@@ -1522,10 +1522,10 @@ class _EmploymentContractFormScreenState
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
             decoration: BoxDecoration(
               color: const Color(0xFFF5F5F7),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(10.r),
             ),
             alignment: Alignment.center,
             child: Text(
@@ -1534,15 +1534,15 @@ class _EmploymentContractFormScreenState
               style: _figmaPillLabel,
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10.h),
           InkWell(
             onTap: onUp,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(18.r),
             child: _pickerChevron(up: true, whiteCircle: false),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 6.h),
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+            padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 10.w),
             child: Text(
               '$value',
               maxLines: 1,
@@ -1550,10 +1550,10 @@ class _EmploymentContractFormScreenState
               style: _figmaInterValue18,
             ),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 6.h),
           InkWell(
             onTap: onDown,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(18.r),
             child: _pickerChevron(up: false, whiteCircle: false),
           ),
         ],
@@ -1578,7 +1578,7 @@ class _EmploymentContractFormScreenState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(title, style: _figmaSectionLabel),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             Row(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1590,14 +1590,14 @@ class _EmploymentContractFormScreenState
                   onUp: yearUp,
                   onDown: yearDown,
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16.w),
                 dateSpinner(
                   label: '월',
                   value: month,
                   onUp: monthUp,
                   onDown: monthDown,
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16.w),
                 dateSpinner(
                   label: '일',
                   value: day,
@@ -1617,9 +1617,9 @@ class _EmploymentContractFormScreenState
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocal) {
           return Dialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+              padding: EdgeInsets.fromLTRB(24.w, 24.h, 24.w, 16.h),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -1631,7 +1631,7 @@ class _EmploymentContractFormScreenState
                       style: _figmaModalHeading,
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20.h),
                   datePanel(
                     title: '시작',
                     year: start.year,
@@ -1682,7 +1682,7 @@ class _EmploymentContractFormScreenState
                       });
                     },
                   ),
-                  const SizedBox(height: 14),
+                  SizedBox(height: 14.h),
                   datePanel(
                     title: '종료',
                     year: end.year,
@@ -1733,7 +1733,7 @@ class _EmploymentContractFormScreenState
                       });
                     },
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24.h),
                   Row(
                     children: [
                       Expanded(
@@ -1747,7 +1747,7 @@ class _EmploymentContractFormScreenState
                           child: const Text('취소'),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12.w),
                       Expanded(
                         child: FilledButton(
                           onPressed: () => Navigator.pop(ctx, true),
@@ -1784,14 +1784,14 @@ class _EmploymentContractFormScreenState
       barrierColor: Colors.black.withValues(alpha: 0.55),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocal) => Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+            padding: EdgeInsets.fromLTRB(16.w, 24.h, 16.w, 16.h),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text('임금', style: AppTypography.heading3),
-                const SizedBox(height: 20),
+                SizedBox(height: 20.h),
                 Row(
                   children: [
                     Expanded(
@@ -1801,7 +1801,7 @@ class _EmploymentContractFormScreenState
                         onTap: () => setLocal(() => localType = 'hourly'),
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    SizedBox(width: 6.w),
                     Expanded(
                       child: _wageOptionTile(
                         selected: localType == 'monthly',
@@ -1811,7 +1811,7 @@ class _EmploymentContractFormScreenState
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10.h),
                 AuthInputField(
                   controller: amountCtrl,
                   hintText: switch (localType) {
@@ -1828,7 +1828,7 @@ class _EmploymentContractFormScreenState
                     vertical: 12,
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24.h),
                 Row(
                   children: [
                     Expanded(
@@ -1842,7 +1842,7 @@ class _EmploymentContractFormScreenState
                         child: const Text('취소'),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12.w),
                     Expanded(
                       child: FilledButton(
                         onPressed: () => Navigator.pop(ctx, true),
@@ -1877,11 +1877,11 @@ class _EmploymentContractFormScreenState
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(12.r),
       child: Container(
         height: 50,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
           border: Border.all(color: selected ? AppColors.primary : AppColors.grey50),
           color: selected ? AppColors.primary.withValues(alpha: 0.16) : AppColors.grey25,
         ),
@@ -1904,9 +1904,9 @@ class _EmploymentContractFormScreenState
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.55),
       builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+          padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 16.h),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1914,24 +1914,24 @@ class _EmploymentContractFormScreenState
                 '알림',
                 textAlign: TextAlign.center,
                 style: AppTypography.bodyLargeM.copyWith(
-                  fontSize: 18,
+                  fontSize: 18.sp,
                   height: 24 / 18,
                   color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20.h),
               Text(
                 widget.isGuardian
                     ? '친권자(후견인) 동의서를 완료로 저장하시겠습니까?'
                     : '해당 계약서를 근로자에게 전송하시겠습니까?',
                 textAlign: TextAlign.center,
                 style: AppTypography.bodyMediumM.copyWith(
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   height: 16 / 14,
                   color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 28),
+              SizedBox(height: 28.h),
               Row(
                 children: [
                   Expanded(
@@ -1943,21 +1943,21 @@ class _EmploymentContractFormScreenState
                           backgroundColor: AppColors.grey25,
                           foregroundColor: AppColors.textTertiary,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(12.r),
                           ),
                         ),
                         child: Text(
                           '취소',
                           style: AppTypography.bodyLargeB.copyWith(
                             color: AppColors.textTertiary,
-                            fontSize: 16,
+                            fontSize: 16.sp,
                             height: 24 / 16,
                           ),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12.w),
                   Expanded(
                     child: SizedBox(
                       height: 52,
@@ -1967,14 +1967,14 @@ class _EmploymentContractFormScreenState
                           backgroundColor: AppColors.primary,
                           foregroundColor: AppColors.grey0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(12.r),
                           ),
                         ),
                         child: Text(
                           '확인',
                           style: AppTypography.bodyLargeB.copyWith(
                             color: AppColors.grey0,
-                            fontSize: 16,
+                            fontSize: 16.sp,
                             height: 24 / 16,
                           ),
                         ),
@@ -2138,7 +2138,7 @@ class _EmploymentContractFormScreenState
 
   Widget _contractNumbered(int index, Widget body) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: 12.h),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2159,7 +2159,7 @@ class _EmploymentContractFormScreenState
         wageAmount.isEmpty ? '' : '$wageLabel $wageAmount';
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
+      padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 120.h),
       children: [
         Text(
           widget.isMinor
@@ -2167,11 +2167,11 @@ class _EmploymentContractFormScreenState
               : '표준 근로 계약서',
           style: AppTypography.heading3.copyWith(
             fontWeight: FontWeight.w500,
-            fontSize: 18,
+            fontSize: 18.sp,
             height: 24 / 18,
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16.h),
         Wrap(
           crossAxisAlignment: WrapCrossAlignment.center,
           spacing: 6,
@@ -2191,7 +2191,7 @@ class _EmploymentContractFormScreenState
           ],
         ),
         Text('다음과 같이 근로계약을 체결한다.', style: _contractBodyStyle),
-        const SizedBox(height: 20),
+        SizedBox(height: 20.h),
         _contractNumbered(
           1,
           Column(
@@ -2211,7 +2211,7 @@ class _EmploymentContractFormScreenState
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
+              SizedBox(height: 6.h),
               Text(
                 '※ 근로계약기간을 정하지 않는 경우에는 "근로개시일"만 기재',
                 style: _contractNoteStyle,
@@ -2327,9 +2327,9 @@ class _EmploymentContractFormScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('임 금', style: _contractBodyStyle),
-              const SizedBox(height: 8),
+              SizedBox(height: 8.h),
               Padding(
-                padding: const EdgeInsets.only(left: 4),
+                padding: EdgeInsets.only(left: 4.w),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -2349,7 +2349,7 @@ class _EmploymentContractFormScreenState
                         Text(' 원', style: _contractBodyStyle),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10.h),
                     Wrap(
                       crossAxisAlignment: WrapCrossAlignment.center,
                       spacing: 8,
@@ -2381,7 +2381,7 @@ class _EmploymentContractFormScreenState
                         Text(')', style: _contractBodyStyle),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10.h),
                     Wrap(
                       crossAxisAlignment: WrapCrossAlignment.center,
                       spacing: 8,
@@ -2416,9 +2416,9 @@ class _EmploymentContractFormScreenState
                         Text(')', style: _contractBodyStyle),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8.h),
                     Padding(
-                      padding: const EdgeInsets.only(left: 10),
+                      padding: EdgeInsets.only(left: 10.w),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -2479,7 +2479,7 @@ class _EmploymentContractFormScreenState
                         ],
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12.h),
                     Wrap(
                       crossAxisAlignment: WrapCrossAlignment.center,
                       spacing: 6,
@@ -2497,7 +2497,7 @@ class _EmploymentContractFormScreenState
                             style: _contractBodyStyle),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10.h),
                     Wrap(
                       crossAxisAlignment: WrapCrossAlignment.center,
                       spacing: 8,
@@ -2533,7 +2533,7 @@ class _EmploymentContractFormScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('연차유급휴가', style: _contractBodyStyle),
-              const SizedBox(height: 4),
+              SizedBox(height: 4.h),
               Text(
                 '연차유급휴가는 근로기준법에서 정하는 바에 따라 부여함',
                 style: _contractBodyStyle,
@@ -2548,7 +2548,7 @@ class _EmploymentContractFormScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('가족관계증명서 및 동의서', style: _contractBodyStyle),
-                const SizedBox(height: 10),
+                SizedBox(height: 10.h),
                 Wrap(
                   crossAxisAlignment: WrapCrossAlignment.center,
                   spacing: 6,
@@ -2568,7 +2568,7 @@ class _EmploymentContractFormScreenState
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10.h),
                 Wrap(
                   crossAxisAlignment: WrapCrossAlignment.center,
                   spacing: 6,
@@ -2597,7 +2597,7 @@ class _EmploymentContractFormScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('근로계약서 교부', style: _contractBodyStyle),
-                const SizedBox(height: 4),
+                SizedBox(height: 4.h),
                 Text(
                   '사업주는 근로계약을 체결함과 동시에 본 계약서를 사본하여 근로자의 교부요구와 관계없이 근로자에게 교부함(근로기준법 제17조, 제67조 이행)',
                   style: _contractBodyStyle,
@@ -2611,7 +2611,7 @@ class _EmploymentContractFormScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('기 타', style: _contractBodyStyle),
-                const SizedBox(height: 8),
+                SizedBox(height: 8.h),
                 Text(
                   '13세 이상 15세 미만인 자에 대해서는 고용노동부장관으로부터 취직인허증을 교부받아야 하며, 이 계약에 정함이 없는 사항은 근로기준법령에 의함',
                   style: _contractBodyStyle,
@@ -2626,7 +2626,7 @@ class _EmploymentContractFormScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('근로계약서 교부', style: _contractBodyStyle),
-                const SizedBox(height: 4),
+                SizedBox(height: 4.h),
                 Text(
                   '사업주는 근로계약을 체결함과 동시에 본 계약서를 사본하여 근로자의 교부요구와 관계없이 근로자에게 교부함(근로기준법 제17조 이행)',
                   style: _contractBodyStyle,
@@ -2640,7 +2640,7 @@ class _EmploymentContractFormScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('기 타', style: _contractBodyStyle),
-                const SizedBox(height: 4),
+                SizedBox(height: 4.h),
                 Text(
                   '이 계약에 정함이 없는 사항은 근로기준법령에 의함',
                   style: _contractBodyStyle,
@@ -2649,7 +2649,7 @@ class _EmploymentContractFormScreenState
             ),
           ),
         ],
-        const SizedBox(height: 24),
+        SizedBox(height: 24.h),
         Center(
           child: Builder(
             builder: (context) {
@@ -2680,7 +2680,7 @@ class _EmploymentContractFormScreenState
             },
           ),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24.h),
         Wrap(
           spacing: 6,
           runSpacing: 8,
@@ -2700,7 +2700,7 @@ class _EmploymentContractFormScreenState
             Text(')', style: _contractBodyStyle),
           ],
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         Wrap(
           spacing: 6,
           runSpacing: 8,
@@ -2714,7 +2714,7 @@ class _EmploymentContractFormScreenState
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         Wrap(
           spacing: 6,
           runSpacing: 8,
@@ -2733,7 +2733,7 @@ class _EmploymentContractFormScreenState
             ),
           ],
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20.h),
         Wrap(
           spacing: 6,
           runSpacing: 8,
@@ -2748,7 +2748,7 @@ class _EmploymentContractFormScreenState
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         Wrap(
           spacing: 6,
           runSpacing: 8,
@@ -2762,7 +2762,7 @@ class _EmploymentContractFormScreenState
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         Wrap(
           spacing: 6,
           runSpacing: 8,
@@ -2806,18 +2806,18 @@ class _EmploymentContractFormScreenState
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.55),
       builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+          padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 16.h),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
                 modalTitle,
-                style: AppTypography.heading3.copyWith(fontSize: 18),
+                style: AppTypography.heading3.copyWith(fontSize: 18.sp),
               ),
-              const SizedBox(height: 14),
+              SizedBox(height: 14.h),
               AuthInputField(
                 controller: ctrl,
                 hintText: '입력해주세요.',
@@ -2833,7 +2833,7 @@ class _EmploymentContractFormScreenState
                   vertical: 12,
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20.h),
               Row(
                 children: [
                   Expanded(
@@ -2847,7 +2847,7 @@ class _EmploymentContractFormScreenState
                       child: const Text('취소'),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12.w),
                   Expanded(
                     child: FilledButton(
                       onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
@@ -2899,7 +2899,7 @@ class _EmploymentContractFormScreenState
             ? Text(
                 '친권자(후견인) 동의서 작성',
                 style: AppTypography.bodyMediumM.copyWith(
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   height: 16 / 14,
                   color: AppColors.textPrimary,
                 ),
@@ -2917,7 +2917,7 @@ class _EmploymentContractFormScreenState
           if (!widget.isGuardian)
             SafeArea(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                padding: EdgeInsets.fromLTRB(16.w, 0.h, 16.w, 16.h),
                 child: SizedBox(
                   width: double.infinity,
                   height: 52,
@@ -2926,7 +2926,7 @@ class _EmploymentContractFormScreenState
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                       ),
                     ),
                     child: const Text('다음'),

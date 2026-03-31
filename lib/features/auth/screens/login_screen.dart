@@ -9,6 +9,7 @@ import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../bloc/auth_bloc.dart';
 import '../widgets/auth_input_field.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 로그인 페이지
 class LoginScreen extends StatefulWidget {
@@ -67,20 +68,20 @@ class _LoginScreenState extends State<LoginScreen> {
           backgroundColor: AppColors.grey0,
           body: SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 142),
+                    SizedBox(height: 142.h),
                     Center(
                       child: Image.asset(
                         AppAssets.logoMain,
                         width: 180,
                       ),
                     ),
-                    const SizedBox(height: 56),
+                    SizedBox(height: 56.h),
                     AuthInputField(
                       controller: _emailController,
                       prefixIconPath: AppAssets.loginFieldEmail,
@@ -94,7 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         if (_submitted) setState(() {});
                       },
                     ),
-                    const SizedBox(height: AppSpacing.xl),
+                    SizedBox(height: AppSpacing.xl),
                     AuthInputField(
                       controller: _pwController,
                       prefixIconPath: AppAssets.loginFieldPassword,
@@ -110,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     if (state.status == AuthStatus.failure &&
                         (state.errorMessage?.isNotEmpty ?? false)) ...[
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8.h),
                       Text(
                         _formatLoginError(state.errorMessage!),
                         style: AppTypography.bodySmallR.copyWith(
@@ -119,16 +120,16 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ],
-                    const SizedBox(height: 48),
+                    SizedBox(height: 48.h),
                     FilledButton(
                       onPressed: state.status == AuthStatus.loading
                           ? null
                           : _onLogin,
                       style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(56),
+                        minimumSize: Size.fromHeight(56.h),
                         backgroundColor: AppColors.primary,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(16.r),
                         ),
                       ),
                       child: state.status == AuthStatus.loading
@@ -145,7 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                     ),
-                    const SizedBox(height: 22),
+                    SizedBox(height: 22.h),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -156,13 +157,13 @@ class _LoginScreenState extends State<LoginScreen> {
                             height: 16 / 14,
                           ),
                         ),
-                        const SizedBox(width: 14),
+                        SizedBox(width: 14.w),
                         Container(
                           width: 1,
                           height: 16,
                           color: AppColors.grey100,
                         ),
-                        const SizedBox(width: 14),
+                        SizedBox(width: 14.w),
                         GestureDetector(
                           onTap: () => context.push(AppRouter.signup),
                           child: Text(
@@ -175,12 +176,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24.h),
                     Row(
                       children: [
                         const Expanded(child: Divider(color: AppColors.grey50)),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          padding: EdgeInsets.symmetric(horizontal: 20.w),
                           child: Text(
                             'SNS 로그인',
                             style: AppTypography.bodySmallR.copyWith(
@@ -192,7 +193,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         const Expanded(child: Divider(color: AppColors.grey50)),
                       ],
                     ),
-                    const SizedBox(height: 22),
+                    SizedBox(height: 22.h),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -200,14 +201,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           assetPath: AppAssets.loginSocialGoogle,
                           onTap: _onGoogleLogin,
                         ),
-                        const SizedBox(width: 16),
+                        SizedBox(width: 16.w),
                         _SocialButton(
                           assetPath: AppAssets.loginSocialApple,
                           onTap: _onAppleLogin,
                         ),
                       ],
                     ),
-                    const SizedBox(height: 28),
+                    SizedBox(height: 28.h),
                   ],
                 ),
               ),

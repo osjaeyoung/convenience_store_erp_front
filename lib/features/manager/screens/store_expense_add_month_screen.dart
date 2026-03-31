@@ -5,6 +5,7 @@ import '../../../data/repositories/store_expense_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import 'store_expense_add_item_screen.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class StoreExpenseAddMonthScreen extends StatefulWidget {
   const StoreExpenseAddMonthScreen({
@@ -54,7 +55,7 @@ class _StoreExpenseAddMonthScreenState extends State<StoreExpenseAddMonthScreen>
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                padding: EdgeInsets.fromLTRB(20.w, 0.h, 20.w, 24.h),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -67,17 +68,17 @@ class _StoreExpenseAddMonthScreenState extends State<StoreExpenseAddMonthScreen>
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 28),
+                    SizedBox(height: 28.h),
                     _label('년도'),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8.h),
                     _selectorTile(
                       value: _year?.toString(),
                       hint: '선택해주세요.',
                       onTap: () => _pickYear(context),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20.h),
                     _label('월'),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8.h),
                     _selectorTile(
                       value: _month?.toString(),
                       hint: '선택해주세요.',
@@ -88,7 +89,7 @@ class _StoreExpenseAddMonthScreenState extends State<StoreExpenseAddMonthScreen>
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
+              padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 36.h),
               child: SizedBox(
                 height: 56,
                 child: FilledButton(
@@ -97,7 +98,7 @@ class _StoreExpenseAddMonthScreenState extends State<StoreExpenseAddMonthScreen>
                     backgroundColor: AppColors.primary,
                     disabledBackgroundColor: AppColors.grey100,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(8.r),
                     ),
                     elevation: 0,
                   ),
@@ -114,7 +115,7 @@ class _StoreExpenseAddMonthScreenState extends State<StoreExpenseAddMonthScreen>
                           '다음',
                           style: AppTypography.bodyLargeB.copyWith(
                             color: AppColors.grey0,
-                            fontSize: 16,
+                            fontSize: 16.sp,
                           ),
                         ),
                 ),
@@ -130,7 +131,7 @@ class _StoreExpenseAddMonthScreenState extends State<StoreExpenseAddMonthScreen>
     return Text(
       text,
       style: AppTypography.bodyMediumM.copyWith(
-        fontSize: 14,
+        fontSize: 14.sp,
         color: AppColors.textPrimary,
       ),
     );
@@ -144,13 +145,13 @@ class _StoreExpenseAddMonthScreenState extends State<StoreExpenseAddMonthScreen>
     final hasValue = value != null && value.isNotEmpty;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(12.r),
       child: Container(
         height: 56,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: 16.w),
         decoration: BoxDecoration(
           color: AppColors.grey0Alt,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
           border: Border.all(color: AppColors.grey50),
         ),
         child: Row(
@@ -159,7 +160,7 @@ class _StoreExpenseAddMonthScreenState extends State<StoreExpenseAddMonthScreen>
               child: Text(
                 hasValue ? value : hint,
                 style: AppTypography.bodyMediumR.copyWith(
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   color: hasValue ? AppColors.textPrimary : AppColors.grey100,
                 ),
               ),

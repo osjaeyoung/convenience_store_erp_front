@@ -10,6 +10,7 @@ import '../../../theme/app_typography.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/widgets/auth_input_field.dart';
 import '../../auth/widgets/mint_add_button.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class AddBranchScreen extends StatefulWidget {
   const AddBranchScreen({super.key});
@@ -193,15 +194,15 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 18, 24, 20),
+                padding: EdgeInsets.fromLTRB(24.w, 18.h, 24.w, 20.h),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text.rich(
                       TextSpan(
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'Pretendard',
-                          fontSize: 24,
+                          fontSize: 24.sp,
                           fontWeight: FontWeight.w400,
                           height: 32 / 24,
                           color: AppColors.textPrimary,
@@ -216,7 +217,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 30),
+                    SizedBox(height: 30.h),
                     if (_isOwner)
                       Form(
                         key: _formKey,
@@ -224,7 +225,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             ..._buildDraftFields(),
-                            const SizedBox(height: 8),
+                            SizedBox(height: 8.h),
                             MintAddButton(
                               label: '추가하기',
                               onPressed: _addDraft,
@@ -239,7 +240,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                         hintText: '이름을 입력해주세요.',
                         focusedBorderColor: AppColors.primary,
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20.h),
                       _buildFieldLabel('점장 전화번호'),
                       AuthInputField(
                         controller: _managerPhoneController,
@@ -247,7 +248,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                         keyboardType: TextInputType.phone,
                         focusedBorderColor: AppColors.primary,
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20.h),
                       _buildFieldLabel('회사명'),
                       TextFormField(
                         controller: _branchQueryController,
@@ -257,7 +258,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                             color: AppColors.grey100,
                           ),
                           prefixIcon: Padding(
-                            padding: const EdgeInsets.all(12),
+                            padding: EdgeInsets.all(12.r),
                             child: SvgPicture.asset(
                               'assets/icons/svg/icon/search_mint_20.svg',
                               width: 20,
@@ -271,25 +272,25 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                             vertical: 14,
                           ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(12.r),
                             borderSide: const BorderSide(color: AppColors.grey50),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(12.r),
                             borderSide: const BorderSide(color: AppColors.grey50),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(12.r),
                             borderSide: const BorderSide(color: AppColors.primary),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12.h),
                       MintAddButton(
                         label: _lookuping ? '조회 중...' : '추가하기',
                         onPressed: _lookuping ? null : _lookupBranches,
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12.h),
                       ..._buildLookupItems(),
                     ],
                   ],
@@ -297,14 +298,14 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
+              padding: EdgeInsets.fromLTRB(24.w, 8.h, 24.w, 20.h),
               child: FilledButton(
                 onPressed: _submitting ? null : _submit,
                 style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(56),
+                  minimumSize: Size.fromHeight(56.h),
                   backgroundColor: AppColors.primary,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
                 ),
                 child: _submitting
@@ -346,7 +347,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
           },
         ),
       );
-      widgets.add(const SizedBox(height: 20));
+      widgets.add(SizedBox(height: 20.h));
       widgets.add(_buildFieldLabel('사업자 등록 번호'));
       widgets.add(
         AuthInputField(
@@ -361,11 +362,11 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
         ),
       );
       if (index != _drafts.length - 1) {
-        widgets.add(const SizedBox(height: 18));
+        widgets.add(SizedBox(height: 18.h));
         widgets.add(const Divider(color: AppColors.grey25, height: 1));
-        widgets.add(const SizedBox(height: 18));
+        widgets.add(SizedBox(height: 18.h));
       } else {
-        widgets.add(const SizedBox(height: 20));
+        widgets.add(SizedBox(height: 20.h));
       }
     }
     return widgets;
@@ -373,7 +374,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
 
   Widget _buildFieldLabel(String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: 8.h),
       child: Text(
         text,
         style: AppTypography.bodyLargeB.copyWith(
@@ -397,10 +398,10 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
     if (filtered.isEmpty) {
       return [
         Container(
-          padding: const EdgeInsets.symmetric(vertical: 18),
+          padding: EdgeInsets.symmetric(vertical: 18.h),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(12.r),
             color: AppColors.grey0Alt,
             border: Border.all(color: AppColors.grey25),
           ),
@@ -417,10 +418,10 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
     return filtered
         .map(
           (item) => Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            margin: EdgeInsets.only(bottom: 8.h),
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(12.r),
               border: Border.all(color: AppColors.grey50),
               color: AppColors.grey0,
             ),
@@ -436,7 +437,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                           color: AppColors.textPrimary,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4.h),
                       Text(
                         item.branchCode ?? '-',
                         style: AppTypography.bodySmallM.copyWith(
@@ -460,7 +461,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                       side: const BorderSide(color: AppColors.primary),
                       backgroundColor: AppColors.primaryLight,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(8.r),
                       ),
                     ),
                     child: Text(

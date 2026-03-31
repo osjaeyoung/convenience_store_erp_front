@@ -6,6 +6,7 @@ import '../../../data/models/recruitment/recruitment_models.dart';
 import '../../../data/repositories/manager_home_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class RecruitmentReviewScreen extends StatefulWidget {
   const RecruitmentReviewScreen({
@@ -111,11 +112,11 @@ class _RecruitmentReviewScreenState extends State<RecruitmentReviewScreen> {
                               ),
                             )
                           : ListView.separated(
-                              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                              padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 24.h),
                               itemBuilder: (context, index) {
                                 return _ReviewCard(review: page.items[index]);
                               },
-                              separatorBuilder: (_, __) => const SizedBox(height: 16),
+                              separatorBuilder: (_, __) => SizedBox(height: 16.h),
                               itemCount: page.items.length,
                             ),
                     ),
@@ -142,8 +143,8 @@ class _ReviewSummaryHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-      decoration: const BoxDecoration(
+      padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 20.h),
+      decoration: BoxDecoration(
         color: AppColors.grey0,
         border: Border(
           bottom: BorderSide(color: AppColors.grey25),
@@ -153,7 +154,7 @@ class _ReviewSummaryHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const _PersonAvatar(size: 48),
-          const SizedBox(width: 12),
+          SizedBox(width: 12.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,12 +162,12 @@ class _ReviewSummaryHeader extends StatelessWidget {
                 Text(
                   employeeName,
                   style: AppTypography.bodyLargeM.copyWith(
-                    fontSize: 16,
+                    fontSize: 16.sp,
                     height: 20 / 16,
                     color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8.h),
                 Wrap(
                   crossAxisAlignment: WrapCrossAlignment.center,
                   spacing: 8,
@@ -175,7 +176,7 @@ class _ReviewSummaryHeader extends StatelessWidget {
                     Text(
                       desiredLocation,
                       style: AppTypography.bodySmallR.copyWith(
-                        fontSize: 12,
+                        fontSize: 12.sp,
                         height: 18 / 12,
                         color: AppColors.textTertiary,
                       ),
@@ -183,7 +184,7 @@ class _ReviewSummaryHeader extends StatelessWidget {
                     Container(
                       width: 2,
                       height: 2,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: AppColors.grey100,
                         shape: BoxShape.circle,
                       ),
@@ -196,11 +197,11 @@ class _ReviewSummaryHeader extends StatelessWidget {
                           maxStars: 3,
                           color: AppColors.primary,
                         ),
-                        const SizedBox(width: 4),
+                        SizedBox(width: 4.w),
                         Text(
                           '($reviewCount)',
                           style: AppTypography.bodySmallR.copyWith(
-                            fontSize: 12,
+                            fontSize: 12.sp,
                             height: 18 / 12,
                             color: AppColors.textTertiary,
                           ),
@@ -229,10 +230,10 @@ class _ReviewCard extends StatelessWidget {
         (review.createdAt ?? '').trim().isNotEmpty ? _formatDateTime(review.createdAt!) : '-';
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+      padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 16.h),
       decoration: BoxDecoration(
         color: AppColors.grey0,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: AppColors.grey50),
       ),
       child: Column(
@@ -241,27 +242,27 @@ class _ReviewCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const _PersonAvatar(size: 32),
-              const SizedBox(width: 8),
+              SizedBox(width: 8.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.only(top: 4),
+                      padding: EdgeInsets.only(top: 4.h),
                       child: Text(
                         review.managerName ?? '-',
                         style: AppTypography.bodyMediumM.copyWith(
-                          fontSize: 14,
+                          fontSize: 14.sp,
                           height: 16 / 14,
                           color: AppColors.textPrimary,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: 2.h),
                     Text(
                       createdAt,
                       style: AppTypography.bodySmallR.copyWith(
-                        fontSize: 12,
+                        fontSize: 12.sp,
                         height: 18 / 12,
                         color: AppColors.textTertiary,
                       ),
@@ -275,7 +276,7 @@ class _ReviewCard extends StatelessWidget {
               ),
             ],
           ),
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
             child: Divider(height: 1, color: AppColors.grey50),
           ),
@@ -284,7 +285,7 @@ class _ReviewCard extends StatelessWidget {
             child: Text(
               (review.comment ?? '').trim().isEmpty ? '-' : review.comment!.trim(),
               style: AppTypography.bodyMediumR.copyWith(
-                fontSize: 14,
+                fontSize: 14.sp,
                 height: 20 / 14,
                 color: AppColors.textPrimary,
               ),
@@ -309,24 +310,24 @@ class _ReviewScoreChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(6, 4, 8, 4),
+      padding: EdgeInsets.fromLTRB(6.w, 4.h, 8.w, 4.h),
       decoration: BoxDecoration(
         color: AppColors.grey25,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(999.r),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.star_rounded,
             size: 12,
             color: Color(0xFFFFD464),
           ),
-          const SizedBox(width: 2),
+          SizedBox(width: 2.w),
           Text(
             '$rating / $maxRating',
             style: AppTypography.bodySmallM.copyWith(
-              fontSize: 12,
+              fontSize: 12.sp,
               height: 16 / 12,
               color: AppColors.textPrimary,
             ),
@@ -350,7 +351,7 @@ class _ReviewErrorView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24.r),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -361,7 +362,7 @@ class _ReviewErrorView extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
             TextButton(
               onPressed: onRetry,
               child: const Text('다시 시도'),
@@ -383,7 +384,7 @@ class _PersonAvatar extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.grey25,
         shape: BoxShape.circle,
       ),

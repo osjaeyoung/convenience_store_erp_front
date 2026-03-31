@@ -11,6 +11,7 @@ import '../account_dio_message.dart';
 import '../widgets/account_confirm_dialogs.dart';
 import '../widgets/account_figma_styles.dart';
 import 'account_my_info_settings_screen.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 설정 (Figma 2634:16151)
 class AccountSettingsMenuScreen extends StatefulWidget {
@@ -92,20 +93,20 @@ class _AccountSettingsMenuScreenState extends State<AccountSettingsMenuScreen> {
           : _error != null
               ? Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(24.r),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           accountDioMessage(_error!),
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'Pretendard',
-                            fontSize: 14,
+                            fontSize: 14.sp,
                             color: AppColors.textSecondary,
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16.h),
                         FilledButton(
                           onPressed: _load,
                           child: const Text('다시 시도'),
@@ -118,12 +119,12 @@ class _AccountSettingsMenuScreenState extends State<AccountSettingsMenuScreen> {
                   children: [
                     Expanded(
                       child: ListView(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                        padding: EdgeInsets.fromLTRB(20.w, 0.h, 20.w, 16.h),
                         children: [
                           Container(
                             decoration: BoxDecoration(
                               color: AppColors.grey0,
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(16.r),
                             ),
                             clipBehavior: Clip.antiAlias,
                             child: Column(
@@ -160,7 +161,7 @@ class _AccountSettingsMenuScreenState extends State<AccountSettingsMenuScreen> {
                     SafeArea(
                       top: false,
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+                        padding: EdgeInsets.fromLTRB(20.w, 10.h, 20.w, 24.h),
                         child: SizedBox(
                           width: double.infinity,
                           height: 60,
@@ -189,7 +190,7 @@ class _AccountSettingsMenuScreenState extends State<AccountSettingsMenuScreen> {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
+          padding: EdgeInsets.symmetric(vertical: 20.h),
           child: Row(
             children: [
               Expanded(

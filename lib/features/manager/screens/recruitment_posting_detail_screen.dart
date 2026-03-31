@@ -10,6 +10,7 @@ import '../../../theme/app_typography.dart';
 import '../../../widgets/app_styled_confirm_dialog.dart';
 import 'recruitment_application_detail_screen.dart';
 import 'recruitment_posting_form_screen.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 const String _postingDeleteIconSvg = '''
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -284,7 +285,7 @@ class _RecruitmentPostingDetailScreenState
         actions: [
           if (widget.mineMode)
             Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: EdgeInsets.only(right: 8.w),
               child: Row(
                 children: [
                   IconButton(
@@ -310,20 +311,20 @@ class _RecruitmentPostingDetailScreenState
             ),
           if (widget.previewMode)
             Padding(
-              padding: const EdgeInsets.only(right: 20),
+              padding: EdgeInsets.only(right: 20.w),
               child: Center(
                 child: Container(
                   height: 24,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
                   decoration: BoxDecoration(
                     color: AppColors.primaryLight,
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(4.r),
                   ),
                   child: Text(
                     '미리보기',
                     style: AppTypography.bodySmallM.copyWith(
                       color: AppColors.primary,
-                      fontSize: 12,
+                      fontSize: 12.sp,
                       height: 16 / 12,
                     ),
                   ),
@@ -345,7 +346,7 @@ class _RecruitmentPostingDetailScreenState
                       children: [
                         if (widget.mineMode)
                           Container(
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               color: AppColors.grey0,
                               border: Border(
                                 bottom: BorderSide(color: AppColors.grey50),
@@ -383,13 +384,13 @@ class _RecruitmentPostingDetailScreenState
                                   onTapApplication: _openApplication,
                                 )
                               : SingleChildScrollView(
-                                  padding: const EdgeInsets.only(bottom: 24),
+                                  padding: EdgeInsets.only(bottom: 24.h),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.stretch,
                                     children: [
                                       _PostingSummaryHeader(detail: _detail!),
                                       Padding(
-                                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                                        padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 0.h),
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.stretch,
                                           children: [
@@ -428,7 +429,7 @@ class _RecruitmentPostingDetailScreenState
                                                 ],
                                               ),
                                             ),
-                                            const SizedBox(height: 20),
+                                            SizedBox(height: 20.h),
                                             _PostingSection(
                                               title: '모집조건',
                                               child: _PostingInfoCard(
@@ -450,7 +451,7 @@ class _RecruitmentPostingDetailScreenState
                                                 ],
                                               ),
                                             ),
-                                            const SizedBox(height: 20),
+                                            SizedBox(height: 20.h),
                                             _PostingSection(
                                               title: '근무지역',
                                               child: _SingleLineInfoCard(
@@ -458,7 +459,7 @@ class _RecruitmentPostingDetailScreenState
                                                     _detail!.address ?? _detail!.regionSummary ?? '-',
                                               ),
                                             ),
-                                            const SizedBox(height: 20),
+                                            SizedBox(height: 20.h),
                                             _PostingSection(
                                               title: '채용 담당자 연락처',
                                               child: _ContactInfoCard(detail: _detail!),
@@ -476,7 +477,7 @@ class _RecruitmentPostingDetailScreenState
                             child: Container(
                               width: double.infinity,
                               color: AppColors.grey0,
-                              padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
+                              padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 36.h),
                               child: SizedBox(
                                 height: 56,
                                 child: FilledButton(
@@ -485,7 +486,7 @@ class _RecruitmentPostingDetailScreenState
                                     backgroundColor: AppColors.primary,
                                     foregroundColor: AppColors.grey0,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(8.r),
                                     ),
                                   ),
                                   child: _publishing
@@ -501,7 +502,7 @@ class _RecruitmentPostingDetailScreenState
                                           widget.allowPublish ? '게시' : '지원하기',
                                           style: AppTypography.bodyLargeB.copyWith(
                                             color: AppColors.grey0,
-                                            fontSize: 16,
+                                            fontSize: 16.sp,
                                           ),
                                         ),
                                 ),
@@ -584,7 +585,7 @@ class _ApplicationsTabBody extends StatelessWidget {
               ? const Center(child: CircularProgressIndicator())
               : page == null || page.items.isEmpty
                   ? Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+                      padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 24.h),
                       child: Align(
                         alignment: Alignment.topCenter,
                         child: Text(
@@ -596,7 +597,7 @@ class _ApplicationsTabBody extends StatelessWidget {
                       ),
                     )
                   : ListView(
-                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+                      padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 24.h),
                       children: [
                         Text(
                           '지원자',
@@ -605,13 +606,13 @@ class _ApplicationsTabBody extends StatelessWidget {
                             color: AppColors.textPrimary,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8.h),
                         for (var i = 0; i < page.items.length; i++) ...[
                           _ApplicationCard(
                             item: page.items[i],
                             onTap: () => onTapApplication(page.items[i]),
                           ),
-                          if (i != page.items.length - 1) const SizedBox(height: 12),
+                          if (i != page.items.length - 1) SizedBox(height: 12.h),
                         ],
                       ],
                     ),
@@ -634,11 +635,11 @@ class _ApplicationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(16.r),
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.grey0,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(16.r),
           border: Border.all(color: AppColors.grey50),
         ),
         child: Column(
@@ -646,26 +647,26 @@ class _ApplicationCard extends StatelessWidget {
           children: [
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-              decoration: const BoxDecoration(
+              padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 8.h),
+              decoration: BoxDecoration(
                 color: AppColors.grey25,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
               ),
               child: Text(
                 item.appliedDateLabel ?? '-',
                 style: AppTypography.bodySmallR.copyWith(
-                  fontSize: 12,
+                  fontSize: 12.sp,
                   height: 18 / 12,
                   color: AppColors.textSecondary,
                 ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+              padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 16.h),
               child: Row(
                 children: [
                   const _ApplicantAvatar(size: 48),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12.w),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -673,12 +674,12 @@ class _ApplicationCard extends StatelessWidget {
                         Text(
                           item.employeeName,
                           style: AppTypography.bodyLargeM.copyWith(
-                            fontSize: 16,
+                            fontSize: 16.sp,
                             height: 20 / 16,
                             color: AppColors.textPrimary,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8.h),
                         Wrap(
                           crossAxisAlignment: WrapCrossAlignment.center,
                           spacing: 8,
@@ -687,7 +688,7 @@ class _ApplicationCard extends StatelessWidget {
                             Text(
                               item.desiredLocation ?? '-',
                               style: AppTypography.bodySmallR.copyWith(
-                                fontSize: 12,
+                                fontSize: 12.sp,
                                 height: 18 / 12,
                                 color: AppColors.textTertiary,
                               ),
@@ -695,7 +696,7 @@ class _ApplicationCard extends StatelessWidget {
                             Container(
                               width: 2,
                               height: 2,
-                              decoration: const BoxDecoration(
+                              decoration: BoxDecoration(
                                 color: AppColors.grey100,
                                 shape: BoxShape.circle,
                               ),
@@ -708,11 +709,11 @@ class _ApplicationCard extends StatelessWidget {
                                       _filledApplicationStarCount(item.averageRating, maxStars: 3),
                                   maxStars: 3,
                                 ),
-                                const SizedBox(width: 4),
+                                SizedBox(width: 4.w),
                                 Text(
                                   '(${item.reviewCount})',
                                   style: AppTypography.bodySmallR.copyWith(
-                                    fontSize: 12,
+                                    fontSize: 12.sp,
                                     height: 18 / 12,
                                     color: AppColors.textTertiary,
                                   ),
@@ -754,8 +755,8 @@ class _PostingSummaryHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-      decoration: const BoxDecoration(
+      padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 20.h),
+      decoration: BoxDecoration(
         color: AppColors.grey0,
         border: Border(
           bottom: BorderSide(color: AppColors.grey50),
@@ -766,35 +767,35 @@ class _PostingSummaryHeader extends StatelessWidget {
         children: [
           Container(
             height: 24,
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
             decoration: BoxDecoration(
               color: AppColors.grey0,
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(4.r),
               border: Border.all(color: AppColors.grey50),
             ),
             child: Text(
               _badgeText,
               style: AppTypography.bodySmallM.copyWith(
-                fontSize: 12,
+                fontSize: 12.sp,
                 height: 16 / 12,
                 color: AppColors.textTertiary,
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           Text(
             detail.companyName ?? '-',
             style: AppTypography.bodySmallM.copyWith(
-              fontSize: 12,
+              fontSize: 12.sp,
               height: 16 / 12,
               color: AppColors.textTertiary,
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4.h),
           Text(
             detail.title ?? '-',
             style: AppTypography.bodyLargeB.copyWith(
-              fontSize: 16,
+              fontSize: 16.sp,
               height: 24 / 16,
               color: const Color(0xFF404040),
             ),
@@ -826,7 +827,7 @@ class _PostingSection extends StatelessWidget {
             color: AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         child,
       ],
     );
@@ -843,15 +844,15 @@ class _PostingInfoCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.grey0,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: AppColors.grey50),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
       child: Column(
         children: [
           for (final row in rows)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: EdgeInsets.symmetric(vertical: 8.h),
               child: _PostingInfoRow(row: row),
             ),
         ],
@@ -893,13 +894,13 @@ class _PostingInfoRow extends StatelessWidget {
           child: Text(
             row.label,
             style: AppTypography.bodyMediumM.copyWith(
-              fontSize: 14,
+              fontSize: 14.sp,
               height: 16 / 14,
               color: AppColors.textTertiary,
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: 12.w),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -913,7 +914,7 @@ class _PostingInfoRow extends StatelessWidget {
                     Text(
                       row.primaryValue!,
                       style: AppTypography.bodyMediumM.copyWith(
-                        fontSize: 14,
+                        fontSize: 14.sp,
                         height: 16 / 14,
                         color: row.primaryColor ?? AppColors.textPrimary,
                       ),
@@ -921,7 +922,7 @@ class _PostingInfoRow extends StatelessWidget {
                   Text(
                     row.value,
                     style: AppTypography.bodyMediumR.copyWith(
-                      fontSize: 14,
+                      fontSize: 14.sp,
                       height: 19 / 14,
                       color: AppColors.textPrimary,
                     ),
@@ -930,11 +931,11 @@ class _PostingInfoRow extends StatelessWidget {
                 ],
               ),
               if (detail != null && detail.isNotEmpty) ...[
-                const SizedBox(height: 4),
+                SizedBox(height: 4.h),
                 Text(
                   detail,
                   style: AppTypography.bodySmallR.copyWith(
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     height: 18 / 12,
                     color: AppColors.textTertiary,
                   ),
@@ -960,14 +961,14 @@ class _SingleLineInfoCard extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: AppColors.grey0,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: AppColors.grey50),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
       child: Text(
         text,
         style: AppTypography.bodyMediumR.copyWith(
-          fontSize: 14,
+          fontSize: 14.sp,
           height: 19 / 14,
           color: AppColors.textPrimary,
         ),
@@ -987,10 +988,10 @@ class _ContactInfoCard extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: AppColors.grey0,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: AppColors.grey50),
       ),
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+      padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 12.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1000,18 +1001,18 @@ class _ContactInfoCard extends StatelessWidget {
               value: detail.managerName ?? '-',
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           _PostingInfoRow(
             row: _PostingInfoRowData(
               label: '전화',
               value: detail.contactPhone ?? '-',
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           Text(
             detail.legalWarningMessage ?? '-',
             style: AppTypography.bodySmallR.copyWith(
-              fontSize: 12,
+              fontSize: 12.sp,
               height: 18 / 12,
               color: AppColors.error,
             ),
@@ -1035,7 +1036,7 @@ class _PostingErrorView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24.r),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1046,7 +1047,7 @@ class _PostingErrorView extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
             TextButton(
               onPressed: onRetry,
               child: const Text('다시 시도'),
@@ -1068,7 +1069,7 @@ class _ApplicantAvatar extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.grey25,
         shape: BoxShape.circle,
       ),

@@ -9,6 +9,7 @@ import '../../../data/repositories/store_expense_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../auth/widgets/auth_input_field.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class StoreExpenseAddItemScreen extends StatefulWidget {
   const StoreExpenseAddItemScreen({
@@ -80,7 +81,7 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                padding: EdgeInsets.fromLTRB(20.w, 0.h, 20.w, 24.h),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -92,9 +93,9 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
                         height: 32 / 24,
                       ),
                     ),
-                    const SizedBox(height: 28),
+                    SizedBox(height: 28.h),
                     _label('구체 일자'),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8.h),
                     _selectorTile(
                       value: _expenseDate == null
                           ? null
@@ -103,29 +104,29 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
                       onTap: _pickDate,
                       showArrow: false,
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20.h),
                     _label('항목'),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8.h),
                     _selectorTile(
                       value: _selectedCategory?.categoryLabel,
                       hint: _loadingCategories ? '불러오는 중...' : '선택해주세요.',
                       onTap: _loadingCategories ? null : _pickCategory,
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20.h),
                     _label('금액'),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8.h),
                     _inputTile(
                       controller: _amountCtrl,
                       hint: '입력해주세요.',
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20.h),
                     _fileArea(),
                   ],
                 ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
+              padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 36.h),
               child: SizedBox(
                 height: 56,
                 child: FilledButton(
@@ -135,7 +136,7 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
                     disabledBackgroundColor: AppColors.grey100,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(8.r),
                     ),
                   ),
                   child: _saving
@@ -151,7 +152,7 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
                           '확인',
                           style: AppTypography.bodyLargeB.copyWith(
                             color: AppColors.grey0,
-                            fontSize: 16,
+                            fontSize: 16.sp,
                           ),
                         ),
                 ),
@@ -167,7 +168,7 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
     return Text(
       text,
       style: AppTypography.bodyMediumM.copyWith(
-        fontSize: 14,
+        fontSize: 14.sp,
         color: AppColors.textPrimary,
       ),
     );
@@ -182,13 +183,13 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
     final hasValue = value != null && value.isNotEmpty;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(12.r),
       child: Container(
         height: 56,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: 16.w),
         decoration: BoxDecoration(
           color: AppColors.grey0Alt,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
           border: Border.all(color: AppColors.grey50),
         ),
         child: Row(
@@ -197,7 +198,7 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
               child: Text(
                 hasValue ? value : hint,
                 style: AppTypography.bodyMediumR.copyWith(
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   color: hasValue ? AppColors.textPrimary : AppColors.grey100,
                 ),
               ),
@@ -229,27 +230,27 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
   Widget _fileArea() {
     return InkWell(
       onTap: _pickFiles,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(12.r),
       child: Container(
         width: double.infinity,
         constraints: const BoxConstraints(minHeight: 132),
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16.r),
         decoration: BoxDecoration(
           color: AppColors.primaryLight,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
           border: Border.all(color: AppColors.primary),
         ),
         child: _pickedFiles.isEmpty
             ? Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.add_circle, color: AppColors.primary, size: 28),
-                  const SizedBox(height: 8),
+                  Icon(Icons.add_circle, color: AppColors.primary, size: 28),
+                  SizedBox(height: 8.h),
                   Text(
                     '파일을 첨부해주세요.',
                     style: AppTypography.bodyMediumB.copyWith(
                       color: AppColors.primary,
-                      fontSize: 14,
+                      fontSize: 14.sp,
                     ),
                   ),
                 ],
@@ -259,20 +260,20 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
                 children: [
                   for (final f in _pickedFiles)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
+                      padding: EdgeInsets.only(bottom: 6.h),
                       child: Text(
                         '• ${f.name}',
                         style: AppTypography.bodySmallM.copyWith(
-                          fontSize: 12,
+                          fontSize: 12.sp,
                           color: AppColors.textSecondary,
                         ),
                       ),
                     ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8.h),
                   Text(
                     '첨부 파일은 현재 메타데이터 저장만 지원합니다.',
                     style: AppTypography.bodySmallR.copyWith(
-                      fontSize: 12,
+                      fontSize: 12.sp,
                       color: AppColors.textTertiary,
                     ),
                   ),

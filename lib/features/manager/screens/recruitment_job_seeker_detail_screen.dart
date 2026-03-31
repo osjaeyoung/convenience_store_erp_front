@@ -6,6 +6,7 @@ import '../../../data/repositories/manager_home_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import 'recruitment_review_screen.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class RecruitmentJobSeekerDetailScreen extends StatefulWidget {
   const RecruitmentJobSeekerDetailScreen({
@@ -123,7 +124,7 @@ class _RecruitmentJobSeekerDetailScreenState
                       children: [
                         Expanded(
                           child: SingleChildScrollView(
-                            padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+                            padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 24.h),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
@@ -131,7 +132,7 @@ class _RecruitmentJobSeekerDetailScreenState
                                   profile: _profile!,
                                   onViewReviews: _openReviews,
                                 ),
-                                const SizedBox(height: 20),
+                                SizedBox(height: 20.h),
                                 Text(
                                   '근무 이력',
                                   style: AppTypography.heading3.copyWith(
@@ -140,7 +141,7 @@ class _RecruitmentJobSeekerDetailScreenState
                                     color: AppColors.textPrimary,
                                   ),
                                 ),
-                                const SizedBox(height: 8),
+                                SizedBox(height: 8.h),
                                 _WorkHistoryCard(histories: _profile!.workHistories),
                               ],
                             ),
@@ -150,7 +151,7 @@ class _RecruitmentJobSeekerDetailScreenState
                           top: false,
                           child: Container(
                             color: AppColors.grey0,
-                            padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
+                            padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 36.h),
                             child: SizedBox(
                               height: 56,
                               child: FilledButton(
@@ -159,7 +160,7 @@ class _RecruitmentJobSeekerDetailScreenState
                                   backgroundColor: AppColors.primary,
                                   foregroundColor: AppColors.grey0,
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(8.r),
                                   ),
                                 ),
                                 child: Text(
@@ -193,9 +194,9 @@ class _ProfileHeroCard extends StatelessWidget {
     final locations =
         profile.desiredLocations.isEmpty ? const ['-'] : profile.desiredLocations;
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+      padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 20.h),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         gradient: const LinearGradient(
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
@@ -208,13 +209,13 @@ class _ProfileHeroCard extends StatelessWidget {
       child: Column(
         children: [
           const _PersonAvatar(size: 80),
-          const SizedBox(height: 20),
+          SizedBox(height: 20.h),
           _ProfileInfoRow(
             label: '근무자명',
             value: Text(
               profile.employeeName,
               style: AppTypography.bodyMediumR.copyWith(
-                fontSize: 14,
+                fontSize: 14.sp,
                 height: 19 / 14,
                 color: AppColors.textPrimary,
               ),
@@ -226,7 +227,7 @@ class _ProfileHeroCard extends StatelessWidget {
             value: Text(
               profile.careerLabel ?? '-',
               style: AppTypography.bodyMediumR.copyWith(
-                fontSize: 14,
+                fontSize: 14.sp,
                 height: 19 / 14,
                 color: AppColors.textPrimary,
               ),
@@ -245,7 +246,7 @@ class _ProfileHeroCard extends StatelessWidget {
                     child: Text(
                       locations[i],
                       style: AppTypography.bodyMediumR.copyWith(
-                        fontSize: 14,
+                        fontSize: 14.sp,
                         height: 19 / 14,
                         color: AppColors.textPrimary,
                       ),
@@ -255,7 +256,7 @@ class _ProfileHeroCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           _ProfileInfoRow(
             label: '평점',
             value: _ScoreStars(
@@ -267,7 +268,7 @@ class _ProfileHeroCard extends StatelessWidget {
               color: const Color(0xFFFFD464),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           SizedBox(
             width: double.infinity,
             height: 36,
@@ -277,7 +278,7 @@ class _ProfileHeroCard extends StatelessWidget {
                 backgroundColor: AppColors.primaryDark,
                 foregroundColor: AppColors.grey0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(8.r),
                 ),
                 padding: EdgeInsets.zero,
               ),
@@ -287,12 +288,12 @@ class _ProfileHeroCard extends StatelessWidget {
                   Text(
                     '리뷰보기',
                     style: AppTypography.bodySmallM.copyWith(
-                      fontSize: 12,
+                      fontSize: 12.sp,
                       color: AppColors.grey0,
                       height: 16 / 12,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8.w),
                   const Icon(
                     Icons.chevron_right_rounded,
                     size: 14,
@@ -322,19 +323,19 @@ class _ProfileInfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: 8.h),
       child: Row(
         crossAxisAlignment: crossAxisAlignment,
         children: [
           Text(
             label,
             style: AppTypography.bodyMediumM.copyWith(
-              fontSize: 14,
+              fontSize: 14.sp,
               height: 16 / 14,
               color: AppColors.textSecondary,
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12.w),
           Expanded(
             child: Align(
               alignment: Alignment.centerRight,
@@ -358,16 +359,16 @@ class _WorkHistoryCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.grey0,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: AppColors.grey50),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
       child: Column(
         children: [
           for (var i = 0; i < items.length; i++) ...[
             if (i > 0) const Divider(height: 1, color: AppColors.grey25),
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              padding: EdgeInsets.symmetric(vertical: 16.h),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -375,13 +376,13 @@ class _WorkHistoryCard extends StatelessWidget {
                     child: Text(
                       items[i].periodLabel ?? '-',
                       style: AppTypography.bodyMediumR.copyWith(
-                        fontSize: 14,
+                        fontSize: 14.sp,
                         height: 19 / 14,
                         color: AppColors.textSecondary,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16.w),
                   Flexible(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -389,17 +390,17 @@ class _WorkHistoryCard extends StatelessWidget {
                         Text(
                           items[i].companyName ?? '-',
                           style: AppTypography.bodyLargeM.copyWith(
-                            fontSize: 16,
+                            fontSize: 16.sp,
                             height: 20 / 16,
                             color: AppColors.textPrimary,
                           ),
                           textAlign: TextAlign.right,
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4.h),
                         Text(
                           items[i].roleLabel ?? '-',
                           style: AppTypography.bodySmallR.copyWith(
-                            fontSize: 12,
+                            fontSize: 12.sp,
                             height: 18 / 12,
                             color: AppColors.textTertiary,
                           ),
@@ -431,7 +432,7 @@ class _DetailErrorView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24.r),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -442,7 +443,7 @@ class _DetailErrorView extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
             TextButton(
               onPressed: onRetry,
               child: const Text('다시 시도'),
@@ -464,7 +465,7 @@ class _PersonAvatar extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.grey25,
         shape: BoxShape.circle,
       ),

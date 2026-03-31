@@ -7,6 +7,7 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../payroll/payroll_formatters.dart';
 import '../widgets/validated_auth_input_field.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 급여명세 작성 (API: calculate → create)
 class PayrollStatementFormScreen extends StatefulWidget {
@@ -27,9 +28,9 @@ class PayrollStatementFormScreen extends StatefulWidget {
 }
 
 class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen> {
-  static const TextStyle _heading2 = TextStyle(
+  static TextStyle get _heading2 => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 20,
+    fontSize: 20.sp,
     fontWeight: FontWeight.w600,
     height: 26 / 20,
     color: Color(0xFF000000),
@@ -63,8 +64,7 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
   bool _autoFillLoading = false;
   int _autoFillSeq = 0;
 
-  static const EdgeInsets _payrollInputPadding =
-      EdgeInsets.symmetric(horizontal: 14, vertical: 12);
+  static EdgeInsets get _payrollInputPadding => EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h);
 
   @override
   void initState() {
@@ -298,7 +298,7 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
       builder: (ctx) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16.r),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -306,15 +306,15 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                 Text(
                   '근무자 선택',
                   textAlign: TextAlign.center,
-                  style: AppTypography.bodyMediumB.copyWith(fontSize: 16),
+                  style: AppTypography.bodyMediumB.copyWith(fontSize: 16.sp),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12.h),
                 ListTile(
                   title: Text(widget.employeeName),
                   subtitle: const Text('현재 직원'),
                   onTap: () => Navigator.pop(ctx),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8.h),
                 Row(
                   children: [
                     Expanded(
@@ -323,7 +323,7 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                         child: const Text('취소'),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8.w),
                     Expanded(
                       child: FilledButton(
                         onPressed: () => Navigator.pop(ctx),
@@ -366,15 +366,15 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 24.h),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text('급여명세', style: _heading2),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16.h),
                     if (_autoFillLoading)
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
+                        padding: EdgeInsets.only(bottom: 8.h),
                         child: Row(
                           children: [
                             SizedBox(
@@ -385,7 +385,7 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                                 color: AppColors.primary,
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            SizedBox(width: 8.w),
                             Text(
                               '근무·급여 정보를 불러오는 중…',
                               style: AppTypography.bodySmall.copyWith(
@@ -396,10 +396,10 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                         ),
                       ),
                     Text('근무자', style: _labelStyle),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6.h),
                     InkWell(
                       onTap: _pickWorker,
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(10.r),
                       child: InputDecorator(
                         decoration: _fieldDecoration('근무자를 선택해주세요'),
                         child: Row(
@@ -418,7 +418,7 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 14),
+                    SizedBox(height: 14.h),
                     Row(
                       children: [
                         Expanded(
@@ -426,7 +426,7 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               Text('년도', style: _labelStyle),
-                              const SizedBox(height: 6),
+                              SizedBox(height: 6.h),
                               DropdownButtonFormField<int>(
                                 value: _year,
                                 decoration: _fieldDecoration('선택해주세요.'),
@@ -444,13 +444,13 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                             ],
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        SizedBox(width: 10.w),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               Text('월', style: _labelStyle),
-                              const SizedBox(height: 6),
+                              SizedBox(height: 6.h),
                               DropdownButtonFormField<int>(
                                 value: _month,
                                 decoration: _fieldDecoration('선택해주세요.'),
@@ -471,9 +471,9 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
+                    SizedBox(height: 14.h),
                     Text('주민번호', style: _labelStyle),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6.h),
                     ValidatedAuthInputField(
                       controller: _residentCtrl,
                       hintText: '선택 입력',
@@ -484,9 +484,9 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                       fillColor: AppColors.grey0,
                       contentPadding: _payrollInputPadding,
                     ),
-                    const SizedBox(height: 14),
+                    SizedBox(height: 14.h),
                     Text('총 근무 시간', style: _labelStyle),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6.h),
                     ValidatedAuthInputField(
                       controller: _hoursCtrl,
                       hintText: '',
@@ -504,9 +504,9 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                         return null;
                       },
                     ),
-                    const SizedBox(height: 14),
+                    SizedBox(height: 14.h),
                     Text('시급', style: _labelStyle),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6.h),
                     ValidatedAuthInputField(
                       controller: _hourlyCtrl,
                       hintText: '',
@@ -524,9 +524,9 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                         return null;
                       },
                     ),
-                    const SizedBox(height: 14),
+                    SizedBox(height: 14.h),
                     Text('기본급', style: _labelStyle),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6.h),
                     ValidatedAuthInputField(
                       controller: _basePayCtrl,
                       hintText: '',
@@ -535,9 +535,9 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                       contentPadding: _payrollInputPadding,
                       suffixText: ' 원',
                     ),
-                    const SizedBox(height: 14),
+                    SizedBox(height: 14.h),
                     Text('주휴횟수', style: _labelStyle),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6.h),
                     ValidatedAuthInputField(
                       controller: _weeklyCountCtrl,
                       hintText: '',
@@ -549,12 +549,12 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                       contentPadding: _payrollInputPadding,
                       suffixText: ' 회',
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6.h),
                     Text(
                       '주휴수당 (원)',
                       style: _labelStyle,
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6.h),
                     ValidatedAuthInputField(
                       controller: _weeklyCtrl,
                       hintText: '',
@@ -572,9 +572,9 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                         return null;
                       },
                     ),
-                    const SizedBox(height: 14),
+                    SizedBox(height: 14.h),
                     Text('연장·야간·휴일 수당', style: _labelStyle),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6.h),
                     ValidatedAuthInputField(
                       controller: _overtimeCtrl,
                       hintText: '0',
@@ -594,14 +594,14 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                         return null;
                       },
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24.h),
                     Divider(height: 1, thickness: 1, color: AppColors.grey50),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16.h),
                     Row(
                       children: [
                         Text('공제항목', style: _heading2),
                         if (_deductionFillLoading) ...[
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12.w),
                           const SizedBox(
                             width: 18,
                             height: 18,
@@ -610,12 +610,12 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                         ],
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12.h),
                     ...List.generate(_deductionLabels.length, (i) {
                       final isOther = i == 6;
                       final expanded = _deductionChecked[i];
                       return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
+                        padding: EdgeInsets.only(bottom: 12.h),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
@@ -624,11 +624,11 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                               children: [
                                 Expanded(
                                   child: Padding(
-                                    padding: const EdgeInsets.only(top: 2),
+                                    padding: EdgeInsets.only(top: 2.h),
                                     child: Text(
                                       _deductionLabels[i],
                                       style: AppTypography.bodyMediumM.copyWith(
-                                        fontSize: 15,
+                                        fontSize: 15.sp,
                                         color: AppColors.textPrimary,
                                       ),
                                     ),
@@ -660,7 +660,7 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                             AnimatedCrossFade(
                               firstChild: const SizedBox(width: double.infinity),
                               secondChild: Padding(
-                                padding: const EdgeInsets.only(top: 8),
+                                padding: EdgeInsets.only(top: 8.h),
                                 child: ValidatedAuthInputField(
                                   controller: _deductionControllers[i],
                                   hintText: isOther
@@ -678,7 +678,7 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                                     color: isOther
                                         ? AppColors.textTertiary
                                         : AppColors.primary,
-                                    fontSize: 14,
+                                    fontSize: 14.sp,
                                     height: 19 / 14,
                                   ),
                                 ),
@@ -699,7 +699,7 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
             ),
             SafeArea(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                padding: EdgeInsets.fromLTRB(16.w, 0.h, 16.w, 16.h),
                 child: SizedBox(
                   width: double.infinity,
                   height: 52,
@@ -708,7 +708,7 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(8.r),
                       ),
                     ),
                     child: _submitting
@@ -724,7 +724,7 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                             '추가하기',
                             style: AppTypography.bodyMediumB.copyWith(
                               color: AppColors.grey0,
-                              fontSize: 16,
+                              fontSize: 16.sp,
                             ),
                           ),
                   ),
@@ -739,7 +739,7 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
 
   TextStyle get _labelStyle => AppTypography.bodySmallB.copyWith(
         color: AppColors.textSecondary,
-        fontSize: 13,
+        fontSize: 13.sp,
       );
 
   InputDecoration _fieldDecoration(String? hint) {
@@ -748,17 +748,17 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
       filled: true,
       fillColor: AppColors.grey0,
       contentPadding:
-          const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(10.r),
         borderSide: const BorderSide(color: AppColors.grey50),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(10.r),
         borderSide: const BorderSide(color: AppColors.grey50),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(10.r),
         borderSide: const BorderSide(color: AppColors.primaryDark),
       ),
     );

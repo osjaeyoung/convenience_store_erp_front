@@ -4,6 +4,7 @@ import '../../../data/models/labor_cost/monthly_detail.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../labor/labor_cost_formatters.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 직원 월별 인건비 상세 (목록 → 상세)
 class LaborCostEmployeeDetailScreen extends StatelessWidget {
@@ -29,21 +30,21 @@ class LaborCostEmployeeDetailScreen extends StatelessWidget {
         centerTitle: false,
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+        padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 32.h),
         children: [
           Text(
             periodLabel,
             style: AppTypography.bodyMediumR.copyWith(
               color: AppColors.textTertiary,
-              fontSize: 13,
+              fontSize: 13.sp,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           Container(
-            padding: const EdgeInsets.all(18),
+            padding: EdgeInsets.all(18.r),
             decoration: BoxDecoration(
               color: AppColors.grey0,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(16.r),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,22 +52,22 @@ class LaborCostEmployeeDetailScreen extends StatelessWidget {
                 Text(
                   LaborCostFormatters.won(employee.totalCost),
                   style: AppTypography.heading2.copyWith(
-                    fontSize: 22,
+                    fontSize: 22.sp,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 6),
+                SizedBox(height: 6.h),
                 Text(
                   '월 총 인건비',
                   style: AppTypography.bodySmallM.copyWith(
                     color: AppColors.textTertiary,
-                    fontSize: 12,
+                    fontSize: 12.sp,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           _SectionCard(
             children: [
               _row('급여 유형', employee.wageTypeLabel),
@@ -81,7 +82,7 @@ class LaborCostEmployeeDetailScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           _SectionCard(
             title: '급여 구성',
             children: [
@@ -97,7 +98,7 @@ class LaborCostEmployeeDetailScreen extends StatelessWidget {
 
   Widget _row(String k, String v) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: EdgeInsets.symmetric(vertical: 10.h),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -106,7 +107,7 @@ class LaborCostEmployeeDetailScreen extends StatelessWidget {
             child: Text(
               k,
               style: AppTypography.bodyMediumR.copyWith(
-                fontSize: 14,
+                fontSize: 14.sp,
                 color: AppColors.textSecondary,
               ),
             ),
@@ -116,7 +117,7 @@ class LaborCostEmployeeDetailScreen extends StatelessWidget {
               v,
               textAlign: TextAlign.right,
               style: AppTypography.bodyMediumM.copyWith(
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -143,21 +144,21 @@ class _SectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+      padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 4.h),
       decoration: BoxDecoration(
         color: AppColors.grey0,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (title != null) ...[
             Padding(
-              padding: const EdgeInsets.only(top: 12, bottom: 4),
+              padding: EdgeInsets.only(top: 12.h, bottom: 4.h),
               child: Text(
                 title!,
                 style: AppTypography.bodyLargeM.copyWith(
-                  fontSize: 15,
+                  fontSize: 15.sp,
                   fontWeight: FontWeight.w600,
                 ),
               ),

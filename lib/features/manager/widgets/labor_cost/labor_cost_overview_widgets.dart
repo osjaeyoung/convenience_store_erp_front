@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../../data/models/labor_cost/expected_labor_cost.dart';
 import '../../../../theme/app_colors.dart';
 import '../../../../theme/app_typography.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 String _monthShort(String yyyyMm) {
   final p = yyyyMm.split('-');
@@ -35,7 +36,7 @@ class LaborCostSubTabsBar extends StatelessWidget {
         isScrollable: true,
         tabAlignment: TabAlignment.start,
         padding: EdgeInsets.zero,
-        labelPadding: const EdgeInsets.symmetric(horizontal: 12),
+        labelPadding: EdgeInsets.symmetric(horizontal: 12.w),
         dividerColor: AppColors.grey25,
         dividerHeight: 1,
         labelColor: AppColors.textPrimary,
@@ -69,7 +70,7 @@ class LaborCostPeriodDropdown extends StatelessWidget {
       alignment: Alignment.centerLeft,
       child: Material(
         color: AppColors.grey0,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(10.r),
         child: InkWell(
           onTap: () async {
             final picked = await showModalBottomSheet<String>(
@@ -95,14 +96,14 @@ class LaborCostPeriodDropdown extends StatelessWidget {
             );
             if (picked != null) onChanged(picked);
           },
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(10.r),
           child: Container(
             width: 96,
             height: 42,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            margin: const EdgeInsets.only(top: 12),
+            padding: EdgeInsets.symmetric(horizontal: 12.w),
+            margin: EdgeInsets.only(top: 12.h),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(10.r),
               border: Border.all(color: AppColors.grey50),
             ),
             child: Row(
@@ -112,7 +113,7 @@ class LaborCostPeriodDropdown extends StatelessWidget {
                   child: Text(
                     label,
                     style: AppTypography.bodyMediumR.copyWith(
-                      fontSize: 14,
+                      fontSize: 14.sp,
                       color: AppColors.textPrimary,
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -148,9 +149,9 @@ class LaborCostFigmaSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20.r),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         gradient: const LinearGradient(
           begin: Alignment(-0.35, 0.2),
           end: Alignment(1.0, 1.0),
@@ -169,19 +170,19 @@ class LaborCostFigmaSummaryCard extends StatelessWidget {
         children: [
           Text(
             totalWonText,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Pretendard',
-              fontSize: 24,
+              fontSize: 24.sp,
               fontWeight: FontWeight.w400,
               height: 32 / 24,
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 6.h),
           Text.rich(
             TextSpan(
               style: AppTypography.bodyMediumM.copyWith(
-                fontSize: 14,
+                fontSize: 14.sp,
                 height: 16 / 14,
                 color: const Color(0xFF666874),
               ),
@@ -190,7 +191,7 @@ class LaborCostFigmaSummaryCard extends StatelessWidget {
                 TextSpan(
                   text: ratioPercentText,
                   style: AppTypography.bodyMediumM.copyWith(
-                    fontSize: 14,
+                    fontSize: 14.sp,
                     height: 16 / 14,
                     color: const Color(0xFF666874),
                     fontWeight: FontWeight.w500,
@@ -225,10 +226,10 @@ class LaborCostHeadcountCompareCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: EdgeInsets.symmetric(vertical: 16.h),
       decoration: BoxDecoration(
         color: AppColors.grey0Alt,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
       ),
       child: Row(
         children: [
@@ -238,15 +239,15 @@ class LaborCostHeadcountCompareCard extends StatelessWidget {
                 Text(
                   leftLabel,
                   style: AppTypography.bodySmallM.copyWith(
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     color: AppColors.textTertiary,
                   ),
                 ),
-                const SizedBox(height: 6),
+                SizedBox(height: 6.h),
                 Text(
                   '$leftCount',
                   style: AppTypography.heading3.copyWith(
-                    fontSize: 18,
+                    fontSize: 18.sp,
                     fontWeight: FontWeight.w500,
                     color: AppColors.textPrimary,
                   ),
@@ -265,15 +266,15 @@ class LaborCostHeadcountCompareCard extends StatelessWidget {
                 Text(
                   rightLabel,
                   style: AppTypography.bodySmallM.copyWith(
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     color: AppColors.textTertiary,
                   ),
                 ),
-                const SizedBox(height: 6),
+                SizedBox(height: 6.h),
                 Text(
                   '$rightCount',
                   style: AppTypography.heading3.copyWith(
-                    fontSize: 18,
+                    fontSize: 18.sp,
                     fontWeight: FontWeight.w500,
                     color: AppColors.textPrimary,
                   ),
@@ -324,11 +325,11 @@ class _LegendDot extends StatelessWidget {
           height: 8,
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
-        const SizedBox(width: 4),
+        SizedBox(width: 4.w),
         Text(
           label,
           style: AppTypography.bodySmallM.copyWith(
-            fontSize: 12,
+            fontSize: 12.sp,
             color: const Color(0xFF666874),
           ),
         ),
@@ -363,7 +364,7 @@ class _ThisMonthBars extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 0),
+          padding: EdgeInsets.symmetric(horizontal: 0.w),
           child: Row(
             children: [
               Text.rich(
@@ -372,14 +373,14 @@ class _ThisMonthBars extends StatelessWidget {
                     TextSpan(
                       text: '인건비',
                       style: AppTypography.bodyLargeM.copyWith(
-                        fontSize: 16,
+                        fontSize: 16.sp,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     TextSpan(
                       text: ' (천원)',
                       style: AppTypography.bodySmallR.copyWith(
-                        fontSize: 12,
+                        fontSize: 12.sp,
                         color: AppColors.textTertiary,
                       ),
                     ),
@@ -391,12 +392,12 @@ class _ThisMonthBars extends StatelessWidget {
                 color: AppColors.textPrimary,
                 label: '전월',
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12.w),
               const _LegendDot(color: AppColors.primary, label: '금월'),
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16.h),
         SizedBox(
           height: 160,
           child: Row(
@@ -404,7 +405,7 @@ class _ThisMonthBars extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               for (var i = 0; i < components.length; i++) ...[
-                if (i > 0) const SizedBox(width: 38),
+                if (i > 0) SizedBox(width: 38.w),
                 _BarPair(
                   label: i < labels.length ? labels[i] : '',
                   prevFrac: components[i].previousAmount / maxA,
@@ -447,7 +448,7 @@ class _BarPair extends StatelessWidget {
               Container(
                 width: 24,
                 height: hPrev,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.textPrimary,
                   borderRadius: BorderRadius.vertical(
                     top: Radius.circular(3),
@@ -457,7 +458,7 @@ class _BarPair extends StatelessWidget {
               Container(
                 width: 24,
                 height: hCur,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.primary,
                   borderRadius: BorderRadius.vertical(
                     top: Radius.circular(3),
@@ -466,13 +467,13 @@ class _BarPair extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 9),
+          SizedBox(height: 9.h),
           Text(
             label,
             textAlign: TextAlign.center,
             maxLines: 2,
             style: AppTypography.bodySmallM.copyWith(
-              fontSize: 12,
+              fontSize: 12.sp,
               color: const Color(0xFF666874),
               height: 16 / 12,
             ),
@@ -492,7 +493,7 @@ class _SixMonthBars extends StatelessWidget {
   Widget build(BuildContext context) {
     if (items.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20.r),
         child: Text(
           '6개월 추이 데이터가 없습니다.',
           style: AppTypography.bodyMediumR.copyWith(
@@ -516,7 +517,7 @@ class _SixMonthBars extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 0),
+          padding: EdgeInsets.symmetric(horizontal: 0.w),
           child: Row(
             children: [
               Text.rich(
@@ -525,14 +526,14 @@ class _SixMonthBars extends StatelessWidget {
                     TextSpan(
                       text: '인건비',
                       style: AppTypography.bodyLargeM.copyWith(
-                        fontSize: 16,
+                        fontSize: 16.sp,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     TextSpan(
                       text: ' (천원)',
                       style: AppTypography.bodySmallR.copyWith(
-                        fontSize: 12,
+                        fontSize: 12.sp,
                         color: AppColors.textTertiary,
                       ),
                     ),
@@ -541,12 +542,12 @@ class _SixMonthBars extends StatelessWidget {
               ),
               const Spacer(),
               const _LegendDot(color: AppColors.textPrimary, label: '수당'),
-              const SizedBox(width: 12),
+              SizedBox(width: 12.w),
               const _LegendDot(color: AppColors.primary, label: '기본급'),
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16.h),
         SizedBox(
           height: 180,
           child: Row(
@@ -562,7 +563,7 @@ class _SixMonthBars extends StatelessWidget {
                         child: Text(
                           _thousandLabel(topTick),
                           style: AppTypography.bodySmallR.copyWith(
-                            fontSize: 12,
+                            fontSize: 12.sp,
                             color: AppColors.textTertiary,
                           ),
                         ),
@@ -575,7 +576,7 @@ class _SixMonthBars extends StatelessWidget {
                         child: Text(
                           _thousandLabel(midTick),
                           style: AppTypography.bodySmallR.copyWith(
-                            fontSize: 12,
+                            fontSize: 12.sp,
                             color: AppColors.textTertiary,
                           ),
                         ),
@@ -587,7 +588,7 @@ class _SixMonthBars extends StatelessWidget {
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 2),
+                  padding: EdgeInsets.only(right: 2.w),
                   child: _LaborLineChart(
                     items: items,
                     topTick: topTick,
@@ -628,7 +629,7 @@ class _LaborLineChart extends StatelessWidget {
             child: const SizedBox.expand(),
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         Row(
           children: [
             for (var i = 0; i < items.length; i++)
@@ -637,7 +638,7 @@ class _LaborLineChart extends StatelessWidget {
                   _monthShort(items[i].month),
                   textAlign: TextAlign.center,
                   style: AppTypography.bodySmallM.copyWith(
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     color: const Color(0xFF666874),
                   ),
                 ),
@@ -757,10 +758,10 @@ class LaborCostSavingPointsFigma extends StatelessWidget {
     final empty = points.isEmpty;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
         color: AppColors.primaryLight,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: AppColors.primary),
       ),
       child: Column(
@@ -773,22 +774,22 @@ class LaborCostSavingPointsFigma extends StatelessWidget {
                 width: 12,
                 height: 12,
               ),
-              const SizedBox(width: 4),
+              SizedBox(width: 4.w),
               Text(
                 '인건비 절감 Point',
                 style: AppTypography.bodySmallM.copyWith(
-                  fontSize: 12,
+                  fontSize: 12.sp,
                   color: const Color(0xFF666874),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           if (empty)
             Text(
               '이번달 절감 Point가 없습니다',
               style: AppTypography.bodyMediumR.copyWith(
-                fontSize: 14,
+                fontSize: 14.sp,
                 height: 19 / 14,
                 color: AppColors.textTertiary,
               ),
@@ -801,11 +802,11 @@ class LaborCostSavingPointsFigma extends StatelessWidget {
                   Text(
                     '→',
                     style: AppTypography.bodyMediumM.copyWith(
-                      fontSize: 14,
+                      fontSize: 14.sp,
                       color: const Color(0xFF666874),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8.w),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -813,15 +814,15 @@ class LaborCostSavingPointsFigma extends StatelessWidget {
                         Text(
                           p.title,
                           style: AppTypography.bodyMediumM.copyWith(
-                            fontSize: 14,
+                            fontSize: 14.sp,
                             color: AppColors.textPrimary,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4.h),
                         Text(
                           p.description,
                           style: AppTypography.bodyMediumR.copyWith(
-                            fontSize: 14,
+                            fontSize: 14.sp,
                             height: 19 / 14,
                             color: AppColors.textPrimary,
                           ),
@@ -831,9 +832,9 @@ class LaborCostSavingPointsFigma extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8.h),
             ],
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
             SizedBox(
               width: double.infinity,
               height: 36,
@@ -843,7 +844,7 @@ class LaborCostSavingPointsFigma extends StatelessWidget {
                   backgroundColor: AppColors.textPrimary,
                   foregroundColor: AppColors.grey0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(8.r),
                   ),
                   elevation: 0,
                 ),
@@ -853,12 +854,12 @@ class LaborCostSavingPointsFigma extends StatelessWidget {
                     Text(
                       '절감 포인트 상세보기',
                       style: AppTypography.bodySmallM.copyWith(
-                        fontSize: 12,
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.w500,
                         color: AppColors.grey0,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8.w),
                     const Icon(Icons.chevron_right_rounded,
                         size: 18, color: AppColors.grey0),
                   ],
@@ -879,7 +880,7 @@ class LaborCostSectionTitleRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: EdgeInsets.symmetric(vertical: 12.h),
       child: Row(
         children: [
           Image.asset(
@@ -887,11 +888,11 @@ class LaborCostSectionTitleRow extends StatelessWidget {
             width: 16,
             height: 16,
           ),
-          const SizedBox(width: 4),
+          SizedBox(width: 4.w),
           Text(
             '이번 달 예상 인건비',
             style: AppTypography.bodyLargeM.copyWith(
-              fontSize: 16,
+              fontSize: 16.sp,
               fontWeight: FontWeight.w500,
               height: 20 / 16,
             ),

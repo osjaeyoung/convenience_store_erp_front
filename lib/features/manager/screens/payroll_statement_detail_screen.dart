@@ -9,6 +9,7 @@ import '../../../theme/app_typography.dart';
 import '../../../widgets/app_styled_confirm_dialog.dart';
 import '../payroll/payroll_formatters.dart';
 import 'payroll_statement_pdf_export.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 급여명세 상세 (아이콘 + 카드 + 공제 + 다운로드)
 class PayrollStatementDetailScreen extends StatefulWidget {
@@ -176,13 +177,13 @@ class _PayrollStatementDetailScreenState
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+              padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 24.h),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (_error != null)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
+                      padding: EdgeInsets.only(bottom: 8.h),
                       child: Text(
                         '일부 정보를 불러오지 못했습니다.',
                         style: AppTypography.bodySmall.copyWith(
@@ -197,12 +198,12 @@ class _PayrollStatementDetailScreenState
                         width: 24,
                         height: 24,
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8.w),
                       Expanded(
                         child: Text(
                           titleText,
                           style: AppTypography.heading3.copyWith(
-                            fontSize: 18,
+                            fontSize: 18.sp,
                             fontWeight: FontWeight.w600,
                             color: const Color(0xFF1D1D1F),
                           ),
@@ -218,17 +219,17 @@ class _PayrollStatementDetailScreenState
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16.h),
                   _infoCard(),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20.h),
                   Text(
                     '공제항목',
                     style: AppTypography.bodyMediumB.copyWith(
-                      fontSize: 15,
+                      fontSize: 15.sp,
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10.h),
                   if (!hasDeductions)
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -237,13 +238,13 @@ class _PayrollStatementDetailScreenState
                       ),
                       decoration: BoxDecoration(
                         color: AppColors.grey25,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                         border: Border.all(color: AppColors.grey50),
                       ),
                       child: Row(
                         children: [
                           Icon(Icons.info_outline, color: AppColors.grey150),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8.w),
                           Expanded(
                             child: Text(
                               '공제항목이 없습니다.',
@@ -257,10 +258,10 @@ class _PayrollStatementDetailScreenState
                     )
                   else
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: EdgeInsets.all(12.r),
                       decoration: BoxDecoration(
                         color: AppColors.grey0Alt,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                         border: Border.all(color: AppColors.grey50),
                       ),
                       child: Column(
@@ -269,7 +270,7 @@ class _PayrollStatementDetailScreenState
                             _kvRow(d.key, PayrollFormatters.krwInt(d.value)),
                           if (totalDed > 0)
                             Padding(
-                              padding: const EdgeInsets.only(top: 8),
+                              padding: EdgeInsets.only(top: 8.h),
                               child: _kvRow(
                                 '공제 합계',
                                 PayrollFormatters.krwInt(totalDed),
@@ -279,10 +280,10 @@ class _PayrollStatementDetailScreenState
                         ],
                       ),
                     ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24.h),
                   if ((_num('net_pay') ?? 0) > 0)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
+                      padding: EdgeInsets.only(bottom: 8.h),
                       child: _kvRow(
                         '실지급액',
                         PayrollFormatters.krwInt(_num('net_pay')),
@@ -298,7 +299,7 @@ class _PayrollStatementDetailScreenState
                         foregroundColor: AppColors.primaryDark,
                         side: const BorderSide(color: AppColors.primaryDark),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(12.r),
                         ),
                       ),
                       child: _pdfBusy
@@ -314,7 +315,7 @@ class _PayrollStatementDetailScreenState
                               '다운로드',
                               style: AppTypography.bodyMediumB.copyWith(
                                 color: AppColors.primaryDark,
-                                fontSize: 16,
+                                fontSize: 16.sp,
                               ),
                             ),
                     ),
@@ -333,10 +334,10 @@ class _PayrollStatementDetailScreenState
     final weeklyAllow = _num('weekly_allowance');
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 16.w),
       decoration: BoxDecoration(
         color: AppColors.grey0Alt,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: AppColors.grey50),
       ),
       child: Column(
@@ -354,7 +355,7 @@ class _PayrollStatementDetailScreenState
 
   Widget _kvRow(String label, String value, {bool emphasize = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: EdgeInsets.symmetric(vertical: 6.h),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -364,7 +365,7 @@ class _PayrollStatementDetailScreenState
               label,
               style: AppTypography.bodyMediumR.copyWith(
                 color: AppColors.textSecondary,
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: emphasize ? FontWeight.w600 : FontWeight.w400,
               ),
             ),
@@ -376,7 +377,7 @@ class _PayrollStatementDetailScreenState
               textAlign: TextAlign.right,
               style: AppTypography.bodyMediumM.copyWith(
                 color: AppColors.textPrimary,
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: emphasize ? FontWeight.w600 : FontWeight.w500,
               ),
             ),

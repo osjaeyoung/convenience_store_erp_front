@@ -20,6 +20,7 @@ import '../widgets/work_assignment_tab.dart';
 import 'add_branch_screen.dart';
 import 'employee_detail_screen.dart';
 import 'worker_registration_screen.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 직원관리 화면
 class ManagementScreen extends StatefulWidget {
@@ -96,18 +97,18 @@ class _ManagementScreenState extends State<ManagementScreen>
                   return Column(
                     children: [
                       if (state.isLoading)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 8),
+                        Padding(
+                          padding: EdgeInsets.only(top: 8.h),
                           child: LinearProgressIndicator(minHeight: 2),
                         ),
                       if (state.status == StaffManagementBlocStatus.failure)
                         Container(
                           width: double.infinity,
-                          margin: const EdgeInsets.all(16),
-                          padding: const EdgeInsets.all(12),
+                          margin: EdgeInsets.all(16.r),
+                          padding: EdgeInsets.all(12.r),
                           decoration: BoxDecoration(
                             color: AppColors.error.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(12.r),
                           ),
                           child: Text(
                         state.errorMessage ?? '오류가 발생했습니다.',
@@ -117,7 +118,7 @@ class _ManagementScreenState extends State<ManagementScreen>
                           ),
                         ),
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                        padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 8.h),
                         child: BranchSelectCard(
                           selectedName: selectedBranch?.name,
                           branches: branches
@@ -197,7 +198,7 @@ class _ManagementScreenState extends State<ManagementScreen>
     return TabBar(
       controller: _tabController,
       padding: EdgeInsets.zero,
-      labelPadding: const EdgeInsets.symmetric(horizontal: 12),
+      labelPadding: EdgeInsets.symmetric(horizontal: 12.w),
       tabAlignment: TabAlignment.start,
       dividerColor: AppColors.grey50,
       dividerHeight: 1,
@@ -254,7 +255,7 @@ class _ManagementScreenState extends State<ManagementScreen>
         _toIsoDate(_selectedDate);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(0, 12, 12, 16),
+      padding: EdgeInsets.fromLTRB(0.w, 12.h, 12.w, 16.h),
       children: [
         ScheduleDateSelector(
           selectedDate: _selectedDate,
@@ -268,7 +269,7 @@ class _ManagementScreenState extends State<ManagementScreen>
                               );
                         },
         ),
-        const SizedBox(height: 30),
+        SizedBox(height: 30.h),
         HomeTodayWorkersSection(
           dateLabel: _formatDateLabel(workDate),
           rows: rows,
@@ -329,13 +330,13 @@ class _ManagementScreenState extends State<ManagementScreen>
                 child: OutlinedButton(
                   onPressed: () => setModalState(() => selectedStatus = label),
                   style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(56),
+                    minimumSize: Size.fromHeight(56.h),
                     side: BorderSide(
                       color: selected ? AppColors.primary : AppColors.grey50,
                     ),
                     backgroundColor: selected ? const Color(0xFFE2F6F0) : AppColors.grey0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12.r),
                     ),
                   ),
                   child: Text(
@@ -349,9 +350,9 @@ class _ManagementScreenState extends State<ManagementScreen>
               }
 
             return Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 28, 20, 18),
+                padding: EdgeInsets.fromLTRB(20.w, 28.h, 20.w, 18.h),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -364,23 +365,23 @@ class _ManagementScreenState extends State<ManagementScreen>
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24.h),
                     Row(
                       children: [
                         statusButton('근무완료'),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12.w),
                         statusButton('근무예정'),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12.h),
                     Row(
                       children: [
                         statusButton('결근'),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12.w),
                         statusButton('미정'),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12.h),
                     OutlinedButton(
                       onPressed: () {
                         Navigator.of(dialogContext).pop();
@@ -396,11 +397,11 @@ class _ManagementScreenState extends State<ManagementScreen>
                         });
                       },
                       style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(56),
+                        minimumSize: Size.fromHeight(56.h),
                         side: const BorderSide(color: AppColors.primary),
                         backgroundColor: AppColors.primaryLight,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(12.r),
                         ),
                       ),
                       child: Row(
@@ -411,12 +412,12 @@ class _ManagementScreenState extends State<ManagementScreen>
                             width: 16,
                             height: 16,
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8.w),
                           Text(
                             '메모 함께 기재하기',
                             style: AppTypography.bodyMediumB.copyWith(
                               color: AppColors.primary,
-                              fontSize: 14,
+                              fontSize: 14.sp,
                               fontWeight: FontWeight.w600,
                               height: 16 / 14,
                             ),
@@ -424,24 +425,24 @@ class _ManagementScreenState extends State<ManagementScreen>
                         ],
                       ),
                     ),
-                    const SizedBox(height: 18),
+                    SizedBox(height: 18.h),
                     Row(
                       children: [
                         Expanded(
                           child: FilledButton(
                             onPressed: () => Navigator.of(dialogContext).pop(),
                             style: FilledButton.styleFrom(
-                              minimumSize: const Size.fromHeight(56),
+                              minimumSize: Size.fromHeight(56.h),
                               backgroundColor: AppColors.grey25,
                               foregroundColor: AppColors.grey150,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(12.r),
                               ),
                             ),
                             child: const Text('취소'),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12.w),
                         Expanded(
                           child: FilledButton(
                         onPressed: () {
@@ -456,11 +457,11 @@ class _ManagementScreenState extends State<ManagementScreen>
                           );
                         },
                             style: FilledButton.styleFrom(
-                              minimumSize: const Size.fromHeight(56),
+                              minimumSize: Size.fromHeight(56.h),
                               backgroundColor: AppColors.primary,
                               foregroundColor: AppColors.grey0,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(12.r),
                               ),
                             ),
                             child: const Text('확인'),
@@ -492,9 +493,9 @@ class _ManagementScreenState extends State<ManagementScreen>
       barrierColor: Colors.black54,
       builder: (dialogContext) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 22, 18, 16),
+            padding: EdgeInsets.fromLTRB(18.w, 22.h, 18.w, 16.h),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -503,13 +504,13 @@ class _ManagementScreenState extends State<ManagementScreen>
                   '근무 상태 메모를\n입력해 주세요.',
                   style: AppTypography.heading3.copyWith(color: AppColors.textPrimary),
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14.h),
                 Container(
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: AppColors.grey25,
                     border: Border(top: BorderSide(color: Color(0xFF666874), width: 1)),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                  padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 8.w),
                   child: Row(
                     children: const [
                       Expanded(child: Text('시간', textAlign: TextAlign.center)),
@@ -520,8 +521,8 @@ class _ManagementScreenState extends State<ManagementScreen>
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-                  decoration: const BoxDecoration(
+                  padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 8.w),
+                  decoration: BoxDecoration(
                     border: Border(bottom: BorderSide(color: AppColors.grey25)),
                   ),
                   child: Row(
@@ -544,9 +545,9 @@ class _ManagementScreenState extends State<ManagementScreen>
                     ],
                   ),
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14.h),
                 Text('메모', style: AppTypography.bodyLargeB.copyWith(color: AppColors.textPrimary)),
-                const SizedBox(height: 8),
+                SizedBox(height: 8.h),
                 TextFormField(
                   controller: controller,
                   minLines: 3,
@@ -556,33 +557,33 @@ class _ManagementScreenState extends State<ManagementScreen>
                     filled: true,
                     fillColor: AppColors.grey0Alt,
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(16.r),
                       borderSide: const BorderSide(color: AppColors.grey50),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(16.r),
                       borderSide: const BorderSide(color: AppColors.primary),
                     ),
                   ),
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14.h),
                 Row(
                   children: [
                     Expanded(
                       child: FilledButton(
                         onPressed: () => Navigator.of(dialogContext).pop(),
                         style: FilledButton.styleFrom(
-                          minimumSize: const Size.fromHeight(56),
+                          minimumSize: Size.fromHeight(56.h),
                           backgroundColor: AppColors.grey25,
                           foregroundColor: AppColors.grey150,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(12.r),
                           ),
                         ),
                         child: const Text('취소'),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12.w),
                     Expanded(
                       child: FilledButton(
                         onPressed: () {
@@ -599,11 +600,11 @@ class _ManagementScreenState extends State<ManagementScreen>
                           );
                         },
                         style: FilledButton.styleFrom(
-                          minimumSize: const Size.fromHeight(56),
+                          minimumSize: Size.fromHeight(56.h),
                           backgroundColor: AppColors.primary,
                           foregroundColor: AppColors.grey0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(12.r),
                           ),
                         ),
                         child: const Text('확인'),
@@ -632,9 +633,9 @@ class _ManagementScreenState extends State<ManagementScreen>
       barrierColor: Colors.black54,
       builder: (dialogContext) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 22, 18, 16),
+            padding: EdgeInsets.fromLTRB(18.w, 22.h, 18.w, 16.h),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -644,13 +645,13 @@ class _ManagementScreenState extends State<ManagementScreen>
                   textAlign: TextAlign.center,
                   style: AppTypography.heading3.copyWith(color: AppColors.textPrimary),
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14.h),
                 Container(
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: AppColors.grey25,
                     border: Border(top: BorderSide(color: Color(0xFF666874), width: 1)),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                  padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 8.w),
                   child: Row(
                     children: const [
                       Expanded(child: Text('시간', textAlign: TextAlign.center)),
@@ -661,8 +662,8 @@ class _ManagementScreenState extends State<ManagementScreen>
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-                  decoration: const BoxDecoration(
+                  padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 8.w),
+                  decoration: BoxDecoration(
                     border: Border(bottom: BorderSide(color: AppColors.grey25)),
                   ),
                   child: Row(
@@ -685,9 +686,9 @@ class _ManagementScreenState extends State<ManagementScreen>
                     ],
                   ),
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14.h),
                 Text('메모', style: AppTypography.bodyLargeB.copyWith(color: AppColors.textPrimary)),
-                const SizedBox(height: 8),
+                SizedBox(height: 8.h),
                 TextFormField(
                   controller: TextEditingController(text: memo),
                   readOnly: true,
@@ -698,16 +699,16 @@ class _ManagementScreenState extends State<ManagementScreen>
                     filled: true,
                     fillColor: AppColors.grey0Alt,
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(16.r),
                       borderSide: const BorderSide(color: AppColors.grey50),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(16.r),
                       borderSide: const BorderSide(color: AppColors.grey50),
                     ),
                   ),
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14.h),
                 Row(
                   children: [
                     Expanded(
@@ -725,26 +726,26 @@ class _ManagementScreenState extends State<ManagementScreen>
                           );
                         },
                         style: FilledButton.styleFrom(
-                          minimumSize: const Size.fromHeight(56),
+                          minimumSize: Size.fromHeight(56.h),
                           backgroundColor: const Color(0xFFFF453A),
                           foregroundColor: AppColors.grey0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(16.r),
                           ),
                         ),
                         child: const Text('삭제'),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12.w),
                     Expanded(
                       child: FilledButton(
                         onPressed: () => Navigator.of(dialogContext).pop(),
                         style: FilledButton.styleFrom(
-                          minimumSize: const Size.fromHeight(56),
+                          minimumSize: Size.fromHeight(56.h),
                           backgroundColor: AppColors.grey25,
                           foregroundColor: AppColors.grey150,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(16.r),
                           ),
                         ),
                         child: const Text('닫기'),
@@ -833,12 +834,12 @@ class _ManagementScreenState extends State<ManagementScreen>
     return Stack(
       children: [
         ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+          padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 80.h),
           children: [
             _buildEmployeeInfoSelector(),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
             _buildEmployeeSearchInput(context, branchId),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
             ...list.map((employee) {
               final avg = employee['average_rating'];
               final starCount = avg != null
@@ -854,7 +855,7 @@ class _ManagementScreenState extends State<ManagementScreen>
             }),
             if (list.isEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24),
+                padding: EdgeInsets.symmetric(vertical: 24.h),
                 child: Center(
                   child: Text(
                     _employeeInfoShowActive ? '현근무자 없음' : '퇴직자 없음',
@@ -882,7 +883,7 @@ class _ManagementScreenState extends State<ManagementScreen>
       offset: const Offset(0, 40),
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(minWidth: 0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
       itemBuilder: (context) => [
         const PopupMenuItem<bool>(
           value: true,
@@ -895,10 +896,10 @@ class _ManagementScreenState extends State<ManagementScreen>
       ],
       onSelected: (value) => setState(() => _employeeInfoShowActive = value),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
         decoration: BoxDecoration(
           color: AppColors.grey0,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(10.r),
           border: Border.all(color: AppColors.grey50),
         ),
         child: Row(
@@ -908,12 +909,12 @@ class _ManagementScreenState extends State<ManagementScreen>
               _employeeInfoShowActive ? '현직자' : '퇴직자',
               style: AppTypography.bodyMediumR.copyWith(
                 color: AppColors.textPrimary,
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w400,
                 height: 19 / 14,
               ),
             ),
-            const SizedBox(width: 4),
+            SizedBox(width: 4.w),
             Icon(
               Icons.keyboard_arrow_down_rounded,
               size: 18,
@@ -933,12 +934,12 @@ class _ManagementScreenState extends State<ManagementScreen>
         hintText: '검색',
         hintStyle: AppTypography.bodyMediumR.copyWith(
           color: AppColors.grey100,
-          fontSize: 14,
+          fontSize: 14.sp,
           fontWeight: FontWeight.w400,
           height: 19 / 14,
         ),
         prefixIcon: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(12.r),
           child: SvgPicture.asset(
             'assets/icons/svg/icon/search_mint_20.svg',
             width: 20,
@@ -948,18 +949,18 @@ class _ManagementScreenState extends State<ManagementScreen>
         filled: true,
         fillColor: AppColors.grey0Alt,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
           borderSide: const BorderSide(color: AppColors.grey50),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
           borderSide: const BorderSide(color: AppColors.grey50),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
           borderSide: const BorderSide(color: AppColors.primary),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
       ),
       onSubmitted: (q) => context.read<StaffManagementBloc>().add(
             StaffManagementEmployeesCompareRequested(
@@ -1016,14 +1017,14 @@ class _ManagementScreenState extends State<ManagementScreen>
               }
             },
       child: Padding(
-        padding: const EdgeInsets.only(top: 10, bottom: 10),
+        padding: EdgeInsets.only(top: 10.h, bottom: 10.h),
         child: Row(
           children: [
             SizedBox(
               width: 24,
               child: starCount > 0 ? _buildStarBadge(starCount) : const SizedBox(),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8.w),
             Expanded(
               child: Row(
                 children: [
@@ -1031,18 +1032,18 @@ class _ManagementScreenState extends State<ManagementScreen>
                     name,
                     style: AppTypography.bodyMediumM.copyWith(
                       color: AppColors.textPrimary,
-                      fontSize: 14,
+                      fontSize: 14.sp,
                       fontWeight: FontWeight.w500,
                       height: 16 / 14,
                     ),
                   ),
                   if (isManager) ...[
-                    const SizedBox(width: 4),
+                    SizedBox(width: 4.w),
                     Text(
                       '[점장]',
                       style: AppTypography.bodyMediumM.copyWith(
                         color: AppColors.primary,
-                        fontSize: 14,
+                        fontSize: 14.sp,
                         fontWeight: FontWeight.w500,
                         height: 16 / 14,
                       ),
@@ -1084,7 +1085,7 @@ class _ManagementScreenState extends State<ManagementScreen>
             width: size,
             height: size,
           ),
-          const SizedBox(width: 2),
+          SizedBox(width: 2.w),
           Image.asset(
             'assets/icons/png/common/star_green_icon.png',
             width: size,
@@ -1104,7 +1105,7 @@ class _ManagementScreenState extends State<ManagementScreen>
             width: size,
             height: size,
           ),
-          const SizedBox(height: 2),
+          SizedBox(height: 2.h),
           Row(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1114,7 +1115,7 @@ class _ManagementScreenState extends State<ManagementScreen>
                 width: size,
                 height: size,
               ),
-              const SizedBox(width: 2),
+              SizedBox(width: 2.w),
               Image.asset(
                 'assets/icons/png/common/star_green_icon.png',
                 width: size,
@@ -1131,7 +1132,7 @@ class _ManagementScreenState extends State<ManagementScreen>
   Widget _buildEmployeeInfoFab(BuildContext context, int? branchId) {
     return Material(
       color: AppColors.primary,
-      borderRadius: BorderRadius.circular(28),
+      borderRadius: BorderRadius.circular(28.r),
       elevation: 4,
       child: InkWell(
         onTap: () {
@@ -1152,7 +1153,7 @@ class _ManagementScreenState extends State<ManagementScreen>
             ),
           );
         },
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(28.r),
         child: const SizedBox(
           width: 56,
           height: 56,

@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 enum UploadSourceType { file, gallery }
 
@@ -78,16 +79,16 @@ Future<UploadSourceType?> _showUploadSourceSheet(BuildContext context) {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             Container(
               width: 36,
               height: 4,
               decoration: BoxDecoration(
                 color: AppColors.grey100,
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(999.r),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
             _UploadSourceTile(
               icon: Icons.folder_open_rounded,
               label: '파일 선택',
@@ -98,7 +99,7 @@ Future<UploadSourceType?> _showUploadSourceSheet(BuildContext context) {
               label: '갤러리 선택',
               onTap: () => Navigator.of(context).pop(UploadSourceType.gallery),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
           ],
         ),
       );

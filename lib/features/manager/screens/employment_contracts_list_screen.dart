@@ -7,6 +7,7 @@ import '../../../theme/app_typography.dart';
 import 'employment_contract_add_method_screen.dart';
 import 'employment_contract_attachment_helpers.dart';
 import 'employment_contract_detail_screen.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 근로계약서 목록 (템플릿별 필터 + 추가하기 + 상세)
 class EmploymentContractsListScreen extends StatefulWidget {
@@ -153,15 +154,15 @@ class _EmploymentContractsListScreenState
         child: _loading
             ? ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                children: const [
-                  SizedBox(height: 120),
-                  Center(child: CircularProgressIndicator()),
+                children: [
+                  SizedBox(height: 120.h),
+                  const Center(child: CircularProgressIndicator()),
                 ],
               )
             : _error != null
                 ? ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(24.r),
                     children: [
                       Text(
                         _error!,
@@ -195,7 +196,7 @@ class _EmploymentContractsListScreenState
                         ],
                       )
                     : ListView.separated(
-                        padding: const EdgeInsets.only(bottom: 12),
+                        padding: EdgeInsets.only(bottom: 12.h),
                         itemCount: _items.length,
                         separatorBuilder: (_, __) => const Divider(
                           height: 1,
@@ -232,18 +233,18 @@ class _EmploymentContractsListScreenState
                                             overflow: TextOverflow.ellipsis,
                                             style: AppTypography.bodyMediumM
                                                 .copyWith(
-                                              fontSize: 15,
+                                              fontSize: 15.sp,
                                               fontWeight: FontWeight.w600,
                                               height: 22 / 15,
                                               color: AppColors.textPrimary,
                                             ),
                                           ),
-                                          const SizedBox(height: 4),
+                                          SizedBox(height: 4.h),
                                           Text(
                                             _listSubtitle(c),
                                             style:
                                                 AppTypography.bodySmall.copyWith(
-                                              fontSize: 13,
+                                              fontSize: 13.sp,
                                               height: 18 / 13,
                                               color: AppColors.textSecondary,
                                             ),
@@ -251,9 +252,9 @@ class _EmploymentContractsListScreenState
                                         ],
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
+                                    SizedBox(width: 12.w),
                                     _ContractStatusChip(completed: completed),
-                                    const SizedBox(width: 4),
+                                    SizedBox(width: 4.w),
                                     Icon(
                                       Icons.chevron_right_rounded,
                                       color: AppColors.textTertiary,
@@ -270,7 +271,7 @@ class _EmploymentContractsListScreenState
       bottomNavigationBar: Material(
         color: AppColors.grey0,
         child: SafeArea(
-          minimum: const EdgeInsets.only(bottom: 8),
+          minimum: EdgeInsets.only(bottom: 8.h),
           child: Padding(
             padding: EdgeInsets.fromLTRB(
               _isGuardianList ? 20 : 16,
@@ -297,7 +298,7 @@ class _EmploymentContractsListScreenState
                   '추가하기',
                   style: AppTypography.bodyMediumB.copyWith(
                     color: AppColors.grey0,
-                    fontSize: 16,
+                    fontSize: 16.sp,
                     height: 24 / 16,
                   ),
                 ),
@@ -321,16 +322,16 @@ class _ContractStatusChip extends StatelessWidget {
     final color = completed ? AppColors.success : AppColors.error;
     final label = completed ? '계약완료' : '계약미완료';
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
       decoration: BoxDecoration(
         color: AppColors.grey0,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(8.r),
         border: Border.all(color: color, width: 1),
       ),
       child: Text(
         label,
         style: AppTypography.bodySmall.copyWith(
-          fontSize: 12,
+          fontSize: 12.sp,
           fontWeight: FontWeight.w600,
           height: 16 / 12,
           color: color,

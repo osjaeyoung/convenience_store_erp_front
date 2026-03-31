@@ -5,6 +5,7 @@ import '../../../data/repositories/staff_management_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import 'employee_etc_record_add_screen.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 기타자료 목록 (records/etc)
 class EmployeeEtcRecordsScreen extends StatefulWidget {
@@ -103,15 +104,15 @@ class _EmployeeEtcRecordsScreenState extends State<EmployeeEtcRecordsScreen> {
         child: _loading
             ? ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                children: const [
-                  SizedBox(height: 120),
-                  Center(child: CircularProgressIndicator()),
+                children: [
+                  SizedBox(height: 120.h),
+                  const Center(child: CircularProgressIndicator()),
                 ],
               )
             : _error != null
                 ? ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(24.r),
                     children: [
                       Text(
                         _error!,
@@ -150,7 +151,7 @@ class _EmployeeEtcRecordsScreenState extends State<EmployeeEtcRecordsScreen> {
                         },
                       )
                     : ListView.separated(
-                        padding: const EdgeInsets.only(bottom: 12),
+                        padding: EdgeInsets.only(bottom: 12.h),
                         itemCount: _items.length,
                         separatorBuilder: (_, __) => const Divider(
                           height: 1,
@@ -196,19 +197,19 @@ class _EmployeeEtcRecordsScreenState extends State<EmployeeEtcRecordsScreen> {
                                             overflow: TextOverflow.ellipsis,
                                             style: AppTypography.bodyMediumM
                                                 .copyWith(
-                                              fontSize: 15,
+                                              fontSize: 15.sp,
                                               fontWeight: FontWeight.w600,
                                               height: 22 / 15,
                                               color: AppColors.textPrimary,
                                             ),
                                           ),
                                           if (dateLine.isNotEmpty) ...[
-                                            const SizedBox(height: 4),
+                                            SizedBox(height: 4.h),
                                             Text(
                                               '작성일 $dateLine',
                                               style: AppTypography.bodySmall
                                                   .copyWith(
-                                                fontSize: 13,
+                                                fontSize: 13.sp,
                                                 height: 18 / 13,
                                                 color: AppColors.textSecondary,
                                               ),
@@ -233,9 +234,9 @@ class _EmployeeEtcRecordsScreenState extends State<EmployeeEtcRecordsScreen> {
       bottomNavigationBar: Material(
         color: AppColors.grey0,
         child: SafeArea(
-          minimum: const EdgeInsets.only(bottom: 8),
+          minimum: EdgeInsets.only(bottom: 8.h),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+            padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 16.h),
             child: SizedBox(
               width: double.infinity,
               height: 52,
@@ -246,14 +247,14 @@ class _EmployeeEtcRecordsScreenState extends State<EmployeeEtcRecordsScreen> {
                   foregroundColor: AppColors.grey0,
                   padding: EdgeInsets.zero,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(8.r),
                   ),
                 ),
                 child: Text(
                   '추가하기',
                   style: AppTypography.bodyMediumB.copyWith(
                     color: AppColors.grey0,
-                    fontSize: 16,
+                    fontSize: 16.sp,
                     height: 24 / 16,
                   ),
                 ),

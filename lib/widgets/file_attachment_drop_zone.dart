@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 파일 첨부 영역 (민트 테두리 + 아이콘 + 안내 문구). 탭 시 [onTap] 호출.
 ///
@@ -46,7 +47,7 @@ class FileAttachmentDropZone extends StatelessWidget {
     final label = hasFile ? fileName!.trim() : emptySubtitle;
     final labelStyle = AppTypography.bodyMediumR.copyWith(
       color: hasFile ? AppColors.textPrimary : AppColors.primary,
-      fontSize: 14,
+      fontSize: 14.sp,
       height: 20 / 14,
     );
 
@@ -68,7 +69,7 @@ class FileAttachmentDropZone extends StatelessWidget {
             ),
             child: Center(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
@@ -110,7 +111,7 @@ class FileAttachmentDropZone extends StatelessWidget {
           ),
           child: Center(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -120,7 +121,7 @@ class FileAttachmentDropZone extends StatelessWidget {
                     height: iconSize,
                     fit: BoxFit.contain,
                   ),
-                  const SizedBox(height: 14),
+                  SizedBox(height: 14.h),
                   Text(
                     label,
                     textAlign: TextAlign.center,

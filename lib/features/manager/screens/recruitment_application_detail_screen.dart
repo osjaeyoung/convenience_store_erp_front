@@ -7,6 +7,7 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../../widgets/app_styled_confirm_dialog.dart';
 import 'recruitment_review_screen.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class RecruitmentApplicationDetailScreen extends StatefulWidget {
   const RecruitmentApplicationDetailScreen({
@@ -139,7 +140,7 @@ class _RecruitmentApplicationDetailScreenState
                       children: [
                         Expanded(
                           child: SingleChildScrollView(
-                            padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+                            padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 24.h),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
@@ -147,7 +148,7 @@ class _RecruitmentApplicationDetailScreenState
                                   profile: _profile!,
                                   onViewReviews: _openReviews,
                                 ),
-                                const SizedBox(height: 20),
+                                SizedBox(height: 20.h),
                                 Text(
                                   '근무 이력',
                                   style: AppTypography.heading3.copyWith(
@@ -155,7 +156,7 @@ class _RecruitmentApplicationDetailScreenState
                                     color: AppColors.textPrimary,
                                   ),
                                 ),
-                                const SizedBox(height: 8),
+                                SizedBox(height: 8.h),
                                 _ApplicationWorkHistoryCard(
                                   histories: _profile!.workHistories,
                                 ),
@@ -167,7 +168,7 @@ class _RecruitmentApplicationDetailScreenState
                           top: false,
                           child: Container(
                             color: AppColors.grey0,
-                            padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
+                            padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 36.h),
                             child: SizedBox(
                               height: 56,
                               child: FilledButton(
@@ -176,7 +177,7 @@ class _RecruitmentApplicationDetailScreenState
                                   backgroundColor: AppColors.grey150,
                                   foregroundColor: AppColors.grey0,
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(8.r),
                                   ),
                                 ),
                                 child: _deleting
@@ -219,9 +220,9 @@ class _ApplicationHeroCard extends StatelessWidget {
     final locations =
         profile.desiredLocations.isEmpty ? const ['-'] : profile.desiredLocations;
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+      padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 20.h),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         gradient: const LinearGradient(
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
@@ -234,7 +235,7 @@ class _ApplicationHeroCard extends StatelessWidget {
       child: Column(
         children: [
           const _ApplicantAvatar(size: 80),
-          const SizedBox(height: 20),
+          SizedBox(height: 20.h),
           _ApplicationInfoRow(
             label: '근무자명',
             value: _valueText(profile.employeeName),
@@ -261,7 +262,7 @@ class _ApplicationHeroCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           _ApplicationInfoRow(
             label: '평점',
             value: Row(
@@ -275,11 +276,11 @@ class _ApplicationHeroCard extends StatelessWidget {
                   maxStars: 3,
                   color: AppColors.grey0,
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: 4.w),
                 Text(
                   '(${profile.reviewCount})',
                   style: AppTypography.bodySmallR.copyWith(
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     height: 18 / 12,
                     color: AppColors.textPrimary,
                   ),
@@ -287,7 +288,7 @@ class _ApplicationHeroCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           SizedBox(
             width: double.infinity,
             height: 36,
@@ -297,7 +298,7 @@ class _ApplicationHeroCard extends StatelessWidget {
                 backgroundColor: AppColors.primaryDark,
                 foregroundColor: AppColors.grey0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(8.r),
                 ),
                 padding: EdgeInsets.zero,
               ),
@@ -311,7 +312,7 @@ class _ApplicationHeroCard extends StatelessWidget {
                       height: 16 / 12,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8.w),
                   const Icon(
                     Icons.chevron_right_rounded,
                     size: 14,
@@ -330,7 +331,7 @@ class _ApplicationHeroCard extends StatelessWidget {
     return Text(
       text,
       style: AppTypography.bodyMediumR.copyWith(
-        fontSize: 14,
+        fontSize: 14.sp,
         height: 19 / 14,
         color: AppColors.textPrimary,
       ),
@@ -353,19 +354,19 @@ class _ApplicationInfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: 8.h),
       child: Row(
         crossAxisAlignment: crossAxisAlignment,
         children: [
           Text(
             label,
             style: AppTypography.bodyMediumM.copyWith(
-              fontSize: 14,
+              fontSize: 14.sp,
               height: 16 / 14,
               color: AppColors.textSecondary,
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12.w),
           Expanded(
             child: Align(
               alignment: Alignment.centerRight,
@@ -389,16 +390,16 @@ class _ApplicationWorkHistoryCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.grey0,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: AppColors.grey50),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
       child: Column(
         children: [
           for (var i = 0; i < items.length; i++) ...[
             if (i > 0) const Divider(height: 1, color: AppColors.grey25),
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              padding: EdgeInsets.symmetric(vertical: 16.h),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -406,13 +407,13 @@ class _ApplicationWorkHistoryCard extends StatelessWidget {
                     child: Text(
                       items[i].periodLabel ?? '-',
                       style: AppTypography.bodyMediumR.copyWith(
-                        fontSize: 14,
+                        fontSize: 14.sp,
                         height: 19 / 14,
                         color: AppColors.textSecondary,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16.w),
                   Flexible(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -420,17 +421,17 @@ class _ApplicationWorkHistoryCard extends StatelessWidget {
                         Text(
                           items[i].companyName ?? '-',
                           style: AppTypography.bodyLargeM.copyWith(
-                            fontSize: 16,
+                            fontSize: 16.sp,
                             height: 20 / 16,
                             color: AppColors.textPrimary,
                           ),
                           textAlign: TextAlign.right,
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4.h),
                         Text(
                           items[i].roleLabel ?? '-',
                           style: AppTypography.bodySmallR.copyWith(
-                            fontSize: 12,
+                            fontSize: 12.sp,
                             height: 18 / 12,
                             color: AppColors.textTertiary,
                           ),
@@ -462,7 +463,7 @@ class _ApplicationErrorView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24.r),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -473,7 +474,7 @@ class _ApplicationErrorView extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
             TextButton(
               onPressed: onRetry,
               child: const Text('다시 시도'),
@@ -495,7 +496,7 @@ class _ApplicantAvatar extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.grey25,
         shape: BoxShape.circle,
       ),

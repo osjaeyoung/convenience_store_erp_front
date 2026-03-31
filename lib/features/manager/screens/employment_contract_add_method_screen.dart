@@ -5,6 +5,7 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import 'employment_contract_file_attach_screen.dart';
 import 'employment_contract_form_screen.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 근로계약서 추가: 직접 작성 vs 파일 첨부 (Figma 2534:14819)
 /// 표준·연소·친권 모두 스펙 `##23-1` 파일 전용 등록(`template_version` + `files`) 가능.
@@ -50,11 +51,11 @@ class EmploymentContractAddMethodScreen extends StatelessWidget {
         scrolledUnderElevation: 0,
       ),
       body: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+        padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 8.h),
         child: Container(
           decoration: BoxDecoration(
             color: AppColors.grey0,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(12.r),
             border: Border.all(color: AppColors.grey50),
           ),
           child: Column(
@@ -127,9 +128,9 @@ class _MethodRow extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
           child: Row(
             children: [
               Container(
@@ -137,19 +138,19 @@ class _MethodRow extends StatelessWidget {
                 height: 28,
                 decoration: BoxDecoration(
                   color: AppColors.grey0Alt,
-                  borderRadius: BorderRadius.circular(100),
+                  borderRadius: BorderRadius.circular(100.r),
                 ),
                 alignment: Alignment.center,
                 child: imageAsset != null
                     ? Image.asset(imageAsset!, width: 16, height: 16)
                     : SvgPicture.asset(svgAsset!, width: 16, height: 16),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12.w),
               Expanded(
                 child: Text(
                   title,
                   style: AppTypography.bodyMediumM.copyWith(
-                    fontSize: 14,
+                    fontSize: 14.sp,
                     height: 16 / 14,
                     color: AppColors.textPrimary,
                   ),

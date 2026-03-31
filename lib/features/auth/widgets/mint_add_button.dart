@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class MintAddButton extends StatelessWidget {
   const MintAddButton({
@@ -22,10 +23,10 @@ class MintAddButton extends StatelessWidget {
     return OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
-        minimumSize: const Size.fromHeight(52),
+        minimumSize: Size.fromHeight(52.h),
         side: const BorderSide(color: AppColors.primary),
         backgroundColor: _backgroundColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -38,7 +39,7 @@ class MintAddButton extends StatelessWidget {
               height: 16 / 12,
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8.w),
           SvgPicture.asset(
             _iconPath,
             width: 20,

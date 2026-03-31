@@ -7,6 +7,7 @@ import '../../../data/repositories/labor_cost_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../labor/labor_cost_formatters.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 인건비 절감 상세 (API 3)
 class LaborCostSavingDetailScreen extends StatefulWidget {
@@ -97,7 +98,7 @@ class _LaborCostSavingDetailScreenState extends State<LaborCostSavingDetailScree
         : _error != null
             ? Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(24.r),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -108,7 +109,7 @@ class _LaborCostSavingDetailScreenState extends State<LaborCostSavingDetailScree
                           color: AppColors.textSecondary,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16.h),
                       FilledButton(onPressed: _load, child: const Text('다시 시도')),
                     ],
                   ),
@@ -144,16 +145,16 @@ class _LaborCostSavingDetailScreenState extends State<LaborCostSavingDetailScree
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
-        padding: const EdgeInsets.only(bottom: 32),
+        padding: EdgeInsets.only(bottom: 32.h),
         children: [
-          const SizedBox(height: 20),
+          SizedBox(height: 20.h),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const _SectionTitle(title: '퇴직금 발생 예정 인원'),
-                const SizedBox(height: 12),
+                SizedBox(height: 12.h),
                 if (d.retirementExpectedWorkers.isEmpty)
                   _emptyCard('해당 조건에 해당하는 인원이 없습니다.')
                 else
@@ -161,8 +162,8 @@ class _LaborCostSavingDetailScreenState extends State<LaborCostSavingDetailScree
               ],
             ),
           ),
-          const SizedBox(height: 20),
-          const Padding(
+          SizedBox(height: 20.h),
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 20),
             child: Divider(
               height: 1,
@@ -170,14 +171,14 @@ class _LaborCostSavingDetailScreenState extends State<LaborCostSavingDetailScree
               color: AppColors.grey25,
             ),
           ),
-          const SizedBox(height: 20),
-          const Padding(
+          SizedBox(height: 20.h),
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 20),
             child: _SectionTitle(title: '주휴수당 절감 개선'),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           if (d.weeklyAllowanceImprovementPoints.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(horizontal: 20),
               child: _EmptyCard(text: '개선안 데이터가 없습니다.'),
             )
@@ -190,8 +191,8 @@ class _LaborCostSavingDetailScreenState extends State<LaborCostSavingDetailScree
                 expanded: _expandedPointIndex.contains(i),
               ),
             ),
-          const SizedBox(height: 20),
-          const Padding(
+          SizedBox(height: 20.h),
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 20),
             child: Divider(
               height: 1,
@@ -199,14 +200,14 @@ class _LaborCostSavingDetailScreenState extends State<LaborCostSavingDetailScree
               color: AppColors.grey25,
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20.h),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const _SectionTitle(title: '중복 근무 발생 현황'),
-                const SizedBox(height: 12),
+                SizedBox(height: 12.h),
                 if (d.overlappingWorkIssues.isEmpty)
                   _emptyCard('중복 근무 이슈가 없습니다.')
                 else
@@ -236,7 +237,7 @@ class _LaborCostSavingDetailScreenState extends State<LaborCostSavingDetailScree
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: AppColors.grey0,
             border: Border(
               bottom: BorderSide(color: AppColors.grey50),
@@ -255,7 +256,7 @@ class _LaborCostSavingDetailScreenState extends State<LaborCostSavingDetailScree
                 });
               },
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 12.h),
                 child: Row(
                   children: [
                     Text(
@@ -282,7 +283,7 @@ class _LaborCostSavingDetailScreenState extends State<LaborCostSavingDetailScree
           Container(
             width: double.infinity,
             color: AppColors.grey0Alt,
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20.r),
             child: Column(
               children: [
                 if (hasBefore)
@@ -292,9 +293,9 @@ class _LaborCostSavingDetailScreenState extends State<LaborCostSavingDetailScree
                     rows: p.beforeWorkers,
                   ),
                 if (hasBefore && hasAfter) ...[
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16.h),
                   const _PointFlowArrow(),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16.h),
                 ],
                 if (hasAfter)
                   _WorkersMiniTable(
@@ -323,7 +324,7 @@ class _SectionTitle extends StatelessWidget {
     return Text(
       title,
       style: AppTypography.bodyLargeM.copyWith(
-        fontSize: 18,
+        fontSize: 18.sp,
         fontWeight: FontWeight.w500,
         height: 24 / 18,
         color: AppColors.textPrimary,
@@ -368,7 +369,7 @@ class _WorkersMiniTable extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.grey0,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: AppColors.grey50),
       ),
       child: Column(
@@ -381,12 +382,12 @@ class _WorkersMiniTable extends StatelessWidget {
                 top: Radius.circular(16),
               ),
             ),
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: EdgeInsets.symmetric(vertical: 8.h),
             alignment: Alignment.center,
             child: Text(
               title,
               style: AppTypography.bodyMediumB.copyWith(
-                fontSize: 14,
+                fontSize: 14.sp,
                 height: 16 / 14,
                 color: titleBg == AppColors.primary
                     ? AppColors.grey0
@@ -395,7 +396,7 @@ class _WorkersMiniTable extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+            padding: EdgeInsets.fromLTRB(20.w, 0.h, 20.w, 8.h),
             child: Column(
               children: [
                 for (var i = 0; i < rows.length; i++)
@@ -441,10 +442,10 @@ class _EmptyCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
       decoration: BoxDecoration(
         color: AppColors.grey0,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: AppColors.grey50),
       ),
       child: Text(
@@ -494,7 +495,7 @@ class _WorkerDetailRow extends StatelessWidget {
     final workHours = _weeklyHoursLabel(worker.weeklyWorkMinutes);
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: EdgeInsets.symmetric(vertical: 12.h),
       decoration: BoxDecoration(
         border: showDivider
             ? const Border(
@@ -523,7 +524,7 @@ class _WorkerDetailRow extends StatelessWidget {
               Container(
                 width: 1,
                 height: 14,
-                margin: const EdgeInsets.symmetric(horizontal: 6),
+                margin: EdgeInsets.symmetric(horizontal: 6.w),
                 color: AppColors.grey25,
               ),
               _WorkerMetaItem(
@@ -557,11 +558,11 @@ class _WorkerMetaItem extends StatelessWidget {
           textAlign: TextAlign.center,
           style: AppTypography.bodySmallB.copyWith(
             color: AppColors.textTertiary,
-            fontSize: 12,
+            fontSize: 12.sp,
             height: 16 / 12,
           ),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: 8.w),
         Text(
           value,
           textAlign: TextAlign.center,
@@ -569,7 +570,7 @@ class _WorkerMetaItem extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: AppTypography.bodyMediumR.copyWith(
             color: AppColors.textSecondary,
-            fontSize: 14,
+            fontSize: 14.sp,
             height: 19 / 14,
           ),
         ),

@@ -9,6 +9,7 @@ import '../../../widgets/app_styled_confirm_dialog.dart';
 import 'employment_contract_attachment_helpers.dart';
 import 'employment_contract_pdf_export.dart';
 import 'employee_etc_record_inline_preview.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 근로계약서 조회 (Figma 2534-18557, 읽기 전용 · 입력값 밑줄 · PDF 다운로드)
 class EmploymentContractDetailScreen extends StatefulWidget {
@@ -41,17 +42,17 @@ class _EmploymentContractDetailScreenState
   String? _error;
   Map<String, dynamic>? _row;
 
-  static const TextStyle _docBodyStyle = TextStyle(
+  static TextStyle get _docBodyStyle => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 14,
+    fontSize: 14.sp,
     fontWeight: FontWeight.w400,
     height: 19 / 14,
     color: Color(0xFF000000),
   );
 
-  static const TextStyle _docHeadingStyle = TextStyle(
+  static TextStyle get _docHeadingStyle => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 18,
+    fontSize: 18.sp,
     fontWeight: FontWeight.w500,
     height: 24 / 18,
     color: Color(0xFF000000),
@@ -194,7 +195,7 @@ class _EmploymentContractDetailScreenState
                   : _underlineColor.withValues(alpha: 0.35),
             ),
           ),
-          const SizedBox(height: 2),
+          SizedBox(height: 2.h),
           Container(height: 1, color: _underlineColor),
         ],
       ),
@@ -215,14 +216,14 @@ class _EmploymentContractDetailScreenState
                 : _underlineColor.withValues(alpha: 0.25),
           ),
         ),
-        const SizedBox(height: 2),
+        SizedBox(height: 2.h),
         Container(height: 1, color: _underlineColor),
       ],
     );
   }
 
   Widget _t(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 2),
+        padding: EdgeInsets.only(bottom: 2.h),
         child: Text(text, style: _docBodyStyle),
       );
 
@@ -270,7 +271,7 @@ class _EmploymentContractDetailScreenState
           : _error != null
               ? Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(24.r),
                     child: Text(
                       _error!,
                       textAlign: TextAlign.center,
@@ -298,8 +299,8 @@ class _EmploymentContractDetailScreenState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Container(
-          padding: const EdgeInsets.fromLTRB(20, 16, 12, 20),
-          decoration: const BoxDecoration(
+          padding: EdgeInsets.fromLTRB(20.w, 16.h, 12.w, 20.h),
+          decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: Color(0xFFF5F5F7)),
             ),
@@ -326,7 +327,7 @@ class _EmploymentContractDetailScreenState
         ),
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 0.h),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -334,15 +335,15 @@ class _EmploymentContractDetailScreenState
                   _buildGuardianReadBody(fv)
                 else
                   _buildStandardContractReadBody(fv, tv == 'minor_standard_v1'),
-                const SizedBox(height: 28),
+                SizedBox(height: 28.h),
                 OutlinedButton(
                   onPressed: (_pdfBusy || _loading) ? null : _downloadPdf,
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.primary,
                     side: const BorderSide(color: AppColors.primary),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: EdgeInsets.symmetric(vertical: 16.h),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(8.r),
                     ),
                   ),
                   child: _pdfBusy
@@ -358,7 +359,7 @@ class _EmploymentContractDetailScreenState
                           '다운로드',
                           style: AppTypography.bodyLargeB.copyWith(
                             color: AppColors.primary,
-                            fontSize: 16,
+                            fontSize: 16.sp,
                             height: 24 / 16,
                           ),
                         ),
@@ -385,8 +386,8 @@ class _EmploymentContractDetailScreenState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Container(
-          padding: const EdgeInsets.fromLTRB(20, 16, 12, 20),
-          decoration: const BoxDecoration(
+          padding: EdgeInsets.fromLTRB(20.w, 16.h, 12.w, 20.h),
+          decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: Color(0xFFF5F5F7)),
             ),
@@ -413,7 +414,7 @@ class _EmploymentContractDetailScreenState
         ),
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 0.h),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -501,7 +502,7 @@ class _EmploymentContractDetailScreenState
           ],
         ),
         _t('다음과 같이 근로계약을 체결한다.'),
-        const SizedBox(height: 16),
+        SizedBox(height: 16.h),
         Wrap(
           spacing: 4,
           runSpacing: 8,
@@ -521,15 +522,15 @@ class _EmploymentContractDetailScreenState
           ],
         ),
         _t('※ 근로계약기간을 정하지 않는 경우에는 "근로개시일"만 기재'),
-        const SizedBox(height: 12),
+        SizedBox(height: 12.h),
         Text('2. 근 무 장 소 :', style: _docBodyStyle),
-        const SizedBox(height: 4),
+        SizedBox(height: 4.h),
         _uBlock(_fv(fv, 'work_place')),
-        const SizedBox(height: 12),
+        SizedBox(height: 12.h),
         Text('3. 업 무 내 용 :', style: _docBodyStyle),
-        const SizedBox(height: 4),
+        SizedBox(height: 4.h),
         _uBlock(_fv(fv, 'job_description')),
-        const SizedBox(height: 12),
+        SizedBox(height: 12.h),
         Wrap(
           spacing: 4,
           runSpacing: 8,
@@ -543,7 +544,7 @@ class _EmploymentContractDetailScreenState
           ],
         ),
         if (bs.isNotEmpty || be.isNotEmpty) ...[
-          const SizedBox(height: 6),
+          SizedBox(height: 6.h),
           Wrap(
             spacing: 4,
             crossAxisAlignment: WrapCrossAlignment.end,
@@ -556,7 +557,7 @@ class _EmploymentContractDetailScreenState
             ],
           ),
         ],
-        const SizedBox(height: 12),
+        SizedBox(height: 12.h),
         Wrap(
           spacing: 4,
           runSpacing: 8,
@@ -569,11 +570,11 @@ class _EmploymentContractDetailScreenState
             Text('요일', style: _docBodyStyle),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12.h),
         _t('6. 임 금'),
-        const SizedBox(height: 4),
+        SizedBox(height: 4.h),
         Padding(
-          padding: const EdgeInsets.only(left: 4),
+          padding: EdgeInsets.only(left: 4.w),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -584,29 +585,29 @@ class _EmploymentContractDetailScreenState
                   Expanded(child: _uBlock(wageLine.isEmpty ? '' : wageLine)),
                 ],
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8.h),
               _t(
                 ' · 상여금 : 있음(${bonusOn ? '✓' : ' '}) '
                 '${bonusOn && bonusAmt.isNotEmpty ? '$bonusAmt원' : ''}',
               ),
               if (bonusOn && bonusAmt.isEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(left: 12, top: 2),
+                  padding: EdgeInsets.only(left: 12.w, top: 2.h),
                   child: _u(''),
                 ),
               _t('   없음(${!bonusOn ? '✓' : ' '})'),
-              const SizedBox(height: 6),
+              SizedBox(height: 6.h),
               _t(
                 ' · 기타급여(제수당 등) : 있음(${otherOn ? '✓' : ' '}) '
                 '${otherOn && otherAmt.isNotEmpty ? '$otherAmt원' : ''}',
               ),
               if (otherOn && otherAmt.isEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(left: 12, top: 2),
+                  padding: EdgeInsets.only(left: 12.w, top: 2.h),
                   child: _u(''),
                 ),
               _t('   없음(${!otherOn ? '✓' : ' '})'),
-              const SizedBox(height: 8),
+              SizedBox(height: 8.h),
               Wrap(
                 spacing: 4,
                 crossAxisAlignment: WrapCrossAlignment.end,
@@ -616,7 +617,7 @@ class _EmploymentContractDetailScreenState
                   Text('원', style: _docBodyStyle),
                 ],
               ),
-              const SizedBox(height: 6),
+              SizedBox(height: 6.h),
               Wrap(
                 spacing: 4,
                 crossAxisAlignment: WrapCrossAlignment.end,
@@ -626,7 +627,7 @@ class _EmploymentContractDetailScreenState
                   Text('원', style: _docBodyStyle),
                 ],
               ),
-              const SizedBox(height: 6),
+              SizedBox(height: 6.h),
               Wrap(
                 spacing: 4,
                 crossAxisAlignment: WrapCrossAlignment.end,
@@ -638,7 +639,7 @@ class _EmploymentContractDetailScreenState
                   Text('원', style: _docBodyStyle),
                 ],
               ),
-              const SizedBox(height: 6),
+              SizedBox(height: 6.h),
               Wrap(
                 spacing: 4,
                 crossAxisAlignment: WrapCrossAlignment.end,
@@ -648,18 +649,18 @@ class _EmploymentContractDetailScreenState
                   Text('일 (휴일의 경우는 전일 지급)', style: _docBodyStyle),
                 ],
               ),
-              const SizedBox(height: 6),
+              SizedBox(height: 6.h),
               _t(' · $payMethodLine'),
             ],
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12.h),
         _t('7. 연차유급휴가'),
         _t(' · 연차유급휴가는 근로기준법에서 정하는 바에 따라 부여함'),
-        const SizedBox(height: 12),
+        SizedBox(height: 12.h),
         if (isMinor) ...[
           _t('8. 가족관계증명서 및 동의서'),
-          const SizedBox(height: 6),
+          SizedBox(height: 6.h),
           Wrap(
             spacing: 4,
             runSpacing: 8,
@@ -672,7 +673,7 @@ class _EmploymentContractDetailScreenState
               _u(_fv(fv, 'family_relation_certificate_submitted')),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           Wrap(
             spacing: 4,
             runSpacing: 8,
@@ -685,13 +686,13 @@ class _EmploymentContractDetailScreenState
               _u(_fv(fv, 'guardian_consent_submitted')),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           _t('9. 근로계약서 교부'),
           _t(
             ' · 사업주는 근로계약을 체결함과 동시에 본 계약서를 사본하여 '
             '근로자의 교부요구와 관계없이 근로자에게 교부함(근로기준법 제17조, 제67조 이행)',
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           _t('10. 기 타'),
           _t(
             ' · 13세 이상 15세 미만인 자에 대해서는 고용노동부장관으로부터 취직인허증을 교부받아야 하며, 이 계약에 정함이 없는 사항은 근로기준법령에 의함',
@@ -702,20 +703,20 @@ class _EmploymentContractDetailScreenState
             ' · 사업주는 근로계약을 체결함과 동시에 본 계약서를 사본하여 '
             '근로자의 교부요구와 관계없이 근로자에게 교부함(근로기준법 제17조 이행)',
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           _t('9. 기 타'),
           _t(' · 이 계약에 정함이 없는 사항은 근로기준법령에 의함'),
         ],
-        const SizedBox(height: 16),
+        SizedBox(height: 16.h),
         _u(
           _fv(fv, 'contract_signed_date').isEmpty ? '' : signed,
           placeholder: '　　　　　　　',
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16.h),
         Text('(사업주) 사업체명 :', style: _docBodyStyle),
-        const SizedBox(height: 4),
+        SizedBox(height: 4.h),
         _uBlock(biz),
-        const SizedBox(height: 4),
+        SizedBox(height: 4.h),
         Wrap(
           spacing: 4,
           crossAxisAlignment: WrapCrossAlignment.end,
@@ -725,11 +726,11 @@ class _EmploymentContractDetailScreenState
             Text(')', style: _docBodyStyle),
           ],
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         Text(' 주 소 :', style: _docBodyStyle),
-        const SizedBox(height: 4),
+        SizedBox(height: 4.h),
         _uBlock(addr),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         Wrap(
           spacing: 4,
           crossAxisAlignment: WrapCrossAlignment.end,
@@ -740,11 +741,11 @@ class _EmploymentContractDetailScreenState
             _u(esign, placeholder: '　　　'),
           ],
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16.h),
         Text('(근로자) 주 소 :', style: _docBodyStyle),
-        const SizedBox(height: 4),
+        SizedBox(height: 4.h),
         _uBlock(waddr),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         Wrap(
           spacing: 4,
           crossAxisAlignment: WrapCrossAlignment.end,
@@ -753,7 +754,7 @@ class _EmploymentContractDetailScreenState
             _u(wphone, placeholder: '　　　　　'),
           ],
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         Wrap(
           spacing: 4,
           crossAxisAlignment: WrapCrossAlignment.end,
@@ -769,7 +770,7 @@ class _EmploymentContractDetailScreenState
   }
 
   Widget _guardianReadHeading(String s) => Padding(
-        padding: const EdgeInsets.only(top: 6, bottom: 10),
+        padding: EdgeInsets.only(top: 6.h, bottom: 10.h),
         child: Text(
           s,
           style: _docBodyStyle.copyWith(fontWeight: FontWeight.w600),
@@ -786,7 +787,7 @@ class _EmploymentContractDetailScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _t('친권자(후견인) 동의서'),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           Text(
             '등록된 내용이 없습니다.',
             style: _docBodyStyle.copyWith(color: AppColors.textSecondary),
@@ -803,7 +804,7 @@ class _EmploymentContractDetailScreenState
       children: [
         _guardianReadHeading('친권자(후견인) 인적사항'),
         Padding(
-          padding: const EdgeInsets.only(bottom: 10),
+          padding: EdgeInsets.only(bottom: 10.h),
           child: Wrap(
             crossAxisAlignment: WrapCrossAlignment.end,
             spacing: 6,
@@ -815,7 +816,7 @@ class _EmploymentContractDetailScreenState
           ),
         ),
         Padding(
-          padding: const EdgeInsets.only(bottom: 10),
+          padding: EdgeInsets.only(bottom: 10.h),
           child: Wrap(
             crossAxisAlignment: WrapCrossAlignment.end,
             spacing: 6,
@@ -827,11 +828,11 @@ class _EmploymentContractDetailScreenState
           ),
         ),
         Text('주 소 : ', style: _docBodyStyle),
-        const SizedBox(height: 4),
+        SizedBox(height: 4.h),
         _uBlock(_fv(fv, 'guardian_address')),
-        const SizedBox(height: 10),
+        SizedBox(height: 10.h),
         Padding(
-          padding: const EdgeInsets.only(bottom: 10),
+          padding: EdgeInsets.only(bottom: 10.h),
           child: Wrap(
             crossAxisAlignment: WrapCrossAlignment.end,
             spacing: 6,
@@ -843,7 +844,7 @@ class _EmploymentContractDetailScreenState
           ),
         ),
         Padding(
-          padding: const EdgeInsets.only(bottom: 10),
+          padding: EdgeInsets.only(bottom: 10.h),
           child: Wrap(
             crossAxisAlignment: WrapCrossAlignment.end,
             spacing: 6,
@@ -856,7 +857,7 @@ class _EmploymentContractDetailScreenState
         ),
         _guardianReadHeading('연소근로자 인적사항'),
         Padding(
-          padding: const EdgeInsets.only(bottom: 10),
+          padding: EdgeInsets.only(bottom: 10.h),
           child: Wrap(
             crossAxisAlignment: WrapCrossAlignment.end,
             spacing: 6,
@@ -871,7 +872,7 @@ class _EmploymentContractDetailScreenState
           ),
         ),
         Padding(
-          padding: const EdgeInsets.only(bottom: 10),
+          padding: EdgeInsets.only(bottom: 10.h),
           child: Wrap(
             crossAxisAlignment: WrapCrossAlignment.end,
             spacing: 6,
@@ -883,12 +884,12 @@ class _EmploymentContractDetailScreenState
           ),
         ),
         Text('주 소 : ', style: _docBodyStyle),
-        const SizedBox(height: 4),
+        SizedBox(height: 4.h),
         _uBlock(_fv(fv, 'minor_address')),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         _guardianReadHeading('사업장 개요'),
         Padding(
-          padding: const EdgeInsets.only(bottom: 10),
+          padding: EdgeInsets.only(bottom: 10.h),
           child: Wrap(
             crossAxisAlignment: WrapCrossAlignment.end,
             spacing: 6,
@@ -900,11 +901,11 @@ class _EmploymentContractDetailScreenState
           ),
         ),
         Text('회사주소 : ', style: _docBodyStyle),
-        const SizedBox(height: 4),
+        SizedBox(height: 4.h),
         _uBlock(_fv(fv, 'business_address')),
-        const SizedBox(height: 10),
+        SizedBox(height: 10.h),
         Padding(
-          padding: const EdgeInsets.only(bottom: 10),
+          padding: EdgeInsets.only(bottom: 10.h),
           child: Wrap(
             crossAxisAlignment: WrapCrossAlignment.end,
             spacing: 6,
@@ -916,7 +917,7 @@ class _EmploymentContractDetailScreenState
           ),
         ),
         Padding(
-          padding: const EdgeInsets.only(bottom: 16),
+          padding: EdgeInsets.only(bottom: 16.h),
           child: Wrap(
             crossAxisAlignment: WrapCrossAlignment.end,
             spacing: 6,
@@ -940,9 +941,9 @@ class _EmploymentContractDetailScreenState
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16.h),
         Center(child: Text(signed, style: _docBodyStyle)),
-        const SizedBox(height: 16),
+        SizedBox(height: 16.h),
         Wrap(
           crossAxisAlignment: WrapCrossAlignment.end,
           spacing: 6,
@@ -953,7 +954,7 @@ class _EmploymentContractDetailScreenState
             Text(' (인)', style: _docBodyStyle),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12.h),
         Text('첨 부 : 가족관계증명서 1부', style: _docBodyStyle),
       ],
     );

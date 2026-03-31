@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 근무일정용 날짜 선택기
 /// - 년/월/일 드롭다운 (selector 스타일)
@@ -68,9 +69,9 @@ class _ScheduleDateSelectorState extends State<ScheduleDateSelector> {
     final start = now.subtract(const Duration(days: 14));
     final weekDays = List.generate(28, (i) => start.add(Duration(days: i)));
 
-    const labelStyle = TextStyle(
+    final labelStyle = TextStyle(
       fontFamily: 'Pretendard',
-      fontSize: 14,
+      fontSize: 14.sp,
       fontWeight: FontWeight.w400,
       height: 19 / 14,
       color: AppColors.textPrimary,
@@ -81,7 +82,7 @@ class _ScheduleDateSelectorState extends State<ScheduleDateSelector> {
       children: [
         Center(
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: EdgeInsets.symmetric(vertical: 8.h),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
@@ -91,29 +92,29 @@ class _ScheduleDateSelectorState extends State<ScheduleDateSelector> {
                   options: years,
                   onChanged: (v) => _apply(year: v),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8.w),
                 Text('년', style: labelStyle),
-                const SizedBox(width: 16),
+                SizedBox(width: 16.w),
                 _Selector(
                   value: month,
                   options: months,
                   onChanged: (v) => _apply(month: v),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8.w),
                 Text('월', style: labelStyle),
-                const SizedBox(width: 16),
+                SizedBox(width: 16.w),
                 _Selector(
                   value: day,
                   options: days,
                   onChanged: (v) => _apply(day: v),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8.w),
                 Text('일', style: labelStyle),
               ],
             ),
           ),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24.h),
         SizedBox(
           height: 60,
           child: ListView.builder(
@@ -128,14 +129,14 @@ class _ScheduleDateSelectorState extends State<ScheduleDateSelector> {
                   d.month == month &&
                   d.day == day;
               return Padding(
-                padding: const EdgeInsets.only(right: 8),
+                padding: EdgeInsets.only(right: 8.w),
                 child: GestureDetector(
                   onTap: () => widget.onDateChanged(d),
                   child: Container(
                     width: 48,
-                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    padding: EdgeInsets.symmetric(vertical: 6.h),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(10.r),
                       color: isSelected
                           ? AppColors.primary
                           : Colors.transparent,
@@ -150,19 +151,19 @@ class _ScheduleDateSelectorState extends State<ScheduleDateSelector> {
                             color: isSelected
                                 ? AppColors.grey0
                                 : AppColors.grey200,
-                            fontSize: 14,
+                            fontSize: 14.sp,
                             fontWeight: FontWeight.w500,
                             height: 16 / 14,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        SizedBox(height: 2.h),
                         Text(
                           '${d.day}',
                           style: AppTypography.heading3.copyWith(
                             color: isSelected
                                 ? AppColors.grey0
                                 : AppColors.textPrimary,
-                            fontSize: 18,
+                            fontSize: 18.sp,
                             fontWeight: FontWeight.w500,
                             height: 24 / 18,
                           ),
@@ -175,7 +176,7 @@ class _ScheduleDateSelectorState extends State<ScheduleDateSelector> {
             },
           ),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24.h),
         const Divider(height: 1, color: AppColors.grey50),
       ],
     );
@@ -207,11 +208,11 @@ class _Selector extends StatelessWidget {
     return Container(
       constraints: const BoxConstraints(minWidth: 56, maxWidth: 80),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(10.r),
         border: Border.all(color: AppColors.grey50),
         color: AppColors.grey0,
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<int>(
           value: value,
@@ -224,7 +225,7 @@ class _Selector extends StatelessWidget {
           ),
           style: AppTypography.bodyMediumR.copyWith(
             color: AppColors.textPrimary,
-            fontSize: 14,
+            fontSize: 14.sp,
             fontWeight: FontWeight.w400,
             height: 19 / 14,
           ),

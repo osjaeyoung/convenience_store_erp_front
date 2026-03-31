@@ -11,6 +11,7 @@ import '../../../widgets/file_attachment_drop_zone.dart';
 import '../../../widgets/file_or_gallery_picker.dart';
 import '../../../widgets/file_form_name_save_dialog.dart';
 import 'picked_file_inline_preview.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 근로계약서 파일 전용 등록 (스펙 ##23-1)
 class EmploymentContractFileAttachScreen extends StatefulWidget {
@@ -129,7 +130,7 @@ class _EmploymentContractFileAttachScreenState
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 24.h),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -137,10 +138,10 @@ class _EmploymentContractFileAttachScreenState
               '제목',
               style: AppTypography.bodySmallB.copyWith(
                 color: AppColors.textSecondary,
-                fontSize: 13,
+                fontSize: 13.sp,
               ),
             ),
-            const SizedBox(height: 6),
+            SizedBox(height: 6.h),
             Stack(
               children: [
                 AuthInputField(
@@ -158,14 +159,14 @@ class _EmploymentContractFileAttachScreenState
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12.r),
                       onTap: _openTitleModal,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20.h),
             if (_picked == null)
               FileAttachmentDropZone(
                 onTap: _pickFile,
@@ -188,9 +189,9 @@ class _EmploymentContractFileAttachScreenState
       bottomNavigationBar: Material(
         color: AppColors.grey0,
         child: SafeArea(
-          minimum: const EdgeInsets.only(bottom: 8),
+          minimum: EdgeInsets.only(bottom: 8.h),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 16.h),
             child: SizedBox(
               width: double.infinity,
               height: 52,
@@ -201,7 +202,7 @@ class _EmploymentContractFileAttachScreenState
                   foregroundColor: AppColors.grey0,
                   padding: EdgeInsets.zero,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
                 ),
                 child: _submitting
@@ -217,7 +218,7 @@ class _EmploymentContractFileAttachScreenState
                         '추가하기',
                         style: AppTypography.bodyMediumB.copyWith(
                           color: AppColors.grey0,
-                          fontSize: 16,
+                          fontSize: 16.sp,
                           height: 24 / 16,
                         ),
                       ),

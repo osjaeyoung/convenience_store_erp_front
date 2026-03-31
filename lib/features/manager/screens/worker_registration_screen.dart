@@ -9,6 +9,7 @@ import '../../../theme/app_typography.dart';
 import '../../../data/repositories/staff_management_repository.dart';
 import '../../../widgets/app_styled_confirm_dialog.dart';
 import 'employee_document_menu_actions.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 근무자 등록 화면
 /// - 연락처 검색 → 결과 시 확인 모달 → 등록 → 직원정보 형태로 표시
@@ -266,12 +267,12 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
       body: _registeredEmployee != null
           ? _buildRegisteredView()
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16.r),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _buildRegistrationCard(),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16.h),
                   _buildDocumentList(registered: false),
                 ],
               ),
@@ -281,7 +282,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
 
   Widget _buildRegistrationCard() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
@@ -291,7 +292,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
             Color(0xFFE1F0B8),
           ],
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF1D1D1F).withValues(alpha: 0.12),
@@ -307,12 +308,12 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
             '근무자',
             style: AppTypography.bodyMediumM.copyWith(
               color: AppColors.textPrimary,
-              fontSize: 14,
+              fontSize: 14.sp,
               fontWeight: FontWeight.w500,
               height: 16 / 14,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           TextField(
             controller: _phoneController,
             keyboardType: TextInputType.number,
@@ -323,12 +324,12 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
               hintText: '앱내 가입된 근무자 연락처를 검색해주세요.',
               hintStyle: AppTypography.bodyMediumR.copyWith(
                 color: AppColors.grey100,
-                fontSize: 13,
+                fontSize: 13.sp,
                 fontWeight: FontWeight.w400,
                 height: 19 / 13,
               ),
               prefixIcon: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(12.r),
                 child: SvgPicture.asset(
                   'assets/icons/svg/icon/search_mint_20.svg',
                   width: 20,
@@ -338,38 +339,38 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
               filled: true,
               fillColor: AppColors.grey0Alt,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12.r),
                 borderSide: const BorderSide(color: AppColors.grey50),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12.r),
                 borderSide: const BorderSide(color: AppColors.grey50),
               ),
               contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
             ),
             onSubmitted: (_) => _searchResult == null ? _onSearch() : _onRegister(),
           ),
           if (_searchResult != null) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             Text(
               _searchResult!['name'] as String? ?? '-',
               style: AppTypography.bodyMediumM.copyWith(
                 color: AppColors.textPrimary,
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w500,
                 height: 16 / 14,
               ),
             ),
           ],
           if (_errorMessage != null) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             Text(
               _errorMessage!,
               style: AppTypography.bodySmall.copyWith(color: AppColors.error),
             ),
           ],
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           SizedBox(
             width: double.infinity,
             child: FilledButton(
@@ -380,14 +381,14 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                 backgroundColor: AppColors.primaryDark,
                 foregroundColor: AppColors.grey0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(8.r),
                 ),
               ),
               child: Text(
                 _searchResult != null ? '등록' : '검색',
                 style: AppTypography.bodyLargeB.copyWith(
                   color: AppColors.grey0,
-                  fontSize: 16,
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.w600,
                   height: 24 / 16,
                 ),
@@ -408,14 +409,14 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         height: 280,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.grey0,
           borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
         ),
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -425,7 +426,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                       '취소',
                       style: AppTypography.bodyMediumM.copyWith(
                         color: AppColors.grey150,
-                        fontSize: 14,
+                        fontSize: 14.sp,
                       ),
                     ),
                   ),
@@ -442,7 +443,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                       '확인',
                       style: AppTypography.bodyMediumB.copyWith(
                         color: AppColors.primaryDark,
-                        fontSize: 14,
+                        fontSize: 14.sp,
                       ),
                     ),
                   ),
@@ -455,7 +456,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                   brightness: Brightness.light,
                   textTheme: CupertinoTextThemeData(
                     dateTimePickerTextStyle: AppTypography.bodyMediumR.copyWith(
-                      fontSize: 20,
+                      fontSize: 20.sp,
                       color: AppColors.textPrimary,
                     ),
                   ),
@@ -475,25 +476,25 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
     );
   }
 
-  static const TextStyle _labelStyle = TextStyle(
+  static TextStyle get _labelStyle => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 14,
+    fontSize: 14.sp,
     fontWeight: FontWeight.w500,
     height: 16 / 14,
     color: Color(0xFF666874),
   );
 
-  static const TextStyle _valueStyle = TextStyle(
+  static TextStyle get _valueStyle => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 14,
+    fontSize: 14.sp,
     fontWeight: FontWeight.w400,
     height: 19 / 14,
     color: Color(0xFF000000),
   );
 
-  static const TextStyle _hireDateButtonStyle = TextStyle(
+  static TextStyle get _hireDateButtonStyle => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 12,
+    fontSize: 12.sp,
     fontWeight: FontWeight.w400,
     height: 20 / 12,
     letterSpacing: -0.3,
@@ -516,10 +517,10 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
       onTap: () => _showDatePickerBottomSheet(currentValue),
       child: IntrinsicWidth(
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
           decoration: BoxDecoration(
             color: const Color(0xFFF5F5F7),
-            borderRadius: BorderRadius.circular(5),
+            borderRadius: BorderRadius.circular(5.r),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -530,7 +531,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                 width: 18,
                 height: 18,
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8.w),
               Text(
                 displayText,
                 style: currentValue.isEmpty
@@ -560,10 +561,10 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
       '기타',
     ];
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: 8.h),
       decoration: BoxDecoration(
         color: AppColors.grey0,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: AppColors.grey50),
       ),
       child: Column(
@@ -573,7 +574,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
               title,
               style: AppTypography.bodyMediumM.copyWith(
                 color: AppColors.textPrimary,
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w500,
                 height: 16 / 14,
               ),
@@ -629,12 +630,12 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
     final phone = emp['phone_number'] as String? ?? '-';
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.r),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20.r),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
@@ -644,7 +645,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                   Color(0xFFE1F0B8),
                 ],
               ),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(16.r),
               boxShadow: [
                 BoxShadow(
                   color: const Color(0xFF1D1D1F).withValues(alpha: 0.12),
@@ -665,7 +666,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                       width: 80,
                       height: 80,
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: 16.w),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -677,7 +678,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                               Text(name, style: _valueStyle),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8.h),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -690,7 +691,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8.h),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -706,7 +707,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(3, (i) {
@@ -716,7 +717,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                         _starRating = (_starRating == i + 1) ? 0 : i + 1;
                       }),
                       child: Padding(
-                        padding: const EdgeInsets.only(right: 4),
+                        padding: EdgeInsets.only(right: 4.w),
                         child: SizedBox(
                           width: 40,
                           height: 40,
@@ -733,7 +734,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                     );
                   }),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4.h),
                 GestureDetector(
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -745,7 +746,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                       '평가작성',
                       style: AppTypography.bodyMediumB.copyWith(
                         color: AppColors.grey150,
-                        fontSize: 14,
+                        fontSize: 14.sp,
                         fontWeight: FontWeight.w600,
                         height: 16 / 14,
                         decoration: TextDecoration.underline,
@@ -754,7 +755,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16.h),
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton(
@@ -763,7 +764,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                       backgroundColor: AppColors.primaryDark,
                       foregroundColor: AppColors.grey0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(8.r),
                       ),
                     ),
                     child: _isSavingEdit
@@ -781,9 +782,9 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           _buildDocumentList(registered: true, employee: emp),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           GestureDetector(
             onTap: (emp['employment_status'] as String?) == 'retired' ||
                     _isProcessingRetirement
@@ -796,7 +797,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                   color: (emp['employment_status'] as String?) == 'retired'
                       ? AppColors.grey100
                       : AppColors.grey150,
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   fontWeight: FontWeight.w600,
                   height: 16 / 14,
                   decoration: TextDecoration.underline,
@@ -825,9 +826,9 @@ class _ConfirmRegistrationDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24.r),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -836,18 +837,18 @@ class _ConfirmRegistrationDialog extends StatelessWidget {
               width: 60,
               height: 60,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
             Text(
               '해당 근무자를 등록하시겠습니까?',
               style: AppTypography.bodyMediumM.copyWith(
                 color: AppColors.textPrimary,
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w500,
                 height: 16 / 14,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24.h),
             Row(
               children: [
                 Expanded(
@@ -857,13 +858,13 @@ class _ConfirmRegistrationDialog extends StatelessWidget {
                       backgroundColor: AppColors.grey25,
                       foregroundColor: AppColors.grey150,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(8.r),
                       ),
                     ),
                     child: const Text('취소'),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12.w),
                 Expanded(
                   child: FilledButton(
                     onPressed: onConfirm,
@@ -871,14 +872,14 @@ class _ConfirmRegistrationDialog extends StatelessWidget {
                       backgroundColor: AppColors.primaryDark,
                       foregroundColor: AppColors.grey0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(8.r),
                       ),
                     ),
                     child: Text(
                       '확인',
                       style: AppTypography.bodyLargeB.copyWith(
                         color: AppColors.grey0,
-                        fontSize: 16,
+                        fontSize: 16.sp,
                         fontWeight: FontWeight.w600,
                         height: 24 / 16,
                       ),

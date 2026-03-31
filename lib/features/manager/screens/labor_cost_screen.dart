@@ -12,6 +12,7 @@ import '../widgets/home_common_app_bar.dart';
 import '../widgets/labor_cost/labor_cost_overview_widgets.dart';
 import 'labor_cost_monthly_list_screen.dart';
 import 'labor_cost_saving_detail_screen.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 인건비 탭 — Figma: 홈 앱바 + 서브탭(예상/월별/절감)
 class LaborCostScreen extends StatefulWidget {
@@ -102,7 +103,7 @@ class _LaborCostScreenState extends State<LaborCostScreen>
         body: branchId == null
           ? Center(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(24.r),
                 child: Text(
                   '지점을 선택해주세요.\n홈 탭에서 지점을 먼저 선택해주세요.',
                   style: AppTypography.bodyMediumR.copyWith(
@@ -171,7 +172,7 @@ class _ExpectedLaborTabView extends StatelessWidget {
             if (state.status == LaborCostBlocStatus.failure) {
               return Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(24.r),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -182,7 +183,7 @@ class _ExpectedLaborTabView extends StatelessWidget {
                         ),
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16.h),
                       FilledButton(
                         onPressed: () => context.read<LaborCostBloc>().add(
                               LaborCostExpectedRequested(
@@ -219,7 +220,7 @@ class _ExpectedLaborTabView extends StatelessWidget {
                       );
                 },
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                  padding: EdgeInsets.fromLTRB(20.w, 0.h, 20.w, 32.h),
                   children: [
                     const LaborCostSectionTitleRow(),
                     LaborCostFigmaSummaryCard(
@@ -227,33 +228,33 @@ class _ExpectedLaborTabView extends StatelessWidget {
                       ratioPercentText: ratioText,
                       ratioWentUp: wentUp,
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8.h),
                     LaborCostPeriodDropdown(
                       rangeType: rangeType,
                       onChanged: onRangeChanged,
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20.h),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
                           '총 근로자 인원수',
                           style: AppTypography.bodyLargeM.copyWith(
-                            fontSize: 16,
+                            fontSize: 16.sp,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        const SizedBox(width: 4),
+                        SizedBox(width: 4.w),
                         Text(
                           '(명)',
                           style: AppTypography.bodySmallR.copyWith(
-                            fontSize: 12,
+                            fontSize: 12.sp,
                             color: AppColors.textTertiary,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12.h),
                     LaborCostHeadcountCompareCard(
                       leftLabel:
                           rangeType == 'six_months' ? '6개월 전' : '전월',
@@ -261,13 +262,13 @@ class _ExpectedLaborTabView extends StatelessWidget {
                       leftCount: expected.headcountPrevious,
                       rightCount: expected.headcountCurrent,
                     ),
-                    const SizedBox(height: 28),
+                    SizedBox(height: 28.h),
                     LaborCostDualBarChartSection(
                       rangeType: rangeType,
                       components: expected.componentComparisons,
                       monthlyTrend: expected.monthlyTrend,
                     ),
-                    const SizedBox(height: 28),
+                    SizedBox(height: 28.h),
                     LaborCostSavingPointsFigma(
                       points: expected.savingPoints,
                       onDetailTap: onOpenSavingTab,

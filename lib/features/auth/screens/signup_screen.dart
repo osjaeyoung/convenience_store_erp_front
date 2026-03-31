@@ -14,6 +14,7 @@ import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../bloc/auth_bloc.dart';
 import '../widgets/auth_input_field.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 enum _SignupStep {
   terms,
@@ -204,9 +205,9 @@ class _SignupScreenState extends State<SignupScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           _buildStepHeader(),
-                          const SizedBox(height: 28),
+                          SizedBox(height: 28.h),
                           _buildStepBody(),
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16.h),
                         ],
                       ),
                     ),
@@ -227,10 +228,10 @@ class _SignupScreenState extends State<SignupScreen> {
                             ? _onSignupSubmit
                             : _goNextStep),
                     style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(56),
+                      minimumSize: Size.fromHeight(56.h),
                       backgroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                       ),
                     ),
                     child: state.status == AuthStatus.loading
@@ -260,9 +261,9 @@ class _SignupScreenState extends State<SignupScreen> {
       case _SignupStep.terms:
         return Text.rich(
           TextSpan(
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Pretendard',
-              fontSize: 24,
+              fontSize: 24.sp,
               fontWeight: FontWeight.w400,
               height: 32 / 24,
               color: AppColors.textPrimary,
@@ -280,9 +281,9 @@ class _SignupScreenState extends State<SignupScreen> {
       case _SignupStep.basicInfo:
         return Text.rich(
           TextSpan(
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Pretendard',
-              fontSize: 24,
+              fontSize: 24.sp,
               fontWeight: FontWeight.w400,
               height: 32 / 24,
               color: AppColors.textPrimary,
@@ -312,10 +313,10 @@ class _SignupScreenState extends State<SignupScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
               decoration: BoxDecoration(
                 color: AppColors.grey0Alt,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12.r),
                 border: Border.all(color: AppColors.grey25),
               ),
               child: Row(
@@ -347,12 +348,12 @@ class _SignupScreenState extends State<SignupScreen> {
                       height: 20,
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  const Text(
+                  SizedBox(width: 10.w),
+                  Text(
                     '전체 동의',
                     style: TextStyle(
                       fontFamily: 'Pretendard',
-                      fontSize: 16,
+                      fontSize: 16.sp,
                       fontWeight: FontWeight.w600,
                       height: 24 / 16,
                       color: Color(0xFF1D1D1F),
@@ -361,35 +362,35 @@ class _SignupScreenState extends State<SignupScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10.h),
             _buildTermsRow(
               tag: '[필수]',
               title: '만 N세 이상',
               value: _agreeAge,
               onChanged: (v) => setState(() => _agreeAge = v),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10.h),
             _buildTermsRow(
               tag: '[필수]',
               title: '서비스 이용 약관',
               value: _agreeTerms,
               onChanged: (v) => setState(() => _agreeTerms = v),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10.h),
             _buildTermsRow(
               tag: '[필수]',
               title: '개인정보 수집 및 처리 방침',
               value: _agreePrivacy,
               onChanged: (v) => setState(() => _agreePrivacy = v),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10.h),
             _buildTermsRow(
               tag: '[필수]',
               title: '개인정보 제3자 제공 동의',
               value: _agreeThirdParty,
               onChanged: (v) => setState(() => _agreeThirdParty = v),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10.h),
             _buildTermsRow(
               tag: '[선택]',
               title: '마케팅 정보 수신 동의',
@@ -421,7 +422,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20.h),
             _buildFieldLabel('이름'),
             AuthInputField(
               controller: _nameController,
@@ -433,7 +434,7 @@ class _SignupScreenState extends State<SignupScreen> {
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? '*이름을 입력해주세요.' : null,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20.h),
             _buildFieldLabel('휴대폰 인증'),
             AuthInputField(
               controller: _phoneController,
@@ -446,7 +447,7 @@ class _SignupScreenState extends State<SignupScreen> {
               enabled: !_isPhoneVerified,
               suffix: _isPhoneVerified
                   ? Padding(
-                      padding: const EdgeInsets.all(6),
+                      padding: EdgeInsets.all(6.r),
                       child: Text(
                         '인증완료',
                         style: AppTypography.bodySmallB.copyWith(
@@ -455,7 +456,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                     )
                   : Padding(
-                      padding: const EdgeInsets.all(6),
+                      padding: EdgeInsets.all(6.r),
                       child: FilledButton(
                         onPressed: _isSendingPhoneCode
                             ? null
@@ -463,11 +464,11 @@ class _SignupScreenState extends State<SignupScreen> {
                                 ? _onRequestPhoneVerification
                                 : _onVerifyPhoneCode),
                         style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          padding: EdgeInsets.symmetric(horizontal: 12.w),
                           minimumSize: const Size(0, 34),
                           backgroundColor: AppColors.primary,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(8.r),
                           ),
                         ),
                         child: _isSendingPhoneCode
@@ -503,7 +504,7 @@ class _SignupScreenState extends State<SignupScreen> {
               },
             ),
             if (_phoneVerificationId != null && !_isPhoneVerified) ...[
-              const SizedBox(height: 12),
+              SizedBox(height: 12.h),
               AuthInputField(
                 controller: _phoneCodeController,
                 keyboardType: TextInputType.number,
@@ -533,7 +534,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
               ),
             ],
-            const SizedBox(height: 20),
+            SizedBox(height: 20.h),
             _buildFieldLabel('비밀번호'),
             AuthInputField(
               controller: _pwController,
@@ -556,7 +557,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20.h),
             _buildFieldLabel('비밀번호 확인'),
             AuthInputField(
               controller: _pwConfirmController,
@@ -578,9 +579,9 @@ class _SignupScreenState extends State<SignupScreen> {
         return Column(
           children: [
             _buildRoleTile(UserRole.manager, '사업주로 가입'),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
             _buildRoleTile(UserRole.storeManager, '점장으로 가입'),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
             _buildRoleTile(UserRole.jobSeeker, '근무자로 가입'),
           ],
         );
@@ -589,7 +590,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Widget _buildFieldLabel(String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: 8.h),
       child: Text(
         text,
         style: AppTypography.bodyMediumM.copyWith(
@@ -781,7 +782,7 @@ class _SignupScreenState extends State<SignupScreen> {
       child: InkWell(
         onTap: () => onChanged(!value),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: EdgeInsets.symmetric(vertical: 16.h),
           child: Row(
             children: [
               Image.asset(
@@ -789,24 +790,24 @@ class _SignupScreenState extends State<SignupScreen> {
                 width: 20,
                 height: 20,
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: 10.w),
               Text(
                 tag,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Pretendard',
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   fontWeight: FontWeight.w500,
                   height: 16 / 14,
                   color: AppColors.primary,
                 ),
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: 6.w),
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Pretendard',
-                    fontSize: 14,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.w500,
                     height: 16 / 14,
                     color: AppColors.textPrimary,
@@ -827,13 +828,13 @@ class _SignupScreenState extends State<SignupScreen> {
   Widget _buildRoleTile(UserRole role, String label) {
     final selected = _selectedRole == role;
     return InkWell(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(12.r),
       onTap: () => setState(() => _selectedRole = role),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 16.h),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
           border: Border.all(
             color: selected ? AppColors.primary : AppColors.grey50,
           ),
@@ -846,7 +847,7 @@ class _SignupScreenState extends State<SignupScreen> {
               width: 20,
               height: 20,
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: 10.w),
             Text(
               label,
               style: AppTypography.bodyLargeM.copyWith(

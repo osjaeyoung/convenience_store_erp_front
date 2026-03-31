@@ -10,6 +10,7 @@ import '../../../theme/app_typography.dart';
 import '../../auth/widgets/auth_input_field.dart';
 import 'recruitment_posting_detail_screen.dart';
 import 'recruitment_posting_form_screen.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class RecruitmentPostingListTab extends StatefulWidget {
   const RecruitmentPostingListTab({
@@ -199,13 +200,13 @@ class _RecruitmentPostingListTabState extends State<RecruitmentPostingListTab> {
           children: [
             if (!widget.mine)
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 0.h),
                 child: AuthInputField(
                   controller: _searchController,
                   hintText: '검색',
                   fillColor: AppColors.grey0Alt,
                   prefixIconWidget: Padding(
-                    padding: const EdgeInsets.all(14),
+                    padding: EdgeInsets.all(14.r),
                     child: SvgPicture.asset(
                       'assets/icons/svg/icon/search_mint_20.svg',
                       width: 20,
@@ -226,7 +227,7 @@ class _RecruitmentPostingListTabState extends State<RecruitmentPostingListTab> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                  padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 0.h),
                   child: _RegionChip(
                     label: _region?.trim().isNotEmpty == true ? _region! : '지역',
                     onTap: _showRegionDialog,
@@ -258,11 +259,11 @@ class _RecruitmentPostingListTabState extends State<RecruitmentPostingListTab> {
             color: Colors.transparent,
             child: InkWell(
               onTap: _openCreate,
-              borderRadius: BorderRadius.circular(100),
+              borderRadius: BorderRadius.circular(100.r),
               child: Container(
                 width: 52,
                 height: 52,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.primary,
                   shape: BoxShape.circle,
                 ),
@@ -293,13 +294,13 @@ class _RegionChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(100),
+      borderRadius: BorderRadius.circular(100.r),
       child: Container(
         height: 40,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: EdgeInsets.symmetric(horizontal: 12.w),
         decoration: BoxDecoration(
           color: AppColors.grey0,
-          borderRadius: BorderRadius.circular(100),
+          borderRadius: BorderRadius.circular(100.r),
           border: Border.all(color: AppColors.grey50),
         ),
         child: Row(
@@ -308,12 +309,12 @@ class _RegionChip extends StatelessWidget {
             Text(
               label,
               style: AppTypography.bodySmallR.copyWith(
-                fontSize: 12,
+                fontSize: 12.sp,
                 height: 18 / 12,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8.w),
             const Icon(
               Icons.keyboard_arrow_down_rounded,
               size: 14,
@@ -365,7 +366,7 @@ class _PostingListView extends StatelessWidget {
           onTapApplicants: () => onTapApplicants(item),
         );
       },
-      separatorBuilder: (_, __) => const SizedBox(height: 0),
+      separatorBuilder: (_, __) => SizedBox(height: 0.h),
       itemCount: items.length,
     );
   }
@@ -391,8 +392,8 @@ class _PostingListCard extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.only(bottom: 20),
-        decoration: const BoxDecoration(
+        padding: EdgeInsets.only(bottom: 20.h),
+        decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(color: AppColors.grey50),
           ),
@@ -401,48 +402,48 @@ class _PostingListCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              margin: const EdgeInsets.only(top: 16),
+              margin: EdgeInsets.only(top: 16.h),
               height: 24,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
               decoration: BoxDecoration(
                 color: AppColors.grey0,
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(4.r),
                 border: Border.all(color: AppColors.grey50),
               ),
               child: Text(
                 item.badgeLabel ?? '상시모집',
                 style: AppTypography.bodySmallM.copyWith(
-                  fontSize: 12,
+                  fontSize: 12.sp,
                   height: 16 / 12,
                   color: AppColors.textTertiary,
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             Text(
               item.companyName ?? '-',
               style: AppTypography.bodySmallM.copyWith(
-                fontSize: 12,
+                fontSize: 12.sp,
                 height: 16 / 12,
                 color: AppColors.textTertiary,
               ),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4.h),
             Text(
               item.title ?? '-',
               style: AppTypography.bodyLargeB.copyWith(
-                fontSize: 16,
+                fontSize: 16.sp,
                 height: 24 / 16,
                 color: const Color(0xFF404040),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(12.r),
               decoration: BoxDecoration(
                 color: AppColors.grey0Alt,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12.r),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -452,28 +453,28 @@ class _PostingListCard extends StatelessWidget {
                     text: item.regionSummary ?? '-',
                     textColor: AppColors.textPrimary,
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8.h),
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.payments_outlined,
                         size: 16,
                         color: AppColors.grey150,
                       ),
-                      const SizedBox(width: 6),
+                      SizedBox(width: 6.w),
                       Text(
                         item.payType ?? '-',
                         style: AppTypography.bodyMediumM.copyWith(
-                          fontSize: 14,
+                          fontSize: 14.sp,
                           height: 16 / 14,
                           color: AppColors.primary,
                         ),
                       ),
-                      const SizedBox(width: 4),
+                      SizedBox(width: 4.w),
                       Text(
                         _numberFormat.format(item.payAmount),
                         style: AppTypography.bodyMediumR.copyWith(
-                          fontSize: 14,
+                          fontSize: 14.sp,
                           height: 19 / 14,
                           color: AppColors.textPrimary,
                         ),
@@ -484,19 +485,19 @@ class _PostingListCard extends StatelessWidget {
               ),
             ),
             if (mineMode) ...[
-              const SizedBox(height: 20),
+              SizedBox(height: 20.h),
               Material(
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: onTapApplicants,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(8.r),
                   child: Container(
                     width: double.infinity,
                     height: 48,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: AppColors.grey0,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(8.r),
                       border: Border.all(
                         color: item.applicantCount > 0
                             ? AppColors.primary
@@ -509,7 +510,7 @@ class _PostingListCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                       style: AppTypography.bodyLargeB.copyWith(
-                        fontSize: 16,
+                        fontSize: 16.sp,
                         height: 24 / 16,
                         color: item.applicantCount > 0
                             ? AppColors.primary
@@ -547,12 +548,12 @@ class _PostingListMetaRow extends StatelessWidget {
           size: 16,
           color: AppColors.grey150,
         ),
-        const SizedBox(width: 6),
+        SizedBox(width: 6.w),
         Expanded(
           child: Text(
             text,
             style: AppTypography.bodyMediumR.copyWith(
-              fontSize: 14,
+              fontSize: 14.sp,
               height: 19 / 14,
               color: textColor,
             ),
@@ -577,7 +578,7 @@ class _PostingListErrorView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24.r),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -588,7 +589,7 @@ class _PostingListErrorView extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
             TextButton(
               onPressed: onRetry,
               child: const Text('다시 시도'),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 어두운 블러 딤 + 둥근 화이트 카드 + 하단 2버튼(취소 / 확인) 확인창
 Future<bool?> showAppStyledConfirmDialog(
@@ -42,15 +43,15 @@ Future<bool?> showAppStyledConfirmDialog(
           ),
           Center(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
+              padding: EdgeInsets.symmetric(horizontal: 32.w),
               child: Material(
                 color: AppColors.grey0,
-                borderRadius: BorderRadius.circular(22),
+                borderRadius: BorderRadius.circular(22.r),
                 clipBehavior: Clip.antiAlias,
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 360),
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(22, 30, 22, 20),
+                    padding: EdgeInsets.fromLTRB(22.w, 30.h, 22.w, 20.h),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -58,13 +59,13 @@ Future<bool?> showAppStyledConfirmDialog(
                           message,
                           textAlign: TextAlign.center,
                           style: AppTypography.bodyLargeB.copyWith(
-                            fontSize: 17,
+                            fontSize: 17.sp,
                             height: 1.45,
                             color: AppColors.textPrimary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: 26),
+                        SizedBox(height: 26.h),
                         Row(
                           children: [
                             Expanded(
@@ -79,20 +80,20 @@ Future<bool?> showAppStyledConfirmDialog(
                                     elevation: 0,
                                     padding: EdgeInsets.zero,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(12.r),
                                     ),
                                   ),
                                   child: Text(
                                     cancelLabel,
                                     style: AppTypography.bodyMediumB.copyWith(
                                       color: AppColors.grey200,
-                                      fontSize: 15,
+                                      fontSize: 15.sp,
                                     ),
                                   ),
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 11),
+                            SizedBox(width: 11.w),
                             Expanded(
                               child: SizedBox(
                                 height: 48,
@@ -105,14 +106,14 @@ Future<bool?> showAppStyledConfirmDialog(
                                     elevation: 0,
                                     padding: EdgeInsets.zero,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(12.r),
                                     ),
                                   ),
                                   child: Text(
                                     confirmLabel,
                                     style: AppTypography.bodyMediumB.copyWith(
                                       color: confirmForegroundColor,
-                                      fontSize: 15,
+                                      fontSize: 15.sp,
                                     ),
                                   ),
                                 ),

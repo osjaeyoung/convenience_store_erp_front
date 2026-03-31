@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 근무 상태 배지 공통 위젯
 /// - 완료: 진회색 배경 + 흰색 텍스트
@@ -51,7 +52,7 @@ class WorkStatusBadge extends StatelessWidget {
         vertical: compact ? 3 : 4,
       ),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(4.r),
         color: style.backgroundColor,
         border: style.borderColor == null
             ? null
