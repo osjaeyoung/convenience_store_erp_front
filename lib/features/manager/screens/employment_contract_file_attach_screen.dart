@@ -1,7 +1,5 @@
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../data/repositories/staff_management_repository.dart';
@@ -10,6 +8,7 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../auth/widgets/auth_input_field.dart';
 import '../../../widgets/file_attachment_drop_zone.dart';
+import '../../../widgets/file_or_gallery_picker.dart';
 import '../../../widgets/file_form_name_save_dialog.dart';
 import 'picked_file_inline_preview.dart';
 
@@ -46,37 +45,12 @@ class _EmploymentContractFileAttachScreenState
   }
 
   Future<void> _pickFile() async {
-    try {
-      FilePickerResult? res;
-      try {
-        res = await FilePicker.platform.pickFiles(
-          type: FileType.custom,
-          allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg'],
-          withData: kIsWeb,
-        );
-      } on MissingPluginException {
-        res = await FilePicker.platform.pickFiles(
-          type: FileType.any,
-          withData: kIsWeb,
-        );
-      }
-
-      final pickedResult = res;
-      if (pickedResult != null && pickedResult.files.isNotEmpty) {
-        final first = pickedResult.files.first;
-        setState(() => _picked = first);
-      }
-    } on MissingPluginException {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('현재 실행 환경에서 파일 선택 기능을 사용할 수 없습니다.')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('파일 선택 실패: $e')),
-      );
-    }
+    final picked = await pickSingleFileOrGallery(
+      context: context,
+      allowedExtensions: const ['pdf', 'png', 'jpg', 'jpeg', 'webp'],
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _picked = picked);
   }
 
   Future<void> _openTitleModal() async {

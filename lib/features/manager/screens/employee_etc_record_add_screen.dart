@@ -2,9 +2,7 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../data/repositories/staff_management_repository.dart';
@@ -13,6 +11,7 @@ import '../../../theme/app_typography.dart';
 import '../../auth/widgets/auth_input_field.dart';
 import '../../../widgets/app_styled_confirm_dialog.dart';
 import '../../../widgets/file_attachment_drop_zone.dart';
+import '../../../widgets/file_or_gallery_picker.dart';
 import 'employee_etc_record_file_bytes.dart';
 import 'employee_etc_record_inline_preview.dart';
 import 'picked_file_inline_preview.dart';
@@ -170,34 +169,12 @@ class _EmployeeEtcRecordAddScreenState extends State<EmployeeEtcRecordAddScreen>
   }
 
   Future<void> _pickFile() async {
-    try {
-      FilePickerResult? res;
-      try {
-        res = await FilePicker.platform.pickFiles(
-          type: FileType.custom,
-          allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg'],
-          withData: kIsWeb,
-        );
-      } on MissingPluginException {
-        res = await FilePicker.platform.pickFiles(
-          type: FileType.any,
-          withData: kIsWeb,
-        );
-      }
-      if (res != null && res.files.isNotEmpty && mounted) {
-        setState(() => _picked = res!.files.first);
-      }
-    } on MissingPluginException {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('현재 실행 환경에서 파일 선택 기능을 사용할 수 없습니다.')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('파일 선택 실패: $e')),
-      );
-    }
+    final picked = await pickSingleFileOrGallery(
+      context: context,
+      allowedExtensions: const ['pdf', 'png', 'jpg', 'jpeg', 'webp'],
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _picked = picked);
   }
 
   bool _isEtcUploadConnectionFailure(Object e) {

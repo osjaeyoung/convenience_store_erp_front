@@ -190,10 +190,12 @@ class HomeMonthlyLaborCostCard extends StatelessWidget {
     super.key,
     required this.totalAmountText,
     required this.changeText,
+    required this.onDetailTap,
   });
 
   final String totalAmountText;
   final String changeText;
+  final VoidCallback onDetailTap;
 
   @override
   Widget build(BuildContext context) {
@@ -262,7 +264,7 @@ class HomeMonthlyLaborCostCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              const _LearnMoreButton(),
+              _LearnMoreButton(onTap: onDetailTap),
             ],
           ),
         ),
@@ -275,9 +277,11 @@ class HomeLaborSavingPointCard extends StatelessWidget {
   const HomeLaborSavingPointCard({
     super.key,
     required this.points,
+    required this.onDetailTap,
   });
 
   final List<TextSpan> points;
+  final VoidCallback onDetailTap;
 
   @override
   Widget build(BuildContext context) {
@@ -329,7 +333,7 @@ class HomeLaborSavingPointCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          const _LearnMoreButton(),
+          _LearnMoreButton(onTap: onDetailTap),
         ],
       ),
     );
@@ -337,14 +341,16 @@ class HomeLaborSavingPointCard extends StatelessWidget {
 }
 
 class _LearnMoreButton extends StatelessWidget {
-  const _LearnMoreButton();
+  const _LearnMoreButton({required this.onTap});
+
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
       child: FilledButton(
-        onPressed: () {},
+        onPressed: onTap,
         style: FilledButton.styleFrom(
           minimumSize: const Size.fromHeight(36),
           padding: const EdgeInsets.symmetric(vertical: 6),

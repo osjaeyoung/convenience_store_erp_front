@@ -49,10 +49,19 @@ class RecruitmentSummary {
 
   factory RecruitmentSummary.fromJson(Map<String, dynamic> json) {
     return RecruitmentSummary(
-      waitingInterviews: json['waiting_interviews'] as int? ?? 0,
-      newApplicants: json['new_applicants'] as int? ?? 0,
-      newContacts: json['new_contacts'] as int? ?? 0,
+      waitingInterviews:
+          _toInt(json['application_count']) ?? _toInt(json['waiting_interviews']) ?? 0,
+      newApplicants:
+          _toInt(json['today_applicants_count']) ?? _toInt(json['new_applicants']) ?? 0,
+      newContacts: _toInt(json['active_postings_count']) ?? _toInt(json['new_contacts']) ?? 0,
       updatedAt: json['updated_at'] as String?,
     );
   }
+}
+
+int? _toInt(Object? value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value);
+  return null;
 }

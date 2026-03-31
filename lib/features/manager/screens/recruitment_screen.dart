@@ -1,39 +1,373 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../../data/models/recruitment/recruitment_models.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../account/account_routes.dart';
+import '../bloc/home_bloc.dart';
 import '../bloc/recruitment_bloc.dart';
 import '../bloc/selected_branch_cubit.dart';
+import '../widgets/home_common_app_bar.dart';
+import 'recruitment_job_seeker_detail_screen.dart';
+import 'recruitment_posting_list_tab.dart';
 
-/// 구인·채용 화면
-class RecruitmentScreen extends StatelessWidget {
-  const RecruitmentScreen({super.key});
+const String _recentViewedHeaderIconSvg = '''
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+  <g clip-path="url(#clip0_2691_3742)">
+    <path d="M7.26179 12.5822C10.2778 12.5822 12.7228 10.1372 12.7228 7.12116C12.7228 4.10513 10.2778 1.66016 7.26179 1.66016C4.24576 1.66016 1.80078 4.10513 1.80078 7.12116C1.80078 10.1372 4.24576 12.5822 7.26179 12.5822Z" fill="black"/>
+    <path d="M7.26026 13.0448C3.9954 13.0448 1.33594 10.3884 1.33594 7.12045C1.33594 3.8525 3.9954 1.19922 7.26026 1.19922C10.5251 1.19922 13.1846 3.85559 13.1846 7.12354C13.1846 10.3915 10.5282 13.0479 7.26026 13.0479V13.0448ZM7.26026 2.12586C4.50505 2.12586 2.26258 4.36833 2.26258 7.12354C2.26258 9.87876 4.50505 12.1212 7.26026 12.1212C10.0155 12.1212 12.2579 9.87876 12.2579 7.12354C12.2579 4.36833 10.0155 2.12586 7.26026 2.12586Z" fill="black"/>
+    <path d="M14.1482 14.4697C14.0308 14.4697 13.9103 14.4234 13.8208 14.3338L10.7968 11.3099C10.6146 11.1276 10.6146 10.8342 10.7968 10.6551C10.9791 10.4759 11.2725 10.4728 11.4517 10.6551L14.4756 13.679C14.6578 13.8612 14.6578 14.1547 14.4756 14.3338C14.386 14.4234 14.2656 14.4697 14.1482 14.4697Z" fill="black"/>
+    <path d="M7.26144 7.24162C8.23209 7.24162 9.01896 6.45475 9.01896 5.48409C9.01896 4.51343 8.23209 3.72656 7.26144 3.72656C6.29078 3.72656 5.50391 4.51343 5.50391 5.48409C5.50391 6.45475 6.29078 7.24162 7.26144 7.24162Z" fill="white"/>
+    <path d="M7.25991 7.70342C6.03675 7.70342 5.03906 6.70573 5.03906 5.48257C5.03906 4.2594 6.03675 3.26172 7.25991 3.26172C8.48308 3.26172 9.48076 4.25631 9.48076 5.48257C9.48076 6.70882 8.48617 7.70342 7.25991 7.70342ZM7.25991 4.18836C6.5464 4.18836 5.9657 4.76905 5.9657 5.48257C5.9657 6.19608 6.5464 6.77678 7.25991 6.77678C7.97343 6.77678 8.55412 6.19608 8.55412 5.48257C8.55412 4.76905 7.97343 4.18836 7.25991 4.18836Z" fill="black"/>
+    <path d="M7.8618 7.24219H6.66335C5.41547 7.24219 4.40234 8.25531 4.40234 9.50319C4.40234 9.56188 4.43014 9.62057 4.47956 9.65454C5.27339 10.1982 6.22783 10.5194 7.26258 10.5194C8.29732 10.5194 9.25485 10.1982 10.0456 9.65454C10.095 9.62057 10.1228 9.56497 10.1228 9.50319C10.1228 8.25531 9.10968 7.24219 7.8618 7.24219Z" fill="white"/>
+    <path d="M7.26105 10.9812C6.1707 10.9812 5.11742 10.6538 4.21549 10.0329C4.03943 9.91248 3.9375 9.7148 3.9375 9.50167C3.9375 8.00051 5.16067 6.77734 6.66182 6.77734H7.86028C9.36144 6.77734 10.5846 8.00051 10.5846 9.50167C10.5846 9.7148 10.4796 9.91248 10.3066 10.0329C9.40468 10.6538 8.3514 10.9812 7.26105 10.9812ZM4.87032 9.35341C5.58692 9.81055 6.41163 10.0515 7.26105 10.0515C8.11047 10.0515 8.93518 9.81055 9.65179 9.35341C9.57765 8.42985 8.80237 7.7009 7.86028 7.7009H6.66182C5.71974 7.7009 4.94445 8.42985 4.87032 9.35341Z" fill="black"/>
+  </g>
+  <defs>
+    <clipPath id="clip0_2691_3742">
+      <rect width="16" height="16" fill="white"/>
+    </clipPath>
+  </defs>
+</svg>
+''';
+
+class RecruitmentScreen extends StatefulWidget {
+  const RecruitmentScreen({
+    super.key,
+    this.initialTabIndex = 0,
+  });
+
+  final int initialTabIndex;
+
+  @override
+  State<RecruitmentScreen> createState() => _RecruitmentScreenState();
+}
+
+class _RecruitmentScreenState extends State<RecruitmentScreen> {
+  static const int _minimumRecruitmentAge = 14;
+  static const int _maximumRecruitmentAge = 99;
+
+  final TextEditingController _searchController = TextEditingController();
+
+  int _selectedTabIndex = 0;
+  int? _lastRequestedBranchId;
+  String? _gender;
+  int? _ageMin;
+  int? _ageMax;
+  String? _region;
+  double? _minRating;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedTabIndex = widget.initialTabIndex.clamp(0, 2);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _requestHome(int branchId) {
+    final (ageMin, ageMax) = _sanitizedAgeRange(_ageMin, _ageMax);
+    _lastRequestedBranchId = branchId;
+    context.read<RecruitmentBloc>().add(
+          RecruitmentHomeRequested(
+            branchId: branchId,
+            keyword: _searchController.text.trim(),
+            gender: _gender,
+            ageMin: ageMin,
+            ageMax: ageMax,
+            region: _region,
+            minRating: _minRating,
+          ),
+        );
+  }
+
+  void _refreshCurrentBranch() {
+    final branchId = context.read<SelectedBranchCubit>().state;
+    if (branchId != null) {
+      _requestHome(branchId);
+    }
+  }
+
+  Future<void> _openProfile(int branchId, int employeeId) async {
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => RecruitmentJobSeekerDetailScreen(
+          branchId: branchId,
+          employeeId: employeeId,
+        ),
+      ),
+    );
+    if (changed == true && mounted) {
+      _requestHome(branchId);
+    }
+  }
+
+  Future<void> _showGenderSheet() async {
+    final result = await showModalBottomSheet<String?>(
+      context: context,
+      backgroundColor: AppColors.grey0,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        Widget option({
+          required String title,
+          required String? value,
+        }) {
+          final selected = _gender == value;
+          return ListTile(
+            title: Text(
+              title,
+              style: AppTypography.bodyMediumR.copyWith(
+                color: selected ? AppColors.primaryDark : AppColors.textPrimary,
+              ),
+            ),
+            trailing: selected
+                ? const Icon(Icons.check_rounded, color: AppColors.primaryDark)
+                : null,
+            onTap: () => Navigator.of(context).pop(value ?? '__clear__'),
+          );
+        }
+
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.grey100,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              const SizedBox(height: 12),
+              option(title: '전체', value: null),
+              option(title: '남성', value: 'male'),
+              option(title: '여성', value: 'female'),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (!mounted || result == null) return;
+    setState(() {
+      _gender = result == '__clear__' ? null : result;
+    });
+    _refreshCurrentBranch();
+  }
+
+  Future<void> _showAgeDialog() async {
+    final minController = TextEditingController(
+      text: _ageMin?.toString() ?? '',
+    );
+    final maxController = TextEditingController(
+      text: _ageMax?.toString() ?? '',
+    );
+
+    final applied = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('연령 설정'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: minController,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(2),
+                ],
+                decoration: const InputDecoration(
+                  labelText: '최소 연령',
+                  hintText: '14-99',
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: maxController,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(2),
+                ],
+                decoration: const InputDecoration(
+                  labelText: '최대 연령',
+                  hintText: '14-99',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () {
+                minController.clear();
+                maxController.clear();
+                Navigator.of(dialogContext).pop(true);
+              },
+              child: const Text('초기화'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final min = _parseAgeValue(minController.text);
+                final max = _parseAgeValue(maxController.text);
+                final message = _ageValidationMessage(min, max);
+                if (message != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(message)),
+                  );
+                  return;
+                }
+                Navigator.of(dialogContext).pop(true);
+              },
+              child: const Text('적용'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!mounted || applied != true) return;
+    setState(() {
+      _ageMin = _parseAgeValue(minController.text);
+      _ageMax = _parseAgeValue(maxController.text);
+    });
+    _refreshCurrentBranch();
+  }
+
+  Future<void> _showRegionDialog() async {
+    final controller = TextEditingController(text: _region ?? '');
+    final applied = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('지역 설정'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              hintText: '예: 강남역점 인근',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () {
+                controller.clear();
+                Navigator.of(dialogContext).pop(true);
+              },
+              child: const Text('초기화'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('적용'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!mounted || applied != true) return;
+    setState(() {
+      final value = controller.text.trim();
+      _region = value.isEmpty ? null : value;
+    });
+    _refreshCurrentBranch();
+  }
+
+  Future<void> _showRatingSheet() async {
+    final result = await showModalBottomSheet<double?>(
+      context: context,
+      backgroundColor: AppColors.grey0,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.grey100,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                title: const Text('전체'),
+                trailing: _minRating == null
+                    ? const Icon(Icons.check_rounded, color: AppColors.primaryDark)
+                    : null,
+                onTap: () => Navigator.of(context).pop(-1.0),
+              ),
+              for (final value in [1, 2, 3])
+                ListTile(
+                  title: Text('$value점 이상'),
+                  trailing: _minRating == value.toDouble()
+                      ? const Icon(Icons.check_rounded, color: AppColors.primaryDark)
+                      : null,
+                  onTap: () => Navigator.of(context).pop(value.toDouble()),
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (!mounted || result == null) return;
+    setState(() {
+      _minRating = result < 0 ? null : result;
+    });
+    _refreshCurrentBranch();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('구인·채용'),
-        actions: [
-          IconButton(
-            onPressed: () => openAccountSettingsMenu(context),
-            icon: Image.asset(
-              'assets/icons/png/common/menu_icon.png',
-              width: 24,
-              height: 24,
-            ),
-          ),
-          const SizedBox(width: 6),
-        ],
+      backgroundColor: AppColors.grey0,
+      appBar: HomeCommonAppBar(
+        alarmActive: false,
+        onAlarmTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('알림 기능은 곧 연결됩니다.')),
+          );
+        },
+        onMenuTap: () => openAccountSettingsMenu(context),
       ),
-      body: BlocConsumer<SelectedBranchCubit, int?>(
+      body: Column(
+        children: [
+          _RecruitmentTopTabs(
+            selectedIndex: _selectedTabIndex,
+            onSelected: (index) => setState(() => _selectedTabIndex = index),
+          ),
+          Expanded(
+            child: _selectedTabIndex == 0
+                ? BlocConsumer<SelectedBranchCubit, int?>(
         listener: (context, branchId) {
           if (branchId != null) {
-            context.read<RecruitmentBloc>().add(
-                  RecruitmentStatusRequested(branchId: branchId),
-                );
+                        _requestHome(branchId);
           }
         },
         builder: (context, branchId) {
@@ -41,70 +375,791 @@ class RecruitmentScreen extends StatelessWidget {
             return Center(
               child: Text(
                 '지점을 선택해주세요.\n홈 탭에서 지점을 먼저 선택해주세요.',
-                style: AppTypography.bodyMedium.copyWith(
+                            style: AppTypography.bodyMediumR.copyWith(
                   color: AppColors.textSecondary,
                 ),
                 textAlign: TextAlign.center,
               ),
             );
           }
+
           return BlocBuilder<RecruitmentBloc, RecruitmentBlocState>(
             builder: (context, state) {
-              if (state.status == RecruitmentBlocStatus.loading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (state.status == RecruitmentBlocStatus.failure) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        state.errorMessage ?? '오류가 발생했습니다.',
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      TextButton(
-                        onPressed: () => context.read<RecruitmentBloc>().add(
-                              RecruitmentStatusRequested(branchId: branchId),
-                            ),
-                        child: const Text('다시 시도'),
-                      ),
-                    ],
+                          if (state.branchId != branchId &&
+                              state.status != RecruitmentBlocStatus.loading &&
+                              _lastRequestedBranchId != branchId) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (mounted) {
+                                _requestHome(branchId);
+                              }
+                            });
+                          }
+
+                          return _RecruitmentHomeTab(
+                            state: state,
+                            searchController: _searchController,
+                            genderLabel: _genderLabel,
+                            ageLabel: _ageLabel,
+                            regionLabel: _regionLabel,
+                            ratingLabel: _ratingLabel,
+                            onSubmittedSearch: _refreshCurrentBranch,
+                            onTapGender: _showGenderSheet,
+                            onTapAge: _showAgeDialog,
+                            onTapRegion: _showRegionDialog,
+                            onTapRating: _showRatingSheet,
+                            onRetry: () => _requestHome(branchId),
+                            onTapProfile: (employeeId) => _openProfile(branchId, employeeId),
+                          );
+                        },
+                      );
+                    },
+                  )
+                : BlocBuilder<SelectedBranchCubit, int?>(
+                    builder: (context, branchId) {
+                      if (branchId == null) {
+                        return const _TabPlaceholderView(title: '지점을 선택해주세요.');
+                      }
+                      final branchName = _selectedBranchName(context, branchId);
+                      return RecruitmentPostingListTab(
+                        branchId: branchId,
+                        branchName: branchName,
+                        mine: _selectedTabIndex == 2,
+                        refreshTick: 0,
+                      );
+                    },
                   ),
-                );
-              }
-              final status = state.recruitmentStatus;
-              if (status == null) {
-                return const Center(child: Text('데이터 없음'));
-              }
-              return SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      '채용 현황',
-                      style: AppTypography.heading3.copyWith(
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      '채용 데이터를 불러왔습니다.',
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          );
-        },
+          ),
+        ],
       ),
     );
   }
+
+  String get _genderLabel {
+    switch (_gender) {
+      case 'male':
+        return '남성';
+      case 'female':
+        return '여성';
+      default:
+        return '성별';
+    }
+  }
+
+  String get _ageLabel {
+    if (_ageMin == null && _ageMax == null) return '연령';
+    if (_ageMin != null && _ageMax != null) return '${_ageMin!}-${_ageMax!}세';
+    if (_ageMin != null) return '${_ageMin!}세 이상';
+    return '${_ageMax!}세 이하';
+  }
+
+  String get _regionLabel => (_region ?? '').trim().isEmpty ? '지역' : _region!.trim();
+
+  String get _ratingLabel {
+    if (_minRating == null) return '평점';
+    final isInt = _minRating! % 1 == 0;
+    final value = isInt ? _minRating!.toStringAsFixed(0) : _minRating!.toStringAsFixed(1);
+    return '$value점+';
+  }
+
+  int? _parseAgeValue(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return null;
+    return int.tryParse(trimmed);
+  }
+
+  String? _ageValidationMessage(int? min, int? max) {
+    if (min != null &&
+        (min < _minimumRecruitmentAge || min > _maximumRecruitmentAge)) {
+      return '최소 연령은 $_minimumRecruitmentAge세 이상 $_maximumRecruitmentAge세 이하로 입력해주세요.';
+    }
+    if (max != null &&
+        (max < _minimumRecruitmentAge || max > _maximumRecruitmentAge)) {
+      return '최대 연령은 $_minimumRecruitmentAge세 이상 $_maximumRecruitmentAge세 이하로 입력해주세요.';
+    }
+    if (min != null && max != null && min > max) {
+      return '최소 연령은 최대 연령보다 클 수 없습니다.';
+    }
+    return null;
+  }
+
+  (int?, int?) _sanitizedAgeRange(int? min, int? max) {
+    if (_ageValidationMessage(min, max) != null) {
+      return (null, null);
+    }
+    return (min, max);
+  }
+
+  String _selectedBranchName(BuildContext context, int branchId) {
+    final state = context.read<HomeBloc>().state;
+    for (final branch in state.managerBranches) {
+      if (branch.id == branchId) return branch.name;
+    }
+    for (final branch in state.ownerBranches) {
+      if (branch.id == branchId) return branch.name;
+    }
+    return '';
+  }
+}
+
+class _RecruitmentTopTabs extends StatelessWidget {
+  const _RecruitmentTopTabs({
+    required this.selectedIndex,
+    required this.onSelected,
+  });
+
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    const tabs = ['채용 홈', '채용 게시판', '내 채용 게시글'];
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.grey0,
+        border: Border(
+          bottom: BorderSide(color: AppColors.grey25),
+        ),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minWidth: MediaQuery.sizeOf(context).width,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              for (var i = 0; i < tabs.length; i++)
+                _RecruitmentTopTabItem(
+                  label: tabs[i],
+                  selected: selectedIndex == i,
+                  onTap: () => onSelected(i),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RecruitmentTopTabItem extends StatelessWidget {
+  const _RecruitmentTopTabItem({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        height: 52,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: selected ? AppColors.textPrimary : Colors.transparent,
+            ),
+          ),
+        ),
+        child: Text(
+          label,
+          style: AppTypography.bodyLargeB.copyWith(
+            color: selected ? AppColors.textPrimary : AppColors.textTertiary,
+            height: 24 / 16,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RecruitmentHomeTab extends StatelessWidget {
+  const _RecruitmentHomeTab({
+    required this.state,
+    required this.searchController,
+    required this.genderLabel,
+    required this.ageLabel,
+    required this.regionLabel,
+    required this.ratingLabel,
+    required this.onSubmittedSearch,
+    required this.onTapGender,
+    required this.onTapAge,
+    required this.onTapRegion,
+    required this.onTapRating,
+    required this.onRetry,
+    required this.onTapProfile,
+  });
+
+  final RecruitmentBlocState state;
+  final TextEditingController searchController;
+  final String genderLabel;
+  final String ageLabel;
+  final String regionLabel;
+  final String ratingLabel;
+  final VoidCallback onSubmittedSearch;
+  final VoidCallback onTapGender;
+  final VoidCallback onTapAge;
+  final VoidCallback onTapRegion;
+  final VoidCallback onTapRating;
+  final VoidCallback onRetry;
+  final ValueChanged<int> onTapProfile;
+
+  @override
+  Widget build(BuildContext context) {
+    if (state.status == RecruitmentBlocStatus.loading && !state.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+    if (state.status == RecruitmentBlocStatus.failure && !state.hasData) {
+      return _RecruitmentErrorView(
+        message: state.errorMessage ?? '오류가 발생했습니다.',
+        onRetry: onRetry,
+      );
+    }
+
+    final data = state.homeData;
+    if (data == null) {
+      return const Center(child: Text('데이터가 없습니다.'));
+    }
+
+    return ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        if (state.status == RecruitmentBlocStatus.loading)
+          const LinearProgressIndicator(
+            minHeight: 1,
+            color: AppColors.primary,
+            backgroundColor: AppColors.grey25,
+          ),
+        _RecentViewedSection(
+          items: data.recentViewedJobSeekers,
+          onTapProfile: onTapProfile,
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+          child: _RecruitmentSearchField(
+            controller: searchController,
+            onSubmitted: (_) => onSubmittedSearch(),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            children: [
+              _RecruitmentFilterChip(
+                label: genderLabel,
+                active: genderLabel != '성별',
+                onTap: onTapGender,
+              ),
+              const SizedBox(width: 8),
+              _RecruitmentFilterChip(
+                label: ageLabel,
+                active: ageLabel != '연령',
+                onTap: onTapAge,
+              ),
+              const SizedBox(width: 8),
+              _RecruitmentFilterChip(
+                label: regionLabel,
+                active: regionLabel != '지역',
+                onTap: onTapRegion,
+              ),
+              const SizedBox(width: 8),
+              _RecruitmentFilterChip(
+                label: ratingLabel,
+                active: ratingLabel != '평점',
+                onTap: onTapRating,
+              ),
+            ],
+          ),
+        ),
+        if (state.status == RecruitmentBlocStatus.failure)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+            child: Text(
+              state.errorMessage ?? '검색 결과를 새로 불러오지 못했습니다.',
+              style: AppTypography.bodySmallR.copyWith(
+                color: AppColors.error,
+              ),
+            ),
+          ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          child: _SearchResultsSection(
+            items: data.searchResults,
+            onTapProfile: onTapProfile,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RecentViewedSection extends StatelessWidget {
+  const _RecentViewedSection({
+    required this.items,
+    required this.onTapProfile,
+  });
+
+  final List<RecentViewedJobSeeker> items;
+  final ValueChanged<int> onTapProfile;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.only(left: 20),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: AppColors.grey25),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SvgPicture.string(
+                  _recentViewedHeaderIconSvg,
+                  width: 16,
+                  height: 16,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '최근 열람 구직자',
+                  style: AppTypography.bodyLargeM.copyWith(
+                    fontSize: 16,
+                    height: 20 / 16,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (items.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(right: 20),
+                child: Text(
+                  '최근 열람한 구직자가 없습니다.',
+                  style: AppTypography.bodySmallR.copyWith(
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              )
+            else
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.only(right: 20),
+                child: Row(
+                  children: [
+                    for (var i = 0; i < items.length; i++) ...[
+                      _RecentViewedCard(
+                        item: items[i],
+                        onTap: () => onTapProfile(items[i].employeeId),
+                      ),
+                      if (i != items.length - 1) const SizedBox(width: 16),
+                    ],
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RecentViewedCard extends StatelessWidget {
+  const _RecentViewedCard({
+    required this.item,
+    required this.onTap,
+  });
+
+  final RecentViewedJobSeeker item;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: SizedBox(
+        width: 82,
+        child: Column(
+          children: [
+            const _PersonAvatar(size: 60),
+            const SizedBox(height: 4),
+            Text(
+              item.nameWithAge,
+              style: AppTypography.bodySmallR.copyWith(
+                fontSize: 12,
+                height: 18 / 12,
+                color: AppColors.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RecruitmentSearchField extends StatelessWidget {
+  const _RecruitmentSearchField({
+    required this.controller,
+    required this.onSubmitted,
+  });
+
+  final TextEditingController controller;
+  final ValueChanged<String> onSubmitted;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      textInputAction: TextInputAction.search,
+      onSubmitted: onSubmitted,
+      style: AppTypography.bodyMediumR.copyWith(
+        color: AppColors.textPrimary,
+        fontSize: 14,
+        height: 19 / 14,
+      ),
+      decoration: InputDecoration(
+        hintText: '검색',
+        hintStyle: AppTypography.bodyMediumR.copyWith(
+          color: AppColors.grey100,
+          fontSize: 14,
+          height: 19 / 14,
+        ),
+        filled: true,
+        fillColor: AppColors.grey0Alt,
+        contentPadding: const EdgeInsets.symmetric(vertical: 16),
+        prefixIcon: Padding(
+          padding: const EdgeInsets.all(14),
+          child: SvgPicture.asset(
+            'assets/icons/svg/icon/search_mint_20.svg',
+            width: 20,
+            height: 20,
+          ),
+        ),
+        prefixIconConstraints: const BoxConstraints(minWidth: 52),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.grey50),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary),
+        ),
+      ),
+    );
+  }
+}
+
+class _RecruitmentFilterChip extends StatelessWidget {
+  const _RecruitmentFilterChip({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(100),
+      child: Container(
+        constraints: const BoxConstraints(minWidth: 72),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: active ? AppColors.primaryLight : AppColors.grey0,
+          borderRadius: BorderRadius.circular(100),
+          border: Border.all(
+            color: active ? AppColors.primary : AppColors.grey50,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: AppTypography.bodySmallR.copyWith(
+                fontSize: 12,
+                height: 18 / 12,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 14,
+              color: active ? AppColors.primaryDark : AppColors.textTertiary,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchResultsSection extends StatelessWidget {
+  const _SearchResultsSection({
+    required this.items,
+    required this.onTapProfile,
+  });
+
+  final List<JobSeekerSummary> items;
+  final ValueChanged<int> onTapProfile;
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 60),
+        child: Text(
+          '검색 결과가 없습니다.',
+          style: AppTypography.bodyMediumR.copyWith(
+            color: AppColors.textSecondary,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        for (var i = 0; i < items.length; i++)
+          _SearchResultCard(
+            item: items[i],
+            showDivider: i != items.length - 1,
+            onTap: () => onTapProfile(items[i].employeeId),
+          ),
+      ],
+    );
+  }
+}
+
+class _SearchResultCard extends StatelessWidget {
+  const _SearchResultCard({
+    required this.item,
+    required this.showDivider,
+    required this.onTap,
+  });
+
+  final JobSeekerSummary item;
+  final bool showDivider;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: showDivider ? AppColors.grey25 : Colors.transparent,
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            const _PersonAvatar(size: 48),
+            const SizedBox(width: 12),
+            Expanded(
+                  child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.employeeName,
+                    style: AppTypography.bodyLargeM.copyWith(
+                      fontSize: 16,
+                      height: 20 / 16,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: [
+                      Text(
+                        item.desiredLocation ?? '-',
+                        style: AppTypography.bodySmallR.copyWith(
+                          fontSize: 12,
+                          height: 18 / 12,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                      Container(
+                        width: 2,
+                        height: 2,
+                        decoration: const BoxDecoration(
+                          color: AppColors.grey100,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _ScoreStars(
+                            filledCount: _filledStarCount(
+                              item.averageRating,
+                              maxStars: 3,
+                            ),
+                            maxStars: 3,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '(${item.reviewCount})',
+                            style: AppTypography.bodySmallR.copyWith(
+                              fontSize: 12,
+                              height: 18 / 12,
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+                  ),
+                );
+              }
+}
+
+class _RecruitmentErrorView extends StatelessWidget {
+  const _RecruitmentErrorView({
+    required this.message,
+    required this.onRetry,
+  });
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+                child: Column(
+          mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+              message,
+              style: AppTypography.bodyMediumR.copyWith(
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+            TextButton(
+              onPressed: onRetry,
+              child: const Text('다시 시도'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TabPlaceholderView extends StatelessWidget {
+  const _TabPlaceholderView({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        '$title 화면은 다음 단계에서 연결됩니다.',
+        style: AppTypography.bodyMediumR.copyWith(
+          color: AppColors.textSecondary,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+}
+
+class _PersonAvatar extends StatelessWidget {
+  const _PersonAvatar({required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: const BoxDecoration(
+        color: AppColors.grey25,
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        Icons.person_rounded,
+        size: size * 0.62,
+        color: const Color(0xFFDADBE4),
+      ),
+    );
+  }
+}
+
+class _ScoreStars extends StatelessWidget {
+  const _ScoreStars({
+    required this.filledCount,
+    required this.maxStars,
+    required this.color,
+  });
+
+  final int filledCount;
+  final int maxStars;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(maxStars, (index) {
+        return Icon(
+          Icons.star_rounded,
+          size: 12,
+          color: index < filledCount ? color : color.withValues(alpha: 0.18),
+        );
+      }),
+    );
+  }
+}
+
+int _filledStarCount(double rating, {required int maxStars}) {
+  if (rating <= 0) return 0;
+  return rating.round().clamp(1, maxStars);
 }

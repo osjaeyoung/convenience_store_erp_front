@@ -5,6 +5,699 @@
 ## 인증
 
 - 모든 API는 `Authorization: Bearer {access_token}` 필요
+- `/owner/home/**`는 `user_profiles.role == owner` 사용자만 호출 가능
+
+---
+
+## 1) 경영주 점포 목록
+
+- `GET /owner/home/branches`
+
+### Response Body (200)
+
+```json
+{
+  "items": [
+    {
+      "id": 10,
+      "name": "나눔 강남점",
+      "code": "AB12CD34",
+      "review_status": "approved",
+      "review_note": null,
+      "manager_user_id": 25,
+      "is_open_for_manager": false,
+      "created_at": "2026-03-05T00:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## 2) 경영주 점포 추가
+
+- `POST /owner/home/branches`
+
+### Request Body
+
+```json
+{
+  "branch_name": "나눔 서초점",
+  "branch_code": "SEOCHO01"
+}
+```
+
+- `branch_code` 미전달 시 서버가 8자리 코드를 자동 생성
+
+### Response Body (201)
+
+```json
+{
+  "id": 11,
+  "name": "나눔 서초점",
+  "code": "SEOCHO01",
+  "review_status": "pending",
+  "review_note": null,
+  "manager_user_id": null,
+  "is_open_for_manager": true,
+  "created_at": "2026-03-05T00:00:00Z"
+}
+```
+
+---
+
+## 3) 점포 상세
+
+- `GET /owner/home/branches/{branch_id}`
+- 문서 정본(canonical) 응답 shape는 아래 1개로 고정
+
+### Response Body (200)
+
+```json
+{
+  "id": 10,
+  "name": "나눔 강남점",
+  "code": "AB12CD34",
+  "review_status": "approved",
+  "review_note": null,
+  "manager": {
+    "user_id": 25,
+    "full_name": "이사라",
+    "phone_number": "01033333333",
+    "approval_status": "approved_by_owner"
+  },
+  "registered_managers": [
+    {
+      "registration_id": 101,
+      "manager_name": "이사라",
+      "manager_phone_number": "01033333333",
+      "status": "linked",
+      "linked_user_id": 25,
+      "created_at": "2026-03-05T02:00:00Z"
+    }
+  ],
+  "manager_candidates": [],
+  "workers": [],
+  "today_shift_date": "2026-03-05",
+  "today_shift_rows": [],
+  "monthly_labor_cost": {
+    "monthly_total": 9157430,
+    "message": "2026.03 급여명세 기준 인건비입니다."
+  }
+}
+```
+
+---
+
+## 4) 점장 등록 요청 목록
+
+- `GET /owner/home/branches/{branch_id}/manager-registrations`
+
+### Response Body (200)
+
+```json
+{
+  "items": [
+    {
+      "registration_id": 101,
+      "manager_name": "이사라",
+      "manager_phone_number": "01033333333",
+      "status": "linked",
+      "linked_user_id": 25,
+      "created_at": "2026-03-05T02:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## 5) 점장 등록 (사전등록)
+
+- `POST /owner/home/branches/{branch_id}/manager`
+
+### Request Body
+
+```json
+{
+  "manager_name": "이사라",
+  "manager_phone_number": "01033333333"
+}
+```
+
+### Response Body (200)
+
+```json
+{
+  "branch_id": 10,
+  "action": "pre_registered",
+  "manager": null,
+  "registration": {
+    "registration_id": 101,
+    "manager_name": "이사라",
+    "manager_phone_number": "01033333333",
+    "status": "pre_registered",
+    "linked_user_id": null,
+    "created_at": "2026-03-05T02:00:00Z"
+  }
+}
+```
+
+---
+
+## 6) 채용 현황 조회
+
+- `GET /owner/home/branches/{branch_id}/recruitment-status`
+- 홈 대시보드와 구인 모듈이 동일 데이터를 보도록 아래 기준으로 집계
+  - `application_count`: 해당 지점의 게시된 공고(`published`) 지원 건수
+  - `today_applicants_count`: 오늘 접수된 지원 건수
+  - `active_postings_count`: 현재 게시중(`published`) 공고 수
+
+### Response Body (200)
+
+```json
+{
+  "application_count": 5,
+  "today_applicants_count": 2,
+  "active_postings_count": 2,
+  "updated_at": "2026-09-11T08:00:00Z"
+}
+```
+
+---
+
+## 7) 점포 알림 목록
+
+- `GET /owner/home/branches/{branch_id}/alerts`
+
+### Response Body (200)
+
+```json
+{
+  "items": [
+    {
+      "alert_id": 9001,
+      "title": "퇴직금 발생",
+      "content": "3개월 내 퇴직금 지급 대상자가 있습니다.",
+      "priority": "high",
+      "is_open": true,
+      "created_at": "2026-09-11T09:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## 8) 점포 알림 읽음 토글
+
+- `PATCH /owner/home/branches/{branch_id}/alerts/{alert_id}`
+
+### Request Body
+
+```json
+{
+  "is_open": false
+}
+```
+
+### Response Body (200)
+
+```json
+{
+  "alert_id": 9001,
+  "is_open": false
+}
+```
+
+---
+
+## 9) 오늘 근무자 현황 조회
+
+- `GET /owner/home/branches/{branch_id}/today-workers?date=2026-09-11`
+- `WorkScheduleEntry` 기반으로 30분 슬롯으로 확장된 행을 반환
+
+### Response Body (200)
+
+```json
+{
+  "date": "2026-09-11",
+  "rows": [
+    {
+      "status_id": 7001,
+      "work_date": "2026-09-11",
+      "time_label": "09:00",
+      "worker_name": "이시현",
+      "status": "done",
+      "memo": null,
+      "updated_at": "2026-09-11T09:20:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## 10) 오늘 근무자 상태/메모 저장
+
+- `PUT /owner/home/branches/{branch_id}/today-workers/status`
+
+### Request Body
+
+```json
+{
+  "work_date": "2026-09-11",
+  "time_label": "09:00",
+  "worker_name": "이시현",
+  "status": "done",
+  "memo": "지각 5분"
+}
+```
+
+허용 상태값:
+- `scheduled`
+- `done`
+- `absent`
+- `unset`
+- `planned` (`scheduled`로 변환)
+- `pending` (`unset`으로 변환)
+
+### Response Body (200)
+
+```json
+{
+  "status_id": 7001,
+  "work_date": "2026-09-11",
+  "time_label": "09:00",
+  "worker_name": "이시현",
+  "status": "done",
+  "memo": "지각 5분",
+  "updated_at": "2026-09-11T09:20:00Z"
+}
+```
+
+---
+
+## 11) 오늘 근무자 메모 삭제
+
+- `DELETE /owner/home/branches/{branch_id}/today-workers/{status_id}/memo`
+
+### Response Body (200)
+
+```json
+{
+  "status_id": 7001,
+  "memo": null
+}
+```
+
+---
+
+## 12) 점장 해제
+
+- `DELETE /owner/home/branches/{branch_id}/manager`
+
+### Response Body (200)
+
+```json
+{
+  "branch_id": 10,
+  "removed_manager_user_id": 25,
+  "removed_registration_id": null,
+  "message": "Manager assignment removed"
+}
+```
+
+---
+
+## 13) 점장 등록 요청 삭제
+
+- `DELETE /owner/home/branches/{branch_id}/manager-registrations/{registration_id}`
+
+### Response Body (200)
+
+```json
+{
+  "branch_id": 10,
+  "removed_manager_user_id": 25,
+  "removed_registration_id": 101,
+  "message": "Manager registration deleted"
+}
+```
+# 경영주 홈 API 스펙
+
+기본 prefix: `/api/v1`
+
+## 인증
+
+- 모든 API는 `Authorization: Bearer {access_token}` 필요
+- `/owner/home/**`는 `user_profiles.role == owner` 사용자만 호출 가능
+
+---
+
+## 1) 경영주 점포 목록
+
+- `GET /owner/home/branches`
+
+### Response Body (200)
+
+```json
+{
+  "items": [
+    {
+      "id": 10,
+      "name": "나눔 강남점",
+      "code": "AB12CD34",
+      "review_status": "approved",
+      "review_note": null,
+      "manager_user_id": 25,
+      "is_open_for_manager": false,
+      "created_at": "2026-03-05T00:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## 2) 경영주 점포 추가
+
+- `POST /owner/home/branches`
+
+### Request Body
+
+```json
+{
+  "branch_name": "나눔 서초점",
+  "branch_code": "SEOCHO01"
+}
+```
+
+- `branch_code` 미전달 시 서버가 8자리 코드를 자동 생성
+
+### Response Body (201)
+
+```json
+{
+  "id": 11,
+  "name": "나눔 서초점",
+  "code": "SEOCHO01",
+  "review_status": "pending",
+  "review_note": null,
+  "manager_user_id": null,
+  "is_open_for_manager": true,
+  "created_at": "2026-03-05T00:00:00Z"
+}
+```
+
+---
+
+## 3) 점포 상세
+
+- `GET /owner/home/branches/{branch_id}`
+- 문서 정본(canonical) 응답 shape는 아래 1개로 고정
+
+### Response Body (200)
+
+```json
+{
+  "id": 10,
+  "name": "나눔 강남점",
+  "code": "AB12CD34",
+  "review_status": "approved",
+  "review_note": null,
+  "manager": {
+    "user_id": 25,
+    "full_name": "이사라",
+    "phone_number": "01033333333",
+    "approval_status": "approved_by_owner"
+  },
+  "registered_managers": [
+    {
+      "registration_id": 101,
+      "manager_name": "이사라",
+      "manager_phone_number": "01033333333",
+      "status": "linked",
+      "linked_user_id": 25,
+      "created_at": "2026-03-05T02:00:00Z"
+    }
+  ],
+  "manager_candidates": [],
+  "workers": [],
+  "today_shift_date": "2026-03-05",
+  "today_shift_rows": [],
+  "monthly_labor_cost": {
+    "monthly_total": 9157430,
+    "message": "2026.03 급여명세 기준 인건비입니다."
+  }
+}
+```
+
+---
+
+## 4) 점장 등록 요청 목록
+
+- `GET /owner/home/branches/{branch_id}/manager-registrations`
+
+### Response Body (200)
+
+```json
+{
+  "items": [
+    {
+      "registration_id": 101,
+      "manager_name": "이사라",
+      "manager_phone_number": "01033333333",
+      "status": "linked",
+      "linked_user_id": 25,
+      "created_at": "2026-03-05T02:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## 5) 점장 등록 (사전등록)
+
+- `POST /owner/home/branches/{branch_id}/manager`
+
+### Request Body
+
+```json
+{
+  "manager_name": "이사라",
+  "manager_phone_number": "01033333333"
+}
+```
+
+### Response Body (200)
+
+```json
+{
+  "branch_id": 10,
+  "action": "pre_registered",
+  "manager": null,
+  "registration": {
+    "registration_id": 101,
+    "manager_name": "이사라",
+    "manager_phone_number": "01033333333",
+    "status": "pre_registered",
+    "linked_user_id": null,
+    "created_at": "2026-03-05T02:00:00Z"
+  }
+}
+```
+
+---
+
+## 6) 채용 현황 조회
+
+- `GET /owner/home/branches/{branch_id}/recruitment-status`
+- 홈 대시보드와 구인 모듈이 동일 데이터를 보도록 아래 기준으로 집계
+  - `application_count`: 해당 지점의 게시된 공고(`published`) 지원 건수
+  - `today_applicants_count`: 오늘 접수된 지원 건수
+  - `active_postings_count`: 현재 게시중(`published`) 공고 수
+
+### Response Body (200)
+
+```json
+{
+  "application_count": 5,
+  "today_applicants_count": 2,
+  "active_postings_count": 2,
+  "updated_at": "2026-09-11T08:00:00Z"
+}
+```
+
+---
+
+## 7) 점포 알림 목록
+
+- `GET /owner/home/branches/{branch_id}/alerts`
+
+### Response Body (200)
+
+```json
+{
+  "items": [
+    {
+      "alert_id": 9001,
+      "title": "퇴직금 발생",
+      "content": "3개월 내 퇴직금 지급 대상자가 있습니다.",
+      "priority": "high",
+      "is_open": true,
+      "created_at": "2026-09-11T09:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## 8) 점포 알림 읽음 토글
+
+- `PATCH /owner/home/branches/{branch_id}/alerts/{alert_id}`
+
+### Request Body
+
+```json
+{
+  "is_open": false
+}
+```
+
+### Response Body (200)
+
+```json
+{
+  "alert_id": 9001,
+  "is_open": false
+}
+```
+
+---
+
+## 9) 오늘 근무자 현황 조회
+
+- `GET /owner/home/branches/{branch_id}/today-workers?date=2026-09-11`
+- `WorkScheduleEntry` 기반으로 30분 슬롯으로 확장된 행을 반환
+
+### Response Body (200)
+
+```json
+{
+  "date": "2026-09-11",
+  "rows": [
+    {
+      "status_id": 7001,
+      "work_date": "2026-09-11",
+      "time_label": "09:00",
+      "worker_name": "이시현",
+      "status": "done",
+      "memo": null,
+      "updated_at": "2026-09-11T09:20:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## 10) 오늘 근무자 상태/메모 저장
+
+- `PUT /owner/home/branches/{branch_id}/today-workers/status`
+
+### Request Body
+
+```json
+{
+  "work_date": "2026-09-11",
+  "time_label": "09:00",
+  "worker_name": "이시현",
+  "status": "done",
+  "memo": "지각 5분"
+}
+```
+
+허용 상태값:
+- `scheduled`
+- `done`
+- `absent`
+- `unset`
+- `planned` (`scheduled`로 변환)
+- `pending` (`unset`으로 변환)
+
+### Response Body (200)
+
+```json
+{
+  "status_id": 7001,
+  "work_date": "2026-09-11",
+  "time_label": "09:00",
+  "worker_name": "이시현",
+  "status": "done",
+  "memo": "지각 5분",
+  "updated_at": "2026-09-11T09:20:00Z"
+}
+```
+
+---
+
+## 11) 오늘 근무자 메모 삭제
+
+- `DELETE /owner/home/branches/{branch_id}/today-workers/{status_id}/memo`
+
+### Response Body (200)
+
+```json
+{
+  "status_id": 7001,
+  "memo": null
+}
+```
+
+---
+
+## 12) 점장 해제
+
+- `DELETE /owner/home/branches/{branch_id}/manager`
+
+### Response Body (200)
+
+```json
+{
+  "branch_id": 10,
+  "removed_manager_user_id": 25,
+  "removed_registration_id": null,
+  "message": "Manager assignment removed"
+}
+```
+
+---
+
+## 13) 점장 등록 요청 삭제
+
+- `DELETE /owner/home/branches/{branch_id}/manager-registrations/{registration_id}`
+
+### Response Body (200)
+
+```json
+{
+  "branch_id": 10,
+  "removed_manager_user_id": 25,
+  "removed_registration_id": 101,
+  "message": "Manager registration deleted"
+}
+```
+
+# 경영주 홈 API 스펙
+
+기본 prefix: `/api/v1`
+
+## 인증
+
+- 모든 API는 `Authorization: Bearer {access_token}` 필요
 - `GET /me`는 전체 역할 사용자 호출 가능
 - `/owner/home/**`는 `user_profiles.role == owner` 사용자만 호출 가능
 
@@ -134,8 +827,8 @@
   "today_shift_date": "2026-03-05",
   "today_shift_rows": [],
   "monthly_labor_cost": {
-    "monthly_total": 0,
-    "message": "근무 스케줄/시급 데이터 연동 전입니다."
+    "monthly_total": 9157430,
+    "message": "2026.03 급여명세 기준 인건비입니다."
   }
 }
 ```
@@ -377,6 +1070,9 @@
 ### 9-3) 오늘 근무자 현황
 - `GET /owner/home/branches/{branch_id}/today-workers?date=2026-09-11`
 
+> 서버는 `today-workers`를 별도 테이블이 아닌 `staff-management` 스케줄(`WorkScheduleEntry`)에서 직접 만들어 반환합니다.  
+> 따라서 `GET /staff-management/branches/{branch_id}/schedules/day`와 동일한 근무 데이터가 30분 슬롯 단위로 노출됩니다.
+
 #### Request Body
 없음
 
@@ -386,38 +1082,51 @@
   "date": "2026-09-11",
   "rows": [
     {
-      "shift_id": 7001,
+      "status_id": 7001,
+      "work_date": "2026-09-11",
       "time_label": "09:00",
       "worker_name": "이시현",
-      "memo": "",
-      "status": "scheduled"
+      "memo": null,
+      "status": "scheduled",
+      "updated_at": "2026-09-11T09:20:00Z"
     },
     {
-      "shift_id": 7002,
-      "time_label": "18:00",
-      "worker_name": "이정의",
-      "memo": "",
-      "status": "done"
+      "status_id": 7001,
+      "work_date": "2026-09-11",
+      "time_label": "09:30",
+      "worker_name": "이시현",
+      "memo": null,
+      "status": "scheduled",
+      "updated_at": "2026-09-11T09:20:00Z"
     }
   ]
 }
 ```
 
 ### 9-4) 오늘 근무 상태 변경
-- `PATCH /owner/home/branches/{branch_id}/today-workers/{shift_id}/status`
+- `PUT /owner/home/branches/{branch_id}/today-workers/status`
 
 #### Request Body
 ```json
 {
-  "status": "done"
+  "work_date": "2026-09-11",
+  "time_label": "09:00",
+  "worker_name": "이시현",
+  "status": "done",
+  "memo": "지각 5분"
 }
 ```
 
 #### Response Body (200)
 ```json
 {
-  "shift_id": 7001,
-  "status": "done"
+  "status_id": 7001,
+  "work_date": "2026-09-11",
+  "time_label": "09:00",
+  "worker_name": "이시현",
+  "status": "done",
+  "memo": "지각 5분",
+  "updated_at": "2026-09-11T09:20:00Z"
 }
 ```
 
@@ -603,8 +1312,8 @@
   "today_shift_date": "2026-03-05",
   "today_shift_rows": [],
   "monthly_labor_cost": {
-    "monthly_total": 0,
-    "message": "근무 스케줄/시급 데이터 연동 전입니다."
+    "monthly_total": 9157430,
+    "message": "2026.03 급여명세 기준 인건비입니다."
   }
 }
 ```
@@ -1155,8 +1864,8 @@
   "today_shift_date": "2026-03-05",
   "today_shift_rows": [],
   "monthly_labor_cost": {
-    "monthly_total": 0,
-    "message": "근무 스케줄/시급 데이터 연동 전입니다."
+    "monthly_total": 9157430,
+    "message": "2026.03 급여명세 기준 인건비입니다."
   }
 }
 ```

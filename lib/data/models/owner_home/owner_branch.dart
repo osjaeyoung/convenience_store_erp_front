@@ -10,6 +10,7 @@ class OwnerBranch {
     this.isOpenForManager = true,
     this.createdAt,
     this.manager,
+    this.registeredManagers = const [],
     this.managerCandidates = const [],
     this.workers = const [],
     this.todayShiftDate,
@@ -26,6 +27,7 @@ class OwnerBranch {
   final bool isOpenForManager;
   final String? createdAt;
   final BranchManager? manager;
+  final List<RegisteredManager> registeredManagers;
   final List<dynamic> managerCandidates;
   final List<dynamic> workers;
   final String? todayShiftDate;
@@ -45,6 +47,10 @@ class OwnerBranch {
       manager: json['manager'] != null
           ? BranchManager.fromJson(json['manager'] as Map<String, dynamic>)
           : null,
+      registeredManagers: (json['registered_managers'] as List<dynamic>?)
+              ?.map((e) => RegisteredManager.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
       managerCandidates:
           json['manager_candidates'] as List<dynamic>? ?? [],
       workers: json['workers'] as List<dynamic>? ?? [],
@@ -54,6 +60,35 @@ class OwnerBranch {
           ? MonthlyLaborCostSummary.fromJson(
               json['monthly_labor_cost'] as Map<String, dynamic>)
           : null,
+    );
+  }
+}
+
+class RegisteredManager {
+  const RegisteredManager({
+    required this.registrationId,
+    required this.managerName,
+    required this.managerPhoneNumber,
+    this.status,
+    this.linkedUserId,
+    this.createdAt,
+  });
+
+  final int registrationId;
+  final String managerName;
+  final String managerPhoneNumber;
+  final String? status;
+  final int? linkedUserId;
+  final String? createdAt;
+
+  factory RegisteredManager.fromJson(Map<String, dynamic> json) {
+    return RegisteredManager(
+      registrationId: json['registration_id'] as int? ?? 0,
+      managerName: json['manager_name'] as String? ?? '',
+      managerPhoneNumber: json['manager_phone_number'] as String? ?? '',
+      status: json['status'] as String?,
+      linkedUserId: json['linked_user_id'] as int?,
+      createdAt: json['created_at'] as String?,
     );
   }
 }

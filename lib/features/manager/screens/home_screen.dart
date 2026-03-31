@@ -9,8 +9,11 @@ import '../../../theme/app_typography.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/selected_branch_cubit.dart';
+import 'home_alerts_screen.dart';
+import 'labor_cost_screen.dart';
 import 'add_branch_screen.dart';
 import 'manager_registration_screen.dart';
+import 'recruitment_screen.dart';
 import '../widgets/home_common_app_bar.dart';
 import '../../account/account_routes.dart';
 import '../widgets/home_shared_sections.dart';
@@ -69,11 +72,13 @@ class _HomeScreenState extends State<HomeScreen> {
             backgroundColor: AppColors.grey0,
             appBar: HomeCommonAppBar(
               alarmActive: hasAlarm,
-              onAlarmTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('알림 기능은 곧 연결됩니다.')),
-                );
-              },
+              onAlarmTap: selectedBranch == null
+                  ? null
+                  : () => _openAlerts(
+                        context,
+                        branchId: selectedBranch.id,
+                        role: user?.role,
+                      ),
               onMenuTap: () => openAccountSettingsMenu(context),
             ),
             body: _buildBody(
@@ -233,6 +238,21 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         )
         .toList();
+  }
+
+  Future<void> _openAlerts(
+    BuildContext context, {
+    required int branchId,
+    required UserRole? role,
+  }) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => HomeAlertsScreen(
+          branchId: branchId,
+          isOwner: role == UserRole.manager,
+        ),
+      ),
+    );
   }
 
   Future<void> _showWorkStatusModal(
@@ -842,13 +862,13 @@ class _SelectedBranchOverview extends StatelessWidget {
           waitingInterview: waitingInterview,
           newApplicants: newApplicants,
           newContacts: newContacts,
-          onDetailTap: () {},
+          onDetailTap: () => _openRecruitment(context),
         ),
         const SizedBox(height: 24),
         _TodayAlertCard(
           alertCount: alertCount,
           alertTitle: detail?.alertTitle,
-          onDetailTap: () {},
+          onDetailTap: () => _openAlerts(context),
         ),
         const SizedBox(height: 28),
         if (detailLoading)
@@ -889,10 +909,12 @@ class _SelectedBranchOverview extends StatelessWidget {
         HomeMonthlyLaborCostCard(
           totalAmountText: detail?.expectedTotalAmountText ?? '총 - 원',
           changeText: detail?.expectedChangeText ?? '전월 대비 데이터가 없습니다',
+          onDetailTap: () => _openLaborCost(context),
         ),
         const SizedBox(height: 32),
         HomeLaborSavingPointCard(
           points: _buildSavingPointSpans(),
+          onDetailTap: () => _openLaborSaving(context),
         ),
       ],
     );
@@ -927,6 +949,41 @@ class _SelectedBranchOverview extends StatelessWidget {
       context.read<HomeBloc>().add(HomeBranchDetailRequested(branchId: branchId));
       context.read<HomeBloc>().add(const HomeBranchesRequested());
     }
+  }
+
+  Future<void> _openRecruitment(BuildContext context) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => const RecruitmentScreen(initialTabIndex: 1),
+      ),
+    );
+  }
+
+  Future<void> _openAlerts(BuildContext context) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => HomeAlertsScreen(
+          branchId: branchId,
+          isOwner: role == UserRole.manager,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openLaborCost(BuildContext context) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => const LaborCostScreen(initialTabIndex: 0),
+      ),
+    );
+  }
+
+  Future<void> _openLaborSaving(BuildContext context) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => const LaborCostScreen(initialTabIndex: 2),
+      ),
+    );
   }
 }
 
@@ -1033,19 +1090,19 @@ class _RecruitmentStatusCard extends StatelessWidget {
           const SizedBox(height: 8),
           _RecruitmentRow(
             label: '구인게시물 ',
-            value: '${waitingInterview}건',
+            value: '$waitingInterview건',
             onDetailTap: onDetailTap,
           ),
           const SizedBox(height: 8),
           _RecruitmentRow(
             label: '새로운 지원자 ',
-            value: '${newApplicants}명',
+            value: '$newApplicants명',
             onDetailTap: onDetailTap,
           ),
           const SizedBox(height: 8),
           _RecruitmentRow(
             label: '새로운 연락 ',
-            value: '${newContacts}건',
+            value: '$newContacts건',
             onDetailTap: onDetailTap,
           ),
           const SizedBox(height: 12),
@@ -1057,7 +1114,7 @@ class _RecruitmentStatusCard extends StatelessWidget {
               color: AppColors.grey0,
             ),
             child: TextButton(
-              onPressed: () {},
+              onPressed: onDetailTap,
               style: TextButton.styleFrom(
                 minimumSize: const Size.fromHeight(46),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
@@ -1179,7 +1236,7 @@ class _TodayAlertCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             alertTitle ??
-                (alertCount > 0 ? '주의 알림 ${alertCount}건' : '퇴직금 발생'),
+                (alertCount > 0 ? '주의 알림 $alertCount건' : '퇴직금 발생'),
             style: AppTypography.bodyLargeM.copyWith(
               color: AppColors.textPrimary,
             ),

@@ -109,9 +109,9 @@
       "code": "AB12CD34",
       "review_status": "approved",
       "recruitment": {
-        "waiting_interviews": 2,
-        "new_applicants": 2,
-        "new_contacts": 2,
+        "application_count": 2,
+        "today_applicants_count": 2,
+        "active_postings_count": 2,
         "updated_at": "2026-09-11T08:00:00Z"
       },
       "open_alert_count": 1,
@@ -138,9 +138,9 @@
   "code": "AB12CD34",
   "review_status": "approved",
   "recruitment": {
-    "waiting_interviews": 2,
-    "new_applicants": 2,
-    "new_contacts": 2,
+    "application_count": 2,
+    "today_applicants_count": 2,
+    "active_postings_count": 2,
     "updated_at": "2026-09-11T08:00:00Z"
   },
   "open_alert_count": 1,
@@ -155,6 +155,10 @@
 ## 4) 채용 현황 조회
 
 - `GET /manager/home/branches/{branch_id}/recruitment-status`
+- 홈 대시보드와 구인 모듈이 동일 데이터를 보도록 아래 기준으로 집계
+  - `application_count`: 해당 지점의 게시된 공고(`published`) 지원 건수
+  - `today_applicants_count`: 오늘 접수된 지원 건수
+  - `active_postings_count`: 현재 게시중(`published`) 공고 수
 
 ### Request Body
 없음
@@ -162,9 +166,9 @@
 ### Response Body (200)
 ```json
 {
-  "waiting_interviews": 2,
-  "new_applicants": 2,
-  "new_contacts": 2,
+  "application_count": 2,
+  "today_applicants_count": 2,
+  "active_postings_count": 2,
   "updated_at": "2026-09-11T08:00:00Z"
 }
 ```

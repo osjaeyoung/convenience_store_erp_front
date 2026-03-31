@@ -55,5 +55,7 @@
 		<string>https</string>
 		<string>http</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>갤러리에서 사진을 선택해 파일 첨부에 사용합니다.</string>
 </dict>
 </plist>

@@ -5,26 +5,50 @@ enum RecruitmentBlocStatus { initial, loading, success, failure }
 class RecruitmentBlocState extends Equatable {
   const RecruitmentBlocState._({
     required this.status,
-    this.recruitmentStatus,
+    this.homeData,
+    this.branchId,
     this.errorMessage,
   });
 
   const RecruitmentBlocState.initial()
       : this._(status: RecruitmentBlocStatus.initial);
 
-  const RecruitmentBlocState.loading()
-      : this._(status: RecruitmentBlocStatus.loading);
+  const RecruitmentBlocState.loading({
+    RecruitmentHomeResponse? previousData,
+    int? branchId,
+  }) : this._(
+          status: RecruitmentBlocStatus.loading,
+          homeData: previousData,
+          branchId: branchId,
+        );
 
-  RecruitmentBlocState.statusLoaded(Map<String, dynamic> data)
-      : this._(status: RecruitmentBlocStatus.success, recruitmentStatus: data);
+  const RecruitmentBlocState.success({
+    required RecruitmentHomeResponse homeData,
+    required int branchId,
+  }) : this._(
+          status: RecruitmentBlocStatus.success,
+          homeData: homeData,
+          branchId: branchId,
+        );
 
-  const RecruitmentBlocState.failure(String message)
-      : this._(status: RecruitmentBlocStatus.failure, errorMessage: message);
+  const RecruitmentBlocState.failure(
+    String message, {
+    RecruitmentHomeResponse? previousData,
+    int? branchId,
+  }) : this._(
+          status: RecruitmentBlocStatus.failure,
+          homeData: previousData,
+          branchId: branchId,
+          errorMessage: message,
+        );
 
   final RecruitmentBlocStatus status;
-  final Map<String, dynamic>? recruitmentStatus;
+  final RecruitmentHomeResponse? homeData;
+  final int? branchId;
   final String? errorMessage;
 
+  bool get hasData => homeData != null;
+
   @override
-  List<Object?> get props => [status, recruitmentStatus, errorMessage];
+  List<Object?> get props => [status, homeData, branchId, errorMessage];
 }

@@ -15,7 +15,12 @@ import 'labor_cost_saving_detail_screen.dart';
 
 /// 인건비 탭 — Figma: 홈 앱바 + 서브탭(예상/월별/절감)
 class LaborCostScreen extends StatefulWidget {
-  const LaborCostScreen({super.key});
+  const LaborCostScreen({
+    super.key,
+    this.initialTabIndex = 0,
+  });
+
+  final int initialTabIndex;
 
   @override
   State<LaborCostScreen> createState() => _LaborCostScreenState();
@@ -29,7 +34,11 @@ class _LaborCostScreenState extends State<LaborCostScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: widget.initialTabIndex.clamp(0, 2),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final branchId = context.read<SelectedBranchCubit>().state;

@@ -22,7 +22,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     this._ownerHomeRepository,
     this._managerHomeRepository,
     this._laborCostRepository,
-    this._staffManagementRepository, {
+    StaffManagementRepository staffManagementRepository, {
     required bool isOwner,
   })  : _isOwner = isOwner,
         super(const HomeState.initial()) {
@@ -35,7 +35,6 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final OwnerHomeRepository _ownerHomeRepository;
   final ManagerHomeRepository _managerHomeRepository;
   final LaborCostRepository _laborCostRepository;
-  final StaffManagementRepository _staffManagementRepository;
   final bool _isOwner;
 
   Future<void> _onBranchesRequested(
@@ -107,9 +106,21 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           branchId: event.branchId,
           managerName: branch.manager?.fullName ?? '',
           alertTitle: alertTitle,
-          waitingInterview: _toInt(recruitment['waiting_interviews']),
-          newApplicants: _toInt(recruitment['new_applicants']),
-          newContacts: _toInt(recruitment['new_contacts']),
+          waitingInterview: _recruitmentCount(
+            recruitment,
+            primaryKey: 'application_count',
+            fallbackKey: 'waiting_interviews',
+          ),
+          newApplicants: _recruitmentCount(
+            recruitment,
+            primaryKey: 'today_applicants_count',
+            fallbackKey: 'new_applicants',
+          ),
+          newContacts: _recruitmentCount(
+            recruitment,
+            primaryKey: 'active_postings_count',
+            fallbackKey: 'new_contacts',
+          ),
           rows: rows,
           workDate: _normalizeWorkDate(workDate),
           dateLabel: _formatDateLabel(_normalizeWorkDate(workDate)),
@@ -151,9 +162,21 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           branchId: event.branchId,
           managerName: '등록된 점장',
           alertTitle: alerts.isNotEmpty ? alerts.first.title : '오늘의 알림',
-          waitingInterview: _toInt(recruitment['waiting_interviews']),
-          newApplicants: _toInt(recruitment['new_applicants']),
-          newContacts: _toInt(recruitment['new_contacts']),
+          waitingInterview: _recruitmentCount(
+            recruitment,
+            primaryKey: 'application_count',
+            fallbackKey: 'waiting_interviews',
+          ),
+          newApplicants: _recruitmentCount(
+            recruitment,
+            primaryKey: 'today_applicants_count',
+            fallbackKey: 'new_applicants',
+          ),
+          newContacts: _recruitmentCount(
+            recruitment,
+            primaryKey: 'active_postings_count',
+            fallbackKey: 'new_contacts',
+          ),
           rows: rows,
           workDate: _normalizeWorkDate(workDate),
           dateLabel: _formatDateLabel(_normalizeWorkDate(workDate)),
@@ -368,6 +391,17 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 
+  int _recruitmentCount(
+    Map<String, dynamic> recruitment, {
+    required String primaryKey,
+    required String fallbackKey,
+  }) {
+    if (recruitment.containsKey(primaryKey)) {
+      return _toInt(recruitment[primaryKey]);
+    }
+    return _toInt(recruitment[fallbackKey]);
+  }
+
   int? _toNullableInt(Object? value) {
     if (value == null) return null;
     if (value is int) return value;
@@ -408,9 +442,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       return '예정';
     }
     if (normalized == 'absent' || status == '결근') return '결근';
-    if (normalized == 'pending' ||
-        normalized == 'unset' ||
-        status == '미정') return '미정';
+    if (normalized == 'pending' || normalized == 'unset' || status == '미정') {
+      return '미정';
+    }
     return status;
   }
 
@@ -427,24 +461,6 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         return 'absent';
       case '미정':
         return 'pending';
-      default:
-        return status.toLowerCase();
-    }
-  }
-
-  /// 직원관리 API용 (scheduled|done|absent|unset)
-  String _toStaffManagementApiStatus(String status) {
-    switch (status) {
-      case '완료':
-      case '근무완료':
-        return 'done';
-      case '예정':
-      case '근무예정':
-        return 'scheduled';
-      case '결근':
-        return 'absent';
-      case '미정':
-        return 'unset';
       default:
         return status.toLowerCase();
     }

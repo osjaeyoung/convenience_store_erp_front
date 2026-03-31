@@ -7,11 +7,39 @@ abstract class RecruitmentBlocEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-class RecruitmentStatusRequested extends RecruitmentBlocEvent {
-  const RecruitmentStatusRequested({this.branchId});
+class RecruitmentHomeRequested extends RecruitmentBlocEvent {
+  const RecruitmentHomeRequested({
+    required this.branchId,
+    this.keyword,
+    this.gender,
+    this.ageMin,
+    this.ageMax,
+    this.region,
+    this.minRating,
+    this.page = 1,
+    this.pageSize = 20,
+  });
 
-  final int? branchId;
+  final int branchId;
+  final String? keyword;
+  final String? gender;
+  final int? ageMin;
+  final int? ageMax;
+  final String? region;
+  final double? minRating;
+  final int page;
+  final int pageSize;
 
   @override
-  List<Object?> get props => [branchId];
+  List<Object?> get props => [
+        branchId,
+        keyword,
+        gender,
+        ageMin,
+        ageMax,
+        region,
+        minRating,
+        page,
+        pageSize,
+      ];
 }

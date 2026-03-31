@@ -11,6 +11,12 @@
 - 경영주(owner): 본인 소유 점포만 접근 가능
 - 점장(manager): 본인이 배정된 점포만 접근 가능
 
+### S3 첨부 `file_url` (서버 env만, 프론트 env 불필요)
+
+- **앱·웹 프론트**에는 `S3_PUBLIC_BASE_URL` 같은 공개 URL용 설정을 **둘 필요 없음**. 업로드 후 API에는 **`file_key`**(와 `file_name`)만 넘기고 **`file_url`은 생략**해도 됨.
+- **백엔드** `.env`의 `S3_BUCKET_NAME` / `S3_REGION`(및 선택 `S3_PUBLIC_BASE_URL`, `S3_ENDPOINT_URL`)으로 서버가 URL을 합성해 저장하고, 응답 JSON의 `file_url`·`s3_file_url` 등에 채움. (급여명세·근로계약·점포경비 첨부 등 동일 동작 — 구현: `app/core/s3_public_url.py`)
+- **비공개 S3 버킷**이면 공개 객체 URL로 GET 시 403이 납니다. 이때는 `.env`에 `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`(및 동일 버킷용 IAM에 `s3:GetObject`)를 두면, 응답의 `file_url` 등이 **짧은 수명의 presigned GET URL** 로 내려가므로 앱은 그 URL로 PDF 미리보기·다운로드하면 됩니다. (구현: `app/core/s3_presign.py`, `S3_PRESIGNED_GET_EXPIRE_SECONDS` 선택.)
+
 ## 목표 범위
 
 - 날짜별 근무일정 조회 (24시간, 30분 단위)
@@ -1313,6 +1319,23 @@ curl -X POST "${BASE}/api/v1/staff-management/branches/${BRANCH_ID}/employees/${
 
 ### Response Body (200)
 `22) 근로계약서 생성`의 Response와 동일
+
+---
+
+## 26-1) 근로계약 첨부 파일 스트리밍 (PDF 미리보기 권장)
+
+비공개 S3 버킷에서는 JSON의 `contract_file_url` / `files[].file_url`로 직접 GET 시 403·404가 날 수 있습니다. **이 엔드포인트는 Bearer 인증만으로 S3에서 파일을 받아옵니다** (앱은 API base URL + 아래 path로 요청).
+
+- `GET /staff-management/branches/{branch_id}/employees/{employee_id}/employment-contracts/{contract_id}/attachment`
+- **Query (선택)** `file_id` — `files[].file_id`. 생략 시 계약의 대표 파일(`contract_file_key` 또는 최신 첨부).
+
+### Request Header
+`Authorization: Bearer {access_token}`
+
+### Response
+- **200**: 파일 바이너리 스트림 (`Content-Type`은 S3/업로드 시 유형, PDF면 `application/pdf` 등).
+- **404**: 첨부 없음 또는 S3에 해당 키 객체 없음.
+- **503**: 서버에 `S3_BUCKET_NAME` / IAM 키 미설정.
 
 ---
 

@@ -316,12 +316,12 @@ class _DashboardTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<StoreExpenseBloc, StoreExpenseBlocState>(
-      builder: (context, state) {
-        if (state.status == StoreExpenseBlocStatus.loading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (state.status == StoreExpenseBlocStatus.failure) {
+          return BlocBuilder<StoreExpenseBloc, StoreExpenseBlocState>(
+            builder: (context, state) {
+              if (state.status == StoreExpenseBlocStatus.loading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (state.status == StoreExpenseBlocStatus.failure) {
           return _ErrorRetryView(message: state.errorMessage ?? '오류가 발생했습니다.');
         }
         final d = state.dashboard;
@@ -462,10 +462,10 @@ class _DashboardTab extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
                           c.categoryLabel,
                           textAlign: TextAlign.center,
                           style: AppTypography.bodySmallM.copyWith(
@@ -823,7 +823,7 @@ class _MonthExpenseCard extends StatelessWidget {
                           style: AppTypography.bodyMediumR.copyWith(
                             fontSize: 14,
                             height: 19 / 14,
-                            color: AppColors.textSecondary,
+                          color: AppColors.textSecondary,
                           ),
                         ),
                         const Spacer(),
