@@ -9,12 +9,54 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 30분 슬롯 시간 라벨 (00:00 ~ 23:30)
 const _slotTimes = [
-  '00:00', '00:30', '01:00', '01:30', '02:00', '02:30', '03:00', '03:30',
-  '04:00', '04:30', '05:00', '05:30', '06:00', '06:30', '07:00', '07:30',
-  '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-  '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
-  '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30',
-  '20:00', '20:30', '21:00', '21:30', '22:00', '22:30', '23:00', '23:30',
+  '00:00',
+  '00:30',
+  '01:00',
+  '01:30',
+  '02:00',
+  '02:30',
+  '03:00',
+  '03:30',
+  '04:00',
+  '04:30',
+  '05:00',
+  '05:30',
+  '06:00',
+  '06:30',
+  '07:00',
+  '07:30',
+  '08:00',
+  '08:30',
+  '09:00',
+  '09:30',
+  '10:00',
+  '10:30',
+  '11:00',
+  '11:30',
+  '12:00',
+  '12:30',
+  '13:00',
+  '13:30',
+  '14:00',
+  '14:30',
+  '15:00',
+  '15:30',
+  '16:00',
+  '16:30',
+  '17:00',
+  '17:30',
+  '18:00',
+  '18:30',
+  '19:00',
+  '19:30',
+  '20:00',
+  '20:30',
+  '21:00',
+  '21:30',
+  '22:00',
+  '22:30',
+  '23:00',
+  '23:30',
 ];
 
 const _weekdays = ['월', '화', '수', '목', '금', '토', '일'];
@@ -44,6 +86,7 @@ class WorkAssignmentTab extends StatefulWidget {
     required this.weekSchedule,
     required this.employeesCompare,
     required this.today,
+    required this.onPullToRefresh,
     required this.onRefreshToday,
     required this.onRefreshWeek,
     this.onDragModeChanged,
@@ -54,6 +97,7 @@ class WorkAssignmentTab extends StatefulWidget {
   final Map<String, dynamic>? weekSchedule;
   final Map<String, dynamic>? employeesCompare;
   final DateTime today;
+  final Future<void> Function(String weekStartDate) onPullToRefresh;
   final VoidCallback onRefreshToday;
   final void Function(String weekStartDate) onRefreshWeek;
   final void Function(bool isDragMode)? onDragModeChanged;
@@ -116,12 +160,15 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
         final employees = (slot['employees'] as List?) ?? [];
         dayMap[time] = employees
             .whereType<Map>()
-            .map((e) => (
-                  id: _toInt(e['employee_id']),
-                  name: e['worker_name']?.toString() ??
-                      e['name']?.toString() ??
-                      '-',
-                ))
+            .map(
+              (e) => (
+                id: _toInt(e['employee_id']),
+                name:
+                    e['worker_name']?.toString() ??
+                    e['name']?.toString() ??
+                    '-',
+              ),
+            )
             .toList();
       }
       for (final t in _slotTimes) {
@@ -135,21 +182,24 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
   Map<String, Map<String, List<({int id, String name})>>> _weekAssignments = {};
 
   void _syncFromDaySchedule() {
-    final slots =
-        ((widget.daySchedule?['slots'] as List?) ?? []).whereType<Map>().toList();
+    final slots = ((widget.daySchedule?['slots'] as List?) ?? [])
+        .whereType<Map>()
+        .toList();
     final map = <String, List<({int id, String name})>>{};
     for (final slot in slots) {
       final time = slot['time']?.toString().trim() ?? '';
       if (time.isEmpty) continue;
-      final employees =
-          ((slot['employees'] as List?) ?? []).whereType<Map>().toList();
+      final employees = ((slot['employees'] as List?) ?? [])
+          .whereType<Map>()
+          .toList();
       map[time] = employees
-          .map((e) => (
-                id: _toInt(e['employee_id']),
-                name: e['worker_name']?.toString() ??
-                    e['name']?.toString() ??
-                    '-',
-              ))
+          .map(
+            (e) => (
+              id: _toInt(e['employee_id']),
+              name:
+                  e['worker_name']?.toString() ?? e['name']?.toString() ?? '-',
+            ),
+          )
           .toList();
     }
     for (final t in _slotTimes) {
@@ -162,10 +212,12 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     final list = (widget.employeesCompare?['active_workers'] as List?) ?? [];
     return list
         .whereType<Map>()
-        .map((e) => (
-              id: _toInt(e['employee_id']),
-              name: e['name']?.toString() ?? '-',
-            ))
+        .map(
+          (e) => (
+            id: _toInt(e['employee_id']),
+            name: e['name']?.toString() ?? '-',
+          ),
+        )
         .toList();
   }
 
@@ -173,10 +225,12 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     final list = (widget.employeesCompare?['retired_workers'] as List?) ?? [];
     return list
         .whereType<Map>()
-        .map((e) => (
-              id: _toInt(e['employee_id']),
-              name: e['name']?.toString() ?? '-',
-            ))
+        .map(
+          (e) => (
+            id: _toInt(e['employee_id']),
+            name: e['name']?.toString() ?? '-',
+          ),
+        )
         .toList();
   }
 
@@ -186,7 +240,10 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
   static List<String> _expandNames(List<String> names) {
     final result = <String>[];
     for (final n in names) {
-      final parts = n.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty);
+      final parts = n
+          .split(',')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty);
       result.addAll(parts.isEmpty ? [n] : parts);
     }
     return result;
@@ -198,15 +255,24 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(
-          child: _isDailyView ? _buildDailyView() : _buildWeeklyView(),
+          child: RefreshIndicator(
+            onRefresh: _handlePullToRefresh,
+            child: _isDailyView ? _buildDailyView() : _buildWeeklyView(),
+          ),
         ),
         _buildBottomButton(),
       ],
     );
   }
 
+  Future<void> _handlePullToRefresh() {
+    final targetDate = _isDailyView ? widget.today : _weekSelectedDate;
+    return widget.onPullToRefresh(_toIsoDate(_getWeekStart(targetDate)));
+  }
+
   Widget _buildDailyView() {
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(16.w, 24.h, 16.w, 0.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -231,6 +297,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     final weekStart = _getWeekStart(_weekSelectedDate);
     final weekDays = _getWeekDays(weekStart);
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 16.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -281,7 +348,8 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
                 slotTimes: _slotTimes,
                 isDragMode: false,
                 dragSelectedSlots: const {},
-                onSlotTap: (time) => _showEmployeePickerForSlot(time, _toIsoDate(d)),
+                onSlotTap: (time) =>
+                    _showEmployeePickerForSlot(time, _toIsoDate(d)),
               ),
             );
           }).toList(),
@@ -310,7 +378,9 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
               return SizedBox(
                 width: columnWidth,
                 child: Padding(
-                  padding: EdgeInsets.only(right: i < weekDays.length - 1 ? columnSpacing : 0),
+                  padding: EdgeInsets.only(
+                    right: i < weekDays.length - 1 ? columnSpacing : 0,
+                  ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -319,7 +389,10 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
                         padding: EdgeInsets.fromLTRB(0.w, 0.h, 0.w, 12.h),
                         child: Center(
                           child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12.w,
+                              vertical: 6.h,
+                            ),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(100.r),
                               border: Border.all(color: AppColors.grey25),
@@ -337,7 +410,9 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
                         ),
                       ),
                       ..._slotTimes.map((time) {
-                        final isSelected = _dragSelectedSlots.contains(_dragSlotKey(dateStr, time));
+                        final isSelected = _dragSelectedSlots.contains(
+                          _dragSlotKey(dateStr, time),
+                        );
                         return Padding(
                           padding: EdgeInsets.only(bottom: 8.h),
                           child: _SlotCard(
@@ -372,7 +447,9 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
             _isDailyView = !_isDailyView;
             if (!_isDailyView) {
               _weekSelectedDate = widget.today;
-              widget.onRefreshWeek(_toIsoDate(_getWeekStart(_weekSelectedDate)));
+              widget.onRefreshWeek(
+                _toIsoDate(_getWeekStart(_weekSelectedDate)),
+              );
             }
           }),
         ),
@@ -433,8 +510,12 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
           runSpacing: spacing,
           children: _slotTimes.map((time) {
             final assigned = _assignments[time] ?? [];
-            final isSelected = _dragSelectedSlots.contains(_dragSlotKey(_toIsoDate(widget.today), time));
-            final names = _isDragMode ? <String>[] : _expandNames(assigned.map((a) => a.name).toList());
+            final isSelected = _dragSelectedSlots.contains(
+              _dragSlotKey(_toIsoDate(widget.today), time),
+            );
+            final names = _isDragMode
+                ? <String>[]
+                : _expandNames(assigned.map((a) => a.name).toList());
             return SizedBox(
               width: itemWidth,
               child: _SlotCard(
@@ -472,9 +553,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
             ),
             child: Text(
               isComplete ? '완료' : '일정 확정',
-              style: AppTypography.bodyLargeB.copyWith(
-                color: AppColors.grey0,
-              ),
+              style: AppTypography.bodyLargeB.copyWith(color: AppColors.grey0),
             ),
           ),
         ),
@@ -508,9 +587,9 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     final retired = _getRetiredWorkers();
     if (active.isEmpty && retired.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('배정 가능한 직원이 없습니다.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('배정 가능한 직원이 없습니다.')));
       }
       return;
     }
@@ -596,11 +675,9 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
       return {
         'time': time,
         'assignments': list
-            .map((a) => {
-                  'employee_id': a.id,
-                  'status': 'scheduled',
-                  'memo': null,
-                })
+            .map(
+              (a) => {'employee_id': a.id, 'status': 'scheduled', 'memo': null},
+            )
             .toList(),
       };
     }).toList();
@@ -612,9 +689,9 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
       ),
     );
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('일정이 확정되었습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('일정이 확정되었습니다.')));
     }
   }
 
@@ -683,7 +760,9 @@ class _WeekDayTable extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               color: AppColors.grey25,
-              border: Border(top: BorderSide(color: Color(0xFF666874), width: 1)),
+              border: Border(
+                top: BorderSide(color: Color(0xFF666874), width: 1),
+              ),
             ),
             padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 8.w),
             child: Row(
@@ -717,8 +796,12 @@ class _WeekDayTable extends StatelessWidget {
           // 30분 단위 행 - 같은 사람이어도 30분씩 끊어서 표시, 행마다 회색 디바이더
           ...slotTimes.map((time) {
             final endTime = _slotEndTime(time);
-            final assigned = isDragMode ? <({int id, String name})>[] : (assignments[time] ?? []);
-            final isDragSelected = dragSelectedSlots.contains('$dateStr\_$time');
+            final assigned = isDragMode
+                ? <({int id, String name})>[]
+                : (assignments[time] ?? []);
+            final isDragSelected = dragSelectedSlots.contains(
+              '$dateStr\_$time',
+            );
             return Container(
               decoration: BoxDecoration(
                 border: Border(bottom: BorderSide(color: AppColors.grey25)),
@@ -759,7 +842,9 @@ class _SlotRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final timeColor = isDragSelected ? AppColors.primary : AppColors.textPrimary;
+    final timeColor = isDragSelected
+        ? AppColors.primary
+        : AppColors.textPrimary;
     return Container(
       constraints: const BoxConstraints(minHeight: 44),
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
@@ -833,7 +918,10 @@ class _StaffSlotCell extends StatelessWidget {
   List<String> _namesToDisplay() {
     final result = <String>[];
     for (final a in assigned) {
-      final parts = a.name.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty);
+      final parts = a.name
+          .split(',')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty);
       if (parts.isEmpty) {
         result.add(a.name);
       } else {
@@ -850,10 +938,12 @@ class _StaffSlotCell extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ...names.map((name) => Padding(
-              padding: EdgeInsets.only(bottom: 4.h),
-              child: _StaffNameChip(name: name),
-            )),
+        ...names.map(
+          (name) => Padding(
+            padding: EdgeInsets.only(bottom: 4.h),
+            child: _StaffNameChip(name: name),
+          ),
+        ),
         if (showPlusButton)
           GestureDetector(
             onTap: onAddTap,
@@ -917,10 +1007,7 @@ class _AddEmployeeChip extends StatelessWidget {
 
 /// 근무일정 년도 selector와 동일 스타일
 class _SelectorChip extends StatelessWidget {
-  const _SelectorChip({
-    required this.label,
-    required this.onTap,
-  });
+  const _SelectorChip({required this.label, required this.onTap});
 
   final String label;
   final VoidCallback? onTap;
@@ -989,9 +1076,7 @@ class _SlotCard extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.all(isDragSlot ? 16 : 8),
         decoration: BoxDecoration(
-          color: isDragSelected
-              ? AppColors.primaryLight
-              : AppColors.grey0,
+          color: isDragSelected ? AppColors.primaryLight : AppColors.grey0,
           borderRadius: BorderRadius.circular(12.r),
           border: Border.all(
             color: isDragSelected ? AppColors.primary : AppColors.grey50,
@@ -1072,7 +1157,11 @@ class _SlotCard extends StatelessWidget {
                       border: Border.all(color: AppColors.primary),
                     ),
                     child: const Center(
-                      child: Icon(Icons.add, size: 20, color: AppColors.primary),
+                      child: Icon(
+                        Icons.add,
+                        size: 20,
+                        color: AppColors.primary,
+                      ),
                     ),
                   ),
                 ),
@@ -1099,7 +1188,8 @@ class _EmployeeSelectionModal extends StatefulWidget {
   final String title;
 
   @override
-  State<_EmployeeSelectionModal> createState() => _EmployeeSelectionModalState();
+  State<_EmployeeSelectionModal> createState() =>
+      _EmployeeSelectionModalState();
 }
 
 class _EmployeeSelectionModalState extends State<_EmployeeSelectionModal>
@@ -1283,4 +1373,3 @@ class _EmployeeGrid extends StatelessWidget {
     );
   }
 }
-

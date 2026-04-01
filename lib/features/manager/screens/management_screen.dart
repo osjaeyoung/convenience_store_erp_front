@@ -66,9 +66,9 @@ class _ManagementScreenState extends State<ManagementScreen>
       appBar: HomeCommonAppBar(
         alarmActive: hasAlarm,
         onAlarmTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('알림 기능은 곧 연결됩니다.')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('알림 기능은 곧 연결됩니다.')));
         },
         onMenuTap: () => openAccountSettingsMenu(context),
       ),
@@ -77,11 +77,11 @@ class _ManagementScreenState extends State<ManagementScreen>
           if (branchId != null && _loadedBranchId != branchId) {
             _loadedBranchId = branchId;
             context.read<StaffManagementBloc>().add(
-                  StaffManagementInitialized(
-                    branchId: branchId,
-                    date: _toIsoDate(_selectedDate),
-                  ),
-                );
+              StaffManagementInitialized(
+                branchId: branchId,
+                date: _toIsoDate(_selectedDate),
+              ),
+            );
           }
         },
         builder: (context, branchId) {
@@ -90,10 +90,12 @@ class _ManagementScreenState extends State<ManagementScreen>
               final branches = _toBranchItems(homeState);
               final selectedBranch = branches
                   .where((b) => b.id == branchId)
-                  .cast<({int id, String name, String? status, int alertCount})?>()
+                  .cast<
+                    ({int id, String name, String? status, int alertCount})?
+                  >()
                   .firstWhere((b) => b != null, orElse: () => null);
-          return BlocBuilder<StaffManagementBloc, StaffManagementBlocState>(
-            builder: (context, state) {
+              return BlocBuilder<StaffManagementBloc, StaffManagementBlocState>(
+                builder: (context, state) {
                   return Column(
                     children: [
                       if (state.isLoading)
@@ -111,7 +113,7 @@ class _ManagementScreenState extends State<ManagementScreen>
                             borderRadius: BorderRadius.circular(12.r),
                           ),
                           child: Text(
-                        state.errorMessage ?? '오류가 발생했습니다.',
+                            state.errorMessage ?? '오류가 발생했습니다.',
                             style: AppTypography.bodySmall.copyWith(
                               color: AppColors.error,
                             ),
@@ -122,34 +124,41 @@ class _ManagementScreenState extends State<ManagementScreen>
                         child: BranchSelectCard(
                           selectedName: selectedBranch?.name,
                           branches: branches
-                              .map((e) => (id: e.id, name: e.name, status: e.status))
+                              .map(
+                                (e) =>
+                                    (id: e.id, name: e.name, status: e.status),
+                              )
                               .toList(),
                           isExpanded: _isBranchListExpanded,
-                          isOwner: user?.role == UserRole.manager ||
+                          isOwner:
+                              user?.role == UserRole.manager ||
                               user?.role == UserRole.storeManager,
                           onHeaderTap: () {
                             if (branches.isEmpty) return;
                             setState(
-                              () => _isBranchListExpanded = !_isBranchListExpanded,
+                              () => _isBranchListExpanded =
+                                  !_isBranchListExpanded,
                             );
                           },
                           onBranchTap: (id) {
                             context.read<SelectedBranchCubit>().select(id);
                             setState(() => _isBranchListExpanded = false);
                           },
-                          onAddTap: (user?.role == UserRole.manager ||
+                          onAddTap:
+                              (user?.role == UserRole.manager ||
                                   user?.role == UserRole.storeManager)
                               ? () async {
                                   final changed = await Navigator.of(context)
                                       .push<bool>(
-                                    MaterialPageRoute<bool>(
-                                      builder: (_) => const AddBranchScreen(),
-                                    ),
-                                  );
+                                        MaterialPageRoute<bool>(
+                                          builder: (_) =>
+                                              const AddBranchScreen(),
+                                        ),
+                                      );
                                   if (changed == true && context.mounted) {
-                                    context
-                                        .read<HomeBloc>()
-                                        .add(const HomeBranchesRequested());
+                                    context.read<HomeBloc>().add(
+                                      const HomeBranchesRequested(),
+                                    );
                                   }
                                 }
                               : null,
@@ -161,11 +170,11 @@ class _ManagementScreenState extends State<ManagementScreen>
                             ? Center(
                                 child: Text(
                                   '점포를 선택하면 직원관리 데이터를 확인할 수 있어요.',
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
                               )
                             : TabBarView(
                                 controller: _tabController,
@@ -173,8 +182,16 @@ class _ManagementScreenState extends State<ManagementScreen>
                                     ? const NeverScrollableScrollPhysics()
                                     : null,
                                 children: [
-                                  _buildDayScheduleTab(context, branchId, state),
-                                  _buildWeekScheduleTab(context, branchId, state),
+                                  _buildDayScheduleTab(
+                                    context,
+                                    branchId,
+                                    state,
+                                  ),
+                                  _buildWeekScheduleTab(
+                                    context,
+                                    branchId,
+                                    state,
+                                  ),
                                   _buildEmployeeInfoTab(
                                     context,
                                     branchId,
@@ -218,86 +235,132 @@ class _ManagementScreenState extends State<ManagementScreen>
     );
   }
 
+  void _requestDaySchedule(BuildContext context, int branchId, DateTime date) {
+    context.read<StaffManagementBloc>().add(
+      StaffManagementDayScheduleRequested(
+        branchId: branchId,
+        date: _toIsoDate(date),
+      ),
+    );
+  }
+
+  void _requestWeekSchedule(
+    BuildContext context,
+    int branchId,
+    String weekStartDate,
+  ) {
+    context.read<StaffManagementBloc>().add(
+      StaffManagementWeekScheduleRequested(
+        branchId: branchId,
+        weekStartDate: weekStartDate,
+      ),
+    );
+  }
+
+  Future<void> _refreshDayScheduleTab(
+    BuildContext context,
+    int branchId,
+  ) async {
+    _requestDaySchedule(context, branchId, _selectedDate);
+  }
+
+  Future<void> _refreshWorkAssignmentTab(
+    BuildContext context,
+    int branchId,
+    String weekStartDate,
+  ) async {
+    _requestDaySchedule(context, branchId, DateTime.now());
+    _requestWeekSchedule(context, branchId, weekStartDate);
+  }
+
+  Future<void> _refreshEmployeeInfoTab(
+    BuildContext context,
+    int branchId,
+  ) async {
+    final query = _searchController.text.trim();
+    context.read<StaffManagementBloc>().add(
+      StaffManagementEmployeesCompareRequested(
+        branchId: branchId,
+        q: query.isEmpty ? null : query,
+      ),
+    );
+  }
+
   Widget _buildDayScheduleTab(
     BuildContext context,
     int branchId,
     StaffManagementBlocState state,
   ) {
-    final slots =
-        ((state.daySchedule?['slots'] as List?) ?? const []).whereType<Map>();
-    final rows = <({
-      String time,
-      String workerName,
-      String status,
-      bool hasMemo,
-    })>[];
+    final slots = ((state.daySchedule?['slots'] as List?) ?? const [])
+        .whereType<Map>();
+    final rows =
+        <({String time, String workerName, String status, bool hasMemo})>[];
     final memoMap = <String, String>{};
     for (final slot in slots) {
       final time = slot['time']?.toString() ?? '-';
-      final employees = ((slot['employees'] as List?) ?? const []).whereType<Map>();
+      final employees = ((slot['employees'] as List?) ?? const [])
+          .whereType<Map>();
       for (final employee in employees) {
         final workerName = employee['worker_name']?.toString() ?? '-';
         final memo = employee['memo']?.toString().trim();
-        rows.add(
-          (
-            time: time,
-            workerName: workerName,
-            status: _toDisplayStatus(employee['status']?.toString() ?? ''),
-            hasMemo: memo != null && memo.isNotEmpty,
-          ),
-        );
+        rows.add((
+          time: time,
+          workerName: workerName,
+          status: _toDisplayStatus(employee['status']?.toString() ?? ''),
+          hasMemo: memo != null && memo.isNotEmpty,
+        ));
         if (memo != null && memo.isNotEmpty) {
           memoMap['${rows.length - 1}'] = memo;
         }
       }
     }
-    final workDate = state.daySchedule?['work_date']?.toString() ??
+    final workDate =
+        state.daySchedule?['work_date']?.toString() ??
         _toIsoDate(_selectedDate);
 
-    return ListView(
-      padding: EdgeInsets.fromLTRB(0.w, 12.h, 12.w, 16.h),
-      children: [
-        ScheduleDateSelector(
-          selectedDate: _selectedDate,
-          onDateChanged: (date) {
-            setState(() => _selectedDate = date);
-                          context.read<StaffManagementBloc>().add(
-                                StaffManagementDayScheduleRequested(
-                                  branchId: branchId,
-                    date: _toIsoDate(date),
-                                ),
-                              );
-                        },
-        ),
-        SizedBox(height: 30.h),
-        HomeTodayWorkersSection(
-          dateLabel: _formatDateLabel(workDate),
-          rows: rows,
-          showHeader: false,
-          tableHorizontalPadding: 4,
-          onTapStatus: rows.isEmpty
-              ? null
-              : (index, row) {
-                  _showWorkStatusModal(
-                    context,
-                    row,
-                    branchId: branchId,
-                    workDate: workDate,
-                  );
-                },
-          onTapMemo: rows.isEmpty
-              ? null
-              : (index, row) {
-                  _showMemoDetailModal(
-                    context,
-                    row,
-                    memo: memoMap['$index'] ?? '',
-                    branchId: branchId,
-                    workDate: workDate,
-                  );
-                },
-        ),
-      ],
+    return RefreshIndicator(
+      onRefresh: () => _refreshDayScheduleTab(context, branchId),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(0.w, 12.h, 12.w, 16.h),
+        children: [
+          ScheduleDateSelector(
+            selectedDate: _selectedDate,
+            onDateChanged: (date) {
+              setState(() => _selectedDate = date);
+              _requestDaySchedule(context, branchId, date);
+            },
+          ),
+          SizedBox(height: 30.h),
+          HomeTodayWorkersSection(
+            dateLabel: _formatDateLabel(workDate),
+            rows: rows,
+            showHeader: false,
+            tableHorizontalPadding: 4,
+            onTapStatus: rows.isEmpty
+                ? null
+                : (index, row) {
+                    _showWorkStatusModal(
+                      context,
+                      row,
+                      branchId: branchId,
+                      workDate: workDate,
+                    );
+                  },
+            onTapMemo: rows.isEmpty
+                ? null
+                : (index, row) {
+                    _showMemoDetailModal(
+                      context,
+                      row,
+                      memo: memoMap['$index'] ?? '',
+                      branchId: branchId,
+                      workDate: workDate,
+                    );
+                  },
+          ),
+        ],
+      ),
     );
   }
 
@@ -334,7 +397,9 @@ class _ManagementScreenState extends State<ManagementScreen>
                     side: BorderSide(
                       color: selected ? AppColors.primary : AppColors.grey50,
                     ),
-                    backgroundColor: selected ? const Color(0xFFE2F6F0) : AppColors.grey0,
+                    backgroundColor: selected
+                        ? const Color(0xFFE2F6F0)
+                        : AppColors.grey0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.r),
                     ),
@@ -342,15 +407,19 @@ class _ManagementScreenState extends State<ManagementScreen>
                   child: Text(
                     label,
                     style: AppTypography.bodyLargeM.copyWith(
-                      color: selected ? AppColors.primary : AppColors.textSecondary,
+                      color: selected
+                          ? AppColors.primary
+                          : AppColors.textSecondary,
                     ),
                   ),
-                  ),
-                );
-              }
+                ),
+              );
+            }
 
             return Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24.r),
+              ),
               child: Padding(
                 padding: EdgeInsets.fromLTRB(20.w, 28.h, 20.w, 18.h),
                 child: Column(
@@ -445,17 +514,17 @@ class _ManagementScreenState extends State<ManagementScreen>
                         SizedBox(width: 12.w),
                         Expanded(
                           child: FilledButton(
-                        onPressed: () {
-                          Navigator.of(dialogContext).pop();
-                          _saveWorkerStatus(
-                            bloc,
-                            workDate: workDate,
-                            timeLabel: row.time,
-                            workerName: row.workerName,
-                            status: selectedStatus,
-                            branchId: branchId,
-                          );
-                        },
+                            onPressed: () {
+                              Navigator.of(dialogContext).pop();
+                              _saveWorkerStatus(
+                                bloc,
+                                workDate: workDate,
+                                timeLabel: row.time,
+                                workerName: row.workerName,
+                                status: selectedStatus,
+                                branchId: branchId,
+                              );
+                            },
                             style: FilledButton.styleFrom(
                               minimumSize: Size.fromHeight(56.h),
                               backgroundColor: AppColors.primary,
@@ -493,7 +562,9 @@ class _ManagementScreenState extends State<ManagementScreen>
       barrierColor: Colors.black54,
       builder: (dialogContext) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24.r),
+          ),
           child: Padding(
             padding: EdgeInsets.fromLTRB(18.w, 22.h, 18.w, 16.h),
             child: Column(
@@ -502,13 +573,17 @@ class _ManagementScreenState extends State<ManagementScreen>
               children: [
                 Text(
                   '근무 상태 메모를\n입력해 주세요.',
-                  style: AppTypography.heading3.copyWith(color: AppColors.textPrimary),
+                  style: AppTypography.heading3.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
                 ),
                 SizedBox(height: 14.h),
                 Container(
                   decoration: BoxDecoration(
                     color: AppColors.grey25,
-                    border: Border(top: BorderSide(color: Color(0xFF666874), width: 1)),
+                    border: Border(
+                      top: BorderSide(color: Color(0xFF666874), width: 1),
+                    ),
                   ),
                   padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 8.w),
                   child: Row(
@@ -521,17 +596,27 @@ class _ManagementScreenState extends State<ManagementScreen>
                   ),
                 ),
                 Container(
-                  padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 8.w),
+                  padding: EdgeInsets.symmetric(
+                    vertical: 10.h,
+                    horizontal: 8.w,
+                  ),
                   decoration: BoxDecoration(
                     border: Border(bottom: BorderSide(color: AppColors.grey25)),
                   ),
                   child: Row(
                     children: [
-                      Expanded(child: Text(row.time, textAlign: TextAlign.center)),
-                      Expanded(child: Text(row.workerName, textAlign: TextAlign.start)),
+                      Expanded(
+                        child: Text(row.time, textAlign: TextAlign.center),
+                      ),
+                      Expanded(
+                        child: Text(row.workerName, textAlign: TextAlign.start),
+                      ),
                       const Expanded(
                         child: Center(
-                          child: Icon(Icons.edit_outlined, color: AppColors.grey150),
+                          child: Icon(
+                            Icons.edit_outlined,
+                            color: AppColors.grey150,
+                          ),
                         ),
                       ),
                       Expanded(
@@ -546,7 +631,12 @@ class _ManagementScreenState extends State<ManagementScreen>
                   ),
                 ),
                 SizedBox(height: 14.h),
-                Text('메모', style: AppTypography.bodyLargeB.copyWith(color: AppColors.textPrimary)),
+                Text(
+                  '메모',
+                  style: AppTypography.bodyLargeB.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
                 SizedBox(height: 8.h),
                 TextFormField(
                   controller: controller,
@@ -633,23 +723,29 @@ class _ManagementScreenState extends State<ManagementScreen>
       barrierColor: Colors.black54,
       builder: (dialogContext) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24.r),
+          ),
           child: Padding(
             padding: EdgeInsets.fromLTRB(18.w, 22.h, 18.w, 16.h),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                    Text(
+                Text(
                   '근무 상태 메모',
                   textAlign: TextAlign.center,
-                  style: AppTypography.heading3.copyWith(color: AppColors.textPrimary),
+                  style: AppTypography.heading3.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
                 ),
                 SizedBox(height: 14.h),
                 Container(
                   decoration: BoxDecoration(
                     color: AppColors.grey25,
-                    border: Border(top: BorderSide(color: Color(0xFF666874), width: 1)),
+                    border: Border(
+                      top: BorderSide(color: Color(0xFF666874), width: 1),
+                    ),
                   ),
                   padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 8.w),
                   child: Row(
@@ -662,17 +758,27 @@ class _ManagementScreenState extends State<ManagementScreen>
                   ),
                 ),
                 Container(
-                  padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 8.w),
+                  padding: EdgeInsets.symmetric(
+                    vertical: 10.h,
+                    horizontal: 8.w,
+                  ),
                   decoration: BoxDecoration(
                     border: Border(bottom: BorderSide(color: AppColors.grey25)),
                   ),
                   child: Row(
                     children: [
-                      Expanded(child: Text(row.time, textAlign: TextAlign.center)),
-                      Expanded(child: Text(row.workerName, textAlign: TextAlign.start)),
+                      Expanded(
+                        child: Text(row.time, textAlign: TextAlign.center),
+                      ),
+                      Expanded(
+                        child: Text(row.workerName, textAlign: TextAlign.start),
+                      ),
                       const Expanded(
                         child: Center(
-                          child: Icon(Icons.edit_outlined, color: AppColors.grey150),
+                          child: Icon(
+                            Icons.edit_outlined,
+                            color: AppColors.grey150,
+                          ),
                         ),
                       ),
                       Expanded(
@@ -687,7 +793,12 @@ class _ManagementScreenState extends State<ManagementScreen>
                   ),
                 ),
                 SizedBox(height: 14.h),
-                Text('메모', style: AppTypography.bodyLargeB.copyWith(color: AppColors.textPrimary)),
+                Text(
+                  '메모',
+                  style: AppTypography.bodyLargeB.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
                 SizedBox(height: 8.h),
                 TextFormField(
                   controller: TextEditingController(text: memo),
@@ -794,22 +905,14 @@ class _ManagementScreenState extends State<ManagementScreen>
       weekSchedule: state.weekSchedule,
       employeesCompare: state.employeesCompare,
       today: today,
+      onPullToRefresh: (weekStartDate) =>
+          _refreshWorkAssignmentTab(context, branchId, weekStartDate),
       onRefreshToday: () {
-        context.read<StaffManagementBloc>().add(
-              StaffManagementDayScheduleRequested(
-                branchId: branchId,
-                date: _toIsoDate(today),
-              ),
-            );
+        _requestDaySchedule(context, branchId, today);
       },
       onRefreshWeek: (weekStartDate) {
-        context.read<StaffManagementBloc>().add(
-              StaffManagementWeekScheduleRequested(
-                branchId: branchId,
-                weekStartDate: weekStartDate,
-                ),
-              );
-            },
+        _requestWeekSchedule(context, branchId, weekStartDate);
+      },
       onDragModeChanged: (isDragMode) {
         if (_isWorkAssignmentDragMode != isDragMode) {
           setState(() => _isWorkAssignmentDragMode = isDragMode);
@@ -823,49 +926,53 @@ class _ManagementScreenState extends State<ManagementScreen>
     int branchId,
     StaffManagementBlocState state,
   ) {
-    final active = ((state.employeesCompare?['active_workers'] as List?) ??
-            const [])
-        .cast<Map<String, dynamic>>();
-    final retired = ((state.employeesCompare?['retired_workers'] as List?) ??
-            const [])
-        .cast<Map<String, dynamic>>();
+    final active =
+        ((state.employeesCompare?['active_workers'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>();
+    final retired =
+        ((state.employeesCompare?['retired_workers'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>();
     final list = _employeeInfoShowActive ? active : retired;
 
     return Stack(
       children: [
-        ListView(
-          padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 80.h),
-          children: [
-            _buildEmployeeInfoSelector(),
-            SizedBox(height: 12.h),
-            _buildEmployeeSearchInput(context, branchId),
-            SizedBox(height: 16.h),
-            ...list.map((employee) {
-              final avg = employee['average_rating'];
-              final starCount = avg != null
-                  ? (avg is num ? avg.round() : 0).clamp(0, 3)
-                  : 0;
-              return _buildEmployeeListTile(
-                context,
-                branchId,
-                employee,
-                state.selectedEmployeeId,
-                starCount,
-              );
-            }),
-            if (list.isEmpty)
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 24.h),
-                child: Center(
-                  child: Text(
-                    _employeeInfoShowActive ? '현근무자 없음' : '퇴직자 없음',
-                    style: AppTypography.bodyMediumR.copyWith(
-                      color: AppColors.textTertiary,
+        RefreshIndicator(
+          onRefresh: () => _refreshEmployeeInfoTab(context, branchId),
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 80.h),
+            children: [
+              _buildEmployeeInfoSelector(),
+              SizedBox(height: 12.h),
+              _buildEmployeeSearchInput(context, branchId),
+              SizedBox(height: 16.h),
+              ...list.map((employee) {
+                final avg = employee['average_rating'];
+                final starCount = avg != null
+                    ? (avg is num ? avg.round() : 0).clamp(0, 3)
+                    : 0;
+                return _buildEmployeeListTile(
+                  context,
+                  branchId,
+                  employee,
+                  state.selectedEmployeeId,
+                  starCount,
+                );
+              }),
+              if (list.isEmpty)
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24.h),
+                  child: Center(
+                    child: Text(
+                      _employeeInfoShowActive ? '현근무자 없음' : '퇴직자 없음',
+                      style: AppTypography.bodyMediumR.copyWith(
+                        color: AppColors.textTertiary,
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
         Positioned(
           right: 16,
@@ -880,50 +987,46 @@ class _ManagementScreenState extends State<ManagementScreen>
     return Align(
       alignment: Alignment.centerLeft,
       child: PopupMenuButton<bool>(
-      offset: const Offset(0, 40),
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(minWidth: 0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
-      itemBuilder: (context) => [
-        const PopupMenuItem<bool>(
-          value: true,
-          child: Text('현직자'),
-        ),
-        const PopupMenuItem<bool>(
-          value: false,
-          child: Text('퇴직자'),
-        ),
-      ],
-      onSelected: (value) => setState(() => _employeeInfoShowActive = value),
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
-        decoration: BoxDecoration(
-          color: AppColors.grey0,
+        offset: const Offset(0, 40),
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(minWidth: 0),
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10.r),
-          border: Border.all(color: AppColors.grey50),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              _employeeInfoShowActive ? '현직자' : '퇴직자',
-              style: AppTypography.bodyMediumR.copyWith(
-                color: AppColors.textPrimary,
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w400,
-                height: 19 / 14,
+        itemBuilder: (context) => [
+          const PopupMenuItem<bool>(value: true, child: Text('현직자')),
+          const PopupMenuItem<bool>(value: false, child: Text('퇴직자')),
+        ],
+        onSelected: (value) => setState(() => _employeeInfoShowActive = value),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+          decoration: BoxDecoration(
+            color: AppColors.grey0,
+            borderRadius: BorderRadius.circular(10.r),
+            border: Border.all(color: AppColors.grey50),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _employeeInfoShowActive ? '현직자' : '퇴직자',
+                style: AppTypography.bodyMediumR.copyWith(
+                  color: AppColors.textPrimary,
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w400,
+                  height: 19 / 14,
+                ),
               ),
-            ),
-            SizedBox(width: 4.w),
-            Icon(
-              Icons.keyboard_arrow_down_rounded,
-              size: 18,
-              color: AppColors.grey150,
-            ),
-          ],
+              SizedBox(width: 4.w),
+              Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: 18,
+                color: AppColors.grey150,
+              ),
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 
@@ -963,11 +1066,11 @@ class _ManagementScreenState extends State<ManagementScreen>
         contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
       ),
       onSubmitted: (q) => context.read<StaffManagementBloc>().add(
-            StaffManagementEmployeesCompareRequested(
-              branchId: branchId,
-              q: q.trim().isEmpty ? null : q.trim(),
-            ),
-          ),
+        StaffManagementEmployeesCompareRequested(
+          branchId: branchId,
+          q: q.trim().isEmpty ? null : q.trim(),
+        ),
+      ),
     );
   }
 
@@ -988,18 +1091,19 @@ class _ManagementScreenState extends State<ManagementScreen>
           ? null
           : () async {
               context.read<StaffManagementBloc>().add(
-                    StaffManagementEmployeeDetailRequested(
-                      branchId: branchId,
-                      employeeId: employeeId,
-                    ),
-                  );
+                StaffManagementEmployeeDetailRequested(
+                  branchId: branchId,
+                  employeeId: employeeId,
+                ),
+              );
               final myRating = (employee['my_rating'] as num?)?.round();
               final shouldRefresh = await Navigator.of(context).push<bool>(
                 MaterialPageRoute(
                   builder: (_) => EmployeeDetailScreen(
                     branchId: branchId,
                     employeeId: employeeId,
-                    initialMyRating: myRating != null && myRating >= 1 && myRating <= 3
+                    initialMyRating:
+                        myRating != null && myRating >= 1 && myRating <= 3
                         ? myRating
                         : null,
                   ),
@@ -1007,13 +1111,13 @@ class _ManagementScreenState extends State<ManagementScreen>
               );
               if (shouldRefresh == true && context.mounted) {
                 context.read<StaffManagementBloc>().add(
-                      StaffManagementEmployeesCompareRequested(
-                        branchId: branchId,
-                        q: _searchController.text.trim().isEmpty
-                            ? null
-                            : _searchController.text.trim(),
-                      ),
-                    );
+                  StaffManagementEmployeesCompareRequested(
+                    branchId: branchId,
+                    q: _searchController.text.trim().isEmpty
+                        ? null
+                        : _searchController.text.trim(),
+                  ),
+                );
               }
             },
       child: Padding(
@@ -1022,7 +1126,9 @@ class _ManagementScreenState extends State<ManagementScreen>
           children: [
             SizedBox(
               width: 24,
-              child: starCount > 0 ? _buildStarBadge(starCount) : const SizedBox(),
+              child: starCount > 0
+                  ? _buildStarBadge(starCount)
+                  : const SizedBox(),
             ),
             SizedBox(width: 8.w),
             Expanded(
@@ -1143,11 +1249,11 @@ class _ManagementScreenState extends State<ManagementScreen>
                 branchId: branchId,
                 onRegistered: () {
                   context.read<StaffManagementBloc>().add(
-                        StaffManagementEmployeesCompareRequested(
-                          branchId: branchId,
-                          q: null,
-                        ),
-                      );
+                    StaffManagementEmployeesCompareRequested(
+                      branchId: branchId,
+                      q: null,
+                    ),
+                  );
                 },
               ),
             ),
