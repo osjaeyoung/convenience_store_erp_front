@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/router/app_router.dart';
 import '../../../core/enums/user_role.dart';
 import '../../../data/repositories/labor_cost_repository.dart';
 import '../../../data/repositories/manager_home_repository.dart';
@@ -103,12 +105,24 @@ class _ManagerMainScreenState extends State<ManagerMainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = context.read<AuthBloc>().state.user;
+    if (currentUser?.role.isJobSeeker == true) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          context.go(AppRouter.jobSeekerMain);
+        }
+      });
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: SizedBox.shrink(),
+      );
+    }
+
     final ownerHomeRepo = context.read<OwnerHomeRepository>();
     final managerHomeRepo = context.read<ManagerHomeRepository>();
     final laborCostRepo = context.read<LaborCostRepository>();
     final storeExpenseRepo = context.read<StoreExpenseRepository>();
     final staffManagementRepo = context.read<StaffManagementRepository>();
-    final currentUser = context.read<AuthBloc>().state.user;
     final isOwner = currentUser?.role == UserRole.manager;
     final userStorageKey = currentUser?.id ?? 'unknown';
 

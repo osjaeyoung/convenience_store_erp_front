@@ -22,7 +22,14 @@ class _WorkerContractChatTabState extends State<WorkerContractChatTab> {
   Object? _error;
   List<WorkerContractChatSummary> _items = const <WorkerContractChatSummary>[];
   String _emptyTitle = '아직 계약 채팅이 없어요.';
-  String _emptyDescription = '점장 또는 경영주가 계약서를 전송하면 이곳에 표시됩니다.';
+  String _emptyDescription = '점장 또는 경영주가 계약서를 전송하면\n이곳에 표시됩니다.';
+
+  /// API가 한 줄로 내려줄 때도 Figma와 동일하게 두 줄로 보이도록 보정
+  static String _normalizeEmptyDescription(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.contains('\n')) return raw;
+    return trimmed.replaceFirst('전송하면 이곳', '전송하면\n이곳');
+  }
 
   @override
   void initState() {
@@ -41,7 +48,9 @@ class _WorkerContractChatTabState extends State<WorkerContractChatTab> {
       setState(() {
         _items = page.items;
         _emptyTitle = page.emptyTitle ?? _emptyTitle;
-        _emptyDescription = page.emptyDescription ?? _emptyDescription;
+        _emptyDescription = page.emptyDescription != null
+            ? _normalizeEmptyDescription(page.emptyDescription!)
+            : _emptyDescription;
         _loading = false;
       });
     } catch (error) {

@@ -38,6 +38,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(const AuthState.unauthenticated());
       return;
     }
+    if (_repository.user != null) {
+      emit(AuthState.authenticated(_repository.user!));
+      return;
+    }
     try {
       await _repository.getMe();
       emit(AuthState.authenticated(_repository.user!));

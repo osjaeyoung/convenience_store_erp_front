@@ -21,6 +21,7 @@ import 'data/repositories/staff_management_repository.dart';
 import 'data/repositories/store_expense_repository.dart';
 import 'data/repositories/worker_recruitment_repository.dart';
 import 'features/auth/bloc/auth_bloc.dart';
+import 'features/splash/screens/app_splash_screen.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
@@ -79,21 +80,46 @@ class ConvenienceStoreApp extends StatefulWidget {
 }
 
 class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
-  late final GoRouter _router;
-  late final AuthBloc _authBloc;
+  GoRouter? _router;
+  AuthBloc? _authBloc;
+  bool _isBootstrapped = false;
 
   @override
   void initState() {
     super.initState();
+    _bootstrap();
+  }
+
+  Future<void> _bootstrap() async {
+    final startedAt = DateTime.now();
+
+    if (widget.authRepository.isLoggedIn) {
+      try {
+        await widget.authRepository.getMe();
+      } catch (_) {
+        await widget.authRepository.logout();
+      }
+    }
+
+    final elapsed = DateTime.now().difference(startedAt);
+    const minimumSplash = Duration(seconds: 1);
+    if (elapsed < minimumSplash) {
+      await Future<void>.delayed(minimumSplash - elapsed);
+    }
+
     _router = createAppRouter(widget.authRepository);
-    _authBloc = AuthBloc(widget.authRepository)
-      ..add(const AuthCheckRequested());
+    _authBloc = AuthBloc(widget.authRepository)..add(const AuthCheckRequested());
+
+    if (!mounted) return;
+    setState(() {
+      _isBootstrapped = true;
+    });
   }
 
   @override
   void dispose() {
-    _router.dispose();
-    _authBloc.close();
+    _router?.dispose();
+    _authBloc?.close();
     super.dispose();
   }
 
@@ -104,6 +130,22 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, _) {
+        if (!_isBootstrapped || _router == null || _authBloc == null) {
+          return MaterialApp(
+            title: '편의점 ERP',
+            theme: AppTheme.light,
+            debugShowCheckedModeBanner: false,
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [Locale('ko', 'KR'), Locale('en', 'US')],
+            locale: const Locale('ko', 'KR'),
+            home: const AppSplashScreen(),
+          );
+        }
+
         return MultiProvider(
           providers: [
             ChangeNotifierProvider.value(value: widget.authRepository),
@@ -115,7 +157,7 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
             RepositoryProvider.value(value: widget.workerRecruitmentRepository),
           ],
           child: BlocProvider.value(
-            value: _authBloc,
+            value: _authBloc!,
             child: MaterialApp.router(
               title: '편의점 ERP',
               theme: AppTheme.light,
@@ -127,7 +169,7 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
               ],
               supportedLocales: const [Locale('ko', 'KR'), Locale('en', 'US')],
               locale: const Locale('ko', 'KR'),
-              routerConfig: _router,
+              routerConfig: _router!,
             ),
           ),
         );

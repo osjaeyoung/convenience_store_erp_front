@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../data/models/recruitment/recruitment_models.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import '../../../widgets/recruitment_region_picker_sheet.dart';
 import '../../account/account_routes.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/recruitment_bloc.dart';
@@ -162,8 +163,8 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
               ),
               SizedBox(height: 12.h),
               option(title: '전체', value: null),
-              option(title: '남성', value: 'male'),
-              option(title: '여성', value: 'female'),
+              option(title: '남', value: 'male'),
+              option(title: '여', value: 'female'),
               SizedBox(height: 8.h),
             ],
           ),
@@ -262,43 +263,15 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
     _refreshCurrentBranch();
   }
 
-  Future<void> _showRegionDialog() async {
-    final controller = TextEditingController(text: _region ?? '');
-    final applied = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('지역 설정'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(hintText: '예: 강남역점 인근'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('취소'),
-            ),
-            TextButton(
-              onPressed: () {
-                controller.clear();
-                Navigator.of(dialogContext).pop(true);
-              },
-              child: const Text('초기화'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('적용'),
-            ),
-          ],
-        );
-      },
+  Future<void> _showRegionSheet() async {
+    final next = await showRecruitmentRegionPickerSheet(
+      context,
+      selectedRegion: _region,
     );
-
-    if (!mounted || applied != true) return;
-    setState(() {
-      final value = controller.text.trim();
-      _region = value.isEmpty ? null : value;
-    });
+    if (!mounted || next == null) return;
+    final region = next.trim().isEmpty ? null : next.trim();
+    if (region == _region) return;
+    setState(() => _region = region);
     _refreshCurrentBranch();
   }
 
@@ -418,7 +391,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
                             onSubmittedSearch: _refreshCurrentBranch,
                             onTapGender: _showGenderSheet,
                             onTapAge: _showAgeDialog,
-                            onTapRegion: _showRegionDialog,
+                            onTapRegion: _showRegionSheet,
                             onTapRating: _showRatingSheet,
                             onRetry: () => _requestHome(branchId),
                             onTapProfile: (employeeId) =>
@@ -451,9 +424,9 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
   String get _genderLabel {
     switch (_gender) {
       case 'male':
-        return '남성';
+        return '남';
       case 'female':
-        return '여성';
+        return '여';
       default:
         return '성별';
     }
@@ -672,25 +645,25 @@ class _RecruitmentHomeTab extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 20.w),
           child: Row(
             children: [
-              _RecruitmentFilterChip(
+              RecruitmentFilterPill(
                 label: genderLabel,
                 active: genderLabel != '성별',
                 onTap: onTapGender,
               ),
               SizedBox(width: 8.w),
-              _RecruitmentFilterChip(
+              RecruitmentFilterPill(
                 label: ageLabel,
                 active: ageLabel != '연령',
                 onTap: onTapAge,
               ),
               SizedBox(width: 8.w),
-              _RecruitmentFilterChip(
+              RecruitmentFilterPill(
                 label: regionLabel,
                 active: regionLabel != '지역',
                 onTap: onTapRegion,
               ),
               SizedBox(width: 8.w),
-              _RecruitmentFilterChip(
+              RecruitmentFilterPill(
                 label: ratingLabel,
                 active: ratingLabel != '평점',
                 onTap: onTapRating,
@@ -871,56 +844,6 @@ class _RecruitmentSearchField extends StatelessWidget {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
           borderSide: const BorderSide(color: AppColors.primary),
-        ),
-      ),
-    );
-  }
-}
-
-class _RecruitmentFilterChip extends StatelessWidget {
-  const _RecruitmentFilterChip({
-    required this.label,
-    required this.active,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(100.r),
-      child: Container(
-        constraints: const BoxConstraints(minWidth: 72),
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-        decoration: BoxDecoration(
-          color: active ? AppColors.primaryLight : AppColors.grey0,
-          borderRadius: BorderRadius.circular(100.r),
-          border: Border.all(
-            color: active ? AppColors.primary : AppColors.grey50,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: AppTypography.bodySmallR.copyWith(
-                fontSize: 12.sp,
-                height: 18 / 12,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            SizedBox(width: 8.w),
-            Icon(
-              Icons.keyboard_arrow_down_rounded,
-              size: 14,
-              color: active ? AppColors.primaryDark : AppColors.textTertiary,
-            ),
-          ],
         ),
       ),
     );

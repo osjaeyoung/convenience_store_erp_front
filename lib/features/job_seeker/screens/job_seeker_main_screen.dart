@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/router/app_router.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import '../../auth/bloc/auth_bloc.dart';
 import '../../manager/widgets/home_common_app_bar.dart';
 import '../widgets/worker_applications_tab.dart';
 import '../widgets/worker_contract_chat_tab.dart';
@@ -22,6 +26,7 @@ class JobSeekerMainScreen extends StatefulWidget {
 class _JobSeekerMainScreenState extends State<JobSeekerMainScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+  int _currentTabIndex = 0;
   int _postingsRefreshToken = 0;
   int _applicationsRefreshToken = 0;
   int _resumeRefreshToken = 0;
@@ -30,10 +35,18 @@ class _JobSeekerMainScreenState extends State<JobSeekerMainScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(_handleTabChanged);
+  }
+
+  void _handleTabChanged() {
+    if (!_tabController.indexIsChanging && _currentTabIndex != _tabController.index) {
+      setState(() => _currentTabIndex = _tabController.index);
+    }
   }
 
   @override
   void dispose() {
+    _tabController.removeListener(_handleTabChanged);
     _tabController.dispose();
     super.dispose();
   }
@@ -65,6 +78,19 @@ class _JobSeekerMainScreenState extends State<JobSeekerMainScreen>
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = context.read<AuthBloc>().state.user;
+    if (currentUser != null && !currentUser.role.isJobSeeker) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          context.go(AppRouter.managerMain);
+        }
+      });
+      return const Scaffold(
+        backgroundColor: AppColors.grey0,
+        body: SizedBox.shrink(),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.grey0,
       appBar: HomeCommonAppBar(
@@ -74,31 +100,13 @@ class _JobSeekerMainScreenState extends State<JobSeekerMainScreen>
       ),
       body: Column(
         children: [
-          Container(
-            decoration: const BoxDecoration(
-              color: AppColors.grey0,
-              border: Border(bottom: BorderSide(color: AppColors.borderLight)),
-            ),
-            child: TabBar(
-              controller: _tabController,
-              isScrollable: true,
-              tabAlignment: TabAlignment.start,
-              labelPadding: EdgeInsets.symmetric(horizontal: 16.w),
-              indicatorColor: AppColors.textPrimary,
-              indicatorWeight: 1,
-              indicatorSize: TabBarIndicatorSize.label,
-              dividerColor: Colors.transparent,
-              labelStyle: AppTypography.bodyLargeB,
-              unselectedLabelStyle: AppTypography.bodyLargeB,
-              labelColor: AppColors.textPrimary,
-              unselectedLabelColor: AppColors.textTertiary,
-              tabs: const [
-                Tab(text: '채용정보'),
-                Tab(text: '지원내역'),
-                Tab(text: '이력서관리'),
-                Tab(text: '계약채팅'),
-              ],
-            ),
+          _WorkerTopTabs(
+            selectedIndex: _currentTabIndex,
+            onSelected: (index) {
+              if (_currentTabIndex == index) return;
+              _tabController.animateTo(index);
+              setState(() => _currentTabIndex = index);
+            },
           ),
           Expanded(
             child: TabBarView(
@@ -121,6 +129,83 @@ class _JobSeekerMainScreenState extends State<JobSeekerMainScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _WorkerTopTabs extends StatelessWidget {
+  const _WorkerTopTabs({
+    required this.selectedIndex,
+    required this.onSelected,
+  });
+
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    const tabs = ['채용정보', '지원내역', '이력서관리', '계약채팅'];
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.grey0,
+        border: Border(bottom: BorderSide(color: AppColors.borderLight)),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minWidth: MediaQuery.sizeOf(context).width),
+          child: Row(
+            children: [
+              for (var i = 0; i < tabs.length; i++)
+                _WorkerTopTabItem(
+                  label: tabs[i],
+                  selected: selectedIndex == i,
+                  onTap: () => onSelected(i),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _WorkerTopTabItem extends StatelessWidget {
+  const _WorkerTopTabItem({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        height: 52.h,
+        padding: EdgeInsets.symmetric(horizontal: 16.w),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: selected ? AppColors.textPrimary : Colors.transparent,
+              width: 0.8,
+            ),
+          ),
+        ),
+        child: Text(
+          label,
+          style: AppTypography.bodyLargeB.copyWith(
+            color: selected ? AppColors.textPrimary : AppColors.textTertiary,
+            height: 24 / 16,
+          ),
+        ),
       ),
     );
   }

@@ -10,6 +10,7 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import 'worker_common.dart';
 import 'worker_recruitment_card.dart';
+import '../../../widgets/recruitment_region_picker_sheet.dart';
 
 class WorkerRecruitmentPostingsTab extends StatefulWidget {
   const WorkerRecruitmentPostingsTab({
@@ -32,7 +33,6 @@ class _WorkerRecruitmentPostingsTabState
 
   List<WorkerRecruitmentPostingSummary> _items =
       const <WorkerRecruitmentPostingSummary>[];
-  List<String> _regionOptions = const <String>[];
   String? _selectedRegion;
   bool _loading = true;
   Object? _error;
@@ -72,7 +72,6 @@ class _WorkerRecruitmentPostingsTabState
       if (!mounted) return;
       setState(() {
         _items = page.items;
-        _regionOptions = page.regionOptions;
         _loading = false;
       });
     } catch (error) {
@@ -85,40 +84,14 @@ class _WorkerRecruitmentPostingsTabState
   }
 
   Future<void> _selectRegion() async {
-    final selected = await showModalBottomSheet<String?>(
-      context: context,
-      backgroundColor: AppColors.grey0,
-      showDragHandle: true,
-      builder: (context) {
-        return SafeArea(
-          child: ListView(
-            shrinkWrap: true,
-            children: [
-              ListTile(
-                title: Text('전체 지역', style: AppTypography.bodyMediumM),
-                trailing: _selectedRegion == null
-                    ? const Icon(Icons.check_rounded, color: AppColors.primary)
-                    : null,
-                onTap: () => Navigator.of(context).pop(null),
-              ),
-              for (final region in _regionOptions)
-                ListTile(
-                  title: Text(region, style: AppTypography.bodyMediumM),
-                  trailing: _selectedRegion == region
-                      ? const Icon(
-                          Icons.check_rounded,
-                          color: AppColors.primary,
-                        )
-                      : null,
-                  onTap: () => Navigator.of(context).pop(region),
-                ),
-            ],
-          ),
-        );
-      },
+    final next = await showRecruitmentRegionPickerSheet(
+      context,
+      selectedRegion: _selectedRegion,
     );
-    if (!mounted || selected == _selectedRegion) return;
-    setState(() => _selectedRegion = selected);
+    if (!mounted || next == null) return;
+    final region = next.trim().isEmpty ? null : next.trim();
+    if (region == _selectedRegion) return;
+    setState(() => _selectedRegion = region);
     await _load();
   }
 
@@ -183,28 +156,11 @@ class _WorkerRecruitmentPostingsTabState
                 ),
               ),
               SizedBox(height: 12.h),
-              OutlinedButton.icon(
-                onPressed: _regionOptions.isEmpty ? null : _selectRegion,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.textPrimary,
-                  backgroundColor: AppColors.grey0,
-                  side: const BorderSide(color: AppColors.border),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(999.r),
-                  ),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 12.w,
-                    vertical: 8.h,
-                  ),
-                ),
-                iconAlignment: IconAlignment.end,
-                label: Text(
-                  _selectedRegion ?? '지역',
-                  style: AppTypography.bodySmallR.copyWith(
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                icon: const Icon(Icons.keyboard_arrow_down_rounded),
+              RecruitmentFilterPill(
+                label: _selectedRegion ?? '지역',
+                active: _selectedRegion != null &&
+                    _selectedRegion!.trim().isNotEmpty,
+                onTap: _selectRegion,
               ),
             ],
           ),
@@ -238,6 +194,7 @@ class _WorkerRecruitmentPostingsTabState
                   itemBuilder: (context, index) {
                     final item = _items[index];
                     return WorkerRecruitmentCard(
+                      topSpacing: index == 0 ? 0 : 18.h,
                       badgeLabel: item.badgeLabel,
                       companyName: item.companyName,
                       title: item.title,

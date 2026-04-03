@@ -97,13 +97,28 @@ Widget workerEmptyView({required String message, String? description}) {
           ),
           if (description != null && description.trim().isNotEmpty) ...[
             SizedBox(height: 8.h),
-            Text(
-              description,
-              textAlign: TextAlign.center,
-              style: AppTypography.bodyMediumR.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
+            ...() {
+              final lines = description
+                  .split('\n')
+                  .map((line) => line.trim())
+                  .where((line) => line.isNotEmpty)
+                  .toList();
+              return <Widget>[
+                for (var i = 0; i < lines.length; i++)
+                  Padding(
+                    padding: EdgeInsets.only(
+                      bottom: i < lines.length - 1 ? 2.h : 0,
+                    ),
+                    child: Text(
+                      lines[i],
+                      textAlign: TextAlign.center,
+                      style: AppTypography.bodyMediumR.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+              ];
+            }(),
           ],
         ],
       ),

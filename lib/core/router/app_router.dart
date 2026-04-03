@@ -29,12 +29,15 @@ GoRouter createAppRouter(AuthRepository authRepository) {
     initialLocation: _initialLocationFor(authRepository),
     refreshListenable: authRepository,
     redirect: (context, state) {
+      final userRole = authRepository.role;
       final isLoggingIn = state.matchedLocation == AppRouter.login;
       final isSigningUp = state.matchedLocation == AppRouter.signup;
       final isPhoneVerification =
           state.matchedLocation == AppRouter.signupPhoneVerification;
       final isSignupComplete =
           state.matchedLocation == AppRouter.signupComplete;
+      final isManagerMain = state.matchedLocation == AppRouter.managerMain;
+      final isJobSeekerMain = state.matchedLocation == AppRouter.jobSeekerMain;
       final signupFlowRoute =
           isSigningUp || isPhoneVerification || isSignupComplete;
 
@@ -55,6 +58,15 @@ GoRouter createAppRouter(AuthRepository authRepository) {
       if (authRepository.isLoggedIn && authRepository.isSignupInProgress) {
         if (!signupFlowRoute) return AppRouter.signup;
         return null;
+      }
+
+      if (authRepository.isLoggedIn && userRole != null) {
+        if (userRole.isJobSeeker && isManagerMain) {
+          return AppRouter.jobSeekerMain;
+        }
+        if (!userRole.isJobSeeker && isJobSeekerMain) {
+          return AppRouter.managerMain;
+        }
       }
 
       if (authRepository.isLoggedIn && (isLoggingIn || signupFlowRoute)) {

@@ -49,10 +49,10 @@
 
 ### Query Params
 
-- `keyword` (optional): 이름/지역 검색
+- `keyword` (optional): 이름/지역/편의점명 검색
 - `gender` (optional): `male` | `female` | `all`
 - `age_min`, `age_max` (optional)
-- `region` (optional)
+- `region` (optional): `서울`, `경기`, `부산` 같은 상위 지역 필터. 서버는 지점의 채용공고 `region_summary`, `address`, `company_name`, `title`를 함께 보고 매칭
 - `min_rating` (optional, 0~3)
 - `page` (default=1), `page_size` (default=20)
 
@@ -74,7 +74,7 @@
       "employee_name": "이사라",
       "age": 24,
       "gender": "female",
-      "desired_location": "강남역점 인근",
+      "desired_location": "서울 강남구 강남역점",
       "average_rating": 2.7,
       "review_count": 5
     }
@@ -187,7 +187,7 @@
 ### Query Params
 
 - `keyword` (optional): 제목/업체명 검색
-- `region` (optional): 지역 필터
+- `region` (optional): 지역 필터. 서버는 `region_summary`, `address`, `company_name`, `title`를 함께 보고 매칭
 - `include_draft` (optional, default=false): `true`면 draft 포함
 - `page`, `page_size`
 

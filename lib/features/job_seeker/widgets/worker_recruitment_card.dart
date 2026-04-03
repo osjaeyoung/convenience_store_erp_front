@@ -16,6 +16,7 @@ class WorkerRecruitmentCard extends StatelessWidget {
     required this.payAmount,
     this.footerLabel,
     this.onTap,
+    this.topSpacing = 0,
   });
 
   final String? badgeLabel;
@@ -26,6 +27,7 @@ class WorkerRecruitmentCard extends StatelessWidget {
   final int payAmount;
   final String? footerLabel;
   final VoidCallback? onTap;
+  final double topSpacing;
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +40,7 @@ class WorkerRecruitmentCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (topSpacing > 0) SizedBox(height: topSpacing),
               if ((badgeLabel ?? '').isNotEmpty)
                 Container(
                   padding: EdgeInsets.symmetric(
@@ -60,13 +63,19 @@ class WorkerRecruitmentCard extends StatelessWidget {
                 companyName,
                 style: AppTypography.bodySmallM.copyWith(
                   color: AppColors.textTertiary,
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w500,
+                  height: 16 / 12,
                 ),
               ),
               SizedBox(height: 4.h),
               Text(
                 title,
                 style: AppTypography.bodyLargeB.copyWith(
-                  color: AppColors.textPrimary,
+                  color: const Color(0xFF404040),
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w600,
+                  height: 24 / 16,
                 ),
               ),
               SizedBox(height: 16.h),
@@ -74,7 +83,7 @@ class WorkerRecruitmentCard extends StatelessWidget {
                 width: double.infinity,
                 padding: EdgeInsets.all(12.r),
                 decoration: BoxDecoration(
-                  color: AppColors.grey25,
+                  color: AppColors.grey0Alt,
                   borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: Column(

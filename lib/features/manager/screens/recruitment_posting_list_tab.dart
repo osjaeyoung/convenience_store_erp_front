@@ -11,6 +11,7 @@ import '../../auth/widgets/auth_input_field.dart';
 import 'recruitment_posting_detail_screen.dart';
 import 'recruitment_posting_form_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../widgets/recruitment_region_picker_sheet.dart';
 
 class RecruitmentPostingListTab extends StatefulWidget {
   const RecruitmentPostingListTab({
@@ -104,43 +105,14 @@ class _RecruitmentPostingListTabState extends State<RecruitmentPostingListTab> {
     }).toList();
   }
 
-  Future<void> _showRegionDialog() async {
-    final controller = TextEditingController(text: _region ?? '');
-    final applied = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('지역 설정'),
-          content: AuthInputField(
-            controller: controller,
-            hintText: '입력해주세요.',
-            fillColor: AppColors.grey0Alt,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('취소'),
-            ),
-            TextButton(
-              onPressed: () {
-                controller.clear();
-                Navigator.of(dialogContext).pop(true);
-              },
-              child: const Text('초기화'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('적용'),
-            ),
-          ],
-        );
-      },
+  Future<void> _showRegionSheet() async {
+    final next = await showRecruitmentRegionPickerSheet(
+      context,
+      selectedRegion: _region,
     );
-
-    if (!mounted || applied != true) return;
+    if (!mounted || next == null) return;
     setState(() {
-      final value = controller.text.trim();
-      _region = value.isEmpty ? null : value;
+      _region = next.trim().isEmpty ? null : next.trim();
     });
     _load();
   }
@@ -228,9 +200,10 @@ class _RecruitmentPostingListTabState extends State<RecruitmentPostingListTab> {
                 alignment: Alignment.centerLeft,
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 0.h),
-                  child: _RegionChip(
+                  child: RecruitmentFilterPill(
                     label: _region?.trim().isNotEmpty == true ? _region! : '지역',
-                    onTap: _showRegionDialog,
+                    active: _region?.trim().isNotEmpty == true,
+                    onTap: _showRegionSheet,
                   ),
                 ),
               ),
@@ -277,52 +250,6 @@ class _RecruitmentPostingListTabState extends State<RecruitmentPostingListTab> {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _RegionChip extends StatelessWidget {
-  const _RegionChip({
-    required this.label,
-    required this.onTap,
-  });
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(100.r),
-      child: Container(
-        height: 40,
-        padding: EdgeInsets.symmetric(horizontal: 12.w),
-        decoration: BoxDecoration(
-          color: AppColors.grey0,
-          borderRadius: BorderRadius.circular(100.r),
-          border: Border.all(color: AppColors.grey50),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: AppTypography.bodySmallR.copyWith(
-                fontSize: 12.sp,
-                height: 18 / 12,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            SizedBox(width: 8.w),
-            const Icon(
-              Icons.keyboard_arrow_down_rounded,
-              size: 14,
-              color: AppColors.grey150,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
