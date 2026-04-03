@@ -984,6 +984,19 @@ curl -X POST "${BASE}/api/v1/staff-management/branches/${BRANCH_ID}/employees/${
 
 ---
 
+## 근로계약 API 사용 구분 (변경사항)
+
+- **신규 모바일 계약서 화면**에서 점장/경영주가 먼저 쓰고, 근로자가 이어서 완성하는 플로우는 이제 `contract-chat` 명세를 기준으로 봐야 합니다.
+- 신규 플로우 문서: `docs/api_spec_contract_chat.md`
+- 신규 플로우 핵심:
+  - 점장/경영주가 사업장 항목만 작성
+  - `send_to_worker` 전송 후 근로자 목록에 `미완료`로 노출
+  - 근로자가 자기 항목만 작성 후 `complete`
+- 따라서 아래 `employment-contracts` 섹션은 **기존 직접 CRUD/파일등록/연소근로자/친권자 동의서 관리용**으로 이해하면 됩니다.
+- 표준 근로계약서의 신규 화면 제어는 `employment-contracts` 가 아니라 `contract-chat`의 `business_field_keys`, `worker_field_keys`, `editable_field_keys`, `required_field_keys` 응답을 사용합니다.
+
+---
+
 ## 22) 근로계약서 목록 조회 (임시저장 포함)
 
 - `GET /staff-management/branches/{branch_id}/employees/{employee_id}/employment-contracts?status=draft&template_version=guardian_consent_v1`

@@ -132,6 +132,21 @@ class PhoneVerificationSession {
   }
 }
 
+/// Firebase 세션의 E.164(+8210…)를 입력란 표시용 `010-…` 형태로 바꿉니다.
+String _krMobileDisplayFromE164(String e164) {
+  var digits = e164.replaceAll(RegExp(r'\D'), '');
+  if (digits.startsWith('82') && digits.length >= 10) {
+    digits = '0${digits.substring(2)}';
+  }
+  if (digits.length == 11) {
+    return '${digits.substring(0, 3)}-${digits.substring(3, 7)}-${digits.substring(7)}';
+  }
+  if (digits.length == 10) {
+    return '${digits.substring(0, 3)}-${digits.substring(3, 6)}-${digits.substring(6)}';
+  }
+  return e164.trim();
+}
+
 /// 인증 관련 API 및 토큰 관리
 /// go_router refreshListenable로 사용
 class AuthRepository extends ChangeNotifier {
@@ -170,6 +185,11 @@ class AuthRepository extends ChangeNotifier {
       _phoneVerificationSession;
   bool get hasPendingPhoneVerification =>
       _signupDraft != null && _phoneVerificationSession != null;
+  bool get shouldShowPhoneVerification {
+    final currentStep = (_signupDraft?.currentStep ?? '').trim();
+    return currentStep == 'phone_verification' || hasPendingPhoneVerification;
+  }
+
   bool get shouldStartAtRoleSelection =>
       (_signupStep ?? '').trim() == 'step1_completed';
   bool get needsSignupCompletion {
@@ -424,11 +444,22 @@ class AuthRepository extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> completePhoneVerification() async {
+  Future<void> completePhoneVerification({String? verifiedPhoneNumber}) async {
     if (_signupDraft != null) {
+      final session = _phoneVerificationSession;
+      var phone = (verifiedPhoneNumber ?? '').trim();
+      if (phone.isEmpty) {
+        phone = _signupDraft!.phoneNumber.trim();
+      }
+      if (phone.isEmpty &&
+          session != null &&
+          session.phoneE164.trim().isNotEmpty) {
+        phone = _krMobileDisplayFromE164(session.phoneE164);
+      }
       _signupDraft = _signupDraft!.copyWith(
         phoneVerified: true,
         currentStep: 'basicInfo',
+        phoneNumber: phone.isNotEmpty ? phone : _signupDraft!.phoneNumber,
       );
       await _tokenStorage.saveString(
         _signupDraftKey,

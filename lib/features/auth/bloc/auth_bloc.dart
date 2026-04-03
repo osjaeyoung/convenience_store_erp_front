@@ -105,9 +105,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(const AuthState.loading());
     try {
-      await _repository.signupCompleteOwner(
-        branches: event.branches,
-      );
+      await _repository.signupCompleteOwner(branches: event.branches);
       emit(AuthState.authenticated(_repository.user!));
     } on AuthException catch (e) {
       emit(AuthState.failure(e.message));
@@ -232,10 +230,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   String _extractErrorMessage(DioException e) {
     final data = e.response?.data;
+    String rawMessage;
     if (data is Map) {
-      return (data['message'] ?? data['detail'] ?? data['error'])?.toString() ??
+      rawMessage =
+          (data['message'] ?? data['detail'] ?? data['error'])?.toString() ??
           '요청에 실패했습니다.';
+    } else {
+      rawMessage = e.message ?? '요청에 실패했습니다.';
     }
-    return e.message ?? '요청에 실패했습니다.';
+
+    final normalized = rawMessage.toLowerCase();
+    if (normalized.contains('email already registered')) {
+      return '이미 가입된 이메일입니다.';
+    }
+
+    return rawMessage;
   }
 }

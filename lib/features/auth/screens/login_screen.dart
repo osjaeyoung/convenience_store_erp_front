@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_assets.dart';
 import '../../../core/router/app_router.dart';
+import '../../../data/repositories/auth_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
@@ -45,11 +46,11 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     context.read<AuthBloc>().add(
-          AuthLoginRequested(
-            email: _emailController.text.trim(),
-            password: _pwController.text,
-          ),
-        );
+      AuthLoginRequested(
+        email: _emailController.text.trim(),
+        password: _pwController.text,
+      ),
+    );
   }
 
   @override
@@ -75,12 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     SizedBox(height: 142.h),
-                    Center(
-                      child: Image.asset(
-                        AppAssets.logoMain,
-                        width: 180,
-                      ),
-                    ),
+                    Center(child: Image.asset(AppAssets.logoMain, width: 180)),
                     SizedBox(height: 56.h),
                     AuthInputField(
                       controller: _emailController,
@@ -165,7 +161,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         SizedBox(width: 14.w),
                         GestureDetector(
-                          onTap: () => context.push(AppRouter.signup),
+                          onTap: () async {
+                            await context
+                                .read<AuthRepository>()
+                                .clearSignupDraft();
+                            if (!context.mounted) return;
+                            context.push(AppRouter.signup);
+                          },
                           child: Text(
                             '회원가입',
                             style: AppTypography.bodyMediumM.copyWith(
@@ -239,10 +241,7 @@ class _LoginScreenState extends State<LoginScreen> {
 }
 
 class _SocialButton extends StatelessWidget {
-  const _SocialButton({
-    required this.assetPath,
-    required this.onTap,
-  });
+  const _SocialButton({required this.assetPath, required this.onTap});
 
   final String assetPath;
   final VoidCallback onTap;
@@ -251,11 +250,7 @@ class _SocialButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: SizedBox(
-        width: 52,
-        height: 52,
-        child: Image.asset(assetPath),
-      ),
+      child: SizedBox(width: 52, height: 52, child: Image.asset(assetPath)),
     );
   }
 }

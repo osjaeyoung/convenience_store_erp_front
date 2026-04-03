@@ -29,6 +29,7 @@ class _SignupPhoneVerificationScreenState
   bool _submitting = false;
   DateTime? _expiresAt;
   Timer? _ticker;
+  bool _requestedInitialCode = false;
 
   @override
   void initState() {
@@ -52,15 +53,24 @@ class _SignupPhoneVerificationScreenState
   }
 
   void _restoreSession() {
-    final session = context.read<AuthRepository>().phoneVerificationSession;
-    if (session == null) {
+    final repo = context.read<AuthRepository>();
+    final draft = repo.signupDraft;
+    final session = repo.phoneVerificationSession;
+    if (draft == null) {
       context.go(AppRouter.signup);
       return;
     }
-    _expiresAt = DateTime.fromMillisecondsSinceEpoch(session.expiresAtMillis);
-    _startTicker();
-    if (mounted) {
-      setState(() {});
+    if (session != null) {
+      _expiresAt = DateTime.fromMillisecondsSinceEpoch(session.expiresAtMillis);
+      _startTicker();
+      if (mounted) {
+        setState(() {});
+      }
+      return;
+    }
+    if (!_requestedInitialCode) {
+      _requestedInitialCode = true;
+      unawaited(_sendVerificationCode(isResend: false));
     }
   }
 
@@ -94,6 +104,15 @@ class _SignupPhoneVerificationScreenState
 
   String _formatPhoneForDisplay(String raw) {
     final digits = raw.replaceAll(RegExp(r'\D'), '');
+    if (digits.startsWith('82') && digits.length >= 11) {
+      final local = '0${digits.substring(2)}';
+      if (local.length == 11) {
+        return '${local.substring(0, 3)}-${local.substring(3, 7)}-${local.substring(7)}';
+      }
+      if (local.length == 10) {
+        return '${local.substring(0, 3)}-${local.substring(3, 6)}-${local.substring(6)}';
+      }
+    }
     if (digits.length == 11) {
       return '${digits.substring(0, 3)}-${digits.substring(3, 7)}-${digits.substring(7)}';
     }
@@ -130,7 +149,26 @@ class _SignupPhoneVerificationScreenState
     try {
       await FirebaseAuth.instance.signInWithCredential(credential);
       await FirebaseAuth.instance.signOut();
-      await repo.completePhoneVerification();
+      final draft = repo.signupDraft;
+      final session = repo.phoneVerificationSession;
+      if (draft != null) {
+        final fallbackPhone = _formatPhoneForDisplay(session?.phoneE164 ?? '');
+        final resolvedPhone = draft.phoneNumber.trim().isNotEmpty
+            ? draft.phoneNumber.trim()
+            : fallbackPhone;
+        await repo.saveSignupDraft(
+          draft.copyWith(
+            phoneNumber: resolvedPhone,
+            currentStep: 'basicInfo',
+            phoneVerified: true,
+          ),
+        );
+      }
+      final fallbackPhone = _formatPhoneForDisplay(session?.phoneE164 ?? '');
+      final resolvedPhone = draft?.phoneNumber.trim().isNotEmpty == true
+          ? draft!.phoneNumber.trim()
+          : fallbackPhone;
+      await repo.completePhoneVerification(verifiedPhoneNumber: resolvedPhone);
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -146,11 +184,15 @@ class _SignupPhoneVerificationScreenState
   }
 
   Future<void> _onResendCode() async {
+    await _sendVerificationCode(isResend: true);
+  }
+
+  Future<void> _sendVerificationCode({required bool isResend}) async {
     if (kIsWeb) return;
     final repo = context.read<AuthRepository>();
     final draft = repo.signupDraft;
     final session = repo.phoneVerificationSession;
-    if (draft == null || session == null) {
+    if (draft == null) {
       if (mounted) context.go(AppRouter.signup);
       return;
     }
@@ -168,7 +210,7 @@ class _SignupPhoneVerificationScreenState
     try {
       await repo.verifyPhoneNumber(
         phoneNumber: phone,
-        forceResendingToken: session.forceResendingToken,
+        forceResendingToken: isResend ? session?.forceResendingToken : null,
         verificationCompleted: (credential) {
           unawaited(_finalizePhoneVerified(credential));
         },
@@ -181,7 +223,9 @@ class _SignupPhoneVerificationScreenState
           );
         },
         codeSent: (verificationId, resendToken) {
-          unawaited(_handleCodeSent(phone, verificationId, resendToken));
+          unawaited(
+            _handleCodeSent(repo, phone, verificationId, resendToken, isResend),
+          );
         },
         codeAutoRetrievalTimeout: (_) {
           if (mounted) setState(() => _submitting = false);
@@ -197,11 +241,13 @@ class _SignupPhoneVerificationScreenState
   }
 
   Future<void> _handleCodeSent(
+    AuthRepository repo,
     String phone,
     String verificationId,
     int? resendToken,
+    bool isResend,
   ) async {
-    await context.read<AuthRepository>().savePhoneVerificationSession(
+    await repo.savePhoneVerificationSession(
       PhoneVerificationSession(
         verificationId: verificationId,
         phoneE164: phone,
@@ -216,9 +262,9 @@ class _SignupPhoneVerificationScreenState
     _expiresAt = DateTime.now().add(const Duration(minutes: 3));
     _startTicker();
     setState(() => _submitting = false);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('인증번호를 다시 보냈습니다.')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(isResend ? '인증번호를 다시 보냈습니다.' : '인증번호가 발송되었습니다.')),
+    );
   }
 
   Future<void> _onSubmit() async {
@@ -243,7 +289,14 @@ class _SignupPhoneVerificationScreenState
   }
 
   Future<void> _onBack() async {
-    await context.read<AuthRepository>().clearPhoneVerificationSession();
+    final repo = context.read<AuthRepository>();
+    final draft = repo.signupDraft;
+    if (draft != null) {
+      await repo.saveSignupDraft(
+        draft.copyWith(currentStep: 'basicInfo', phoneVerified: false),
+      );
+    }
+    await repo.clearPhoneVerificationSession();
     if (!mounted) return;
     context.go(AppRouter.signup);
   }

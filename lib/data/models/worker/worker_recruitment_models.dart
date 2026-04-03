@@ -218,6 +218,11 @@ class WorkerResumeSummary {
     this.resumeTypeLabel,
     this.isDefault = false,
     this.status,
+    this.editButtonLabel,
+    this.deleteButtonLabel,
+    this.canDelete = true,
+    this.createdAt,
+    this.updatedAt,
   });
 
   final int resumeId;
@@ -225,6 +230,11 @@ class WorkerResumeSummary {
   final String? resumeTypeLabel;
   final bool isDefault;
   final String? status;
+  final String? editButtonLabel;
+  final String? deleteButtonLabel;
+  final bool canDelete;
+  final String? createdAt;
+  final String? updatedAt;
 
   factory WorkerResumeSummary.fromJson(Map<String, dynamic> json) {
     return WorkerResumeSummary(
@@ -233,15 +243,31 @@ class WorkerResumeSummary {
       resumeTypeLabel: _nullableString(json['resume_type_label']),
       isDefault: _boolOf(json['is_default']),
       status: _nullableString(json['status']),
+      editButtonLabel: _nullableString(json['edit_button_label']),
+      deleteButtonLabel: _nullableString(json['delete_button_label']),
+      canDelete: json.containsKey('can_delete')
+          ? _boolOf(json['can_delete'])
+          : true,
+      createdAt: _nullableString(json['created_at']),
+      updatedAt: _nullableString(json['updated_at']),
     );
   }
 }
 
 class WorkerResumePage {
-  const WorkerResumePage({required this.items, required this.totalCount});
+  const WorkerResumePage({
+    required this.items,
+    required this.totalCount,
+    this.isEmpty = false,
+    this.emptyMessage,
+    this.createButtonLabel,
+  });
 
   final List<WorkerResumeSummary> items;
   final int totalCount;
+  final bool isEmpty;
+  final String? emptyMessage;
+  final String? createButtonLabel;
 
   factory WorkerResumePage.fromJson(Map<String, dynamic> json) {
     final items = json['items'] as List<dynamic>? ?? const [];
@@ -254,6 +280,240 @@ class WorkerResumePage {
           )
           .toList(),
       totalCount: _intOf(json['total_count']),
+      isEmpty: _boolOf(json['is_empty']),
+      emptyMessage: _nullableString(json['empty_message']),
+      createButtonLabel: _nullableString(json['create_button_label']),
+    );
+  }
+}
+
+class WorkerResumeOption {
+  const WorkerResumeOption({required this.value, required this.label});
+
+  final String value;
+  final String label;
+
+  factory WorkerResumeOption.fromJson(Map<String, dynamic> json) {
+    return WorkerResumeOption(
+      value: _stringOf(json['value']),
+      label: _stringOf(json['label']),
+    );
+  }
+}
+
+class WorkerResumeProfileSummary {
+  const WorkerResumeProfileSummary({
+    required this.fullName,
+    this.gender,
+    this.genderLabel,
+    this.age,
+    this.ageLabel,
+    this.address,
+    this.email,
+    this.phoneNumber,
+  });
+
+  final String fullName;
+  final String? gender;
+  final String? genderLabel;
+  final int? age;
+  final String? ageLabel;
+  final String? address;
+  final String? email;
+  final String? phoneNumber;
+
+  factory WorkerResumeProfileSummary.fromJson(Map<String, dynamic> json) {
+    return WorkerResumeProfileSummary(
+      fullName: _stringOf(json['full_name']),
+      gender: _nullableString(json['gender']),
+      genderLabel: _nullableString(json['gender_label']),
+      age: _nullableInt(json['age']),
+      ageLabel: _nullableString(json['age_label']),
+      address: _nullableString(json['address']),
+      email: _nullableString(json['email']),
+      phoneNumber: _nullableString(json['phone_number']),
+    );
+  }
+}
+
+class WorkerResumeCareerEntry {
+  const WorkerResumeCareerEntry({
+    this.careerId,
+    required this.companyName,
+    this.durationType,
+    this.durationTypeLabel,
+    this.startedYearMonth,
+    this.endedYearMonth,
+    this.duty,
+    this.periodLabel,
+  });
+
+  final int? careerId;
+  final String companyName;
+  final String? durationType;
+  final String? durationTypeLabel;
+  final String? startedYearMonth;
+  final String? endedYearMonth;
+  final String? duty;
+  final String? periodLabel;
+
+  factory WorkerResumeCareerEntry.fromJson(Map<String, dynamic> json) {
+    return WorkerResumeCareerEntry(
+      careerId: _nullableInt(json['career_id']),
+      companyName: _stringOf(json['company_name']),
+      durationType: _nullableString(json['duration_type']),
+      durationTypeLabel: _nullableString(json['duration_type_label']),
+      startedYearMonth: _nullableString(json['started_year_month']),
+      endedYearMonth: _nullableString(json['ended_year_month']),
+      duty: _nullableString(json['duty']),
+      periodLabel: _nullableString(json['period_label']),
+    );
+  }
+}
+
+class WorkerResumeWorkHistoryItem {
+  const WorkerResumeWorkHistoryItem({
+    this.periodLabel,
+    required this.companyName,
+    this.duty,
+  });
+
+  final String? periodLabel;
+  final String companyName;
+  final String? duty;
+
+  factory WorkerResumeWorkHistoryItem.fromJson(Map<String, dynamic> json) {
+    return WorkerResumeWorkHistoryItem(
+      periodLabel: _nullableString(json['period_label']),
+      companyName: _stringOf(json['company_name']),
+      duty: _nullableString(json['duty']),
+    );
+  }
+}
+
+class WorkerResumeFormData {
+  const WorkerResumeFormData({
+    this.resumeId,
+    this.resumeTitle,
+    required this.mode,
+    this.headerTitle,
+    this.submitButtonLabel,
+    this.editButtonLabel,
+    this.deleteButtonLabel,
+    this.canDelete = false,
+    this.profileSummary,
+    this.educationLevel,
+    this.educationStatus,
+    this.careerType,
+    this.selfIntroduction,
+    this.educationLevelOptions = const [],
+    this.educationStatusOptions = const [],
+    this.careerTypeOptions = const [],
+    this.durationTypeOptions = const [],
+    this.careerEntries = const [],
+    this.workHistoryItems = const [],
+    this.addCareerButtonLabel,
+  });
+
+  final int? resumeId;
+  final String? resumeTitle;
+  final String mode;
+  final String? headerTitle;
+  final String? submitButtonLabel;
+  final String? editButtonLabel;
+  final String? deleteButtonLabel;
+  final bool canDelete;
+  final WorkerResumeProfileSummary? profileSummary;
+  final String? educationLevel;
+  final String? educationStatus;
+  final String? careerType;
+  final String? selfIntroduction;
+  final List<WorkerResumeOption> educationLevelOptions;
+  final List<WorkerResumeOption> educationStatusOptions;
+  final List<WorkerResumeOption> careerTypeOptions;
+  final List<WorkerResumeOption> durationTypeOptions;
+  final List<WorkerResumeCareerEntry> careerEntries;
+  final List<WorkerResumeWorkHistoryItem> workHistoryItems;
+  final String? addCareerButtonLabel;
+
+  bool get isEditMode => mode == 'edit';
+
+  factory WorkerResumeFormData.fromJson(Map<String, dynamic> json) {
+    final educationLevelOptions =
+        json['education_level_options'] as List<dynamic>? ?? const [];
+    final educationStatusOptions =
+        json['education_status_options'] as List<dynamic>? ?? const [];
+    final careerTypeOptions =
+        json['career_type_options'] as List<dynamic>? ?? const [];
+    final durationTypeOptions =
+        json['duration_type_options'] as List<dynamic>? ?? const [];
+    final careerEntries = json['career_entries'] as List<dynamic>? ?? const [];
+    final workHistoryItems =
+        json['work_history_items'] as List<dynamic>? ?? const [];
+
+    return WorkerResumeFormData(
+      resumeId: _nullableInt(json['resume_id']),
+      resumeTitle: _nullableString(json['resume_title']),
+      mode: _stringOf(json['mode']),
+      headerTitle: _nullableString(json['header_title']),
+      submitButtonLabel: _nullableString(json['submit_button_label']),
+      editButtonLabel: _nullableString(json['edit_button_label']),
+      deleteButtonLabel: _nullableString(json['delete_button_label']),
+      canDelete: _boolOf(json['can_delete']),
+      profileSummary: json['profile_summary'] is Map
+          ? WorkerResumeProfileSummary.fromJson(
+              Map<String, dynamic>.from(json['profile_summary'] as Map),
+            )
+          : null,
+      educationLevel: _nullableString(json['education_level']),
+      educationStatus: _nullableString(json['education_status']),
+      careerType: _nullableString(json['career_type']),
+      selfIntroduction: _nullableString(json['self_introduction']),
+      educationLevelOptions: educationLevelOptions
+          .whereType<Map>()
+          .map(
+            (item) =>
+                WorkerResumeOption.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList(),
+      educationStatusOptions: educationStatusOptions
+          .whereType<Map>()
+          .map(
+            (item) =>
+                WorkerResumeOption.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList(),
+      careerTypeOptions: careerTypeOptions
+          .whereType<Map>()
+          .map(
+            (item) =>
+                WorkerResumeOption.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList(),
+      durationTypeOptions: durationTypeOptions
+          .whereType<Map>()
+          .map(
+            (item) =>
+                WorkerResumeOption.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList(),
+      careerEntries: careerEntries
+          .whereType<Map>()
+          .map(
+            (item) => WorkerResumeCareerEntry.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
+          )
+          .toList(),
+      workHistoryItems: workHistoryItems
+          .whereType<Map>()
+          .map(
+            (item) => WorkerResumeWorkHistoryItem.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
+          )
+          .toList(),
+      addCareerButtonLabel: _nullableString(json['add_career_button_label']),
     );
   }
 }
@@ -410,6 +670,284 @@ class WorkerRecruitmentApplicationPage {
       totalCount: _intOf(json['total_count']),
       page: _intOf(json['page']),
       pageSize: _intOf(json['page_size']),
+    );
+  }
+}
+
+class WorkerContractChatSummary {
+  const WorkerContractChatSummary({
+    required this.contractId,
+    required this.branchId,
+    required this.employeeId,
+    required this.branchName,
+    required this.title,
+    this.counterpartyName,
+    this.counterpartyRole,
+    required this.chatStatus,
+    required this.chatStatusLabel,
+    this.lastMessagePreview,
+    this.lastMessageAt,
+    this.unreadCount = 0,
+  });
+
+  final int contractId;
+  final int branchId;
+  final int employeeId;
+  final String branchName;
+  final String title;
+  final String? counterpartyName;
+  final String? counterpartyRole;
+  final String chatStatus;
+  final String chatStatusLabel;
+  final String? lastMessagePreview;
+  final String? lastMessageAt;
+  final int unreadCount;
+
+  bool get isCompleted => chatStatus == 'completed';
+
+  factory WorkerContractChatSummary.fromJson(Map<String, dynamic> json) {
+    return WorkerContractChatSummary(
+      contractId: _intOf(json['contract_id']),
+      branchId: _intOf(json['branch_id']),
+      employeeId: _intOf(json['employee_id']),
+      branchName: _stringOf(json['branch_name']),
+      title: _stringOf(json['title']),
+      counterpartyName: _nullableString(json['counterparty_name']),
+      counterpartyRole: _nullableString(json['counterparty_role']),
+      chatStatus: _stringOf(json['chat_status']),
+      chatStatusLabel: _stringOf(json['chat_status_label']),
+      lastMessagePreview: _nullableString(json['last_message_preview']),
+      lastMessageAt: _nullableString(json['last_message_at']),
+      unreadCount: _intOf(json['unread_count']),
+    );
+  }
+}
+
+class WorkerContractChatPage {
+  const WorkerContractChatPage({
+    required this.items,
+    this.emptyTitle,
+    this.emptyDescription,
+  });
+
+  final List<WorkerContractChatSummary> items;
+  final String? emptyTitle;
+  final String? emptyDescription;
+
+  factory WorkerContractChatPage.fromJson(Map<String, dynamic> json) {
+    final rawItems = json['items'] as List<dynamic>? ?? const [];
+    return WorkerContractChatPage(
+      items: rawItems
+          .whereType<Map>()
+          .map(
+            (item) =>
+                WorkerContractChatSummary.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList(),
+      emptyTitle: _nullableString(json['empty_title']),
+      emptyDescription: _nullableString(json['empty_description']),
+    );
+  }
+}
+
+class WorkerContractChatThread {
+  const WorkerContractChatThread({
+    required this.contractId,
+    required this.branchId,
+    required this.employeeId,
+    required this.branchName,
+    required this.title,
+    this.counterpartyName,
+    this.counterpartyRole,
+    required this.chatStatus,
+    required this.chatStatusLabel,
+    this.lastMessagePreview,
+    this.lastMessageAt,
+    this.unreadCount = 0,
+  });
+
+  final int contractId;
+  final int branchId;
+  final int employeeId;
+  final String branchName;
+  final String title;
+  final String? counterpartyName;
+  final String? counterpartyRole;
+  final String chatStatus;
+  final String chatStatusLabel;
+  final String? lastMessagePreview;
+  final String? lastMessageAt;
+  final int unreadCount;
+
+  bool get isCompleted => chatStatus == 'completed';
+
+  factory WorkerContractChatThread.fromJson(Map<String, dynamic> json) {
+    return WorkerContractChatThread(
+      contractId: _intOf(json['contract_id']),
+      branchId: _intOf(json['branch_id']),
+      employeeId: _intOf(json['employee_id']),
+      branchName: _stringOf(json['branch_name']),
+      title: _stringOf(json['title']),
+      counterpartyName: _nullableString(json['counterparty_name']),
+      counterpartyRole: _nullableString(json['counterparty_role']),
+      chatStatus: _stringOf(json['chat_status']),
+      chatStatusLabel: _stringOf(json['chat_status_label']),
+      lastMessagePreview: _nullableString(json['last_message_preview']),
+      lastMessageAt: _nullableString(json['last_message_at']),
+      unreadCount: _intOf(json['unread_count']),
+    );
+  }
+}
+
+class WorkerContractChatMessage {
+  const WorkerContractChatMessage({
+    required this.messageId,
+    required this.senderRole,
+    this.senderName,
+    required this.messageType,
+    required this.text,
+    this.createdAt,
+    this.documentStatus,
+  });
+
+  final String messageId;
+  final String senderRole;
+  final String? senderName;
+  final String messageType;
+  final String text;
+  final String? createdAt;
+  final String? documentStatus;
+
+  bool get fromWorker => senderRole == 'worker';
+
+  factory WorkerContractChatMessage.fromJson(Map<String, dynamic> json) {
+    return WorkerContractChatMessage(
+      messageId: _stringOf(json['message_id']),
+      senderRole: _stringOf(json['sender_role']),
+      senderName: _nullableString(json['sender_name']),
+      messageType: _stringOf(json['message_type']),
+      text: _stringOf(json['text']),
+      createdAt: _nullableString(json['created_at']),
+      documentStatus: _nullableString(json['document_status']),
+    );
+  }
+}
+
+class WorkerContractChatDetail {
+  const WorkerContractChatDetail({
+    required this.thread,
+    required this.currentUserRole,
+    required this.messages,
+    this.canOpenDocument = false,
+    this.canDownloadDocument = false,
+  });
+
+  final WorkerContractChatThread thread;
+  final String currentUserRole;
+  final List<WorkerContractChatMessage> messages;
+  final bool canOpenDocument;
+  final bool canDownloadDocument;
+
+  factory WorkerContractChatDetail.fromJson(Map<String, dynamic> json) {
+    final rawMessages = json['messages'] as List<dynamic>? ?? const [];
+    final threadJson = json['thread'];
+    return WorkerContractChatDetail(
+      thread: WorkerContractChatThread.fromJson(
+        threadJson is Map ? Map<String, dynamic>.from(threadJson) : const {},
+      ),
+      currentUserRole: _stringOf(json['current_user_role']),
+      messages: rawMessages
+          .whereType<Map>()
+          .map(
+            (item) =>
+                WorkerContractChatMessage.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList(),
+      canOpenDocument: _boolOf(json['can_open_document']),
+      canDownloadDocument: _boolOf(json['can_download_document']),
+    );
+  }
+}
+
+class WorkerContractChatDocument {
+  const WorkerContractChatDocument({
+    required this.contractId,
+    required this.title,
+    required this.templateVersion,
+    required this.chatStatus,
+    required this.chatStatusLabel,
+    required this.currentUserRole,
+    required this.formValues,
+    this.documentPreviewText,
+    required this.businessFieldKeys,
+    required this.workerFieldKeys,
+    required this.editableFieldKeys,
+    required this.requiredFieldKeys,
+    required this.requiredFieldLabels,
+    this.primaryAction,
+    this.primaryActionLabel,
+    this.downloadAvailable = false,
+  });
+
+  final int contractId;
+  final String title;
+  final String templateVersion;
+  final String chatStatus;
+  final String chatStatusLabel;
+  final String currentUserRole;
+  final Map<String, dynamic> formValues;
+  final String? documentPreviewText;
+  final List<String> businessFieldKeys;
+  final List<String> workerFieldKeys;
+  final List<String> editableFieldKeys;
+  final List<String> requiredFieldKeys;
+  final Map<String, String> requiredFieldLabels;
+  final String? primaryAction;
+  final String? primaryActionLabel;
+  final bool downloadAvailable;
+
+  bool canEditField(String key) => editableFieldKeys.contains(key);
+
+  factory WorkerContractChatDocument.fromJson(Map<String, dynamic> json) {
+    List<String> parseStringList(dynamic raw) {
+      final list = raw as List<dynamic>? ?? const [];
+      return list
+          .map((item) => item?.toString() ?? '')
+          .where((item) => item.isNotEmpty)
+          .toList();
+    }
+
+    final labelsRaw = json['required_field_labels'];
+    final labels = <String, String>{};
+    if (labelsRaw is Map) {
+      for (final entry in labelsRaw.entries) {
+        final key = entry.key.toString();
+        final value = entry.value?.toString() ?? '';
+        if (key.isNotEmpty) {
+          labels[key] = value;
+        }
+      }
+    }
+
+    return WorkerContractChatDocument(
+      contractId: _intOf(json['contract_id']),
+      title: _stringOf(json['title']),
+      templateVersion: _stringOf(json['template_version']),
+      chatStatus: _stringOf(json['chat_status']),
+      chatStatusLabel: _stringOf(json['chat_status_label']),
+      currentUserRole: _stringOf(json['current_user_role']),
+      formValues: json['form_values'] is Map
+          ? Map<String, dynamic>.from(json['form_values'] as Map)
+          : <String, dynamic>{},
+      documentPreviewText: _nullableString(json['document_preview_text']),
+      businessFieldKeys: parseStringList(json['business_field_keys']),
+      workerFieldKeys: parseStringList(json['worker_field_keys']),
+      editableFieldKeys: parseStringList(json['editable_field_keys']),
+      requiredFieldKeys: parseStringList(json['required_field_keys']),
+      requiredFieldLabels: labels,
+      primaryAction: _nullableString(json['primary_action']),
+      primaryActionLabel: _nullableString(json['primary_action_label']),
+      downloadAvailable: _boolOf(json['download_available']),
     );
   }
 }

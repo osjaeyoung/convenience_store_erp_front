@@ -31,6 +31,9 @@ class AuthInputField extends StatelessWidget {
     this.maxLines = 1,
     this.hintStyle,
     this.suffixIconConstraints,
+    this.enableInteractiveSelection = true,
+    this.showCursor,
+    this.contextMenuBuilder,
   });
 
   final GlobalKey<FormFieldState<String>>? formFieldKey;
@@ -56,6 +59,9 @@ class AuthInputField extends StatelessWidget {
   final int? maxLines;
   final TextStyle? hintStyle;
   final BoxConstraints? suffixIconConstraints;
+  final bool enableInteractiveSelection;
+  final bool? showCursor;
+  final EditableTextContextMenuBuilder? contextMenuBuilder;
 
   static const Color _errorColor = Color(0xFFFF4834);
 
@@ -69,6 +75,9 @@ class AuthInputField extends StatelessWidget {
       readOnly: readOnly,
       keyboardType: keyboardType,
       obscureText: obscureText,
+      enableInteractiveSelection: enableInteractiveSelection,
+      showCursor: showCursor,
+      contextMenuBuilder: contextMenuBuilder,
       validator: validator,
       autovalidateMode: autovalidateMode,
       onChanged: onChanged,
