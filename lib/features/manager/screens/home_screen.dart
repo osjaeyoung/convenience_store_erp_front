@@ -4,16 +4,17 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../core/enums/user_role.dart';
 import '../../../core/models/user.dart';
+import '../../../data/models/recruitment/recruitment_models.dart';
+import '../../../data/repositories/manager_home_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/selected_branch_cubit.dart';
 import 'home_alerts_screen.dart';
-import 'labor_cost_screen.dart';
 import 'add_branch_screen.dart';
 import 'manager_registration_screen.dart';
-import 'recruitment_screen.dart';
+import 'recruitment_posting_detail_screen.dart';
 import '../widgets/home_common_app_bar.dart';
 import '../../account/account_routes.dart';
 import '../widgets/home_shared_sections.dart';
@@ -35,7 +36,16 @@ const String _registeredManagerIconSvg = '''
 
 /// 경영주/점장 공용 홈 화면
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({
+    super.key,
+    required this.onOpenManagementTab,
+    required this.onOpenLaborCostTab,
+    required this.onOpenRecruitmentTab,
+  });
+
+  final VoidCallback onOpenManagementTab;
+  final ValueChanged<int> onOpenLaborCostTab;
+  final ValueChanged<int> onOpenRecruitmentTab;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -52,8 +62,8 @@ class _HomeScreenState extends State<HomeScreen> {
       listener: (context, selectedBranchId) {
         if (selectedBranchId != null) {
           context.read<HomeBloc>().add(
-                HomeBranchDetailRequested(branchId: selectedBranchId),
-              );
+            HomeBranchDetailRequested(branchId: selectedBranchId),
+          );
         }
       },
       child: BlocBuilder<HomeBloc, HomeState>(
@@ -75,8 +85,8 @@ class _HomeScreenState extends State<HomeScreen> {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (!mounted) return;
               context.read<HomeBloc>().add(
-                    HomeBranchDetailRequested(branchId: selectedBranch.id),
-                  );
+                HomeBranchDetailRequested(branchId: selectedBranch.id),
+              );
             });
           }
 
@@ -89,10 +99,10 @@ class _HomeScreenState extends State<HomeScreen> {
               onAlarmTap: selectedBranch == null
                   ? null
                   : () => _openAlerts(
-                        context,
-                        branchId: selectedBranch.id,
-                        role: user?.role,
-                      ),
+                      context,
+                      branchId: selectedBranch.id,
+                      role: user?.role,
+                    ),
               onMenuTap: () => openAccountSettingsMenu(context),
             ),
             body: _buildBody(
@@ -152,7 +162,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 .map((b) => (id: b.id, name: b.name, status: b.status))
                 .toList(),
             isExpanded: _isBranchListExpanded,
-            isOwner: user?.role == UserRole.manager || user?.role == UserRole.storeManager,
+            isOwner:
+                user?.role == UserRole.manager ||
+                user?.role == UserRole.storeManager,
             onHeaderTap: () {
               if (branches.isEmpty) return;
               setState(() => _isBranchListExpanded = !_isBranchListExpanded);
@@ -162,7 +174,8 @@ class _HomeScreenState extends State<HomeScreen> {
               _lastDetailRequestedBranchId = branchId;
               setState(() => _isBranchListExpanded = false);
             },
-            onAddTap: (user?.role == UserRole.manager ||
+            onAddTap:
+                (user?.role == UserRole.manager ||
                     user?.role == UserRole.storeManager)
                 ? () async {
                     final changed = await Navigator.of(context).push<bool>(
@@ -171,48 +184,55 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     );
                     if (changed == true && context.mounted) {
-                      context.read<HomeBloc>().add(const HomeBranchesRequested());
+                      context.read<HomeBloc>().add(
+                        const HomeBranchesRequested(),
+                      );
                     }
                   }
                 : null,
           ),
           SizedBox(height: 28.h),
           if (selectedBranch == null)
-            _EmptyBranchView(
-              hasBranches: branches.isNotEmpty,
-            )
+            _EmptyBranchView(hasBranches: branches.isNotEmpty)
           else
             _SelectedBranchOverview(
               role: user?.role,
               branchId: selectedBranch.id,
               branchName: selectedBranch.name,
-              managerName: state.selectedBranchDetail?.branchId == selectedBranch.id
+              managerName:
+                  state.selectedBranchDetail?.branchId == selectedBranch.id
                   ? state.selectedBranchDetail!.managerName
                   : selectedBranch.managerName,
               waitingInterview:
                   state.selectedBranchDetail?.branchId == selectedBranch.id
-                      ? state.selectedBranchDetail!.waitingInterview
-                      : selectedBranch.waitingInterview,
-              newApplicants: state.selectedBranchDetail?.branchId == selectedBranch.id
+                  ? state.selectedBranchDetail!.waitingInterview
+                  : selectedBranch.waitingInterview,
+              newApplicants:
+                  state.selectedBranchDetail?.branchId == selectedBranch.id
                   ? state.selectedBranchDetail!.newApplicants
                   : selectedBranch.newApplicants,
-              newContacts: state.selectedBranchDetail?.branchId == selectedBranch.id
+              newContacts:
+                  state.selectedBranchDetail?.branchId == selectedBranch.id
                   ? state.selectedBranchDetail!.newContacts
                   : selectedBranch.newContacts,
-              alertCount: state.selectedBranchDetail?.branchId == selectedBranch.id
+              alertCount:
+                  state.selectedBranchDetail?.branchId == selectedBranch.id
                   ? selectedBranch.alertCount
                   : selectedBranch.alertCount,
-              detail:
-                  state.selectedBranchDetail?.branchId == selectedBranch.id
-                      ? state.selectedBranchDetail
-                      : null,
+              detail: state.selectedBranchDetail?.branchId == selectedBranch.id
+                  ? state.selectedBranchDetail
+                  : null,
               detailLoading: state.detailLoading,
-              onTapTodayWorkerStatus: (row) => _showWorkStatusModal(context, row),
+              onTapTodayWorkerStatus: (row) =>
+                  _showWorkStatusModal(context, row),
               onTapTodayWorkerMemo: (row) => _showMemoDetailModal(
                 context,
                 row,
                 homeBloc: context.read<HomeBloc>(),
               ),
+              onOpenManagementTab: widget.onOpenManagementTab,
+              onOpenLaborCostTab: widget.onOpenLaborCostTab,
+              onOpenRecruitmentTab: widget.onOpenRecruitmentTab,
             ),
         ],
       ),
@@ -300,7 +320,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     side: BorderSide(
                       color: selected ? AppColors.primary : AppColors.grey50,
                     ),
-                    backgroundColor: selected ? const Color(0xFFE2F6F0) : AppColors.grey0,
+                    backgroundColor: selected
+                        ? const Color(0xFFE2F6F0)
+                        : AppColors.grey0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.r),
                     ),
@@ -308,7 +330,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Text(
                     label,
                     style: AppTypography.bodyLargeM.copyWith(
-                      color: selected ? AppColors.primary : AppColors.textSecondary,
+                      color: selected
+                          ? AppColors.primary
+                          : AppColors.textSecondary,
                     ),
                   ),
                 ),
@@ -316,7 +340,9 @@ class _HomeScreenState extends State<HomeScreen> {
             }
 
             return Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24.r),
+              ),
               child: Padding(
                 padding: EdgeInsets.fromLTRB(20.w, 28.h, 20.w, 18.h),
                 child: Column(
@@ -444,16 +470,18 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _showMemoModal(
     BuildContext context,
     HomeWorkerRow row,
-    String status,
-    {required HomeBloc homeBloc}
-  ) async {
+    String status, {
+    required HomeBloc homeBloc,
+  }) async {
     final controller = TextEditingController();
     await showDialog<void>(
       context: context,
       barrierColor: Colors.black54,
       builder: (dialogContext) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24.r),
+          ),
           child: Padding(
             padding: EdgeInsets.fromLTRB(18.w, 22.h, 18.w, 16.h),
             child: Column(
@@ -462,13 +490,17 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(
                   '근무 상태 메모를\n입력해 주세요.',
-                  style: AppTypography.heading3.copyWith(color: AppColors.textPrimary),
+                  style: AppTypography.heading3.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
                 ),
                 SizedBox(height: 14.h),
                 Container(
                   decoration: BoxDecoration(
                     color: AppColors.grey25,
-                    border: Border(top: BorderSide(color: Color(0xFF666874), width: 1)),
+                    border: Border(
+                      top: BorderSide(color: Color(0xFF666874), width: 1),
+                    ),
                   ),
                   padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 8.w),
                   child: Row(
@@ -481,27 +513,41 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 Container(
-                  padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 8.w),
+                  padding: EdgeInsets.symmetric(
+                    vertical: 10.h,
+                    horizontal: 8.w,
+                  ),
                   decoration: BoxDecoration(
                     border: Border(bottom: BorderSide(color: AppColors.grey25)),
                   ),
                   child: Row(
                     children: [
-                      Expanded(child: Text(row.time, textAlign: TextAlign.center)),
-                      Expanded(child: Text(row.workerName, textAlign: TextAlign.start)),
+                      Expanded(
+                        child: Text(row.time, textAlign: TextAlign.center),
+                      ),
+                      Expanded(
+                        child: Text(row.workerName, textAlign: TextAlign.start),
+                      ),
                       const Expanded(
                         child: Center(
-                          child: Icon(Icons.edit_outlined, color: AppColors.grey150),
+                          child: Icon(
+                            Icons.edit_outlined,
+                            color: AppColors.grey150,
+                          ),
                         ),
                       ),
                       Expanded(
                         child: Center(
                           child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8.w,
+                              vertical: 3.h,
+                            ),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(4.r),
-                              border:
-                                  status == '완료' ? null : Border.all(color: AppColors.primary),
+                              border: status == '완료'
+                                  ? null
+                                  : Border.all(color: AppColors.primary),
                               color: status == '완료'
                                   ? const Color(0xFF666874)
                                   : AppColors.primaryLight,
@@ -521,7 +567,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 SizedBox(height: 14.h),
-                Text('메모', style: AppTypography.bodyLargeB.copyWith(color: AppColors.textPrimary)),
+                Text(
+                  '메모',
+                  style: AppTypography.bodyLargeB.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
                 SizedBox(height: 8.h),
                 TextFormField(
                   controller: controller,
@@ -603,7 +654,9 @@ class _HomeScreenState extends State<HomeScreen> {
       barrierColor: Colors.black54,
       builder: (dialogContext) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24.r),
+          ),
           child: Padding(
             padding: EdgeInsets.fromLTRB(18.w, 22.h, 18.w, 16.h),
             child: Column(
@@ -613,13 +666,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   '근무 상태 메모',
                   textAlign: TextAlign.center,
-                  style: AppTypography.heading3.copyWith(color: AppColors.textPrimary),
+                  style: AppTypography.heading3.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
                 ),
                 SizedBox(height: 14.h),
                 Container(
                   decoration: BoxDecoration(
                     color: AppColors.grey25,
-                    border: Border(top: BorderSide(color: Color(0xFF666874), width: 1)),
+                    border: Border(
+                      top: BorderSide(color: Color(0xFF666874), width: 1),
+                    ),
                   ),
                   padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 8.w),
                   child: Row(
@@ -632,23 +689,36 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 Container(
-                  padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 8.w),
+                  padding: EdgeInsets.symmetric(
+                    vertical: 10.h,
+                    horizontal: 8.w,
+                  ),
                   decoration: BoxDecoration(
                     border: Border(bottom: BorderSide(color: AppColors.grey25)),
                   ),
                   child: Row(
                     children: [
-                      Expanded(child: Text(row.time, textAlign: TextAlign.center)),
-                      Expanded(child: Text(row.workerName, textAlign: TextAlign.start)),
+                      Expanded(
+                        child: Text(row.time, textAlign: TextAlign.center),
+                      ),
+                      Expanded(
+                        child: Text(row.workerName, textAlign: TextAlign.start),
+                      ),
                       const Expanded(
                         child: Center(
-                          child: Icon(Icons.edit_outlined, color: AppColors.grey150),
+                          child: Icon(
+                            Icons.edit_outlined,
+                            color: AppColors.grey150,
+                          ),
                         ),
                       ),
                       Expanded(
                         child: Center(
                           child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8.w,
+                              vertical: 3.h,
+                            ),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(4.r),
                               border: _displayStatusLabel(row.status) == '완료'
@@ -673,7 +743,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 SizedBox(height: 14.h),
-                Text('메모', style: AppTypography.bodyLargeB.copyWith(color: AppColors.textPrimary)),
+                Text(
+                  '메모',
+                  style: AppTypography.bodyLargeB.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
                 SizedBox(height: 8.h),
                 TextFormField(
                   controller: controller,
@@ -748,21 +823,18 @@ class _HomeScreenState extends State<HomeScreen> {
     final detail = homeBloc.state.selectedBranchDetail;
     if (detail == null) return;
     homeBloc.add(
-          HomeWorkerStatusSaveRequested(
-            branchId: detail.branchId,
-            workDate: detail.workDate,
-            timeLabel: row.time,
-            workerName: row.workerName,
-            status: status,
-            memo: (memo != null && memo.isNotEmpty) ? memo : null,
-          ),
-        );
+      HomeWorkerStatusSaveRequested(
+        branchId: detail.branchId,
+        workDate: detail.workDate,
+        timeLabel: row.time,
+        workerName: row.workerName,
+        status: status,
+        memo: (memo != null && memo.isNotEmpty) ? memo : null,
+      ),
+    );
   }
 
-  void _deleteTodayWorkerMemo(
-    HomeBloc homeBloc, {
-    required HomeWorkerRow row,
-  }) {
+  void _deleteTodayWorkerMemo(HomeBloc homeBloc, {required HomeWorkerRow row}) {
     final detail = homeBloc.state.selectedBranchDetail;
     if (detail == null) return;
     homeBloc.add(
@@ -828,6 +900,9 @@ class _SelectedBranchOverview extends StatelessWidget {
     required this.detailLoading,
     required this.onTapTodayWorkerStatus,
     required this.onTapTodayWorkerMemo,
+    required this.onOpenManagementTab,
+    required this.onOpenLaborCostTab,
+    required this.onOpenRecruitmentTab,
   });
 
   final UserRole? role;
@@ -842,28 +917,33 @@ class _SelectedBranchOverview extends StatelessWidget {
   final bool detailLoading;
   final void Function(HomeWorkerRow row) onTapTodayWorkerStatus;
   final void Function(HomeWorkerRow row) onTapTodayWorkerMemo;
+  final VoidCallback onOpenManagementTab;
+  final ValueChanged<int> onOpenLaborCostTab;
+  final ValueChanged<int> onOpenRecruitmentTab;
 
   @override
   Widget build(BuildContext context) {
     final workerRows = detail != null
         ? detail!.rows
-            .map(
-              (row) => (
-                row: row,
-                time: row.time,
-                workerName: row.workerName,
-                status: row.status,
-                hasMemo: (row.memo ?? '').trim().isNotEmpty,
-              ),
-            )
-            .toList()
-        : const <({
-            HomeWorkerRow row,
-            String time,
-            String workerName,
-            String status,
-            bool hasMemo,
-          })>[];
+              .map(
+                (row) => (
+                  row: row,
+                  time: row.time,
+                  workerName: row.workerName,
+                  status: row.status,
+                  hasMemo: (row.memo ?? '').trim().isNotEmpty,
+                ),
+              )
+              .toList()
+        : const <
+            ({
+              HomeWorkerRow row,
+              String time,
+              String workerName,
+              String status,
+              bool hasMemo,
+            })
+          >[];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -876,7 +956,19 @@ class _SelectedBranchOverview extends StatelessWidget {
           waitingInterview: waitingInterview,
           newApplicants: newApplicants,
           newContacts: newContacts,
-          onDetailTap: () => _openRecruitment(context),
+          onTapWaitingInterviewDetail: () => _openRecruitmentStatusDetail(
+            context,
+            target: _RecruitmentHomeDetailTarget.posting,
+          ),
+          onTapNewApplicantsDetail: () => _openRecruitmentStatusDetail(
+            context,
+            target: _RecruitmentHomeDetailTarget.applicants,
+          ),
+          onTapNewContactsDetail: () => _openRecruitmentStatusDetail(
+            context,
+            target: _RecruitmentHomeDetailTarget.posting,
+          ),
+          onOpenRecruitment: _openRecruitment,
         ),
         SizedBox(height: 24.h),
         _TodayAlertCard(
@@ -892,6 +984,7 @@ class _SelectedBranchOverview extends StatelessWidget {
           ),
         HomeTodayWorkersSection(
           dateLabel: detail?.dateLabel ?? _todayDateLabel(),
+          onTapHeader: onOpenManagementTab,
           rows: workerRows
               .map(
                 (e) => (
@@ -923,12 +1016,12 @@ class _SelectedBranchOverview extends StatelessWidget {
         HomeMonthlyLaborCostCard(
           totalAmountText: detail?.expectedTotalAmountText ?? '총 - 원',
           changeText: detail?.expectedChangeText ?? '전월 대비 데이터가 없습니다',
-          onDetailTap: () => _openLaborCost(context),
+          onDetailTap: _openLaborCost,
         ),
         SizedBox(height: 32.h),
         HomeLaborSavingPointCard(
           points: _buildSavingPointSpans(),
-          onDetailTap: () => _openLaborSaving(context),
+          onDetailTap: _openLaborSaving,
         ),
       ],
     );
@@ -946,9 +1039,7 @@ class _SelectedBranchOverview extends StatelessWidget {
   List<TextSpan> _buildSavingPointSpans() {
     final raw = detail?.savingPointTexts ?? const [];
     if (raw.isEmpty) {
-      return const [
-        TextSpan(text: '절감 포인트 데이터가 없습니다.'),
-      ];
+      return const [TextSpan(text: '절감 포인트 데이터가 없습니다.')];
     }
     return raw.map((e) => TextSpan(text: e)).toList();
   }
@@ -960,17 +1051,15 @@ class _SelectedBranchOverview extends StatelessWidget {
       ),
     );
     if (changed == true && context.mounted) {
-      context.read<HomeBloc>().add(HomeBranchDetailRequested(branchId: branchId));
+      context.read<HomeBloc>().add(
+        HomeBranchDetailRequested(branchId: branchId),
+      );
       context.read<HomeBloc>().add(const HomeBranchesRequested());
     }
   }
 
-  Future<void> _openRecruitment(BuildContext context) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => const RecruitmentScreen(initialTabIndex: 1),
-      ),
-    );
+  void _openRecruitment() {
+    onOpenRecruitmentTab(2);
   }
 
   Future<void> _openAlerts(BuildContext context) async {
@@ -984,22 +1073,199 @@ class _SelectedBranchOverview extends StatelessWidget {
     );
   }
 
-  Future<void> _openLaborCost(BuildContext context) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => const LaborCostScreen(initialTabIndex: 0),
-      ),
-    );
+  void _openLaborCost() {
+    onOpenLaborCostTab(0);
   }
 
-  Future<void> _openLaborSaving(BuildContext context) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => const LaborCostScreen(initialTabIndex: 2),
+  void _openLaborSaving() {
+    onOpenLaborCostTab(2);
+  }
+
+  Future<void> _openRecruitmentStatusDetail(
+    BuildContext context, {
+    required _RecruitmentHomeDetailTarget target,
+  }) async {
+    final repo = context.read<ManagerHomeRepository>();
+    final page = await repo.getMyRecruitmentPostings(
+      branchId: branchId,
+      pageSize: 50,
+    );
+    if (!context.mounted) return;
+
+    final candidates = _candidateRecruitmentPostings(
+      page.items,
+      target: target,
+    );
+    if (candidates.isEmpty) {
+      final message = target == _RecruitmentHomeDetailTarget.applicants
+          ? '확인할 지원자 채용 공고가 없습니다.'
+          : '열어볼 채용 공고가 없습니다.';
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+      return;
+    }
+
+    final selected = candidates.length == 1
+        ? candidates.first
+        : await _showRecruitmentPostingPicker(
+            context,
+            candidates,
+            target: target,
+          );
+    if (selected == null || !context.mounted) return;
+
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => RecruitmentPostingDetailScreen(
+          branchId: branchId,
+          postingId: selected.postingId,
+          mineMode: true,
+          initialTabIndex: target == _RecruitmentHomeDetailTarget.applicants
+              ? 1
+              : 0,
+        ),
       ),
+    );
+    if (changed == true && context.mounted) {
+      context.read<HomeBloc>().add(const HomeBranchesRequested());
+      context.read<HomeBloc>().add(
+        HomeBranchDetailRequested(branchId: branchId),
+      );
+    }
+  }
+
+  List<RecruitmentPostingSummary> _candidateRecruitmentPostings(
+    List<RecruitmentPostingSummary> items, {
+    required _RecruitmentHomeDetailTarget target,
+  }) {
+    final validItems = items.where((item) => item.postingId > 0).toList();
+    final publishedItems = validItems.where((item) => !item.isDraft).toList();
+
+    if (target == _RecruitmentHomeDetailTarget.applicants) {
+      final applicantsItems = publishedItems
+          .where((item) => item.applicantCount > 0)
+          .toList();
+      if (applicantsItems.isNotEmpty) return applicantsItems;
+    }
+
+    if (publishedItems.isNotEmpty) return publishedItems;
+
+    if (target == _RecruitmentHomeDetailTarget.applicants) {
+      final applicantsItems = validItems
+          .where((item) => item.applicantCount > 0)
+          .toList();
+      if (applicantsItems.isNotEmpty) return applicantsItems;
+    }
+
+    return validItems;
+  }
+
+  Future<RecruitmentPostingSummary?> _showRecruitmentPostingPicker(
+    BuildContext context,
+    List<RecruitmentPostingSummary> items, {
+    required _RecruitmentHomeDetailTarget target,
+  }) {
+    final title = target == _RecruitmentHomeDetailTarget.applicants
+        ? '지원 현황을 볼 채용 공고를 선택해주세요.'
+        : '열어볼 채용 공고를 선택해주세요.';
+
+    return showModalBottomSheet<RecruitmentPostingSummary>(
+      context: context,
+      backgroundColor: AppColors.grey0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 20.h),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36.w,
+                    height: 4.h,
+                    decoration: BoxDecoration(
+                      color: AppColors.grey100,
+                      borderRadius: BorderRadius.circular(999.r),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                Text(
+                  title,
+                  style: AppTypography.heading3.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 12.h),
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.55,
+                  ),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: items.length,
+                    separatorBuilder: (_, __) =>
+                        const Divider(height: 1, color: AppColors.grey50),
+                    itemBuilder: (itemContext, index) {
+                      final item = items[index];
+                      final titleText = item.title?.trim().isNotEmpty == true
+                          ? item.title!.trim()
+                          : '제목 없는 채용 공고';
+                      final subtitleParts = <String>[
+                        if (item.companyName?.trim().isNotEmpty == true)
+                          item.companyName!.trim(),
+                        if (item.regionSummary?.trim().isNotEmpty == true)
+                          item.regionSummary!.trim(),
+                      ];
+                      final trailingText =
+                          target == _RecruitmentHomeDetailTarget.applicants
+                          ? '지원자 ${item.applicantCount}명'
+                          : (item.badgeLabel?.trim().isNotEmpty == true
+                                ? item.badgeLabel!.trim()
+                                : '공고 상세');
+
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          titleText,
+                          style: AppTypography.bodyMediumM.copyWith(
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        subtitle: subtitleParts.isEmpty
+                            ? null
+                            : Text(
+                                subtitleParts.join(' · '),
+                                style: AppTypography.bodySmallR.copyWith(
+                                  color: AppColors.textTertiary,
+                                ),
+                              ),
+                        trailing: Text(
+                          trailingText,
+                          style: AppTypography.bodySmallM.copyWith(
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        onTap: () => Navigator.of(sheetContext).pop(item),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
+
+enum _RecruitmentHomeDetailTarget { posting, applicants }
 
 class _RegisteredManagerCard extends StatelessWidget {
   const _RegisteredManagerCard({
@@ -1060,13 +1326,19 @@ class _RecruitmentStatusCard extends StatelessWidget {
     required this.waitingInterview,
     required this.newApplicants,
     required this.newContacts,
-    required this.onDetailTap,
+    required this.onTapWaitingInterviewDetail,
+    required this.onTapNewApplicantsDetail,
+    required this.onTapNewContactsDetail,
+    required this.onOpenRecruitment,
   });
 
   final int waitingInterview;
   final int newApplicants;
   final int newContacts;
-  final VoidCallback onDetailTap;
+  final VoidCallback onTapWaitingInterviewDetail;
+  final VoidCallback onTapNewApplicantsDetail;
+  final VoidCallback onTapNewContactsDetail;
+  final VoidCallback onOpenRecruitment;
 
   @override
   Widget build(BuildContext context) {
@@ -1109,19 +1381,19 @@ class _RecruitmentStatusCard extends StatelessWidget {
           _RecruitmentRow(
             label: '구인게시물 ',
             value: '$waitingInterview건',
-            onDetailTap: onDetailTap,
+            onDetailTap: onTapWaitingInterviewDetail,
           ),
           SizedBox(height: 8.h),
           _RecruitmentRow(
             label: '새로운 지원자 ',
             value: '$newApplicants명',
-            onDetailTap: onDetailTap,
+            onDetailTap: onTapNewApplicantsDetail,
           ),
           SizedBox(height: 8.h),
           _RecruitmentRow(
             label: '새로운 연락 ',
             value: '$newContacts건',
-            onDetailTap: onDetailTap,
+            onDetailTap: onTapNewContactsDetail,
           ),
           SizedBox(height: 12.h),
           Container(
@@ -1132,7 +1404,7 @@ class _RecruitmentStatusCard extends StatelessWidget {
               color: AppColors.grey0,
             ),
             child: TextButton(
-              onPressed: onDetailTap,
+              onPressed: onOpenRecruitment,
               style: TextButton.styleFrom(
                 minimumSize: Size.fromHeight(46.h),
                 padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 0.h),
@@ -1253,8 +1525,7 @@ class _TodayAlertCard extends StatelessWidget {
           ),
           SizedBox(height: 8.h),
           Text(
-            alertTitle ??
-                (alertCount > 0 ? '주의 알림 $alertCount건' : '퇴직금 발생'),
+            alertTitle ?? (alertCount > 0 ? '주의 알림 $alertCount건' : '퇴직금 발생'),
             style: AppTypography.bodyLargeM.copyWith(
               color: AppColors.textPrimary,
             ),

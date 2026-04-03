@@ -33,15 +33,33 @@ class ManagerMainScreen extends StatefulWidget {
 
 class _ManagerMainScreenState extends State<ManagerMainScreen> {
   int _currentIndex = 0;
+  int _laborCostInitialTabIndex = 0;
+  int _laborCostNavigationRequestId = 0;
+  int _recruitmentInitialTabIndex = 0;
+  int _recruitmentNavigationRequestId = 0;
 
   Future<void> _handleBottomTap(BuildContext context, int index) async {
-    if (index == _currentIndex) return;
+    await _navigateToTab(context, index);
+  }
+
+  Future<void> _navigateToTab(
+    BuildContext context,
+    int index, {
+    int? laborCostTabIndex,
+    int? recruitmentTabIndex,
+  }) async {
+    if (index == _currentIndex &&
+        laborCostTabIndex == null &&
+        recruitmentTabIndex == null) {
+      return;
+    }
 
     final selectedBranchId = context.read<SelectedBranchCubit>().state;
     final requiresBranchSelection = index != 0;
 
     if (requiresBranchSelection && selectedBranchId == null) {
-      final moveHome = await showDialog<bool>(
+      final moveHome =
+          await showDialog<bool>(
             context: context,
             builder: (dialogContext) {
               return AlertDialog(
@@ -70,7 +88,17 @@ class _ManagerMainScreenState extends State<ManagerMainScreen> {
       return;
     }
 
-    setState(() => _currentIndex = index);
+    setState(() {
+      _currentIndex = index;
+      if (laborCostTabIndex != null) {
+        _laborCostInitialTabIndex = laborCostTabIndex.clamp(0, 2);
+        _laborCostNavigationRequestId += 1;
+      }
+      if (recruitmentTabIndex != null) {
+        _recruitmentInitialTabIndex = recruitmentTabIndex.clamp(0, 2);
+        _recruitmentNavigationRequestId += 1;
+      }
+    });
   }
 
   @override
@@ -116,12 +144,24 @@ class _ManagerMainScreenState extends State<ManagerMainScreen> {
             backgroundColor: AppColors.background,
             body: IndexedStack(
               index: _currentIndex,
-              children: const [
-                HomeScreen(),
-                ManagementScreen(),
-                LaborCostScreen(),
-                StoreCostScreen(),
-                RecruitmentScreen(),
+              children: [
+                HomeScreen(
+                  onOpenManagementTab: () => _navigateToTab(context, 1),
+                  onOpenLaborCostTab: (tabIndex) =>
+                      _navigateToTab(context, 2, laborCostTabIndex: tabIndex),
+                  onOpenRecruitmentTab: (tabIndex) =>
+                      _navigateToTab(context, 4, recruitmentTabIndex: tabIndex),
+                ),
+                const ManagementScreen(),
+                LaborCostScreen(
+                  initialTabIndex: _laborCostInitialTabIndex,
+                  navigationRequestId: _laborCostNavigationRequestId,
+                ),
+                const StoreCostScreen(),
+                RecruitmentScreen(
+                  initialTabIndex: _recruitmentInitialTabIndex,
+                  navigationRequestId: _recruitmentNavigationRequestId,
+                ),
               ],
             ),
             bottomNavigationBar: ManagerBottomBar(

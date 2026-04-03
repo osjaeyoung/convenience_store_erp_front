@@ -72,12 +72,12 @@ class _StoreCostScreenState extends State<StoreCostScreen>
 
   void _loadDashboard(int branchId) {
     context.read<StoreExpenseBloc>().add(
-          StoreExpenseDashboardRequested(
-            branchId: branchId,
-            year: _dashboardYear,
-            month: _dashboardMonth,
-          ),
-        );
+      StoreExpenseDashboardRequested(
+        branchId: branchId,
+        year: _dashboardYear,
+        month: _dashboardMonth,
+      ),
+    );
   }
 
   Future<void> _loadMonths(int branchId) async {
@@ -87,7 +87,10 @@ class _StoreCostScreenState extends State<StoreCostScreen>
     });
     try {
       final repo = context.read<StoreExpenseRepository>();
-      final months = await repo.getMonths(branchId: branchId, year: _monthsYear);
+      final months = await repo.getMonths(
+        branchId: branchId,
+        year: _monthsYear,
+      );
       final details = await Future.wait(
         months.map((m) async {
           final d = await repo.getMonthDetail(
@@ -138,7 +141,7 @@ class _StoreCostScreenState extends State<StoreCostScreen>
     final ok = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
         builder: (_) => StoreExpenseAddItemScreen(
-                    branchId: branchId,
+          branchId: branchId,
           expenseMonthId: month.expenseMonthId,
           periodLabel: month.periodLabel,
         ),
@@ -151,13 +154,14 @@ class _StoreCostScreenState extends State<StoreCostScreen>
   }
 
   void _showEditMonthUnavailable() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('월 수정 기능은 곧 지원됩니다.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('월 수정 기능은 곧 지원됩니다.')));
   }
 
   Future<void> _deleteMonth(int branchId, int expenseMonthId) async {
-    final sure = await showDialog<bool>(
+    final sure =
+        await showDialog<bool>(
           context: context,
           builder: (ctx) {
             return AlertDialog(
@@ -180,15 +184,18 @@ class _StoreCostScreenState extends State<StoreCostScreen>
     if (!mounted) return;
     try {
       final repo = context.read<StoreExpenseRepository>();
-      await repo.deleteMonth(branchId: branchId, expenseMonthId: expenseMonthId);
+      await repo.deleteMonth(
+        branchId: branchId,
+        expenseMonthId: expenseMonthId,
+      );
       if (!mounted) return;
       await _loadMonths(branchId);
       _loadDashboard(branchId);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('삭제에 실패했습니다: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('삭제에 실패했습니다: $e')));
     }
   }
 
@@ -210,19 +217,19 @@ class _StoreCostScreenState extends State<StoreCostScreen>
         appBar: HomeCommonAppBar(
           alarmActive: hasAlarm,
           onAlarmTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('알림 기능은 곧 연결됩니다.')),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('알림 기능은 곧 연결됩니다.')));
           },
           onMenuTap: () => openAccountSettingsMenu(context),
         ),
         body: branchId == null
             ? Center(
-              child: Text(
-                '지점을 선택해주세요.\n홈 탭에서 지점을 먼저 선택해주세요.',
+                child: Text(
+                  '지점을 선택해주세요.\n홈 탭에서 지점을 먼저 선택해주세요.',
                   textAlign: TextAlign.center,
                   style: AppTypography.bodyMediumR.copyWith(
-                  color: AppColors.textSecondary,
+                    color: AppColors.textSecondary,
                   ),
                 ),
               )
@@ -297,9 +304,9 @@ class _StoreExpenseTopTabs extends StatelessWidget {
           Tab(text: '월간 표시'),
           Tab(text: '월별 점내 비용 내역'),
         ],
-              ),
-            );
-          }
+      ),
+    );
+  }
 }
 
 class _DashboardTab extends StatelessWidget {
@@ -317,12 +324,12 @@ class _DashboardTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-          return BlocBuilder<StoreExpenseBloc, StoreExpenseBlocState>(
-            builder: (context, state) {
-              if (state.status == StoreExpenseBlocStatus.loading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (state.status == StoreExpenseBlocStatus.failure) {
+    return BlocBuilder<StoreExpenseBloc, StoreExpenseBlocState>(
+      builder: (context, state) {
+        if (state.status == StoreExpenseBlocStatus.loading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (state.status == StoreExpenseBlocStatus.failure) {
           return _ErrorRetryView(message: state.errorMessage ?? '오류가 발생했습니다.');
         }
         final d = state.dashboard;
@@ -339,12 +346,12 @@ class _DashboardTab extends StatelessWidget {
             final branchId = context.read<SelectedBranchCubit>().state;
             if (branchId == null) return;
             context.read<StoreExpenseBloc>().add(
-                  StoreExpenseDashboardRequested(
-                    branchId: branchId,
-                    year: year,
-                    month: month,
-                  ),
-                );
+              StoreExpenseDashboardRequested(
+                branchId: branchId,
+                year: year,
+                month: month,
+              ),
+            );
           },
           child: ListView(
             padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 24.h),
@@ -463,10 +470,10 @@ class _DashboardTab extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16.r),
                     ),
                     padding: EdgeInsets.fromLTRB(12.w, 12.h, 12.w, 16.h),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
                           c.categoryLabel,
                           textAlign: TextAlign.center,
                           style: AppTypography.bodySmallM.copyWith(
@@ -794,7 +801,11 @@ class _MonthExpenseCard extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.add_circle, size: 16, color: AppColors.primary),
+                        Icon(
+                          Icons.add_circle,
+                          size: 16,
+                          color: AppColors.primary,
+                        ),
                         SizedBox(width: 8.w),
                         Text(
                           '항목 추가',
@@ -811,7 +822,10 @@ class _MonthExpenseCard extends StatelessWidget {
                 for (final item in items) ...[
                   SizedBox(height: 8.h),
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 20.w,
+                      vertical: 12.h,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.grey0,
                       borderRadius: BorderRadius.circular(12.r),
@@ -824,7 +838,7 @@ class _MonthExpenseCard extends StatelessWidget {
                           style: AppTypography.bodyMediumR.copyWith(
                             fontSize: 14.sp,
                             height: 19 / 14,
-                          color: AppColors.textSecondary,
+                            color: AppColors.textSecondary,
                           ),
                         ),
                         const Spacer(),
@@ -892,10 +906,7 @@ class _MonthExpenseCard extends StatelessWidget {
 }
 
 class _CategoryChip extends StatelessWidget {
-  const _CategoryChip({
-    required this.label,
-    required this.categoryCode,
-  });
+  const _CategoryChip({required this.label, required this.categoryCode});
 
   final String label;
   final String categoryCode;
@@ -959,9 +970,7 @@ class _ExpenseCalendar extends StatelessWidget {
         Container(
           padding: EdgeInsets.symmetric(vertical: 10.h),
           decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: AppColors.grey25),
-            ),
+            border: Border(bottom: BorderSide(color: AppColors.grey25)),
           ),
           child: Row(
             children: [
@@ -976,8 +985,8 @@ class _ExpenseCalendar extends StatelessWidget {
                         color: i == 0
                             ? const Color(0xFFFF4834)
                             : i == 6
-                                ? AppColors.textPrimary
-                                : AppColors.textTertiary,
+                            ? AppColors.textPrimary
+                            : AppColors.textTertiary,
                       ),
                     ),
                   ),
@@ -992,17 +1001,8 @@ class _ExpenseCalendar extends StatelessWidget {
               Builder(
                 builder: (context) {
                   final rowStart = weekIndex * 7;
-                  final rowBadgeCount = List<int>.generate(7, (offset) {
-                    final index = rowStart + offset;
-                    final dayNum = index - firstWeekdayMon0 + 1;
-                    final inMonth = dayNum >= 1 && dayNum <= daysInMonth;
-                    final expense = inMonth ? dateMap[dayNum] : null;
-                    return expense == null ? 0 : expense.items.take(2).length;
-                  }).fold<int>(0, (maxCount, count) => count > maxCount ? count : maxCount);
-
-                  final rowHeight = rowBadgeCount >= 2 ? 111.0 : 72.0;
-
                   return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       for (var offset = 0; offset < 7; offset++)
                         Expanded(
@@ -1010,45 +1010,62 @@ class _ExpenseCalendar extends StatelessWidget {
                             builder: (context) {
                               final index = rowStart + offset;
                               final dayNum = index - firstWeekdayMon0 + 1;
-                              final inMonth = dayNum >= 1 && dayNum <= daysInMonth;
+                              final inMonth =
+                                  dayNum >= 1 && dayNum <= daysInMonth;
                               final label = inMonth
                                   ? '$dayNum'
                                   : dayNum <= 0
-                                      ? '${prevMonthDays + dayNum}'
-                                      : '${dayNum - daysInMonth}';
+                                  ? '${prevMonthDays + dayNum}'
+                                  : '${dayNum - daysInMonth}';
                               final expense = inMonth ? dateMap[dayNum] : null;
                               final weekDayIndex = index % 7;
                               final dayColor = !inMonth
                                   ? AppColors.grey50
                                   : weekDayIndex == 0
-                                      ? const Color(0xFFFF4834)
-                                      : AppColors.textPrimary;
+                                  ? const Color(0xFFFF4834)
+                                  : AppColors.textPrimary;
 
-                              return SizedBox(
-                                height: rowHeight,
+                              final visibleItems =
+                                  expense?.items.take(2).toList() ??
+                                  const <ExpenseItem>[];
+
+                              return ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  minHeight: 72,
+                                ),
                                 child: Column(
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
                                     SizedBox(
                                       height: 20,
                                       child: Center(
                                         child: Text(
                                           label.padLeft(2, '0'),
-                                          style: AppTypography.bodySmallR.copyWith(
-                                            fontSize: 12.sp,
-                                            height: 18 / 12,
-                                            color: dayColor,
-                                          ),
+                                          style: AppTypography.bodySmallR
+                                              .copyWith(
+                                                fontSize: 12.sp,
+                                                height: 18 / 12,
+                                                color: dayColor,
+                                              ),
                                         ),
                                       ),
                                     ),
                                     SizedBox(height: 5.h),
-                                    if (expense != null && expense.items.isNotEmpty)
-                                      ...expense.items.take(2).map(
-                                            (it) => Padding(
-                                              padding: EdgeInsets.only(bottom: 5.h),
-                                              child: _CalendarExpenseBadge(item: it),
-                                            ),
+                                    if (visibleItems.isNotEmpty)
+                                      ...visibleItems.asMap().entries.map(
+                                        (entry) => Padding(
+                                          padding: EdgeInsets.only(
+                                            bottom:
+                                                entry.key ==
+                                                    visibleItems.length - 1
+                                                ? 0
+                                                : 5.h,
                                           ),
+                                          child: _CalendarExpenseBadge(
+                                            item: entry.value,
+                                          ),
+                                        ),
+                                      ),
                                   ],
                                 ),
                               );
@@ -1070,7 +1087,6 @@ class _ExpenseCalendar extends StatelessWidget {
     if (parts.length != 3) return null;
     return int.tryParse(parts[2]);
   }
-
 }
 
 class _DashboardMoneyIcon extends StatelessWidget {
@@ -1162,13 +1178,16 @@ Color _categoryColor(String code) {
   }
 }
 
-String _wonWithoutSuffix(int amount) => _StoreCostScreenState._won.format(amount);
+String _wonWithoutSuffix(int amount) =>
+    _StoreCostScreenState._won.format(amount);
 
 String _compactAmountLabel(int amount) {
   if (amount >= 10000) {
     final manWon = amount / 10000;
     final hasDecimal = amount % 10000 != 0;
-    final text = hasDecimal ? manWon.toStringAsFixed(1) : manWon.toStringAsFixed(0);
+    final text = hasDecimal
+        ? manWon.toStringAsFixed(1)
+        : manWon.toStringAsFixed(0);
     return '$text만원';
   }
   return '${_StoreCostScreenState._won.format(amount)}원';
@@ -1189,27 +1208,27 @@ class _ErrorRetryView extends StatelessWidget {
           children: [
             Text(
               message,
-                        textAlign: TextAlign.center,
+              textAlign: TextAlign.center,
               style: AppTypography.bodyMediumR.copyWith(
                 color: AppColors.textSecondary,
               ),
-                      ),
-                      SizedBox(height: 16.h),
+            ),
+            SizedBox(height: 16.h),
             FilledButton(
-                        onPressed: () {
+              onPressed: () {
                 final branchId = context.read<SelectedBranchCubit>().state;
                 if (branchId == null) return;
-                          final now = DateTime.now();
-                          context.read<StoreExpenseBloc>().add(
-                                StoreExpenseDashboardRequested(
-                                  branchId: branchId,
-                                  year: now.year,
-                                  month: now.month,
-                                ),
-                              );
-                        },
-                        child: const Text('다시 시도'),
-                      ),
+                final now = DateTime.now();
+                context.read<StoreExpenseBloc>().add(
+                  StoreExpenseDashboardRequested(
+                    branchId: branchId,
+                    year: now.year,
+                    month: now.month,
+                  ),
+                );
+              },
+              child: const Text('다시 시도'),
+            ),
           ],
         ),
       ),

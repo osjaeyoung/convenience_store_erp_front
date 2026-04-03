@@ -38,9 +38,11 @@ class RecruitmentScreen extends StatefulWidget {
   const RecruitmentScreen({
     super.key,
     this.initialTabIndex = 0,
+    this.navigationRequestId = 0,
   });
 
   final int initialTabIndex;
+  final int navigationRequestId;
 
   @override
   State<RecruitmentScreen> createState() => _RecruitmentScreenState();
@@ -72,20 +74,32 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(covariant RecruitmentScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.navigationRequestId != widget.navigationRequestId ||
+        oldWidget.initialTabIndex != widget.initialTabIndex) {
+      final nextIndex = widget.initialTabIndex.clamp(0, 2);
+      if (_selectedTabIndex != nextIndex) {
+        setState(() => _selectedTabIndex = nextIndex);
+      }
+    }
+  }
+
   void _requestHome(int branchId) {
     final (ageMin, ageMax) = _sanitizedAgeRange(_ageMin, _ageMax);
     _lastRequestedBranchId = branchId;
     context.read<RecruitmentBloc>().add(
-          RecruitmentHomeRequested(
-            branchId: branchId,
-            keyword: _searchController.text.trim(),
-            gender: _gender,
-            ageMin: ageMin,
-            ageMax: ageMax,
-            region: _region,
-            minRating: _minRating,
-          ),
-        );
+      RecruitmentHomeRequested(
+        branchId: branchId,
+        keyword: _searchController.text.trim(),
+        gender: _gender,
+        ageMin: ageMin,
+        ageMax: ageMax,
+        region: _region,
+        minRating: _minRating,
+      ),
+    );
   }
 
   void _refreshCurrentBranch() {
@@ -117,10 +131,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        Widget option({
-          required String title,
-          required String? value,
-        }) {
+        Widget option({required String title, required String? value}) {
           final selected = _gender == value;
           return ListTile(
             title: Text(
@@ -229,9 +240,9 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
                 final max = _parseAgeValue(maxController.text);
                 final message = _ageValidationMessage(min, max);
                 if (message != null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(message)),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(message)));
                   return;
                 }
                 Navigator.of(dialogContext).pop(true);
@@ -260,9 +271,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
           title: const Text('지역 설정'),
           content: TextField(
             controller: controller,
-            decoration: const InputDecoration(
-              hintText: '예: 강남역점 인근',
-            ),
+            decoration: const InputDecoration(hintText: '예: 강남역점 인근'),
           ),
           actions: [
             TextButton(
@@ -318,7 +327,10 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
               ListTile(
                 title: const Text('전체'),
                 trailing: _minRating == null
-                    ? const Icon(Icons.check_rounded, color: AppColors.primaryDark)
+                    ? const Icon(
+                        Icons.check_rounded,
+                        color: AppColors.primaryDark,
+                      )
                     : null,
                 onTap: () => Navigator.of(context).pop(-1.0),
               ),
@@ -351,9 +363,9 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
       appBar: HomeCommonAppBar(
         alarmActive: false,
         onAlarmTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('알림 기능은 곧 연결됩니다.')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('알림 기능은 곧 연결됩니다.')));
         },
         onMenuTap: () => openAccountSettingsMenu(context),
       ),
@@ -366,26 +378,26 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
           Expanded(
             child: _selectedTabIndex == 0
                 ? BlocConsumer<SelectedBranchCubit, int?>(
-        listener: (context, branchId) {
-          if (branchId != null) {
+                    listener: (context, branchId) {
+                      if (branchId != null) {
                         _requestHome(branchId);
-          }
-        },
-        builder: (context, branchId) {
-          if (branchId == null) {
-            return Center(
-              child: Text(
-                '지점을 선택해주세요.\n홈 탭에서 지점을 먼저 선택해주세요.',
+                      }
+                    },
+                    builder: (context, branchId) {
+                      if (branchId == null) {
+                        return Center(
+                          child: Text(
+                            '지점을 선택해주세요.\n홈 탭에서 지점을 먼저 선택해주세요.',
                             style: AppTypography.bodyMediumR.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            );
-          }
+                              color: AppColors.textSecondary,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        );
+                      }
 
-          return BlocBuilder<RecruitmentBloc, RecruitmentBlocState>(
-            builder: (context, state) {
+                      return BlocBuilder<RecruitmentBloc, RecruitmentBlocState>(
+                        builder: (context, state) {
                           if (state.branchId != branchId &&
                               state.status != RecruitmentBlocStatus.loading &&
                               _lastRequestedBranchId != branchId) {
@@ -409,7 +421,8 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
                             onTapRegion: _showRegionDialog,
                             onTapRating: _showRatingSheet,
                             onRetry: () => _requestHome(branchId),
-                            onTapProfile: (employeeId) => _openProfile(branchId, employeeId),
+                            onTapProfile: (employeeId) =>
+                                _openProfile(branchId, employeeId),
                           );
                         },
                       );
@@ -453,12 +466,15 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
     return '${_ageMax!}세 이하';
   }
 
-  String get _regionLabel => (_region ?? '').trim().isEmpty ? '지역' : _region!.trim();
+  String get _regionLabel =>
+      (_region ?? '').trim().isEmpty ? '지역' : _region!.trim();
 
   String get _ratingLabel {
     if (_minRating == null) return '평점';
     final isInt = _minRating! % 1 == 0;
-    final value = isInt ? _minRating!.toStringAsFixed(0) : _minRating!.toStringAsFixed(1);
+    final value = isInt
+        ? _minRating!.toStringAsFixed(0)
+        : _minRating!.toStringAsFixed(1);
     return '$value점+';
   }
 
@@ -518,9 +534,7 @@ class _RecruitmentTopTabs extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.grey0,
-        border: Border(
-          bottom: BorderSide(color: AppColors.grey25),
-        ),
+        border: Border(bottom: BorderSide(color: AppColors.grey25)),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -617,8 +631,8 @@ class _RecruitmentHomeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (state.status == RecruitmentBlocStatus.loading && !state.hasData) {
-                return const Center(child: CircularProgressIndicator());
-              }
+      return const Center(child: CircularProgressIndicator());
+    }
 
     if (state.status == RecruitmentBlocStatus.failure && !state.hasData) {
       return _RecruitmentErrorView(
@@ -689,9 +703,7 @@ class _RecruitmentHomeTab extends StatelessWidget {
             padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 0.h),
             child: Text(
               state.errorMessage ?? '검색 결과를 새로 불러오지 못했습니다.',
-              style: AppTypography.bodySmallR.copyWith(
-                color: AppColors.error,
-              ),
+              style: AppTypography.bodySmallR.copyWith(color: AppColors.error),
             ),
           ),
         Padding(
@@ -707,10 +719,7 @@ class _RecruitmentHomeTab extends StatelessWidget {
 }
 
 class _RecentViewedSection extends StatelessWidget {
-  const _RecentViewedSection({
-    required this.items,
-    required this.onTapProfile,
-  });
+  const _RecentViewedSection({required this.items, required this.onTapProfile});
 
   final List<RecentViewedJobSeeker> items;
   final ValueChanged<int> onTapProfile;
@@ -721,9 +730,7 @@ class _RecentViewedSection extends StatelessWidget {
       width: double.infinity,
       padding: EdgeInsets.only(left: 20.w),
       decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: AppColors.grey25),
-        ),
+        border: Border(bottom: BorderSide(color: AppColors.grey25)),
       ),
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: 20.h),
@@ -784,10 +791,7 @@ class _RecentViewedSection extends StatelessWidget {
 }
 
 class _RecentViewedCard extends StatelessWidget {
-  const _RecentViewedCard({
-    required this.item,
-    required this.onTap,
-  });
+  const _RecentViewedCard({required this.item, required this.onTap});
 
   final RecentViewedJobSeeker item;
   final VoidCallback onTap;
@@ -989,7 +993,7 @@ class _SearchResultCard extends StatelessWidget {
             const _PersonAvatar(size: 48),
             SizedBox(width: 12.w),
             Expanded(
-                  child: Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -1051,16 +1055,13 @@ class _SearchResultCard extends StatelessWidget {
             ),
           ],
         ),
-                  ),
-                );
-              }
+      ),
+    );
+  }
 }
 
 class _RecruitmentErrorView extends StatelessWidget {
-  const _RecruitmentErrorView({
-    required this.message,
-    required this.onRetry,
-  });
+  const _RecruitmentErrorView({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
@@ -1070,21 +1071,18 @@ class _RecruitmentErrorView extends StatelessWidget {
     return Center(
       child: Padding(
         padding: EdgeInsets.all(24.r),
-                child: Column(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
+          children: [
+            Text(
               message,
               style: AppTypography.bodyMediumR.copyWith(
                 color: AppColors.textSecondary,
               ),
               textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: 16.h),
-            TextButton(
-              onPressed: onRetry,
-              child: const Text('다시 시도'),
             ),
+            SizedBox(height: 16.h),
+            TextButton(onPressed: onRetry, child: const Text('다시 시도')),
           ],
         ),
       ),
