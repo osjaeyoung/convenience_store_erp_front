@@ -12,7 +12,20 @@
           "package_name": "com.example.convenience_store_erp_front"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "315149487915-2432ehl9lhiti0ijphbev6ponnfg8oi4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.convenience_store_erp_front",
+            "certificate_hash": "508756452e07a3948aa2120379eef1030906e7e7"
+          }
+        },
+        {
+          "client_id": "315149487915-flhgv52j6vveo14ncmukb66jlckjm7lu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCDd9A76zhcTJ4VCZon-GlZEZFXBQEk--w"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "315149487915-flhgv52j6vveo14ncmukb66jlckjm7lu.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "315149487915-cpjg2ainqbpgi7uvaje5d2rk5ld4hgv3.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.convenienceStoreErpFront"
+              }
+            }
+          ]
         }
       }
     }

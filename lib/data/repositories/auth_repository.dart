@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -14,21 +16,143 @@ import '../models/login_response.dart';
 import '../models/signup_response.dart';
 import '../network/api_client.dart';
 
+class SignupDraft {
+  const SignupDraft({
+    required this.email,
+    required this.password,
+    required this.fullName,
+    required this.phoneNumber,
+    required this.agreeTerms,
+    required this.agreeAge,
+    required this.agreePrivacy,
+    required this.agreeThirdParty,
+    required this.agreeMarketing,
+    required this.currentStep,
+    required this.phoneVerified,
+  });
+
+  final String email;
+  final String password;
+  final String fullName;
+  final String phoneNumber;
+  final bool agreeTerms;
+  final bool agreeAge;
+  final bool agreePrivacy;
+  final bool agreeThirdParty;
+  final bool agreeMarketing;
+  final String currentStep;
+  final bool phoneVerified;
+
+  SignupDraft copyWith({
+    String? email,
+    String? password,
+    String? fullName,
+    String? phoneNumber,
+    bool? agreeTerms,
+    bool? agreeAge,
+    bool? agreePrivacy,
+    bool? agreeThirdParty,
+    bool? agreeMarketing,
+    String? currentStep,
+    bool? phoneVerified,
+  }) {
+    return SignupDraft(
+      email: email ?? this.email,
+      password: password ?? this.password,
+      fullName: fullName ?? this.fullName,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      agreeTerms: agreeTerms ?? this.agreeTerms,
+      agreeAge: agreeAge ?? this.agreeAge,
+      agreePrivacy: agreePrivacy ?? this.agreePrivacy,
+      agreeThirdParty: agreeThirdParty ?? this.agreeThirdParty,
+      agreeMarketing: agreeMarketing ?? this.agreeMarketing,
+      currentStep: currentStep ?? this.currentStep,
+      phoneVerified: phoneVerified ?? this.phoneVerified,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'email': email,
+    'password': password,
+    'fullName': fullName,
+    'phoneNumber': phoneNumber,
+    'agreeTerms': agreeTerms,
+    'agreeAge': agreeAge,
+    'agreePrivacy': agreePrivacy,
+    'agreeThirdParty': agreeThirdParty,
+    'agreeMarketing': agreeMarketing,
+    'currentStep': currentStep,
+    'phoneVerified': phoneVerified,
+  };
+
+  factory SignupDraft.fromJson(Map<String, dynamic> json) {
+    return SignupDraft(
+      email: (json['email'] ?? '').toString(),
+      password: (json['password'] ?? '').toString(),
+      fullName: (json['fullName'] ?? '').toString(),
+      phoneNumber: (json['phoneNumber'] ?? '').toString(),
+      agreeTerms: json['agreeTerms'] == true,
+      agreeAge: json['agreeAge'] == true,
+      agreePrivacy: json['agreePrivacy'] == true,
+      agreeThirdParty: json['agreeThirdParty'] == true,
+      agreeMarketing: json['agreeMarketing'] == true,
+      currentStep: (json['currentStep'] ?? 'terms').toString(),
+      phoneVerified: json['phoneVerified'] == true,
+    );
+  }
+}
+
+class PhoneVerificationSession {
+  const PhoneVerificationSession({
+    required this.verificationId,
+    required this.phoneE164,
+    required this.expiresAtMillis,
+    this.forceResendingToken,
+  });
+
+  final String verificationId;
+  final String phoneE164;
+  final int expiresAtMillis;
+  final int? forceResendingToken;
+
+  Map<String, dynamic> toJson() => {
+    'verificationId': verificationId,
+    'phoneE164': phoneE164,
+    'expiresAtMillis': expiresAtMillis,
+    'forceResendingToken': forceResendingToken,
+  };
+
+  factory PhoneVerificationSession.fromJson(Map<String, dynamic> json) {
+    return PhoneVerificationSession(
+      verificationId: (json['verificationId'] ?? '').toString(),
+      phoneE164: (json['phoneE164'] ?? '').toString(),
+      expiresAtMillis: (json['expiresAtMillis'] as num?)?.toInt() ?? 0,
+      forceResendingToken: (json['forceResendingToken'] as num?)?.toInt(),
+    );
+  }
+}
+
 /// 인증 관련 API 및 토큰 관리
 /// go_router refreshListenable로 사용
 class AuthRepository extends ChangeNotifier {
   AuthRepository(this._apiClient, this._tokenStorage) {
     _user = _cachedUser;
+    _signupDraft = _loadSignupDraft();
+    _phoneVerificationSession = _loadPhoneVerificationSession();
   }
 
   final ApiClient _apiClient;
   final TokenStorage _tokenStorage;
+  static const _signupDraftKey = 'signup_draft';
+  static const _phoneVerificationSessionKey = 'phone_verification_session';
 
   User? _user;
   bool _isSignupInProgress = false;
   String? _rawRole;
   String? _signupStep;
   String? _approvalStatus;
+  SignupDraft? _signupDraft;
+  PhoneVerificationSession? _phoneVerificationSession;
 
   User? get user => _user;
 
@@ -41,6 +165,11 @@ class AuthRepository extends ChangeNotifier {
   bool get isJobSeeker => _user?.role.isJobSeeker ?? false;
   bool get isSignupInProgress => _isSignupInProgress;
   String? get signupStep => _signupStep;
+  SignupDraft? get signupDraft => _signupDraft;
+  PhoneVerificationSession? get phoneVerificationSession =>
+      _phoneVerificationSession;
+  bool get hasPendingPhoneVerification =>
+      _signupDraft != null && _phoneVerificationSession != null;
   bool get shouldStartAtRoleSelection =>
       (_signupStep ?? '').trim() == 'step1_completed';
   bool get needsSignupCompletion {
@@ -125,10 +254,7 @@ class AuthRepository extends ChangeNotifier {
   }) async {
     final res = await _apiClient.dio.post<Map<String, dynamic>>(
       '/auth/signup/complete',
-      data: {
-        'role': 'manager',
-        'requested_branch_id': requestedBranchId,
-      },
+      data: {'role': 'manager', 'requested_branch_id': requestedBranchId},
     );
     final userData = res.data!['user'] ?? res.data;
     final user = AuthUser.fromJson(userData as Map<String, dynamic>);
@@ -177,7 +303,9 @@ class AuthRepository extends ChangeNotifier {
       queryParameters: {'q': query},
     );
     final items = res.data!['items'] as List<dynamic>? ?? [];
-    return items.map((e) => Branch.fromJson(e as Map<String, dynamic>)).toList();
+    return items
+        .map((e) => Branch.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   /// 이메일 로그인
@@ -187,10 +315,7 @@ class AuthRepository extends ChangeNotifier {
   }) async {
     final res = await _apiClient.dio.post<Map<String, dynamic>>(
       '/auth/login',
-      data: {
-        'email': email,
-        'password': password,
-      },
+      data: {'email': email, 'password': password},
     );
     return LoginResponse.fromJson(res.data!);
   }
@@ -206,8 +331,9 @@ class AuthRepository extends ChangeNotifier {
       idToken: googleAuth.idToken,
     );
 
-    final userCredential =
-        await FirebaseAuth.instance.signInWithCredential(credential);
+    final userCredential = await FirebaseAuth.instance.signInWithCredential(
+      credential,
+    );
     final firebaseUser = userCredential.user;
     if (firebaseUser == null) throw AuthException('구글 로그인에 실패했습니다.');
 
@@ -236,14 +362,15 @@ class AuthRepository extends ChangeNotifier {
       accessToken: appleCredential.authorizationCode,
     );
 
-    final userCredential =
-        await FirebaseAuth.instance.signInWithCredential(oauthCredential);
+    final userCredential = await FirebaseAuth.instance.signInWithCredential(
+      oauthCredential,
+    );
     final firebaseUser = userCredential.user;
     if (firebaseUser == null) throw AuthException('애플 로그인에 실패했습니다.');
 
     final fullName = appleCredential.givenName != null
         ? '${appleCredential.givenName ?? ''} ${appleCredential.familyName ?? ''}'
-            .trim()
+              .trim()
         : firebaseUser.displayName ?? firebaseUser.email ?? '';
 
     final res = await _apiClient.dio.post<Map<String, dynamic>>(
@@ -280,6 +407,51 @@ class AuthRepository extends ChangeNotifier {
     );
   }
 
+  Future<void> saveSignupDraft(SignupDraft draft) async {
+    _signupDraft = draft;
+    await _tokenStorage.saveString(_signupDraftKey, jsonEncode(draft.toJson()));
+    notifyListeners();
+  }
+
+  Future<void> savePhoneVerificationSession(
+    PhoneVerificationSession session,
+  ) async {
+    _phoneVerificationSession = session;
+    await _tokenStorage.saveString(
+      _phoneVerificationSessionKey,
+      jsonEncode(session.toJson()),
+    );
+    notifyListeners();
+  }
+
+  Future<void> completePhoneVerification() async {
+    if (_signupDraft != null) {
+      _signupDraft = _signupDraft!.copyWith(
+        phoneVerified: true,
+        currentStep: 'basicInfo',
+      );
+      await _tokenStorage.saveString(
+        _signupDraftKey,
+        jsonEncode(_signupDraft!.toJson()),
+      );
+    }
+    await clearPhoneVerificationSession(notify: false);
+    notifyListeners();
+  }
+
+  Future<void> clearPhoneVerificationSession({bool notify = true}) async {
+    _phoneVerificationSession = null;
+    await _tokenStorage.remove(_phoneVerificationSessionKey);
+    if (notify) notifyListeners();
+  }
+
+  Future<void> clearSignupDraft({bool notify = true}) async {
+    _signupDraft = null;
+    await _tokenStorage.remove(_signupDraftKey);
+    await clearPhoneVerificationSession(notify: false);
+    if (notify) notifyListeners();
+  }
+
   /// 내 정보 조회
   Future<AuthUser> getMe() async {
     final res = await _apiClient.dio.get<Map<String, dynamic>>('/auth/me');
@@ -297,12 +469,33 @@ class AuthRepository extends ChangeNotifier {
 
   /// 이름·전화번호 부분 갱신 (`PATCH /me/account`)
   Future<AccountProfile> patchAccount({
+    String? email,
     String? fullName,
+    int? birthYear,
+    int? birthMonth,
+    int? birthDay,
+    String? gender,
     String? phoneNumber,
+    String? address,
   }) async {
     final body = <String, dynamic>{};
-    if (fullName != null) body['full_name'] = fullName;
-    if (phoneNumber != null) body['phone_number'] = phoneNumber;
+    final normalizedEmail = email?.trim();
+    final normalizedFullName = fullName?.trim();
+    final normalizedGender = gender?.trim();
+    final normalizedPhoneNumber = phoneNumber?.trim();
+    final normalizedAddress = address?.trim();
+    if (normalizedEmail != null) body['email'] = normalizedEmail;
+    if (normalizedFullName != null) body['full_name'] = normalizedFullName;
+    if (birthYear != null) body['birth_year'] = birthYear;
+    if (birthMonth != null) body['birth_month'] = birthMonth;
+    if (birthDay != null) body['birth_day'] = birthDay;
+    if (normalizedGender != null && normalizedGender.isNotEmpty) {
+      body['gender'] = normalizedGender;
+    }
+    if (normalizedPhoneNumber != null) {
+      body['phone_number'] = normalizedPhoneNumber;
+    }
+    if (normalizedAddress != null) body['address'] = normalizedAddress;
     final res = await _apiClient.dio.patch<Map<String, dynamic>>(
       '/me/account',
       data: body,
@@ -319,10 +512,7 @@ class AuthRepository extends ChangeNotifier {
   }) async {
     await _apiClient.dio.post<Map<String, dynamic>>(
       '/me/account/password',
-      data: {
-        'current_password': currentPassword,
-        'new_password': newPassword,
-      },
+      data: {'current_password': currentPassword, 'new_password': newPassword},
     );
   }
 
@@ -336,6 +526,7 @@ class AuthRepository extends ChangeNotifier {
 
   /// 로그인 성공 후 상태 저장
   Future<void> setAuthenticated(LoginResponse response) async {
+    await clearSignupDraft(notify: false);
     await _tokenStorage.saveTokens(
       accessToken: response.accessToken,
       refreshToken: response.refreshToken,
@@ -349,6 +540,7 @@ class AuthRepository extends ChangeNotifier {
     required String accessToken,
     required String refreshToken,
   }) async {
+    await clearSignupDraft(notify: false);
     await _tokenStorage.saveTokens(
       accessToken: accessToken,
       refreshToken: refreshToken,
@@ -365,6 +557,7 @@ class AuthRepository extends ChangeNotifier {
       // 서버에 엔드포인트가 없거나 실패해도 로컬 로그아웃은 진행
     }
     await _tokenStorage.clearAll();
+    await clearSignupDraft(notify: false);
     await FirebaseAuth.instance.signOut();
     await GoogleSignIn().signOut();
     _user = null;
@@ -378,6 +571,7 @@ class AuthRepository extends ChangeNotifier {
   /// 토큰 만료(401) 등으로 강제 로그아웃 처리
   Future<void> handleUnauthorized() async {
     await _tokenStorage.clearAll();
+    await clearSignupDraft(notify: false);
     _user = null;
     _isSignupInProgress = false;
     _rawRole = null;
@@ -401,5 +595,37 @@ class AuthRepository extends ChangeNotifier {
     _signupStep = auth.signupStep;
     _approvalStatus = auth.approvalStatus;
     _isSignupInProgress = needsSignupCompletion;
+  }
+
+  SignupDraft? _loadSignupDraft() {
+    final raw = _tokenStorage.getString(_signupDraftKey);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) {
+        return SignupDraft.fromJson(decoded);
+      }
+      if (decoded is Map) {
+        return SignupDraft.fromJson(Map<String, dynamic>.from(decoded));
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  PhoneVerificationSession? _loadPhoneVerificationSession() {
+    final raw = _tokenStorage.getString(_phoneVerificationSessionKey);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) {
+        return PhoneVerificationSession.fromJson(decoded);
+      }
+      if (decoded is Map) {
+        return PhoneVerificationSession.fromJson(
+          Map<String, dynamic>.from(decoded),
+        );
+      }
+    } catch (_) {}
+    return null;
   }
 }

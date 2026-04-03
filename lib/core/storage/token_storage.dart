@@ -43,6 +43,16 @@ class TokenStorage {
     await _prefs.remove(_refreshTokenKey);
   }
 
+  Future<void> saveString(String key, String value) async {
+    await _prefs.setString(key, value);
+  }
+
+  String? getString(String key) => _prefs.getString(key);
+
+  Future<void> remove(String key) async {
+    await _prefs.remove(key);
+  }
+
   Future<void> clearAll() async {
     await _prefs.remove(_accessTokenKey);
     await _prefs.remove(_refreshTokenKey);

@@ -32,6 +32,12 @@ class AccountProfile {
     required this.fullName,
     this.phoneNumber,
     this.phoneNumberMasked,
+    this.birthDate,
+    this.birthYear,
+    this.birthMonth,
+    this.birthDay,
+    this.gender,
+    this.address,
     required this.role,
     required this.roleLabelKo,
     required this.usageTypeLabelKo,
@@ -44,6 +50,7 @@ class AccountProfile {
     this.memberSince,
     this.settingsLinks = const AccountSettingsLinks(),
     this.hasPasswordLogin = true,
+    this.sessionRefreshRequired = false,
   });
 
   final int userId;
@@ -51,6 +58,12 @@ class AccountProfile {
   final String fullName;
   final String? phoneNumber;
   final String? phoneNumberMasked;
+  final String? birthDate;
+  final int? birthYear;
+  final int? birthMonth;
+  final int? birthDay;
+  final String? gender;
+  final String? address;
   final String role;
   final String roleLabelKo;
   final String usageTypeLabelKo;
@@ -63,6 +76,7 @@ class AccountProfile {
   final String? memberSince;
   final AccountSettingsLinks settingsLinks;
   final bool hasPasswordLogin;
+  final bool sessionRefreshRequired;
 
   factory AccountProfile.fromJson(Map<String, dynamic> json) {
     return AccountProfile(
@@ -71,6 +85,12 @@ class AccountProfile {
       fullName: json['full_name']?.toString() ?? '',
       phoneNumber: json['phone_number']?.toString(),
       phoneNumberMasked: json['phone_number_masked']?.toString(),
+      birthDate: json['birth_date']?.toString(),
+      birthYear: (json['birth_year'] as num?)?.toInt(),
+      birthMonth: (json['birth_month'] as num?)?.toInt(),
+      birthDay: (json['birth_day'] as num?)?.toInt(),
+      gender: json['gender']?.toString(),
+      address: json['address']?.toString(),
       role: json['role']?.toString() ?? '',
       roleLabelKo: json['role_label_ko']?.toString() ?? '',
       usageTypeLabelKo: json['usage_type_label_ko']?.toString() ?? '',
@@ -85,6 +105,8 @@ class AccountProfile {
         json['settings_links'] as Map<String, dynamic>?,
       ),
       hasPasswordLogin: json['has_password_login'] as bool? ?? true,
+      sessionRefreshRequired:
+          json['session_refresh_required'] as bool? ?? false,
     );
   }
 }

@@ -19,14 +19,13 @@ import 'data/repositories/manager_home_repository.dart';
 import 'data/repositories/owner_home_repository.dart';
 import 'data/repositories/staff_management_repository.dart';
 import 'data/repositories/store_expense_repository.dart';
+import 'data/repositories/worker_recruitment_repository.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await dotenv.load(fileName: '.env');
 
   final prefs = await SharedPreferences.getInstance();
@@ -40,15 +39,19 @@ void main() async {
   final laborCostRepository = LaborCostRepository(apiClient);
   final storeExpenseRepository = StoreExpenseRepository(apiClient);
   final staffManagementRepository = StaffManagementRepository(apiClient);
+  final workerRecruitmentRepository = WorkerRecruitmentRepository(apiClient);
 
-  runApp(ConvenienceStoreApp(
-    authRepository: authRepository,
-    ownerHomeRepository: ownerHomeRepository,
-    managerHomeRepository: managerHomeRepository,
-    laborCostRepository: laborCostRepository,
-    storeExpenseRepository: storeExpenseRepository,
-    staffManagementRepository: staffManagementRepository,
-  ));
+  runApp(
+    ConvenienceStoreApp(
+      authRepository: authRepository,
+      ownerHomeRepository: ownerHomeRepository,
+      managerHomeRepository: managerHomeRepository,
+      laborCostRepository: laborCostRepository,
+      storeExpenseRepository: storeExpenseRepository,
+      staffManagementRepository: staffManagementRepository,
+      workerRecruitmentRepository: workerRecruitmentRepository,
+    ),
+  );
 }
 
 class ConvenienceStoreApp extends StatefulWidget {
@@ -60,6 +63,7 @@ class ConvenienceStoreApp extends StatefulWidget {
     required this.laborCostRepository,
     required this.storeExpenseRepository,
     required this.staffManagementRepository,
+    required this.workerRecruitmentRepository,
   });
 
   final AuthRepository authRepository;
@@ -68,6 +72,7 @@ class ConvenienceStoreApp extends StatefulWidget {
   final LaborCostRepository laborCostRepository;
   final StoreExpenseRepository storeExpenseRepository;
   final StaffManagementRepository staffManagementRepository;
+  final WorkerRecruitmentRepository workerRecruitmentRepository;
 
   @override
   State<ConvenienceStoreApp> createState() => _ConvenienceStoreAppState();
@@ -81,7 +86,8 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
   void initState() {
     super.initState();
     _router = createAppRouter(widget.authRepository);
-    _authBloc = AuthBloc(widget.authRepository)..add(const AuthCheckRequested());
+    _authBloc = AuthBloc(widget.authRepository)
+      ..add(const AuthCheckRequested());
   }
 
   @override
@@ -106,6 +112,7 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
             RepositoryProvider.value(value: widget.laborCostRepository),
             RepositoryProvider.value(value: widget.storeExpenseRepository),
             RepositoryProvider.value(value: widget.staffManagementRepository),
+            RepositoryProvider.value(value: widget.workerRecruitmentRepository),
           ],
           child: BlocProvider.value(
             value: _authBloc,
@@ -118,10 +125,7 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
                 GlobalWidgetsLocalizations.delegate,
                 GlobalCupertinoLocalizations.delegate,
               ],
-              supportedLocales: const [
-                Locale('ko', 'KR'),
-                Locale('en', 'US'),
-              ],
+              supportedLocales: const [Locale('ko', 'KR'), Locale('en', 'US')],
               locale: const Locale('ko', 'KR'),
               routerConfig: _router,
             ),

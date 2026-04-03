@@ -1,65 +1,121 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-
-import '../../../core/models/user.dart';
-import '../../../core/router/app_router.dart';
-import '../../../theme/app_colors.dart';
-import '../../../theme/app_typography.dart';
-import '../../auth/bloc/auth_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-/// 구직자 메인 화면
-/// 경영자/점장과 전혀 다른 화면 구조 (바텀바 없음)
-class JobSeekerMainScreen extends StatelessWidget {
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_typography.dart';
+import '../../manager/widgets/home_common_app_bar.dart';
+import '../widgets/worker_applications_tab.dart';
+import '../widgets/worker_common.dart';
+import '../widgets/worker_recruitment_postings_tab.dart';
+import 'worker_my_page_screen.dart';
+
+/// 근로자 메인 화면
+/// 경영/점장과 별개의 상단 탭 구조를 사용한다.
+class JobSeekerMainScreen extends StatefulWidget {
   const JobSeekerMainScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final user = context.select<AuthBloc, User?>((b) => b.state.user);
+  State<JobSeekerMainScreen> createState() => _JobSeekerMainScreenState();
+}
 
+class _JobSeekerMainScreenState extends State<JobSeekerMainScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+  int _postingsRefreshToken = 0;
+  int _applicationsRefreshToken = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 4, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _handleApplicationCreated() {
+    setState(() {
+      _postingsRefreshToken++;
+      _applicationsRefreshToken++;
+    });
+  }
+
+  Future<void> _openMyPage() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (_) => const WorkerMyPageScreen()),
+    );
+  }
+
+  void _showAlarmPlaceholder() {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('알림 기능은 준비 중입니다.')));
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('구직자'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.logout),
-            onPressed: () {
-              context.read<AuthBloc>().add(const AuthLogoutRequested());
-              context.go(AppRouter.login);
-            },
+      backgroundColor: AppColors.grey0,
+      appBar: HomeCommonAppBar(
+        alarmActive: false,
+        onAlarmTap: _showAlarmPlaceholder,
+        onMenuTap: _openMyPage,
+      ),
+      body: Column(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              color: AppColors.grey0,
+              border: Border(bottom: BorderSide(color: AppColors.borderLight)),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              labelPadding: EdgeInsets.symmetric(horizontal: 16.w),
+              indicatorColor: AppColors.textPrimary,
+              indicatorWeight: 1,
+              indicatorSize: TabBarIndicatorSize.label,
+              dividerColor: Colors.transparent,
+              labelStyle: AppTypography.bodyLargeB,
+              unselectedLabelStyle: AppTypography.bodyLargeB,
+              labelColor: AppColors.textPrimary,
+              unselectedLabelColor: AppColors.textTertiary,
+              tabs: const [
+                Tab(text: '채용정보'),
+                Tab(text: '지원내역'),
+                Tab(text: '이력서관리'),
+                Tab(text: '계약문서'),
+              ],
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                WorkerRecruitmentPostingsTab(
+                  refreshToken: _postingsRefreshToken,
+                  onApplicationCreated: _handleApplicationCreated,
+                ),
+                WorkerApplicationsTab(
+                  refreshToken: _applicationsRefreshToken,
+                  onApplicationCreated: _handleApplicationCreated,
+                ),
+                workerEmptyView(
+                  message: '이력서관리 화면은 준비 중입니다.',
+                  description: '우선 채용정보와 지원내역부터 이용하실 수 있습니다.',
+                ),
+                workerEmptyView(
+                  message: '계약문서 화면은 준비 중입니다.',
+                  description: '다음 단계에서 연결될 예정입니다.',
+                ),
+              ],
+            ),
           ),
         ],
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              '구직자 전용 화면',
-              style: AppTypography.heading2.copyWith(
-                color: AppColors.textPrimary,
-              ),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              '경영자/점장과 다른 화면 구조',
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-            if (user != null) ...[
-              SizedBox(height: 16.h),
-              Text(
-                user.email,
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.textTertiary,
-                ),
-              ),
-            ],
-          ],
-        ),
       ),
     );
   }

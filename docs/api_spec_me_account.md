@@ -32,6 +32,8 @@ Figma 파일 `개인 공간`의 계정·설정 플로우에 맞춘 API입니다.
 - `role_label_ko`: 기존 표기 (`owner` → `경영주` 등)
 - `settings_links`: `support_url`, `notices_url`, `policy_url` — `.env`의 `ACCOUNT_*_URL` (미설정 시 `null`)
 - `has_password_login`: 비밀번호 변경 행 표시 여부 힌트
+- `birth_date`, `birth_year`, `birth_month`, `birth_day`, `gender`, `address`: 회원정보 수정 화면용
+- `session_refresh_required`: 이메일 변경 직후 재로그인/토큰 갱신 필요 여부
 
 ```json
 {
@@ -50,13 +52,20 @@ Figma 파일 `개인 공간`의 계정·설정 플로우에 맞춘 API입니다.
   "signup_step2_passed": true,
   "is_active": true,
   "member_since": "2026-01-01T00:00:00Z",
+  "birth_date": "1999-03-08",
+  "birth_year": 1999,
+  "birth_month": 3,
+  "birth_day": 8,
+  "gender": "male",
+  "address": "부산 해운대구 반송동",
   "branches": [],
   "settings_links": {
     "support_url": null,
     "notices_url": null,
     "policy_url": null
   },
-  "has_password_login": true
+  "has_password_login": true,
+  "session_refresh_required": false
 }
 ```
 
@@ -64,20 +73,30 @@ Figma 파일 `개인 공간`의 계정·설정 플로우에 맞춘 API입니다.
 
 ## PATCH `/me/account`
 
-이름·전화번호 갱신. **보낸 필드만** 수정합니다.
+이메일·이름·생년월일·성별·전화번호·주소 갱신. **보낸 필드만** 수정합니다.
 
 ### Request Body
 
 ```json
 {
+  "email": "worker1@test.com",
   "full_name": "홍길동",
-  "phone_number": "01012345678"
+  "birth_year": 1999,
+  "birth_month": 3,
+  "birth_day": 8,
+  "gender": "male",
+  "phone_number": "01012345678",
+  "address": "부산 해운대구 반송동"
 }
 ```
 
 ### Response (200)
 
 `GET /me/account`와 동일 스키마.
+
+- 이메일이 변경된 경우 `session_refresh_required=true`
+- 이메일 중복이면 `400`
+- 생년월일은 연/월/일을 모두 보내야 하며, 잘못된 날짜면 `400`
 
 ---
 

@@ -30,6 +30,7 @@ class AuthInputField extends StatelessWidget {
     this.minLines,
     this.maxLines = 1,
     this.hintStyle,
+    this.suffixIconConstraints,
   });
 
   final GlobalKey<FormFieldState<String>>? formFieldKey;
@@ -54,6 +55,7 @@ class AuthInputField extends StatelessWidget {
   final int? minLines;
   final int? maxLines;
   final TextStyle? hintStyle;
+  final BoxConstraints? suffixIconConstraints;
 
   static const Color _errorColor = Color(0xFFFF4834);
 
@@ -79,21 +81,22 @@ class AuthInputField extends StatelessWidget {
       ),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: hintStyle ??
+        hintStyle:
+            hintStyle ??
             AppTypography.bodyMediumR.copyWith(
               color: AppColors.grey100,
               height: 19 / 14,
             ),
         filled: true,
         fillColor: fillColor ?? AppColors.grey0Alt,
-        contentPadding:
-            contentPadding ?? EdgeInsets.all(16.r),
+        contentPadding: contentPadding ?? EdgeInsets.all(16.r),
         suffixText: suffixText,
         suffixStyle: AppTypography.bodyMediumR.copyWith(
           color: AppColors.textSecondary,
           height: 19 / 14,
         ),
-        prefixIcon: prefixIconWidget ??
+        prefixIcon:
+            prefixIconWidget ??
             (prefixIconPath == null
                 ? null
                 : Padding(
@@ -102,9 +105,10 @@ class AuthInputField extends StatelessWidget {
                   )),
         prefixIconConstraints:
             (prefixIconPath == null && prefixIconWidget == null)
-                ? null
-                : const BoxConstraints(minWidth: 52),
+            ? null
+            : const BoxConstraints(minWidth: 52),
         suffixIcon: suffix,
+        suffixIconConstraints: suffixIconConstraints,
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
           borderSide: const BorderSide(color: AppColors.grey50),

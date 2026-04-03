@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../enums/user_role.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../features/auth/screens/login_screen.dart';
+import '../../features/auth/screens/signup_phone_verification_screen.dart';
 import '../../features/auth/screens/signup_screen.dart';
 import '../../features/auth/screens/signup_step2_screen.dart';
 import '../../features/manager/screens/manager_main_screen.dart';
@@ -17,6 +18,7 @@ class AppRouter {
 
   static const String login = '/login';
   static const String signup = '/signup';
+  static const String signupPhoneVerification = '/signup/phone-verification';
   static const String signupComplete = '/signup/complete';
   static const String managerMain = '/manager';
   static const String jobSeekerMain = '/job-seeker';
@@ -29,10 +31,22 @@ GoRouter createAppRouter(AuthRepository authRepository) {
     redirect: (context, state) {
       final isLoggingIn = state.matchedLocation == AppRouter.login;
       final isSigningUp = state.matchedLocation == AppRouter.signup;
-      final isSignupComplete = state.matchedLocation == AppRouter.signupComplete;
-      final signupFlowRoute = isSigningUp || isSignupComplete;
+      final isPhoneVerification =
+          state.matchedLocation == AppRouter.signupPhoneVerification;
+      final isSignupComplete =
+          state.matchedLocation == AppRouter.signupComplete;
+      final signupFlowRoute =
+          isSigningUp || isPhoneVerification || isSignupComplete;
 
-      if (!authRepository.isLoggedIn && !isLoggingIn && !isSigningUp && !isSignupComplete) {
+      if (authRepository.hasPendingPhoneVerification && !isPhoneVerification) {
+        return AppRouter.signupPhoneVerification;
+      }
+
+      if (!authRepository.isLoggedIn &&
+          !isLoggingIn &&
+          !isSigningUp &&
+          !isPhoneVerification &&
+          !isSignupComplete) {
         return AppRouter.login;
       }
 
@@ -51,13 +65,11 @@ GoRouter createAppRouter(AuthRepository authRepository) {
       return null;
     },
     routes: [
+      GoRoute(path: AppRouter.login, builder: (_, __) => const LoginScreen()),
+      GoRoute(path: AppRouter.signup, builder: (_, __) => const SignupScreen()),
       GoRoute(
-        path: AppRouter.login,
-        builder: (_, __) => const LoginScreen(),
-      ),
-      GoRoute(
-        path: AppRouter.signup,
-        builder: (_, __) => const SignupScreen(),
+        path: AppRouter.signupPhoneVerification,
+        builder: (_, __) => const SignupPhoneVerificationScreen(),
       ),
       GoRoute(
         path: AppRouter.signupComplete,

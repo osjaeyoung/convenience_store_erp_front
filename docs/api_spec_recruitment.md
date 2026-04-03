@@ -366,15 +366,36 @@
       "application_id": 3301,
       "applied_date_label": "지원날짜 2026.03.30",
       "employee_id": 602,
+      "applicant_user_id": null,
+      "application_source": "employee",
       "employee_name": "이사라",
       "desired_location": "서울 강남구 개포 2동",
       "average_rating": 2.7,
-      "review_count": 3
+      "review_count": 3,
+      "resume_title": null
+    },
+    {
+      "application_id": -17,
+      "applied_date_label": "지원날짜 2026.03.30",
+      "employee_id": null,
+      "applicant_user_id": 901,
+      "application_source": "worker",
+      "employee_name": "김현수",
+      "desired_location": "부산 해운대구 반송동",
+      "average_rating": 0,
+      "review_count": 0,
+      "resume_title": "김현수_이력서"
     }
   ],
   "total_count": 2
 }
 ```
+
+### 비고
+
+- 기존 `BranchEmployee` 지원자는 `application_source="employee"`
+- 근로자 앱에서 직접 지원한 경우 `application_source="worker"`
+- 근로자 앱 지원건은 단일 상세/삭제 라우트를 유지하기 위해 `application_id`가 **음수**로 내려갑니다
 
 ---
 
@@ -383,9 +404,36 @@
 - `GET /recruitment/branches/{branch_id}/applications/{application_id}`
 - Figma `지원현황 상세` 화면
 - 응답은 구직자 프로필과 동일 포맷이며 `contact_action_label`이 `삭제`
+- 근로자 앱 지원건은 `source_type="worker"`, `applicant_user_id`, `resume_title`이 함께 내려갈 수 있음
 
 ### Response Body (200)
 `3) 구직자 프로필 조회`와 동일 (단, `contact_action_label="삭제"`)
+
+예: 근로자 앱 지원건
+
+```json
+{
+  "employee_id": null,
+  "applicant_user_id": 901,
+  "source_type": "worker",
+  "employee_name": "김현수",
+  "age": 26,
+  "gender": "male",
+  "career_label": "이력서 기반 프로필",
+  "desired_locations": ["부산 해운대구 반송동"],
+  "average_rating": 0,
+  "review_count": 0,
+  "work_histories": [
+    {
+      "period_label": "2026.03.30",
+      "company_name": "김현수_이력서",
+      "role_label": "근로자 이력서"
+    }
+  ],
+  "contact_action_label": "삭제",
+  "resume_title": "김현수_이력서"
+}
+```
 
 ---
 
@@ -393,6 +441,7 @@
 
 - `DELETE /recruitment/branches/{branch_id}/applications/{application_id}`
 - 지원현황 상세 하단 `삭제` 버튼
+- `application_id`는 음수(근로자 앱 지원)도 허용
 
 ### Response Body (200)
 

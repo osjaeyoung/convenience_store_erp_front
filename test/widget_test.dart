@@ -17,6 +17,7 @@ import 'package:convenience_store_erp_front/data/repositories/manager_home_repos
 import 'package:convenience_store_erp_front/data/repositories/owner_home_repository.dart';
 import 'package:convenience_store_erp_front/data/repositories/staff_management_repository.dart';
 import 'package:convenience_store_erp_front/data/repositories/store_expense_repository.dart';
+import 'package:convenience_store_erp_front/data/repositories/worker_recruitment_repository.dart';
 import 'package:convenience_store_erp_front/main.dart';
 
 void main() {
@@ -39,6 +40,7 @@ void main() {
     final laborCostRepository = LaborCostRepository(apiClient);
     final storeExpenseRepository = StoreExpenseRepository(apiClient);
     final staffManagementRepository = StaffManagementRepository(apiClient);
+    final workerRecruitmentRepository = WorkerRecruitmentRepository(apiClient);
 
     await tester.pumpWidget(
       ConvenienceStoreApp(
@@ -48,6 +50,7 @@ void main() {
         laborCostRepository: laborCostRepository,
         storeExpenseRepository: storeExpenseRepository,
         staffManagementRepository: staffManagementRepository,
+        workerRecruitmentRepository: workerRecruitmentRepository,
       ),
     );
 
