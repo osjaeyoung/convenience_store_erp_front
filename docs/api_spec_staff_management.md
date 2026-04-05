@@ -1003,6 +1003,11 @@ curl -X POST "${BASE}/api/v1/staff-management/branches/${BRANCH_ID}/employees/${
 - `status`는 선택값(`draft` 또는 `completed`)
 - `template_version`도 선택값(`standard_v1`, `minor_standard_v1`, `guardian_consent_v1`)
 
+### 인증/권한
+
+- **경영주(`owner`) / 점장(`manager`)**: 기존과 동일(해당 점포 접근 권한 필요)
+- **근로자(`worker`)**: `branch_employees.linked_user_id`가 본인 `user_id`인 직원 행에 대해서만 조회 가능 (`403` 시 본인 근무지·직원 ID가 아님)
+
 ### Request Body
 없음
 
@@ -1013,7 +1018,7 @@ curl -X POST "${BASE}/api/v1/staff-management/branches/${BRANCH_ID}/employees/${
     {
       "contract_id": 301, // 근로계약서 PK
       "title": "김현수 표준 근로계약서", // 문서 제목
-      "status": "draft", // draft(임시저장)|completed(완료)
+      "status": "draft", // draft(임시저장)|completed(완료) — 직원관리·채팅 공통 저장 필드
       "template_version": "standard_v1", // 템플릿 버전
       "completion_rate": 56, // 필수항목 입력률(0~100)
       "form_values": {
@@ -1027,7 +1032,9 @@ curl -X POST "${BASE}/api/v1/staff-management/branches/${BRANCH_ID}/employees/${
       "created_by_user_id": 2, // 작성자 사용자 ID
       "finalized_at": null, // 완료 시각(임시저장은 null)
       "created_at": "2026-03-05T09:00:00Z", // 생성 시각
-      "updated_at": "2026-03-05T09:10:00Z" // 마지막 수정 시각
+      "updated_at": "2026-03-05T09:10:00Z", // 마지막 수정 시각
+      "chat_status": "waiting_worker", // 계약 채팅 플로우일 때만: business_draft|waiting_worker|completed, 아니면 null
+      "chat_status_label": "미완료" // chat_status가 null이면 null. 라벨: 임시저장|미완료|작성 완료
     }
   ]
 }
@@ -1092,6 +1099,8 @@ curl -X POST "${BASE}/api/v1/staff-management/branches/${BRANCH_ID}/employees/${
 
 **주의:** `employer_name`은 상단 "사업주" 칩이고, `employer_business_name`은 하단 "사업체명" 칩입니다. `employer_name`이 비어 있으면 `employer_business_name`으로 자동 채움되므로, 사업체명만 보내도 됩니다.
 
+**앱 연결 직원(`linked_user_id`가 있는 직원):** `standard_v1`·`minor_standard_v1`에서 `status=completed`일 때는 위 표준 필수 외에 **근로자** `worker_address`, `worker_phone`, `worker_signature_text`도 모두 채워져야 합니다. 점장만 입력한 단계라면 `status=draft`로 저장하거나, 계약 채팅(`contract-chat`) API로 전송해 근로자가 마무리하세요. 앱 미연동 직원(수기 계약)은 기존처럼 근로자 필드 없이 완료 가능합니다.
+
 **Flutter 수집 시 흔한 누락:** 하단 사업주 영역만 채우고 상단 `employer_name`, `contract_start_date`, `work_place`, `job_description`을 `form_values`에 넣지 않으면 400 에러가 납니다. 제출 직전에 위 16개 키가 모두 포함되는지 확인하세요.
 
 #### minor_standard_v1 (연소근로자 표준 근로계약서)
@@ -1125,7 +1134,7 @@ curl -X POST "${BASE}/api/v1/staff-management/branches/${BRANCH_ID}/employees/${
 | 친권자/후견인 동의서 구비 여부 | `guardian_consent_submitted` | ✓ |
 | 계약 체결일 (연/월/일) | `contract_signed_date` | ✓ |
 | (사업주) 사업체명, 전화, 주소, 대표자 | `employer_business_name`, `employer_phone`, `employer_address`, `employer_representative_name` | 사업체명·대표자 필수 |
-| (근로자) 주소, 연락처, 성명 | `worker_address`, `worker_phone`, `worker_signature_text` | 선택 |
+| (근로자) 주소, 연락처, 서명 | `worker_address`, `worker_phone`, `worker_signature_text` | 앱 연결 직원이면 `completed` 시 필수, 그 외 선택 |
 
 #### guardian_consent_v1 (친권자 동의서)
 
@@ -1326,18 +1335,21 @@ curl -X POST "${BASE}/api/v1/staff-management/branches/${BRANCH_ID}/employees/${
 ## 26) 근로계약서 단건 조회
 
 - `GET /staff-management/branches/{branch_id}/employees/{employee_id}/employment-contracts/{contract_id}`
+- **권한**: `22) 근로계약서 목록 조회`와 동일(경영주·점장·해당 직원에 연결된 근로자).
 
 ### Request Body
 없음
 
 ### Response Body (200)
-`22) 근로계약서 생성`의 Response와 동일
+`22) 근로계약서 생성`의 Response와 동일 (`chat_status`, `chat_status_label` 포함 — 목록 조회 예시 참고).
 
 ---
 
 ## 26-1) 근로계약 첨부 파일 스트리밍 (PDF 미리보기 권장)
 
 비공개 S3 버킷에서는 JSON의 `contract_file_url` / `files[].file_url`로 직접 GET 시 403·404가 날 수 있습니다. **이 엔드포인트는 Bearer 인증만으로 S3에서 파일을 받아옵니다** (앱은 API base URL + 아래 path로 요청).
+
+- **권한**: 경영주·점장·해당 직원에 연결된 근로자 (`22)`와 동일).
 
 - `GET /staff-management/branches/{branch_id}/employees/{employee_id}/employment-contracts/{contract_id}/attachment`
 - **Query (선택)** `file_id` — `files[].file_id`. 생략 시 계약의 대표 파일(`contract_file_key` 또는 최신 첨부).

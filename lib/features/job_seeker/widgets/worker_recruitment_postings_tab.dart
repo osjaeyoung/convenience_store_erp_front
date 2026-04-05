@@ -157,7 +157,7 @@ class _WorkerRecruitmentPostingsTabState
               ),
               SizedBox(height: 12.h),
               RecruitmentFilterPill(
-                label: _selectedRegion ?? '지역',
+                label: _selectedRegion ?? '전체',
                 active: _selectedRegion != null &&
                     _selectedRegion!.trim().isNotEmpty,
                 onTap: _selectRegion,

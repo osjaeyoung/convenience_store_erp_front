@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/navigation/logo_navigation_bridge.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/enums/user_role.dart';
 import '../../../data/repositories/labor_cost_repository.dart';
@@ -34,11 +35,33 @@ class ManagerMainScreen extends StatefulWidget {
 }
 
 class _ManagerMainScreenState extends State<ManagerMainScreen> {
+  late final VoidCallback _logoTapHandler;
+
   int _currentIndex = 0;
   int _laborCostInitialTabIndex = 0;
   int _laborCostNavigationRequestId = 0;
   int _recruitmentInitialTabIndex = 0;
   int _recruitmentNavigationRequestId = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _logoTapHandler = _onLogoGoHome;
+    ManagerLogoNavigation.register(_logoTapHandler);
+  }
+
+  @override
+  void dispose() {
+    ManagerLogoNavigation.unregister(_logoTapHandler);
+    super.dispose();
+  }
+
+  void _onLogoGoHome() {
+    if (!mounted) return;
+    Navigator.of(context, rootNavigator: true)
+        .popUntil((route) => route.isFirst);
+    setState(() => _currentIndex = 0);
+  }
 
   Future<void> _handleBottomTap(BuildContext context, int index) async {
     await _navigateToTab(context, index);

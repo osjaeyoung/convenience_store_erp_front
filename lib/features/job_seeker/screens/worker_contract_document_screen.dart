@@ -10,9 +10,16 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 
 class WorkerContractDocumentScreen extends StatefulWidget {
-  const WorkerContractDocumentScreen({super.key, required this.contractId});
+  const WorkerContractDocumentScreen({
+    super.key,
+    required this.contractId,
+    this.roomTitle,
+  });
 
   final int contractId;
+
+  /// 채팅방(지점)명 — 있으면 앱바에 표시하고 본문 상단에 계약서 제목 구역을 둠 (Figma 계약채팅)
+  final String? roomTitle;
 
   @override
   State<WorkerContractDocumentScreen> createState() =>
@@ -20,6 +27,9 @@ class WorkerContractDocumentScreen extends StatefulWidget {
 }
 
 class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScreen> {
+  static const Color _autoFillOrange = Color(0xFFFF8D28);
+  static const String _autoFillMarker = '자동 기입';
+
   static const Map<String, String> _defaultLabels = <String, String>{
     'worker_address': '근로자 주소',
     'worker_phone': '근로자 연락처',
@@ -86,6 +96,55 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
 
   String _labelFor(String key, WorkerContractChatDocument doc) {
     return doc.requiredFieldLabels[key] ?? _defaultLabels[key] ?? key;
+  }
+
+  /// `____` 구간은 검은 밑줄, `자동 기입`은 주황 글자+밑줄 (Figma 표준 근로 계약서)
+  static List<TextSpan> _previewSpans(String text, TextStyle base) {
+    final orangeStyle = base.copyWith(
+      color: _autoFillOrange,
+      decoration: TextDecoration.underline,
+      decorationColor: _autoFillOrange,
+    );
+    TextStyle underlinedUnderscore(TextStyle s) => s.copyWith(
+          decoration: TextDecoration.underline,
+          decorationColor: AppColors.textPrimary,
+        );
+
+    List<TextSpan> underlineUnderscores(String chunk) {
+      final reg = RegExp(r'_+');
+      final out = <TextSpan>[];
+      var i = 0;
+      for (final m in reg.allMatches(chunk)) {
+        if (m.start > i) {
+          out.add(TextSpan(text: chunk.substring(i, m.start), style: base));
+        }
+        out.add(TextSpan(
+          text: chunk.substring(m.start, m.end),
+          style: underlinedUnderscore(base),
+        ));
+        i = m.end;
+      }
+      if (i < chunk.length) {
+        out.add(TextSpan(text: chunk.substring(i), style: base));
+      }
+      return out;
+    }
+
+    final result = <TextSpan>[];
+    var rest = text;
+    while (true) {
+      final idx = rest.indexOf(_autoFillMarker);
+      if (idx < 0) {
+        result.addAll(underlineUnderscores(rest));
+        break;
+      }
+      if (idx > 0) {
+        result.addAll(underlineUnderscores(rest.substring(0, idx)));
+      }
+      result.add(TextSpan(text: _autoFillMarker, style: orangeStyle));
+      rest = rest.substring(idx + _autoFillMarker.length);
+    }
+    return result;
   }
 
   String _prettyAction(String? action) {
@@ -203,10 +262,12 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
         ),
         titleSpacing: 0,
         title: Text(
-          doc?.title ?? '표준 근로 계약서',
+          _appBarTitle(doc),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: AppTypography.heading3.copyWith(
+          style: AppTypography.bodyLargeM.copyWith(
+            fontSize: 18.sp,
+            height: 24 / 18,
             fontWeight: FontWeight.w500,
             color: AppColors.textPrimary,
           ),
@@ -288,47 +349,86 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
     );
   }
 
+  String _appBarTitle(WorkerContractChatDocument? doc) {
+    final room = widget.roomTitle?.trim();
+    if (room != null && room.isNotEmpty) return room;
+    return doc?.title ?? '표준 근로 계약서';
+  }
+
   Widget _buildContent(WorkerContractChatDocument doc) {
     final editableKeys = doc.editableFieldKeys;
+    final showRoomHeader =
+        widget.roomTitle != null && widget.roomTitle!.trim().isNotEmpty;
+    final previewRaw = (doc.documentPreviewText ?? '').trim();
+    final previewStyle = AppTypography.bodyMediumR.copyWith(
+      color: AppColors.textPrimary,
+      height: 25 / 14,
+    );
+
     return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 16.h),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            doc.title,
-            style: AppTypography.heading3.copyWith(
-              fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          SizedBox(height: 12.h),
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(12.r),
-            decoration: BoxDecoration(
-              color: AppColors.grey0,
-              borderRadius: BorderRadius.circular(8.r),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Text(
-              (doc.documentPreviewText ?? '').trim().isEmpty
-                  ? '문서 미리보기를 불러오는 중입니다.'
-                  : doc.documentPreviewText!,
-              style: AppTypography.bodyMediumR.copyWith(
-                color: AppColors.textPrimary,
-                height: 25 / 14,
+          if (showRoomHeader)
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 20.h),
+              decoration: const BoxDecoration(
+                color: AppColors.grey0,
+                border: Border(
+                  bottom: BorderSide(color: AppColors.borderLight),
+                ),
+              ),
+              child: Text(
+                doc.title,
+                style: AppTypography.bodyLargeM.copyWith(
+                  fontSize: 18.sp,
+                  height: 24 / 18,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textPrimary,
+                ),
               ),
             ),
-          ),
-          if (editableKeys.isNotEmpty) ...[
-            SizedBox(height: 20.h),
-            Text(
-              '입력 항목',
-              style: AppTypography.bodyLargeB.copyWith(color: AppColors.textPrimary),
-            ),
-            SizedBox(height: 10.h),
-            ...editableKeys.map((key) {
+          Padding(
+            padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 16.h),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!showRoomHeader) ...[
+                  Text(
+                    doc.title,
+                    style: AppTypography.bodyLargeM.copyWith(
+                      fontSize: 18.sp,
+                      height: 24 / 18,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+                ],
+                Text.rich(
+                  TextSpan(
+                    style: previewStyle,
+                    children: previewRaw.isEmpty
+                        ? [
+                            TextSpan(
+                              text: '문서 미리보기를 불러오는 중입니다.',
+                              style: previewStyle,
+                            ),
+                          ]
+                        : _previewSpans(previewRaw, previewStyle),
+                  ),
+                ),
+                if (editableKeys.isNotEmpty) ...[
+                  SizedBox(height: 20.h),
+                  Text(
+                    '입력 항목',
+                    style: AppTypography.bodyLargeB.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 10.h),
+                  ...editableKeys.map((key) {
               final required = doc.requiredFieldKeys.contains(key);
               final controller = _controllers[key] ?? TextEditingController();
               _controllers[key] = controller;
@@ -374,16 +474,21 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
                   ],
                 ),
               );
-            }),
-          ],
-          if (doc.chatStatus == 'completed') ...[
-            SizedBox(height: 10.h),
-            Text(
-              '작성이 완료된 문서입니다.',
-              style: AppTypography.bodySmallR.copyWith(color: AppColors.textSecondary),
+                  }),
+                ],
+                if (doc.chatStatus == 'completed') ...[
+                  SizedBox(height: 10.h),
+                  Text(
+                    '작성이 완료된 문서입니다.',
+                    style: AppTypography.bodySmallR.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+                SizedBox(height: 16.h),
+              ],
             ),
-          ],
-          SizedBox(height: 16.h),
+          ),
         ],
       ),
     );

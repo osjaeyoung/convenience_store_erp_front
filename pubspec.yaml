@@ -58,6 +58,7 @@ dependencies:
   printing: ^5.14.3
   image_picker: ^1.2.1
   flutter_screenutil: ^5.9.3
+  kpostal: ^1.1.0
 
 dev_dependencies:
   flutter_test:

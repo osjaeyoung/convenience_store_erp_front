@@ -440,7 +440,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
   }
 
   String get _regionLabel =>
-      (_region ?? '').trim().isEmpty ? '지역' : _region!.trim();
+      (_region ?? '').trim().isEmpty ? '전체' : _region!.trim();
 
   String get _ratingLabel {
     if (_minRating == null) return '평점';
@@ -659,7 +659,7 @@ class _RecruitmentHomeTab extends StatelessWidget {
               SizedBox(width: 8.w),
               RecruitmentFilterPill(
                 label: regionLabel,
-                active: regionLabel != '지역',
+                active: regionLabel != '전체',
                 onTap: onTapRegion,
               ),
               SizedBox(width: 8.w),

@@ -4,6 +4,25 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class EmploymentContractAttachmentHelpers {
   EmploymentContractAttachmentHelpers._();
 
+  static String? chatStatus(Map<String, dynamic> c) {
+    final value = c['chat_status']?.toString().trim();
+    return (value == null || value.isEmpty) ? null : value;
+  }
+
+  static String? chatStatusLabel(Map<String, dynamic> c) {
+    final rawStatus = chatStatus(c);
+    if (rawStatus == null) return null;
+    switch (rawStatus) {
+      case 'business_draft':
+      case 'waiting_worker':
+        return '미완료';
+      case 'completed':
+        return '작성 완료';
+    }
+    final value = c['chat_status_label']?.toString().trim();
+    return (value == null || value.isEmpty) ? null : value;
+  }
+
   /// `files` 또는 단일 `contract_file_url`
   static bool hasAttachment(Map<String, dynamic> c) {
     final url = c['contract_file_url']?.toString().trim();
@@ -23,10 +42,18 @@ class EmploymentContractAttachmentHelpers {
   /// 스펙 ##23-1: `status=draft`, `completion_rate=0` + 첨부 → 화면상 "계약완료"·파일 중심 상세
   static bool isFileOnlyRegistration(Map<String, dynamic> c) {
     if (!hasAttachment(c)) return false;
+    if (chatStatus(c) != null) return false;
     final status = c['status']?.toString() ?? '';
     if (status == 'completed') return false;
     final rate = (c['completion_rate'] as num?)?.toInt() ?? 0;
     return rate == 0;
+  }
+
+  static bool isCompleted(Map<String, dynamic> c) {
+    final chat = chatStatus(c);
+    if (chat != null) return chat == 'completed';
+    final status = c['status']?.toString() ?? '';
+    return status == 'completed' || isFileOnlyRegistration(c);
   }
 
   static String? primaryFileUrl(Map<String, dynamic> c) {
@@ -54,8 +81,9 @@ class EmploymentContractAttachmentHelpers {
   static String? _publicUrlForFileKey(String fileKey) {
     final base = dotenv.env['S3_PUBLIC_BASE_URL']?.trim() ?? '';
     if (base.isEmpty) return null;
-    final normalized =
-        base.endsWith('/') ? base.substring(0, base.length - 1) : base;
+    final normalized = base.endsWith('/')
+        ? base.substring(0, base.length - 1)
+        : base;
     return '$normalized/$fileKey';
   }
 

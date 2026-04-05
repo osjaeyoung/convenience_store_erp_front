@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/navigation/logo_navigation_bridge.dart';
 import '../../../core/router/app_router.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
@@ -31,11 +32,25 @@ class _JobSeekerMainScreenState extends State<JobSeekerMainScreen>
   int _applicationsRefreshToken = 0;
   int _resumeRefreshToken = 0;
 
+  late final VoidCallback _logoTapHandler;
+
   @override
   void initState() {
     super.initState();
+    _logoTapHandler = _onLogoGoToRecruitment;
+    JobSeekerLogoNavigation.register(_logoTapHandler);
     _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(_handleTabChanged);
+  }
+
+  void _onLogoGoToRecruitment() {
+    if (!mounted) return;
+    Navigator.of(context, rootNavigator: true)
+        .popUntil((route) => route.isFirst);
+    if (_tabController.index != 0) {
+      _tabController.animateTo(0);
+    }
+    setState(() => _currentTabIndex = 0);
   }
 
   void _handleTabChanged() {
@@ -46,6 +61,7 @@ class _JobSeekerMainScreenState extends State<JobSeekerMainScreen>
 
   @override
   void dispose() {
+    JobSeekerLogoNavigation.unregister(_logoTapHandler);
     _tabController.removeListener(_handleTabChanged);
     _tabController.dispose();
     super.dispose();
@@ -195,7 +211,7 @@ class _WorkerTopTabItem extends StatelessWidget {
           border: Border(
             bottom: BorderSide(
               color: selected ? AppColors.textPrimary : Colors.transparent,
-              width: 0.8,
+              width: selected ? 2 : 0,
             ),
           ),
         ),
@@ -204,6 +220,7 @@ class _WorkerTopTabItem extends StatelessWidget {
           style: AppTypography.bodyLargeB.copyWith(
             color: selected ? AppColors.textPrimary : AppColors.textTertiary,
             height: 24 / 16,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),

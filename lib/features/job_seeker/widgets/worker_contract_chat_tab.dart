@@ -75,120 +75,160 @@ class _WorkerContractChatTabState extends State<WorkerContractChatTab> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading && _items.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_error != null && _items.isEmpty) {
-      return workerErrorView(
-        message: accountDioMessage(_error!),
-        onRetry: _load,
-      );
-    }
-    if (_items.isEmpty) {
-      return workerEmptyView(
-        message: _emptyTitle,
-        description: _emptyDescription,
-      );
-    }
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView.separated(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 24.h),
-        itemCount: _items.length,
-        separatorBuilder: (_, __) => const Divider(
-          color: AppColors.border,
-          height: 1,
-          thickness: 1,
-        ),
-        itemBuilder: (context, index) {
-          final item = _items[index];
-          final preview =
-              workerDisplayValue(item.lastMessagePreview, fallback: item.title);
-          final unread = item.unreadCount;
-          return InkWell(
-            onTap: () => _openDetail(item),
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 20.h),
-              child: Row(
-                children: [
-                  Container(
-                    width: 36.r,
-                    height: 36.r,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppColors.grey25,
-                    ),
-                    child: const Icon(
-                      Icons.person_rounded,
-                      color: AppColors.textTertiary,
-                      size: 20,
-                    ),
-                  ),
-                  SizedBox(width: 8.w),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          workerDisplayValue(item.counterpartyName, fallback: '상대방'),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTypography.bodyMediumM.copyWith(
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        SizedBox(height: 2.h),
-                        Text(
-                          preview,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTypography.bodySmallR.copyWith(
-                            color: AppColors.textTertiary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (unread > 0) ...[
-                        Container(
-                          constraints: BoxConstraints(minWidth: 20.w),
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 6.w,
-                            vertical: 2.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFF4834),
-                            borderRadius: BorderRadius.circular(100.r),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            unread.toString(),
-                            style: AppTypography.bodySmallB.copyWith(
-                              color: AppColors.grey0,
-                              fontSize: 12.sp,
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 10.w),
-                      ],
-                      Icon(
-                        Icons.more_horiz_rounded,
-                        color: AppColors.textPrimary,
-                        size: 24.r,
-                      ),
-                    ],
-                  ),
-                ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final minH = constraints.maxHeight;
+        Widget scrollableChild;
+        if (_loading && _items.isEmpty) {
+          scrollableChild = SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: minH),
+              child: const Center(child: CircularProgressIndicator()),
+            ),
+          );
+        } else if (_error != null && _items.isEmpty) {
+          scrollableChild = SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: minH),
+              child: workerErrorView(
+                message: accountDioMessage(_error!),
+                onRetry: _load,
               ),
             ),
           );
-        },
-      ),
+        } else if (_items.isEmpty) {
+          scrollableChild = SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: minH),
+              child: workerEmptyView(
+                message: _emptyTitle,
+                description: _emptyDescription,
+              ),
+            ),
+          );
+        } else {
+          // Figma 2534:11025 — 계약 채팅 목록 (36 아바타·14/12 타이포·빨간 읽지않음·⋯)
+          scrollableChild = ListView.separated(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 24.h),
+            itemCount: _items.length,
+            separatorBuilder: (_, __) => Divider(
+              color: AppColors.border,
+              height: 1,
+              thickness: 1,
+              indent: 0,
+              endIndent: 0,
+            ),
+            itemBuilder: (context, index) {
+              final item = _items[index];
+              final preview = workerDisplayValue(
+                item.lastMessagePreview,
+                fallback: item.title,
+              );
+              final unread = item.unreadCount;
+              return InkWell(
+                onTap: () => _openDetail(item),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20.h),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36.r,
+                        height: 36.r,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.grey0,
+                          border: Border.all(
+                            color: AppColors.borderLight,
+                            width: 1,
+                          ),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Icon(
+                          Icons.person_rounded,
+                          color: AppColors.textTertiary,
+                          size: 22.r,
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              workerDisplayValue(
+                                item.counterpartyName,
+                                fallback: '상대방',
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.bodyMediumM.copyWith(
+                                color: AppColors.textPrimary,
+                                height: 16 / 14,
+                              ),
+                            ),
+                            SizedBox(height: 2.h),
+                            Text(
+                              preview,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.bodySmallR.copyWith(
+                                color: AppColors.textTertiary,
+                                height: 18 / 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (unread > 0) ...[
+                            Container(
+                              constraints: BoxConstraints(
+                                minWidth: 20.r,
+                                minHeight: 20.r,
+                              ),
+                              padding: EdgeInsets.symmetric(horizontal: 5.w),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF4834),
+                                borderRadius: BorderRadius.circular(100.r),
+                              ),
+                              child: Text(
+                                unread > 99 ? '99+' : '$unread',
+                                style: AppTypography.bodySmallB.copyWith(
+                                  color: AppColors.grey0,
+                                  fontSize: 12.sp,
+                                  height: 16 / 12,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 12.w),
+                          ],
+                          Icon(
+                            Icons.more_horiz_rounded,
+                            color: AppColors.textPrimary,
+                            size: 24,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        }
+        return RefreshIndicator(
+          onRefresh: _load,
+          child: scrollableChild,
+        );
+      },
     );
   }
 }

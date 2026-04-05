@@ -8,6 +8,8 @@ import '../../../data/repositories/auth_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../account/account_dio_message.dart';
+import '../../account/screens/account_inquiries_screen.dart';
+import '../../account/screens/account_notices_screen.dart';
 import '../../account/screens/account_password_verify_screen.dart';
 import '../../account/screens/account_settings_menu_screen.dart';
 import '../../account/widgets/account_confirm_dialogs.dart';
@@ -164,14 +166,24 @@ class _WorkerMyPageScreenState extends State<WorkerMyPageScreen> {
                         _MenuRow(
                           icon: Icons.campaign_outlined,
                           title: '공지사항',
-                          onTap: () =>
-                              _openLink(profile?.settingsLinks.noticesUrl),
+                          onTap: () {
+                            Navigator.of(context).push<void>(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const AccountNoticesScreen(),
+                              ),
+                            );
+                          },
                         ),
                         _MenuRow(
                           icon: Icons.chat_bubble_outline_rounded,
                           title: '고객센터/문의하기',
-                          onTap: () =>
-                              _openLink(profile?.settingsLinks.supportUrl),
+                          onTap: () {
+                            Navigator.of(context).push<void>(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const AccountInquiriesScreen(),
+                              ),
+                            );
+                          },
                         ),
                         _MenuRow(
                           icon: Icons.article_outlined,

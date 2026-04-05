@@ -26,6 +26,18 @@ bool _boolOf(dynamic value) {
   return normalized == 'true' || normalized == '1';
 }
 
+String _normalizeContractChatStatusLabel(String status, String label) {
+  switch (status) {
+    case 'business_draft':
+    case 'waiting_worker':
+      return '미완료';
+    case 'completed':
+      return '작성 완료';
+    default:
+      return label;
+  }
+}
+
 class WorkerRecruitmentPostingSummary {
   const WorkerRecruitmentPostingSummary({
     required this.postingId,
@@ -715,7 +727,10 @@ class WorkerContractChatSummary {
       counterpartyName: _nullableString(json['counterparty_name']),
       counterpartyRole: _nullableString(json['counterparty_role']),
       chatStatus: _stringOf(json['chat_status']),
-      chatStatusLabel: _stringOf(json['chat_status_label']),
+      chatStatusLabel: _normalizeContractChatStatusLabel(
+        _stringOf(json['chat_status']),
+        _stringOf(json['chat_status_label']),
+      ),
       lastMessagePreview: _nullableString(json['last_message_preview']),
       lastMessageAt: _nullableString(json['last_message_at']),
       unreadCount: _intOf(json['unread_count']),
@@ -740,8 +755,9 @@ class WorkerContractChatPage {
       items: rawItems
           .whereType<Map>()
           .map(
-            (item) =>
-                WorkerContractChatSummary.fromJson(Map<String, dynamic>.from(item)),
+            (item) => WorkerContractChatSummary.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
           )
           .toList(),
       emptyTitle: _nullableString(json['empty_title']),
@@ -791,7 +807,10 @@ class WorkerContractChatThread {
       counterpartyName: _nullableString(json['counterparty_name']),
       counterpartyRole: _nullableString(json['counterparty_role']),
       chatStatus: _stringOf(json['chat_status']),
-      chatStatusLabel: _stringOf(json['chat_status_label']),
+      chatStatusLabel: _normalizeContractChatStatusLabel(
+        _stringOf(json['chat_status']),
+        _stringOf(json['chat_status_label']),
+      ),
       lastMessagePreview: _nullableString(json['last_message_preview']),
       lastMessageAt: _nullableString(json['last_message_at']),
       unreadCount: _intOf(json['unread_count']),
@@ -859,8 +878,9 @@ class WorkerContractChatDetail {
       messages: rawMessages
           .whereType<Map>()
           .map(
-            (item) =>
-                WorkerContractChatMessage.fromJson(Map<String, dynamic>.from(item)),
+            (item) => WorkerContractChatMessage.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
           )
           .toList(),
       canOpenDocument: _boolOf(json['can_open_document']),
@@ -934,7 +954,10 @@ class WorkerContractChatDocument {
       title: _stringOf(json['title']),
       templateVersion: _stringOf(json['template_version']),
       chatStatus: _stringOf(json['chat_status']),
-      chatStatusLabel: _stringOf(json['chat_status_label']),
+      chatStatusLabel: _normalizeContractChatStatusLabel(
+        _stringOf(json['chat_status']),
+        _stringOf(json['chat_status_label']),
+      ),
       currentUserRole: _stringOf(json['current_user_role']),
       formValues: json['form_values'] is Map
           ? Map<String, dynamic>.from(json['form_values'] as Map)

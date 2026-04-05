@@ -11,6 +11,7 @@ import '../../account/account_dio_message.dart';
 import '../widgets/worker_common.dart';
 import 'worker_contract_document_screen.dart';
 
+/// Figma: 계약채팅 상세 — 앱바·문서 말풍선(밑줄)·타임스탬프
 class WorkerContractChatDetailScreen extends StatefulWidget {
   const WorkerContractChatDetailScreen({super.key, required this.contractId});
 
@@ -67,9 +68,13 @@ class _WorkerContractChatDetailScreenState
   }
 
   Future<void> _openDocument() async {
+    final room = _detail?.thread.branchName;
     final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
-        builder: (_) => WorkerContractDocumentScreen(contractId: widget.contractId),
+        builder: (_) => WorkerContractDocumentScreen(
+          contractId: widget.contractId,
+          roomTitle: (room != null && room.isNotEmpty) ? room : null,
+        ),
       ),
     );
     if (!mounted) return;
@@ -77,6 +82,27 @@ class _WorkerContractChatDetailScreenState
       _changed = true;
       await _load();
     }
+  }
+
+  static TextStyle get _appBarTitleStyle => AppTypography.bodyLargeM.copyWith(
+        fontSize: 18.sp,
+        height: 24 / 18,
+        fontWeight: FontWeight.w500,
+        color: AppColors.textPrimary,
+      );
+
+  static TextStyle get _timeStyle => AppTypography.bodyXSmallM.copyWith(
+        color: const Color(0xFFC7C9D7),
+        height: 16 / 10,
+      );
+
+  /// 말풍선이 화면을 넘지 않도록 상한만 둔다. 너비는 글자 길이(본질적 폭)에 맞춘다.
+  double _maxBubbleWidth(BuildContext context, {required bool incoming}) {
+    final w = MediaQuery.sizeOf(context).width;
+    final listPad = 20.w * 2;
+    final avatar = incoming ? (36.r + 10.w) : 0.0;
+    final timeReserve = 56.w;
+    return (w - listPad - avatar - timeReserve).clamp(72.w, w);
   }
 
   @override
@@ -101,16 +127,20 @@ class _WorkerContractChatDetailScreenState
           detail?.thread.branchName ?? '계약채팅',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: AppTypography.heading3.copyWith(
-            fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
-          ),
+          style: _appBarTitleStyle,
         ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 12),
-            child: Icon(Icons.more_horiz_rounded, color: AppColors.textPrimary),
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(
+              Icons.more_horiz_rounded,
+              size: 24,
+              color: AppColors.textPrimary,
+            ),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
           ),
+          SizedBox(width: 4.w),
         ],
       ),
       body: _loading
@@ -133,85 +163,269 @@ class _WorkerContractChatDetailScreenState
         final message = messages[index];
         final workerMessage = message.fromWorker;
         final time = _formatTime(message.createdAt);
+        final isDocument = message.messageType == 'document';
+
+        if (workerMessage) {
+          return Padding(
+            padding: EdgeInsets.only(bottom: 16.h),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (time.isNotEmpty) ...[
+                  Text(time, style: _timeStyle),
+                  SizedBox(width: 6.w),
+                ],
+                _WorkerOutgoingBubble(
+                  maxBubbleWidth: _maxBubbleWidth(context, incoming: false),
+                  text: message.text,
+                  isDocument: isDocument,
+                  onTapDocument: isDocument ? _openDocument : null,
+                ),
+              ],
+            ),
+          );
+        }
+
         return Padding(
           padding: EdgeInsets.only(bottom: 16.h),
           child: Row(
-            mainAxisAlignment:
-                workerMessage ? MainAxisAlignment.end : MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              if (!workerMessage) ...[
-                Container(
-                  width: 36.r,
-                  height: 36.r,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.grey25,
-                  ),
-                  child: const Icon(
-                    Icons.person_rounded,
-                    size: 20,
-                    color: AppColors.textTertiary,
-                  ),
-                ),
-                SizedBox(width: 10.w),
-              ],
-              if (workerMessage && time.isNotEmpty) ...[
-                Text(
-                  time,
-                  style: AppTypography.bodyXSmallM.copyWith(
-                    color: AppColors.textDisabled,
-                  ),
-                ),
-                SizedBox(width: 6.w),
-              ],
-              Flexible(
-                child: InkWell(
-                  onTap: message.messageType == 'document' ? _openDocument : null,
-                  borderRadius: BorderRadius.circular(10.r),
-                  child: Container(
-                    constraints: BoxConstraints(maxWidth: 248.w),
-                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
-                    decoration: BoxDecoration(
-                      color: workerMessage ? AppColors.primary : AppColors.grey0,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(workerMessage ? 10 : 2),
-                        topRight: Radius.circular(workerMessage ? 2 : 10),
-                        bottomLeft: Radius.circular(10.r),
-                        bottomRight: Radius.circular(10.r),
+              _CounterpartyAvatar(),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      _WorkerIncomingBubble(
+                        maxBubbleWidth:
+                            _maxBubbleWidth(context, incoming: true),
+                        text: message.text,
+                        isDocument: isDocument,
+                        onTapDocument: isDocument ? _openDocument : null,
                       ),
-                      boxShadow: workerMessage
-                          ? null
-                          : const [
-                              BoxShadow(
-                                color: Color(0x1A000000),
-                                blurRadius: 12,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
-                    ),
-                    child: Text(
-                      message.text,
-                      style: AppTypography.bodyMediumR.copyWith(
-                        color: workerMessage ? AppColors.grey0 : AppColors.textPrimary,
-                      ),
-                    ),
+                      if (time.isNotEmpty) ...[
+                        SizedBox(width: 6.w),
+                        Text(
+                          time,
+                          textAlign: TextAlign.center,
+                          style: _timeStyle,
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ),
-              if (!workerMessage && time.isNotEmpty) ...[
-                SizedBox(width: 6.w),
-                Text(
-                  time,
-                  style: AppTypography.bodyXSmallM.copyWith(
-                    color: AppColors.textDisabled,
-                  ),
-                ),
-              ],
             ],
           ),
         );
       },
+    );
+  }
+}
+
+class _CounterpartyAvatar extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 36.r,
+      height: 36.r,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppColors.grey0,
+        border: Border.all(color: AppColors.textDisabled, width: 1),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Icon(
+        Icons.person_rounded,
+        size: 22.r,
+        color: AppColors.textTertiary,
+      ),
+    );
+  }
+}
+
+/// Figma 2534:10737 — 흰 말풍선, 그림자, 문서 문구는 검정 밑줄
+class _WorkerIncomingBubble extends StatelessWidget {
+  const _WorkerIncomingBubble({
+    required this.maxBubbleWidth,
+    required this.text,
+    required this.isDocument,
+    this.onTapDocument,
+  });
+
+  final double maxBubbleWidth;
+  final String text;
+  final bool isDocument;
+  final VoidCallback? onTapDocument;
+
+  @override
+  Widget build(BuildContext context) {
+    final baseStyle = AppTypography.bodyMediumR.copyWith(
+      color: AppColors.textPrimary,
+      height: 19 / 14,
+    );
+    final textStyle = baseStyle;
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxBubbleWidth),
+      child: IntrinsicWidth(
+        child: SizedBox(
+          height: 40.h,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTapDocument,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(2.r),
+                topRight: Radius.circular(10.r),
+                bottomLeft: Radius.circular(10.r),
+                bottomRight: Radius.circular(10.r),
+              ),
+              child: Ink(
+                padding: EdgeInsets.symmetric(horizontal: 10.w),
+                decoration: BoxDecoration(
+                  color: AppColors.grey0,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(2.r),
+                    topRight: Radius.circular(10.r),
+                    bottomLeft: Radius.circular(10.r),
+                    bottomRight: Radius.circular(10.r),
+                  ),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x1A000000),
+                      blurRadius: 12,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Align(
+                  alignment: Alignment.center,
+                  child: isDocument
+                      ? _DocumentUnderlinedText(
+                          text: text,
+                          style: textStyle,
+                          underlineColor: AppColors.textPrimary,
+                        )
+                      : Text(
+                          text,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textStyle,
+                        ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _WorkerOutgoingBubble extends StatelessWidget {
+  const _WorkerOutgoingBubble({
+    required this.maxBubbleWidth,
+    required this.text,
+    required this.isDocument,
+    this.onTapDocument,
+  });
+
+  final double maxBubbleWidth;
+  final String text;
+  final bool isDocument;
+  final VoidCallback? onTapDocument;
+
+  @override
+  Widget build(BuildContext context) {
+    final baseStyle = AppTypography.bodyMediumR.copyWith(
+      color: AppColors.grey0,
+      height: 19 / 14,
+    );
+    final textStyle = baseStyle;
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxBubbleWidth),
+      child: IntrinsicWidth(
+        child: SizedBox(
+          height: 40.h,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTapDocument,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(10.r),
+                topRight: Radius.circular(2.r),
+                bottomLeft: Radius.circular(10.r),
+                bottomRight: Radius.circular(10.r),
+              ),
+              child: Ink(
+                padding: EdgeInsets.symmetric(horizontal: 10.w),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(10.r),
+                    topRight: Radius.circular(2.r),
+                    bottomLeft: Radius.circular(10.r),
+                    bottomRight: Radius.circular(10.r),
+                  ),
+                ),
+                child: Align(
+                  alignment: Alignment.center,
+                  child: isDocument
+                      ? _DocumentUnderlinedText(
+                          text: text,
+                          style: textStyle,
+                          underlineColor: AppColors.grey0,
+                        )
+                      : Text(
+                          text,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textStyle,
+                        ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 문서 메시지 밑줄은 글자와 약간 간격을 두어 표시한다.
+class _DocumentUnderlinedText extends StatelessWidget {
+  const _DocumentUnderlinedText({
+    required this.text,
+    required this.style,
+    required this.underlineColor,
+  });
+
+  final String text;
+  final TextStyle style;
+  final Color underlineColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: underlineColor, width: 1)),
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(bottom: 2.h),
+        child: Text(
+          text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: style,
+        ),
+      ),
     );
   }
 }

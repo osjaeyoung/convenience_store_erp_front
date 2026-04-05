@@ -201,7 +201,7 @@ class _RecruitmentPostingListTabState extends State<RecruitmentPostingListTab> {
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 0.h),
                   child: RecruitmentFilterPill(
-                    label: _region?.trim().isNotEmpty == true ? _region! : '지역',
+                    label: _region?.trim().isNotEmpty == true ? _region! : '전체',
                     active: _region?.trim().isNotEmpty == true,
                     onTap: _showRegionSheet,
                   ),

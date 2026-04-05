@@ -740,26 +740,48 @@ class _SignupScreenState extends State<SignupScreen> {
 
     final repo = context.read<AuthRepository>();
     setState(() => _isSendingPhoneCode = true);
-    await repo.clearPhoneVerificationSession(notify: false);
-    await repo.saveSignupDraft(
-      SignupDraft(
-        email: _emailController.text.trim(),
-        password: _pwController.text,
-        fullName: _nameController.text.trim(),
+    try {
+      final existsResult = await repo.checkPhoneNumberExists(
         phoneNumber: _phoneController.text.trim(),
-        agreeTerms: _agreeTerms,
-        agreeAge: _agreeAge,
-        agreePrivacy: _agreePrivacy,
-        agreeThirdParty: _agreeThirdParty,
-        agreeMarketing: _agreeMarketing,
-        currentStep: 'phone_verification',
-        phoneVerified: false,
-      ),
-    );
-    if (!mounted) return;
-    setState(() => _isSendingPhoneCode = true);
-    setState(() => _isSendingPhoneCode = false);
-    context.go(AppRouter.signupPhoneVerification);
+      );
+      if (!mounted) return;
+      if (existsResult.exists) {
+        final message = existsResult.hasPasswordLogin
+            ? '이미 가입된 전화번호입니다.'
+            : '이미 가입된 전화번호입니다. 소셜 계정으로 가입된 번호인지 확인해주세요.';
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+        setState(() => _isSendingPhoneCode = false);
+        return;
+      }
+
+      await repo.clearPhoneVerificationSession(notify: false);
+      await repo.saveSignupDraft(
+        SignupDraft(
+          email: _emailController.text.trim(),
+          password: _pwController.text,
+          fullName: _nameController.text.trim(),
+          phoneNumber: _phoneController.text.trim(),
+          agreeTerms: _agreeTerms,
+          agreeAge: _agreeAge,
+          agreePrivacy: _agreePrivacy,
+          agreeThirdParty: _agreeThirdParty,
+          agreeMarketing: _agreeMarketing,
+          currentStep: 'phone_verification',
+          phoneVerified: false,
+        ),
+      );
+      if (!mounted) return;
+      setState(() => _isSendingPhoneCode = false);
+      context.go(AppRouter.signupPhoneVerification);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _isSendingPhoneCode = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    }
   }
 
   Widget _buildTermsRow({

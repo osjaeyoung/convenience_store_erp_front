@@ -10,7 +10,9 @@ import '../../auth/bloc/auth_bloc.dart';
 import '../account_dio_message.dart';
 import '../widgets/account_confirm_dialogs.dart';
 import '../widgets/account_figma_styles.dart';
+import 'account_inquiries_screen.dart';
 import 'account_my_info_settings_screen.dart';
+import 'account_notices_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 설정 (Figma 2634:16151)
@@ -83,8 +85,6 @@ class _AccountSettingsMenuScreenState extends State<AccountSettingsMenuScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final links = _profile?.settingsLinks ?? const AccountSettingsLinks();
-
     return Scaffold(
       backgroundColor: AppColors.grey0Alt,
       appBar: accountFigmaAppBar(context: context, title: '설정'),
@@ -142,15 +142,30 @@ class _AccountSettingsMenuScreenState extends State<AccountSettingsMenuScreen> {
                                 ),
                                 _row(
                                   '고객센터/문의하기',
-                                  onTap: () => _openLink(links.supportUrl),
+                                  onTap: () {
+                                    Navigator.of(context).push<void>(
+                                      MaterialPageRoute<void>(
+                                        builder: (_) =>
+                                            const AccountInquiriesScreen(),
+                                      ),
+                                    );
+                                  },
                                 ),
                                 _row(
                                   '공지사항',
-                                  onTap: () => _openLink(links.noticesUrl),
+                                  onTap: () {
+                                    Navigator.of(context).push<void>(
+                                      MaterialPageRoute<void>(
+                                        builder: (_) =>
+                                            const AccountNoticesScreen(),
+                                      ),
+                                    );
+                                  },
                                 ),
                                 _row(
                                   '이용정책',
-                                  onTap: () => _openLink(links.policyUrl),
+                                  onTap: () =>
+                                      _openLink(_profile?.settingsLinks.policyUrl),
                                 ),
                               ],
                             ),

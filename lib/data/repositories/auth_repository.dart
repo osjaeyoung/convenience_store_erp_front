@@ -10,6 +10,7 @@ import '../../features/auth/exceptions/auth_exception.dart';
 import '../../core/models/user.dart';
 import '../../core/storage/token_storage.dart';
 import '../models/account_profile.dart';
+import '../models/account_support_models.dart';
 import '../models/auth_user.dart';
 import '../models/branch.dart';
 import '../models/login_response.dart';
@@ -498,6 +499,16 @@ class AuthRepository extends ChangeNotifier {
     return AccountProfile.fromJson(res.data!);
   }
 
+  Future<PhoneNumberExistsResult> checkPhoneNumberExists({
+    required String phoneNumber,
+  }) async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/auth/phone-number-exists',
+      queryParameters: {'phone_number': phoneNumber.trim()},
+    );
+    return PhoneNumberExistsResult.fromJson(res.data!);
+  }
+
   /// 이름·전화번호 부분 갱신 (`PATCH /me/account`)
   Future<AccountProfile> patchAccount({
     String? email,
@@ -547,11 +558,89 @@ class AuthRepository extends ChangeNotifier {
     );
   }
 
+  Future<PasswordResetByPhoneResult> resetPasswordByPhone({
+    required String phoneNumber,
+    required String newPassword,
+  }) async {
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/auth/password/reset/by-phone',
+      data: {
+        'phone_number': phoneNumber.trim(),
+        'new_password': newPassword,
+      },
+    );
+    return PasswordResetByPhoneResult.fromJson(res.data!);
+  }
+
   /// 회원 탈퇴 (`POST /me/account/withdraw`)
   Future<void> withdrawAccount() async {
     await _apiClient.dio.post<Map<String, dynamic>>(
       '/me/account/withdraw',
       data: {'confirm': true},
+    );
+  }
+
+  Future<AccountNoticePage> getNotices({
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/me/notices',
+      queryParameters: {'page': page, 'page_size': pageSize},
+    );
+    return AccountNoticePage.fromJson(res.data!);
+  }
+
+  Future<AccountNotice> getNoticeDetail({
+    required int noticeId,
+  }) async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/me/notices/$noticeId',
+    );
+    return AccountNotice.fromJson(res.data!);
+  }
+
+  Future<AccountInquiryPage> getInquiries({
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/me/inquiries',
+      queryParameters: {'page': page, 'page_size': pageSize},
+    );
+    return AccountInquiryPage.fromJson(res.data!);
+  }
+
+  Future<AccountInquiry> createInquiry({
+    required String inquiryType,
+    required String title,
+    required String content,
+  }) async {
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/me/inquiries',
+      data: {
+        'inquiry_type': inquiryType.trim(),
+        'title': title.trim(),
+        'content': content.trim(),
+      },
+    );
+    return AccountInquiry.fromJson(res.data!);
+  }
+
+  Future<AccountInquiry> getInquiryDetail({
+    required int inquiryId,
+  }) async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/me/inquiries/$inquiryId',
+    );
+    return AccountInquiry.fromJson(res.data!);
+  }
+
+  Future<void> checkInquiryAnswer({
+    required int inquiryId,
+  }) async {
+    await _apiClient.dio.post<Map<String, dynamic>>(
+      '/me/inquiries/$inquiryId/answer-check',
     );
   }
 

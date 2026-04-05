@@ -47,19 +47,18 @@ class _EmploymentContractsListScreenState
   }
 
   static String _listSubtitle(Map<String, dynamic> c) {
-    final status = c['status']?.toString();
-    final fileOnly =
-        EmploymentContractAttachmentHelpers.isFileOnlyRegistration(c);
-    if (status == 'completed' || fileOnly) {
-      final at =
-          c['finalized_at'] ?? c['updated_at'] ?? c['created_at'];
+    final completed = EmploymentContractAttachmentHelpers.isCompleted(c);
+    if (completed) {
+      final at = c['finalized_at'] ?? c['updated_at'] ?? c['created_at'];
       return '완료일 ${_formatYmd(at)}';
     }
+    final incompleteLabel =
+        EmploymentContractAttachmentHelpers.chatStatusLabel(c) ?? '계약미완료';
     final at = c['updated_at'];
     if (at != null) {
-      return '임시저장 · ${_formatYmd(at)}';
+      return '$incompleteLabel · ${_formatYmd(at)}';
     }
-    return '임시저장';
+    return incompleteLabel;
   }
 
   @override
@@ -132,9 +131,8 @@ class _EmploymentContractsListScreenState
 
   bool get _isGuardianList => widget.templateVersion == 'guardian_consent_v1';
 
-  String get _emptyMessage => _isGuardianList
-      ? '등록된 친권자(후견인) 동의서가 없습니다'
-      : '등록된 근로계약서가 없습니다.';
+  String get _emptyMessage =>
+      _isGuardianList ? '등록된 친권자(후견인) 동의서가 없습니다' : '등록된 근로계약서가 없습니다.';
 
   @override
   Widget build(BuildContext context) {
@@ -160,113 +158,108 @@ class _EmploymentContractsListScreenState
                 ],
               )
             : _error != null
-                ? ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.all(24.r),
-                    children: [
-                      Text(
-                        _error!,
-                        textAlign: TextAlign.center,
-                        style: AppTypography.bodyMediumR.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  )
-                : _items.isEmpty
-                    ? CustomScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        slivers: [
-                          SliverFillRemaining(
-                            hasScrollBody: false,
-                            child: ColoredBox(
-                              color: AppColors.grey0,
-                              child: Center(
-                                child: Text(
-                                  _emptyMessage,
-                                  textAlign: TextAlign.center,
-                                  style: AppTypography.bodyLargeM.copyWith(
-                                    color: AppColors.textTertiary,
-                                    height: 20 / 16,
-                                  ),
-                                ),
-                              ),
-                            ),
+            ? ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.all(24.r),
+                children: [
+                  Text(
+                    _error!,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.bodyMediumR.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              )
+            : _items.isEmpty
+            ? CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: ColoredBox(
+                      color: AppColors.grey0,
+                      child: Center(
+                        child: Text(
+                          _emptyMessage,
+                          textAlign: TextAlign.center,
+                          style: AppTypography.bodyLargeM.copyWith(
+                            color: AppColors.textTertiary,
+                            height: 20 / 16,
                           ),
-                        ],
-                      )
-                    : ListView.separated(
-                        padding: EdgeInsets.only(bottom: 12.h),
-                        itemCount: _items.length,
-                        separatorBuilder: (_, __) => const Divider(
-                          height: 1,
-                          thickness: 1,
-                          color: AppColors.divider,
                         ),
-                        itemBuilder: (context, i) {
-                          final c = _items[i];
-                          final title = c['title']?.toString() ?? '-';
-                          final status = c['status']?.toString() ?? '';
-                          final completed = status == 'completed' ||
-                              EmploymentContractAttachmentHelpers
-                                  .isFileOnlyRegistration(c);
-                          return Material(
-                            color: AppColors.grey0,
-                            child: InkWell(
-                              onTap: () => _openDetail(c),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 16,
-                                ),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            title,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: AppTypography.bodyMediumM
-                                                .copyWith(
-                                              fontSize: 15.sp,
-                                              fontWeight: FontWeight.w600,
-                                              height: 22 / 15,
-                                              color: AppColors.textPrimary,
-                                            ),
-                                          ),
-                                          SizedBox(height: 4.h),
-                                          Text(
-                                            _listSubtitle(c),
-                                            style:
-                                                AppTypography.bodySmall.copyWith(
-                                              fontSize: 13.sp,
-                                              height: 18 / 13,
-                                              color: AppColors.textSecondary,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : ListView.separated(
+                padding: EdgeInsets.only(bottom: 12.h),
+                itemCount: _items.length,
+                separatorBuilder: (_, __) => const Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: AppColors.divider,
+                ),
+                itemBuilder: (context, i) {
+                  final c = _items[i];
+                  final title = c['title']?.toString() ?? '-';
+                  final completed =
+                      EmploymentContractAttachmentHelpers.isCompleted(c);
+                  return Material(
+                    color: AppColors.grey0,
+                    child: InkWell(
+                      onTap: () => _openDetail(c),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    title,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTypography.bodyMediumM.copyWith(
+                                      fontSize: 15.sp,
+                                      fontWeight: FontWeight.w600,
+                                      height: 22 / 15,
+                                      color: AppColors.textPrimary,
                                     ),
-                                    SizedBox(width: 12.w),
-                                    _ContractStatusChip(completed: completed),
-                                    SizedBox(width: 4.w),
-                                    Icon(
-                                      Icons.chevron_right_rounded,
-                                      color: AppColors.textTertiary,
-                                      size: 22,
+                                  ),
+                                  SizedBox(height: 4.h),
+                                  Text(
+                                    _listSubtitle(c),
+                                    style: AppTypography.bodySmall.copyWith(
+                                      fontSize: 13.sp,
+                                      height: 18 / 13,
+                                      color: AppColors.textSecondary,
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             ),
-                          );
-                        },
+                            SizedBox(width: 12.w),
+                            _ContractStatusChip(completed: completed),
+                            SizedBox(width: 4.w),
+                            Icon(
+                              Icons.chevron_right_rounded,
+                              color: AppColors.textTertiary,
+                              size: 22,
+                            ),
+                          ],
+                        ),
                       ),
+                    ),
+                  );
+                },
+              ),
       ),
       bottomNavigationBar: Material(
         color: AppColors.grey0,
@@ -311,30 +304,50 @@ class _EmploymentContractsListScreenState
   }
 }
 
-/// 목록 우측 상태 뱃지 (Figma: 초록 계약완료 / 빨강 계약미완료)
+/// 목록 우측 상태 뱃지 (Figma: Main 계약완료 / Accents-Red 계약미완료)
 class _ContractStatusChip extends StatelessWidget {
   const _ContractStatusChip({required this.completed});
 
   final bool completed;
 
+  /// Figma Accents-Red
+  static const Color _accentRed = Color(0xFFFF383C);
+
   @override
   Widget build(BuildContext context) {
-    final color = completed ? AppColors.success : AppColors.error;
-    final label = completed ? '계약완료' : '계약미완료';
+    if (completed) {
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.primaryLight,
+          borderRadius: BorderRadius.circular(4.r),
+          border: Border.all(color: AppColors.primary, width: 1),
+        ),
+        child: Text(
+          '계약완료',
+          textAlign: TextAlign.center,
+          style: AppTypography.bodySmallB.copyWith(
+            height: 16 / 12,
+            color: AppColors.primary,
+          ),
+        ),
+      );
+    }
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+      alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: AppColors.grey0,
-        borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(color: color, width: 1),
+        color: const Color.fromRGBO(255, 72, 52, 0.05),
+        borderRadius: BorderRadius.circular(4.r),
+        border: Border.all(color: _accentRed, width: 1),
       ),
       child: Text(
-        label,
-        style: AppTypography.bodySmall.copyWith(
-          fontSize: 12.sp,
-          fontWeight: FontWeight.w600,
+        '계약미완료',
+        textAlign: TextAlign.center,
+        style: AppTypography.bodySmallB.copyWith(
           height: 16 / 12,
-          color: color,
+          color: _accentRed,
         ),
       ),
     );

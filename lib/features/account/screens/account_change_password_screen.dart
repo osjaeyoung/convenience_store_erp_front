@@ -1,15 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/router/app_router.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../theme/app_colors.dart';
+import '../../auth/bloc/auth_bloc.dart';
 import '../account_dio_message.dart';
 import '../widgets/account_figma_styles.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'account_password_verify_screen.dart';
 
-/// 비밀번호 재설정 (Figma 2634:16243) — `POST /me/account/password`
 class AccountChangePasswordScreen extends StatefulWidget {
-  const AccountChangePasswordScreen({super.key});
+  const AccountChangePasswordScreen({
+    super.key,
+    required this.phoneNumber,
+    required this.entryPoint,
+  });
+
+  final String phoneNumber;
+  final AccountPasswordEntryPoint entryPoint;
 
   @override
   State<AccountChangePasswordScreen> createState() =>
@@ -19,18 +30,15 @@ class AccountChangePasswordScreen extends StatefulWidget {
 class _AccountChangePasswordScreenState
     extends State<AccountChangePasswordScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _currentCtrl = TextEditingController();
-  final _newCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
-  bool _obscureCurrent = true;
-  bool _obscureNew = true;
+  bool _obscurePassword = true;
   bool _obscureConfirm = true;
   bool _submitting = false;
 
   @override
   void dispose() {
-    _currentCtrl.dispose();
-    _newCtrl.dispose();
+    _passwordCtrl.dispose();
     _confirmCtrl.dispose();
     super.dispose();
   }
@@ -39,15 +47,28 @@ class _AccountChangePasswordScreenState
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _submitting = true);
     try {
-      await context.read<AuthRepository>().changeAccountPassword(
-            currentPassword: _currentCtrl.text,
-            newPassword: _newCtrl.text,
+      final result = await context.read<AuthRepository>().resetPasswordByPhone(
+            phoneNumber: widget.phoneNumber,
+            newPassword: _passwordCtrl.text.trim(),
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('비밀번호가 변경되었습니다.')),
+        SnackBar(
+          content: Text(
+            result.message.isNotEmpty ? result.message : '비밀번호가 변경되었습니다.',
+          ),
+        ),
       );
-      Navigator.of(context).pop();
+      if (widget.entryPoint == AccountPasswordEntryPoint.login) {
+        context.go(AppRouter.login);
+        return;
+      }
+      final user = context.read<AuthBloc>().state.user;
+      context.go(
+        user?.role.isJobSeeker == true
+            ? AppRouter.jobSeekerMain
+            : AppRouter.managerMain,
+      );
     } catch (e) {
       if (mounted) {
         setState(() => _submitting = false);
@@ -58,7 +79,7 @@ class _AccountChangePasswordScreenState
     }
   }
 
-  Widget _pwdField({
+  Widget _passwordField({
     required String caption,
     required TextEditingController controller,
     required bool obscure,
@@ -124,29 +145,14 @@ class _AccountChangePasswordScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _pwdField(
-                      caption: '현재 비밀번호',
-                      controller: _currentCtrl,
-                      obscure: _obscureCurrent,
+                    _passwordField(
+                      caption: '비밀번호',
+                      controller: _passwordCtrl,
+                      obscure: _obscurePassword,
                       toggleObscure: () => setState(
-                        () => _obscureCurrent = !_obscureCurrent,
+                        () => _obscurePassword = !_obscurePassword,
                       ),
-                      hint: '현재 비밀번호를 입력해주세요.',
-                      validator: (v) {
-                        if (v == null || v.isEmpty) {
-                          return '현재 비밀번호를 입력해주세요.';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: 20.h),
-                    _pwdField(
-                      caption: '새 비밀번호',
-                      controller: _newCtrl,
-                      obscure: _obscureNew,
-                      toggleObscure: () =>
-                          setState(() => _obscureNew = !_obscureNew),
-                      hint: '새 비밀번호를 입력해주세요.',
+                      hint: '비밀번호를 입력해주세요.',
                       validator: (v) {
                         if (v == null || v.length < 8) {
                           return '8자 이상 입력해주세요.';
@@ -155,17 +161,17 @@ class _AccountChangePasswordScreenState
                       },
                     ),
                     SizedBox(height: 20.h),
-                    _pwdField(
-                      caption: '새 비밀번호 확인',
+                    _passwordField(
+                      caption: '비밀번호 확인',
                       controller: _confirmCtrl,
                       obscure: _obscureConfirm,
                       toggleObscure: () => setState(
                         () => _obscureConfirm = !_obscureConfirm,
                       ),
-                      hint: '새 비밀번호를 다시 입력해주세요.',
+                      hint: '비밀번호를 한번 더 입력해주세요.',
                       validator: (v) {
-                        if (v != _newCtrl.text) {
-                          return '새 비밀번호가 일치하지 않습니다.';
+                        if (v != _passwordCtrl.text) {
+                          return '비밀번호가 일치하지 않습니다.';
                         }
                         return null;
                       },
@@ -186,7 +192,7 @@ class _AccountChangePasswordScreenState
                   backgroundColor: AppColors.primary,
                   foregroundColor: AppColors.grey0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
+                    borderRadius: BorderRadius.circular(8.r),
                   ),
                 ),
                 child: _submitting

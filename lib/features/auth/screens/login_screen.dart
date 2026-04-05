@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_assets.dart';
 import '../../../core/router/app_router.dart';
 import '../../../data/repositories/auth_repository.dart';
+import '../../account/screens/account_password_verify_screen.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
@@ -53,6 +54,17 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  void _goHomeFromLogo() {
+    final user = context.read<AuthBloc>().state.user;
+    if (user == null) {
+      context.go(AppRouter.login);
+      return;
+    }
+    context.go(
+      user.role.isJobSeeker ? AppRouter.jobSeekerMain : AppRouter.managerMain,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<AuthBloc, AuthState>(
@@ -76,7 +88,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     SizedBox(height: 142.h),
-                    Center(child: Image.asset(AppAssets.logoMain, width: 180)),
+                    Center(
+                      child: GestureDetector(
+                        onTap: _goHomeFromLogo,
+                        child: Image.asset(AppAssets.logoMain, width: 180),
+                      ),
+                    ),
                     SizedBox(height: 56.h),
                     AuthInputField(
                       controller: _emailController,
@@ -146,11 +163,22 @@ class _LoginScreenState extends State<LoginScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          '비밀번호 찾기',
-                          style: AppTypography.bodyMediumM.copyWith(
-                            color: AppColors.grey150,
-                            height: 16 / 14,
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).push<void>(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const AccountPasswordVerifyScreen(
+                                  entryPoint: AccountPasswordEntryPoint.login,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            '비밀번호 찾기',
+                            style: AppTypography.bodyMediumM.copyWith(
+                              color: AppColors.grey150,
+                              height: 16 / 14,
+                            ),
                           ),
                         ),
                         SizedBox(width: 14.w),

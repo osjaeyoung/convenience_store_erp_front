@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_assets.dart';
+import '../../../core/navigation/logo_navigation_bridge.dart';
+import '../../../core/router/app_router.dart';
+import '../../auth/bloc/auth_bloc.dart';
 import '../../../theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -21,6 +26,8 @@ class HomeCommonAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = context.read<AuthBloc>().state.user;
+
     return AppBar(
       elevation: 0,
       scrolledUnderElevation: 0,
@@ -31,11 +38,23 @@ class HomeCommonAppBar extends StatelessWidget implements PreferredSizeWidget {
         padding: EdgeInsets.only(left: 12.w),
         child: Align(
           alignment: Alignment.centerLeft,
-          child: Image.asset(
-            AppAssets.logoMain,
-            width: 72,
-            height: 26,
-            fit: BoxFit.contain,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8.r),
+            onTap: () {
+              if (currentUser?.role.isJobSeeker == true) {
+                if (JobSeekerLogoNavigation.tryHandle()) return;
+                context.go(AppRouter.jobSeekerMain);
+                return;
+              }
+              if (ManagerLogoNavigation.tryHandle()) return;
+              context.go(AppRouter.managerMain);
+            },
+            child: Image.asset(
+              AppAssets.logoMain,
+              width: 72,
+              height: 26,
+              fit: BoxFit.contain,
+            ),
           ),
         ),
       ),

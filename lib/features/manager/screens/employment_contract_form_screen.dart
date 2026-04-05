@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:intl/intl.dart';
 
 import '../../../data/repositories/staff_management_repository.dart';
 import '../../../utils/modal_title_format.dart';
@@ -9,6 +10,32 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../auth/widgets/auth_input_field.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+String _stripCommaNumber(String s) => s.replaceAll(',', '').trim();
+
+/// 금액(원) 입력: 숫자만 받고 3자리마다 `,` 표시.
+class _ThousandsSeparatorInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digitsOnly = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+    if (digitsOnly.isEmpty) {
+      return const TextEditingValue(
+        text: '',
+        selection: TextSelection.collapsed(offset: 0),
+      );
+    }
+    final n = int.tryParse(digitsOnly);
+    if (n == null) return oldValue;
+    final formatted = NumberFormat('#,###', 'ko_KR').format(n);
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
 
 /// 친권 동의서 칩: 색은 민트(사업장)·주황(후견인·연소)만. 빈 칩 문구만 「입력」「근로자」「후견인 입력」.
 enum _ContractChipTone { mint, worker, guardian }
@@ -50,12 +77,15 @@ class _EmploymentContractFormScreenState
   static const Color _mintChipBg = Color(0xFFE2F6F0);
 
   /// 표준·연소·친권 인라인 칩 공통 패딩 (민트/오렌지, 높이 절약)
-  static EdgeInsets get _contractChipPadding => EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h);
-  static EdgeInsets get _contractChipPaddingWide => EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h);
+  static EdgeInsets get _contractChipPadding =>
+      EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h);
+  static EdgeInsets get _contractChipPaddingWide =>
+      EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h);
 
   /// 모달 하단 취소·확인 (Figma 8px)
-  static final OutlinedBorder _modalActionButtonShape =
-      RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r));
+  static final OutlinedBorder _modalActionButtonShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(8.r),
+  );
 
   static const String _svgPickerChevronDown =
       'assets/icons/svg/icon/contract_picker_chevron_down.svg';
@@ -137,11 +167,7 @@ class _EmploymentContractFormScreenState
       fit: BoxFit.contain,
     );
     if (!whiteCircle) {
-      return SizedBox(
-        width: 36,
-        height: 36,
-        child: Center(child: pic),
-      );
+      return SizedBox(width: 36, height: 36, child: Center(child: pic));
     }
     return Container(
       width: 36,
@@ -298,6 +324,13 @@ class _EmploymentContractFormScreenState
           _c[key]?.text = val.toString();
         }
       }
+      for (final k in _wonAmountFieldKeys) {
+        final c = _c[k];
+        if (c != null && c.text.trim().isNotEmpty) {
+          final f = _formatWonForDisplay(c.text);
+          if (f.isNotEmpty) c.text = f;
+        }
+      }
     } catch (_) {
       /* ignore */
     } finally {
@@ -317,6 +350,24 @@ class _EmploymentContractFormScreenState
     'minor_age',
   };
 
+  /// 임금·수당 등 원 단위(화면·저장 시 콤마 제거 후 정수)
+  static const Set<String> _wonAmountFieldKeys = {
+    'wage_amount',
+    'bonus_amount',
+    'other_allowance_amount',
+    'meal_allowance',
+    'transport_allowance',
+    'extra_allowance_amount',
+  };
+
+  String _formatWonForDisplay(String? raw) {
+    final cleaned = _stripCommaNumber(raw ?? '');
+    if (cleaned.isEmpty) return '';
+    final n = int.tryParse(cleaned);
+    if (n == null) return (raw ?? '').trim();
+    return NumberFormat('#,###', 'ko_KR').format(n);
+  }
+
   Map<String, dynamic> _collectFormValues() {
     final out = <String, dynamic>{};
     for (final e in _c.entries) {
@@ -329,7 +380,7 @@ class _EmploymentContractFormScreenState
     int? pi(String k) {
       final t = _c[k]?.text.trim() ?? '';
       if (t.isEmpty) return null;
-      return int.tryParse(t);
+      return int.tryParse(t.replaceAll(',', ''));
     }
 
     if (!widget.isGuardian) {
@@ -368,6 +419,18 @@ class _EmploymentContractFormScreenState
 
   bool _fieldNonEmpty(String key) => (_c[key]?.text.trim().isNotEmpty ?? false);
 
+  bool _isWorkerOwnedField(String key) => switch (key) {
+    'worker_name' ||
+    'worker_address' ||
+    'worker_phone' ||
+    'worker_signature_text' ||
+    'minor_name' ||
+    'minor_age' ||
+    'minor_resident_id_masked' ||
+    'minor_address' => true,
+    _ => false,
+  };
+
   /// `docs/api_spec_staff_management.md` §28 `guardian_consent_v1` 완료 필수 필드(16개)만 검사.
   /// 가족관계증명서 **파일**은 완료 시점에 필수 아님(이후 PATCH file). 화면 문구는 양식대로 유지.
   List<String> _missingFieldsForGuardianCompletion() {
@@ -382,13 +445,6 @@ class _EmploymentContractFormScreenState
     if (!_fieldNonEmpty('relation_to_minor_worker')) {
       m.add('연소근로자와의 관계');
     }
-    if (!_fieldNonEmpty('minor_name')) m.add('연소근로자 성명');
-    final age = int.tryParse(_c['minor_age']?.text.trim() ?? '');
-    if (age == null) m.add('연소근로자 만 나이');
-    if (!_fieldNonEmpty('minor_resident_id_masked')) {
-      m.add('연소근로자 주민등록번호(마스킹)');
-    }
-    if (!_fieldNonEmpty('minor_address')) m.add('연소근로자 주소');
     if (!_fieldNonEmpty('business_name')) m.add('회사명');
     if (!_fieldNonEmpty('business_address')) m.add('회사주소');
     if (!_fieldNonEmpty('business_representative_name')) m.add('대표자');
@@ -409,7 +465,8 @@ class _EmploymentContractFormScreenState
     final m = <String>[];
     if (widget.isGuardian) return m;
 
-    if (!_fieldNonEmpty('employer_name') && !_fieldNonEmpty('employer_business_name')) {
+    if (!_fieldNonEmpty('employer_name') &&
+        !_fieldNonEmpty('employer_business_name')) {
       m.add('사업주명(상단) 또는 사업체명(하단) 중 하나 이상');
     }
     if (!_fieldNonEmpty('worker_name')) m.add('근로자명');
@@ -437,13 +494,13 @@ class _EmploymentContractFormScreenState
 
     if (!_fieldNonEmpty('weekly_holiday_day')) m.add('주휴일 요일');
 
-    final wageTxt = _c['wage_amount']?.text.trim() ?? '';
+    final wageTxt = _stripCommaNumber(_c['wage_amount']?.text ?? '');
     final wageAmt = int.tryParse(wageTxt);
     if (wageTxt.isEmpty || wageAmt == null || wageAmt < 0) {
       m.add('임금 금액(원)');
     }
 
-    final pd = int.tryParse(_c['payment_day']?.text.trim() ?? '');
+    final pd = int.tryParse(_stripCommaNumber(_c['payment_day']?.text ?? ''));
     if (pd == null || pd < 1 || pd > 31) {
       m.add('임금지급일(매월 1~31일)');
     }
@@ -596,9 +653,9 @@ class _EmploymentContractFormScreenState
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('저장 실패: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('저장 실패: $e')));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -615,12 +672,12 @@ class _EmploymentContractFormScreenState
   }
 
   Widget _guardianDocHeading(String s) => Padding(
-        padding: EdgeInsets.only(top: 4.h, bottom: 10.h),
-        child: Text(
-          s,
-          style: _contractBodyStyle.copyWith(fontWeight: FontWeight.w600),
-        ),
-      );
+    padding: EdgeInsets.only(top: 4.h, bottom: 10.h),
+    child: Text(
+      s,
+      style: _contractBodyStyle.copyWith(fontWeight: FontWeight.w600),
+    ),
+  );
 
   Widget _buildGuardianBody() {
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
@@ -631,9 +688,7 @@ class _EmploymentContractFormScreenState
           width: double.infinity,
           padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 20.h),
           decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: AppColors.grey25),
-            ),
+            border: Border(bottom: BorderSide(color: AppColors.grey25)),
           ),
           child: Text(
             '친권자(후견인) 동의서',
@@ -652,17 +707,19 @@ class _EmploymentContractFormScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _guardianDocHeading('친권자(후견인) 인적사항'),
-              _guardianLabeledChipRow(
-                  '성 명 : ', '친권자(후견인) 성명', 'guardian_name'),
+              _guardianLabeledChipRow('성 명 : ', '친권자(후견인) 성명', 'guardian_name'),
               _guardianLabeledChipRow(
                 '주민등록번호 : ',
                 '주민등록번호(마스킹)',
                 'guardian_resident_id_masked',
               ),
-              _guardianLabeledChipRow('주 소 : ', '주소', 'guardian_address',
-                  wideChip: true),
               _guardianLabeledChipRow(
-                  '연락처 : ', '연락처', 'guardian_phone_number'),
+                '주 소 : ',
+                '주소',
+                'guardian_address',
+                wideChip: true,
+              ),
+              _guardianLabeledChipRow('연락처 : ', '연락처', 'guardian_phone_number'),
               _guardianLabeledChipRow(
                 '연소근로자와의 관계 : ',
                 '연소근로자와의 관계',
@@ -681,8 +738,7 @@ class _EmploymentContractFormScreenState
                     _inputChip(
                       display: _c['minor_name']?.text,
                       tone: _ContractChipTone.worker,
-                      onTap: () =>
-                          _openInlineInput('연소근로자 성명', 'minor_name'),
+                      onTap: () => _openInlineInput('연소근로자 성명', 'minor_name'),
                     ),
                     Text(' (만 ', style: _contractBodyStyle),
                     _inputChip(
@@ -700,21 +756,40 @@ class _EmploymentContractFormScreenState
                 'minor_resident_id_masked',
                 tone: _ContractChipTone.worker,
               ),
-              _guardianLabeledChipRow('주 소 : ', '연소근로자 주소', 'minor_address',
-                  tone: _ContractChipTone.worker, wideChip: true),
+              _guardianLabeledChipRow(
+                '주 소 : ',
+                '연소근로자 주소',
+                'minor_address',
+                tone: _ContractChipTone.worker,
+                wideChip: true,
+              ),
               SizedBox(height: 8.h),
               _guardianDocHeading('사업장 개요'),
-              _guardianLabeledChipRow('회사명 : ', '회사명', 'business_name',
-                  tone: _ContractChipTone.mint),
-              _guardianLabeledChipRow('회사주소 : ', '회사주소', 'business_address',
-                  tone: _ContractChipTone.mint, wideChip: true),
               _guardianLabeledChipRow(
-                  '대표 자 : ',
-                  '대표자',
-                  'business_representative_name',
-                  tone: _ContractChipTone.mint),
-              _guardianLabeledChipRow('회사전화 : ', '회사전화', 'business_phone_number',
-                  tone: _ContractChipTone.mint),
+                '회사명 : ',
+                '회사명',
+                'business_name',
+                tone: _ContractChipTone.mint,
+              ),
+              _guardianLabeledChipRow(
+                '회사주소 : ',
+                '회사주소',
+                'business_address',
+                tone: _ContractChipTone.mint,
+                wideChip: true,
+              ),
+              _guardianLabeledChipRow(
+                '대표 자 : ',
+                '대표자',
+                'business_representative_name',
+                tone: _ContractChipTone.mint,
+              ),
+              _guardianLabeledChipRow(
+                '회사전화 : ',
+                '회사전화',
+                'business_phone_number',
+                tone: _ContractChipTone.mint,
+              ),
               SizedBox(height: 16.h),
               Wrap(
                 crossAxisAlignment: WrapCrossAlignment.center,
@@ -725,8 +800,8 @@ class _EmploymentContractFormScreenState
                   _inputChip(
                     display: _c['consent_minor_name']?.text,
                     tone: _ContractChipTone.guardian,
-                    onTap: () => _openInlineInput(
-                        '동의문 속 연소근로자명', 'consent_minor_name'),
+                    onTap: () =>
+                        _openInlineInput('동의문 속 연소근로자명', 'consent_minor_name'),
                   ),
                   Text(
                     ' 가 위 사업장에서 근로를 하는 것에 대하여 동의합니다.',
@@ -738,8 +813,9 @@ class _EmploymentContractFormScreenState
               Center(
                 child: Builder(
                   builder: (context) {
-                    final d =
-                        DateTime.tryParse(_c['consent_signed_date']?.text ?? '');
+                    final d = DateTime.tryParse(
+                      _c['consent_signed_date']?.text ?? '',
+                    );
                     return Wrap(
                       crossAxisAlignment: WrapCrossAlignment.center,
                       spacing: 4,
@@ -780,7 +856,9 @@ class _EmploymentContractFormScreenState
                     display: _c['guardian_signature_name']?.text,
                     tone: _ContractChipTone.guardian,
                     onTap: () => _openInlineInput(
-                        '친권자(후견인) 서명', 'guardian_signature_name'),
+                      '친권자(후견인) 서명',
+                      'guardian_signature_name',
+                    ),
                   ),
                   Text(' (인)', style: _contractBodyStyle),
                 ],
@@ -836,10 +914,10 @@ class _EmploymentContractFormScreenState
           _inputChip(
             display: _c[key]?.text,
             tone: tone,
-            padding: wideChip
-                ? _contractChipPaddingWide
-                : _contractChipPadding,
-            onTap: () => _openInlineInput(dialogLabel, key),
+            padding: wideChip ? _contractChipPaddingWide : _contractChipPadding,
+            onTap: _isWorkerOwnedField(key)
+                ? null
+                : () => _openInlineInput(dialogLabel, key),
           ),
         ],
       ),
@@ -848,18 +926,18 @@ class _EmploymentContractFormScreenState
 
   TextStyle get _contractBodyStyle => _contractFigmaBody;
 
-  TextStyle get _contractNoteStyle => _contractFigmaBody.copyWith(
-        color: AppColors.textTertiary,
-      );
+  TextStyle get _contractNoteStyle =>
+      _contractFigmaBody.copyWith(color: AppColors.textTertiary);
 
   /// Figma: 민트/오렌지 라운드 칩. 빈 칩: 사업장 「입력」, 연소 「근로자」, 후견 「후견인 입력」
   Widget _inputChip({
     required String? display,
-    required VoidCallback onTap,
+    VoidCallback? onTap,
     _ContractChipTone tone = _ContractChipTone.mint,
     EdgeInsets? padding,
   }) {
     final chipPadding = padding ?? _contractChipPadding;
+    final effectiveOnTap = tone == _ContractChipTone.worker ? null : onTap;
     final t = display?.trim() ?? '';
     final empty = t.isEmpty;
     final String emptyLabel = switch (tone) {
@@ -876,7 +954,7 @@ class _EmploymentContractFormScreenState
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+        onTap: effectiveOnTap,
         borderRadius: BorderRadius.circular(8.r),
         child: Container(
           padding: chipPadding,
@@ -899,10 +977,7 @@ class _EmploymentContractFormScreenState
     );
   }
 
-  Widget _circleToggle({
-    required bool selected,
-    required VoidCallback onTap,
-  }) {
+  Widget _circleToggle({required bool selected, required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12.r),
@@ -932,7 +1007,9 @@ class _EmploymentContractFormScreenState
   }
 
   Future<void> _openSigningDateDialog() async {
-    DateTime? initial = DateTime.tryParse(_c['contract_signed_date']?.text ?? '');
+    DateTime? initial = DateTime.tryParse(
+      _c['contract_signed_date']?.text ?? '',
+    );
     final picked = await showDatePicker(
       context: context,
       firstDate: DateTime(2000),
@@ -945,8 +1022,9 @@ class _EmploymentContractFormScreenState
   }
 
   Future<void> _openConsentSignedDateDialog() async {
-    DateTime? initial =
-        DateTime.tryParse(_c['consent_signed_date']?.text ?? '');
+    DateTime? initial = DateTime.tryParse(
+      _c['consent_signed_date']?.text ?? '',
+    );
     final picked = await showDatePicker(
       context: context,
       firstDate: DateTime(2000),
@@ -967,10 +1045,7 @@ class _EmploymentContractFormScreenState
       if (!t.contains(':')) return (fh, fm);
       final p = t.split(':');
       if (p.length < 2) return (fh, fm);
-      return (
-        int.tryParse(p[0].trim()) ?? fh,
-        int.tryParse(p[1].trim()) ?? fm,
-      );
+      return (int.tryParse(p[0].trim()) ?? fh, int.tryParse(p[1].trim()) ?? fm);
     }
 
     final slots = List<_DayWorkSlot>.generate(7, (_) => _DayWorkSlot());
@@ -1017,7 +1092,8 @@ class _EmploymentContractFormScreenState
       if (wss.isNotEmpty) {
         final sh = parseHm(wss, 9, 0);
         final eh = parseHm(wse, 18, 0);
-        final brk = (_c['break_start_time']?.text.trim().isNotEmpty ?? false) ||
+        final brk =
+            (_c['break_start_time']?.text.trim().isNotEmpty ?? false) ||
             (_c['break_end_time']?.text.trim().isNotEmpty ?? false);
         final b1 = parseHm(_c['break_start_time']?.text, 13, 0);
         final b2 = parseHm(_c['break_end_time']?.text, 14, 0);
@@ -1188,7 +1264,9 @@ class _EmploymentContractFormScreenState
                       border: Border.all(
                         color: AppColors.primary.withValues(alpha: 0.45),
                       ),
-                      color: !s.breakHas ? AppColors.primaryLight : AppColors.grey25,
+                      color: !s.breakHas
+                          ? AppColors.primaryLight
+                          : AppColors.grey25,
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -1198,7 +1276,9 @@ class _EmploymentContractFormScreenState
                               ? Icons.check_circle_rounded
                               : Icons.circle_outlined,
                           size: 18,
-                          color: !s.breakHas ? AppColors.primary : AppColors.grey100,
+                          color: !s.breakHas
+                              ? AppColors.primary
+                              : AppColors.grey100,
                         ),
                         SizedBox(width: 6.w),
                         Text('없음', style: AppTypography.bodyMediumM),
@@ -1219,7 +1299,9 @@ class _EmploymentContractFormScreenState
                       border: Border.all(
                         color: AppColors.primary.withValues(alpha: 0.45),
                       ),
-                      color: s.breakHas ? AppColors.primaryLight : AppColors.grey25,
+                      color: s.breakHas
+                          ? AppColors.primaryLight
+                          : AppColors.grey25,
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -1229,7 +1311,9 @@ class _EmploymentContractFormScreenState
                               ? Icons.check_circle_rounded
                               : Icons.circle_outlined,
                           size: 18,
-                          color: s.breakHas ? AppColors.primary : AppColors.grey100,
+                          color: s.breakHas
+                              ? AppColors.primary
+                              : AppColors.grey100,
                         ),
                         SizedBox(width: 6.w),
                         Text('있음', style: AppTypography.bodyMediumM),
@@ -1303,7 +1387,9 @@ class _EmploymentContractFormScreenState
           }
 
           return Dialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16.r),
+            ),
             child: ConstrainedBox(
               constraints: BoxConstraints(
                 minHeight: 320,
@@ -1326,10 +1412,7 @@ class _EmploymentContractFormScreenState
                     SizedBox(height: 8.h),
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: Text(
-                        '· 중복 입력 가능',
-                        style: _figmaWorkTimeSubnote,
-                      ),
+                      child: Text('· 중복 입력 가능', style: _figmaWorkTimeSubnote),
                     ),
                     SizedBox(height: 12.h),
                     Expanded(
@@ -1344,15 +1427,20 @@ class _EmploymentContractFormScreenState
                                     color: AppColors.grey0,
                                     borderRadius: BorderRadius.circular(10.r),
                                     child: InkWell(
-                                      onTap: () => setLocal(() => slots[i].open = true),
+                                      onTap: () =>
+                                          setLocal(() => slots[i].open = true),
                                       borderRadius: BorderRadius.circular(10.r),
                                       child: Container(
                                         width: double.infinity,
                                         height: 48,
                                         alignment: Alignment.center,
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(10.r),
-                                          border: Border.all(color: AppColors.grey50),
+                                          borderRadius: BorderRadius.circular(
+                                            10.r,
+                                          ),
+                                          border: Border.all(
+                                            color: AppColors.grey50,
+                                          ),
                                         ),
                                         child: Text(
                                           dayKor[i],
@@ -1367,26 +1455,37 @@ class _EmploymentContractFormScreenState
                                   padding: EdgeInsets.only(bottom: 10.h),
                                   child: Container(
                                     width: double.infinity,
-                                    padding: EdgeInsets.fromLTRB(12.w, 10.h, 12.w, 12.h),
+                                    padding: EdgeInsets.fromLTRB(
+                                      12.w,
+                                      10.h,
+                                      12.w,
+                                      12.h,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFF3FBF8),
                                       borderRadius: BorderRadius.circular(12.r),
                                       border: Border.all(
-                                        color: AppColors.primary.withValues(alpha: 0.55),
+                                        color: AppColors.primary.withValues(
+                                          alpha: 0.55,
+                                        ),
                                       ),
                                     ),
                                     child: Column(
                                       children: [
                                         InkWell(
-                                          onTap: () => setLocal(() => slots[i].open = false),
+                                          onTap: () => setLocal(
+                                            () => slots[i].open = false,
+                                          ),
                                           child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
                                             children: [
                                               Text(
                                                 dayKor[i],
-                                                style: AppTypography.bodyMediumM.copyWith(
-                                                  color: AppColors.primary,
-                                                ),
+                                                style: AppTypography.bodyMediumM
+                                                    .copyWith(
+                                                      color: AppColors.primary,
+                                                    ),
                                               ),
                                               SizedBox(width: 4.w),
                                               Icon(
@@ -1398,7 +1497,10 @@ class _EmploymentContractFormScreenState
                                           ),
                                         ),
                                         SizedBox(height: 8.h),
-                                        workTimeBlock(slots[i], (fn) => slot(i, fn)),
+                                        workTimeBlock(
+                                          slots[i],
+                                          (fn) => slot(i, fn),
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -1460,10 +1562,12 @@ class _EmploymentContractFormScreenState
             _c['work_day_${i}_start']!.text = '${two(s.sh)}:${two(s.sm)}';
             _c['work_day_${i}_end']!.text = '${two(s.eh)}:${two(s.em)}';
             _c['work_day_${i}_break_has']!.text = s.breakHas ? '1' : '0';
-            _c['work_day_${i}_break_start']!.text =
-                s.breakHas ? '${two(s.bsh)}:${two(s.bsm)}' : '';
-            _c['work_day_${i}_break_end']!.text =
-                s.breakHas ? '${two(s.beh)}:${two(s.bem)}' : '';
+            _c['work_day_${i}_break_start']!.text = s.breakHas
+                ? '${two(s.bsh)}:${two(s.bsm)}'
+                : '';
+            _c['work_day_${i}_break_end']!.text = s.breakHas
+                ? '${two(s.beh)}:${two(s.bem)}'
+                : '';
           }
         }
 
@@ -1472,10 +1576,12 @@ class _EmploymentContractFormScreenState
           final s = slots[firstOpen];
           _c['scheduled_work_start_time']!.text = '${two(s.sh)}:${two(s.sm)}';
           _c['scheduled_work_end_time']!.text = '${two(s.eh)}:${two(s.em)}';
-          _c['break_start_time']!.text =
-              s.breakHas ? '${two(s.bsh)}:${two(s.bsm)}' : '';
-          _c['break_end_time']!.text =
-              s.breakHas ? '${two(s.beh)}:${two(s.bem)}' : '';
+          _c['break_start_time']!.text = s.breakHas
+              ? '${two(s.bsh)}:${two(s.bsm)}'
+              : '';
+          _c['break_end_time']!.text = s.breakHas
+              ? '${two(s.beh)}:${two(s.bem)}'
+              : '';
         } else {
           _c['scheduled_work_start_time']!.text = '';
           _c['scheduled_work_end_time']!.text = '';
@@ -1504,7 +1610,8 @@ class _EmploymentContractFormScreenState
   }
 
   Future<void> _openPeriodDialog() async {
-    DateTime start = DateTime.tryParse(_c['contract_start_date']?.text ?? '') ??
+    DateTime start =
+        DateTime.tryParse(_c['contract_start_date']?.text ?? '') ??
         DateTime.now();
     DateTime end =
         DateTime.tryParse(_c['contract_end_date']?.text ?? '') ?? start;
@@ -1617,7 +1724,9 @@ class _EmploymentContractFormScreenState
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocal) {
           return Dialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16.r),
+            ),
             child: Padding(
               padding: EdgeInsets.fromLTRB(24.w, 24.h, 24.w, 16.h),
               child: Column(
@@ -1654,7 +1763,9 @@ class _EmploymentContractFormScreenState
                     monthUp: () {
                       setLocal(() {
                         final nm = start.month == 12 ? 1 : start.month + 1;
-                        final ny = start.month == 12 ? start.year + 1 : start.year;
+                        final ny = start.month == 12
+                            ? start.year + 1
+                            : start.year;
                         final nd = start.day.clamp(1, dayMax(ny, nm));
                         start = DateTime(ny.clamp(2000, 2100), nm, nd);
                       });
@@ -1662,7 +1773,9 @@ class _EmploymentContractFormScreenState
                     monthDown: () {
                       setLocal(() {
                         final nm = start.month == 1 ? 12 : start.month - 1;
-                        final ny = start.month == 1 ? start.year - 1 : start.year;
+                        final ny = start.month == 1
+                            ? start.year - 1
+                            : start.year;
                         final nd = start.day.clamp(1, dayMax(ny, nm));
                         start = DateTime(ny.clamp(2000, 2100), nm, nd);
                       });
@@ -1778,13 +1891,17 @@ class _EmploymentContractFormScreenState
 
   Future<void> _openWageDialog() async {
     String localType = _wageType;
-    final amountCtrl = TextEditingController(text: _c['wage_amount']?.text ?? '');
+    final amountCtrl = TextEditingController(
+      text: _formatWonForDisplay(_c['wage_amount']?.text),
+    );
     final ok = await showDialog<bool>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.55),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocal) => Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
+          ),
           child: Padding(
             padding: EdgeInsets.fromLTRB(16.w, 24.h, 16.w, 16.h),
             child: Column(
@@ -1820,6 +1937,7 @@ class _EmploymentContractFormScreenState
                     _ => '월급을 입력해주세요.',
                   },
                   keyboardType: TextInputType.number,
+                  inputFormatters: [_ThousandsSeparatorInputFormatter()],
                   fillColor: AppColors.grey25,
                   focusedBorderColor: AppColors.primaryDark,
                   suffixText: '원',
@@ -1882,8 +2000,12 @@ class _EmploymentContractFormScreenState
         height: 50,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: selected ? AppColors.primary : AppColors.grey50),
-          color: selected ? AppColors.primary.withValues(alpha: 0.16) : AppColors.grey25,
+          border: Border.all(
+            color: selected ? AppColors.primary : AppColors.grey50,
+          ),
+          color: selected
+              ? AppColors.primary.withValues(alpha: 0.16)
+              : AppColors.grey25,
         ),
         alignment: Alignment.center,
         child: Text(label, style: AppTypography.bodyMediumM),
@@ -1904,7 +2026,9 @@ class _EmploymentContractFormScreenState
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.55),
       builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.r),
+        ),
         child: Padding(
           padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 16.h),
           child: Column(
@@ -2120,7 +2244,9 @@ class _EmploymentContractFormScreenState
       }
       final parts = <String>[];
       for (final e in byRange.entries) {
-        parts.add('${_formatDayIndexRuns(List<int>.from(e.value)..sort())} ${e.key}');
+        parts.add(
+          '${_formatDayIndexRuns(List<int>.from(e.value)..sort())} ${e.key}',
+        );
       }
       return Text(parts.join(' / '), style: _contractFigmaBody);
     }
@@ -2131,7 +2257,9 @@ class _EmploymentContractFormScreenState
     final bs = _c['break_start_time']?.text.trim() ?? '';
     final be = _c['break_end_time']?.text.trim() ?? '';
     if (bs.isEmpty && be.isEmpty) return null;
-    if (bs.isNotEmpty && be.isNotEmpty) return Text('$bs~$be', style: _contractFigmaBody);
+    if (bs.isNotEmpty && be.isNotEmpty) {
+      return Text('$bs~$be', style: _contractFigmaBody);
+    }
     if (bs.isNotEmpty) return Text(bs, style: _contractFigmaBody);
     return Text(be, style: _contractFigmaBody);
   }
@@ -2155,16 +2283,13 @@ class _EmploymentContractFormScreenState
   Widget _buildStandardContractBody() {
     final wageLabel = _wageTypeLabelKo();
     final wageAmount = _c['wage_amount']?.text.trim() ?? '';
-    final wageChipText =
-        wageAmount.isEmpty ? '' : '$wageLabel $wageAmount';
+    final wageChipText = wageAmount.isEmpty ? '' : '$wageLabel $wageAmount';
 
     return ListView(
       padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 120.h),
       children: [
         Text(
-          widget.isMinor
-              ? '연소근로자(18세 미만) 표준 근로계약서'
-              : '표준 근로 계약서',
+          widget.isMinor ? '연소근로자(18세 미만) 표준 근로계약서' : '표준 근로 계약서',
           style: AppTypography.heading3.copyWith(
             fontWeight: FontWeight.w500,
             fontSize: 18.sp,
@@ -2341,8 +2466,7 @@ class _EmploymentContractFormScreenState
                         Text('· ', style: _contractBodyStyle),
                         Text('월(일, 시간)급 : ', style: _contractBodyStyle),
                         _inputChip(
-                          display:
-                              wageChipText.isEmpty ? null : wageChipText,
+                          display: wageChipText.isEmpty ? null : wageChipText,
                           onTap: _openWageDialog,
                           padding: _contractChipPaddingWide,
                         ),
@@ -2486,15 +2610,16 @@ class _EmploymentContractFormScreenState
                       runSpacing: 8,
                       children: [
                         Text('· ', style: _contractBodyStyle),
-                        Text('임금지급일 : 매월(매주 또는 매일) ',
-                            style: _contractBodyStyle),
+                        Text(
+                          '임금지급일 : 매월(매주 또는 매일) ',
+                          style: _contractBodyStyle,
+                        ),
                         _inputChip(
                           display: _c['payment_day']?.text,
                           onTap: () =>
                               _openInlineInput('임금 지급일(일)', 'payment_day'),
                         ),
-                        Text('일 (휴일의 경우는 전일 지급)',
-                            style: _contractBodyStyle),
+                        Text('일 (휴일의 경우는 전일 지급)', style: _contractBodyStyle),
                       ],
                     ),
                     SizedBox(height: 10.h),
@@ -2504,15 +2629,13 @@ class _EmploymentContractFormScreenState
                       runSpacing: 8,
                       children: [
                         Text('· ', style: _contractBodyStyle),
-                        Text('지급방법 : 근로자에게 직접지급(',
-                            style: _contractBodyStyle),
+                        Text('지급방법 : 근로자에게 직접지급(', style: _contractBodyStyle),
                         _circleToggle(
                           selected: _paymentMethod == 'direct',
                           onTap: () =>
                               setState(() => _paymentMethod = 'direct'),
                         ),
-                        Text('), 근로자 명의 예금통장에 입금(',
-                            style: _contractBodyStyle),
+                        Text('), 근로자 명의 예금통장에 입금(', style: _contractBodyStyle),
                         _circleToggle(
                           selected: _paymentMethod == 'bank_transfer',
                           onTap: () =>
@@ -2534,10 +2657,7 @@ class _EmploymentContractFormScreenState
             children: [
               Text('연차유급휴가', style: _contractBodyStyle),
               SizedBox(height: 4.h),
-              Text(
-                '연차유급휴가는 근로기준법에서 정하는 바에 따라 부여함',
-                style: _contractBodyStyle,
-              ),
+              Text('연차유급휴가는 근로기준법에서 정하는 바에 따라 부여함', style: _contractBodyStyle),
             ],
           ),
         ),
@@ -2574,10 +2694,7 @@ class _EmploymentContractFormScreenState
                   spacing: 6,
                   runSpacing: 8,
                   children: [
-                    Text(
-                      '친권자 또는 후견인의 동의서 구비 여부 : ',
-                      style: _contractBodyStyle,
-                    ),
+                    Text('친권자 또는 후견인의 동의서 구비 여부 : ', style: _contractBodyStyle),
                     _inputChip(
                       display: _c['guardian_consent_submitted']?.text,
                       tone: _ContractChipTone.worker,
@@ -2641,10 +2758,7 @@ class _EmploymentContractFormScreenState
               children: [
                 Text('기 타', style: _contractBodyStyle),
                 SizedBox(height: 4.h),
-                Text(
-                  '이 계약에 정함이 없는 사항은 근로기준법령에 의함',
-                  style: _contractBodyStyle,
-                ),
+                Text('이 계약에 정함이 없는 사항은 근로기준법령에 의함', style: _contractBodyStyle),
               ],
             ),
           ),
@@ -2653,7 +2767,9 @@ class _EmploymentContractFormScreenState
         Center(
           child: Builder(
             builder: (context) {
-              final d = DateTime.tryParse(_c['contract_signed_date']?.text ?? '');
+              final d = DateTime.tryParse(
+                _c['contract_signed_date']?.text ?? '',
+              );
               return Wrap(
                 crossAxisAlignment: WrapCrossAlignment.center,
                 spacing: 4,
@@ -2689,8 +2805,7 @@ class _EmploymentContractFormScreenState
             Text('(사업주) 사업체명 : ', style: _contractBodyStyle),
             _inputChip(
               display: _c['employer_business_name']?.text,
-              onTap: () =>
-                  _openInlineInput('사업체명', 'employer_business_name'),
+              onTap: () => _openInlineInput('사업체명', 'employer_business_name'),
             ),
             Text('(전화 : ', style: _contractBodyStyle),
             _inputChip(
@@ -2729,7 +2844,8 @@ class _EmploymentContractFormScreenState
             Text('(서명)', style: _contractBodyStyle),
             _inputChip(
               display: _c['employer_signature_text']?.text,
-              onTap: () => _openInlineInput('사업주 서명', 'employer_signature_text'),
+              onTap: () =>
+                  _openInlineInput('사업주 서명', 'employer_signature_text'),
             ),
           ],
         ),
@@ -2778,8 +2894,7 @@ class _EmploymentContractFormScreenState
             _inputChip(
               display: _c['worker_signature_text']?.text,
               tone: _ContractChipTone.worker,
-              onTap: () =>
-                  _openInlineInput('근로자 서명', 'worker_signature_text'),
+              onTap: () => _openInlineInput('근로자 서명', 'worker_signature_text'),
             ),
           ],
         ),
@@ -2799,14 +2914,38 @@ class _EmploymentContractFormScreenState
   };
 
   Future<void> _openInlineInput(String label, String key) async {
-    final ctrl = TextEditingController(text: _c[key]?.text ?? '');
+    final initial = _wonAmountFieldKeys.contains(key)
+        ? _formatWonForDisplay(_c[key]?.text)
+        : (_c[key]?.text ?? '');
+    final ctrl = TextEditingController(text: initial);
     final modalTitle = modalTitleWithoutParenthetical(label);
     final digitsOnly = _inlineDigitsOnlyKeys.contains(key);
+    final paymentDay = key == 'payment_day';
+    final wonAmount = _wonAmountFieldKeys.contains(key);
+
+    List<TextInputFormatter>? formatters;
+    TextInputType keyboardType = TextInputType.text;
+    if (paymentDay) {
+      formatters = [
+        FilteringTextInputFormatter.digitsOnly,
+        LengthLimitingTextInputFormatter(2),
+      ];
+      keyboardType = TextInputType.number;
+    } else if (wonAmount) {
+      formatters = [_ThousandsSeparatorInputFormatter()];
+      keyboardType = TextInputType.number;
+    } else if (digitsOnly) {
+      formatters = [FilteringTextInputFormatter.digitsOnly];
+      keyboardType = TextInputType.number;
+    }
+
     final val = await showDialog<String>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.55),
       builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.r),
+        ),
         child: Padding(
           padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 16.h),
           child: Column(
@@ -2821,11 +2960,8 @@ class _EmploymentContractFormScreenState
               AuthInputField(
                 controller: ctrl,
                 hintText: '입력해주세요.',
-                keyboardType:
-                    digitsOnly ? TextInputType.number : TextInputType.text,
-                inputFormatters: digitsOnly
-                    ? [FilteringTextInputFormatter.digitsOnly]
-                    : null,
+                keyboardType: keyboardType,
+                inputFormatters: formatters,
                 fillColor: AppColors.grey25,
                 focusedBorderColor: AppColors.primaryDark,
                 contentPadding: const EdgeInsets.symmetric(
@@ -2850,7 +2986,23 @@ class _EmploymentContractFormScreenState
                   SizedBox(width: 12.w),
                   Expanded(
                     child: FilledButton(
-                      onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+                      onPressed: () {
+                        final text = ctrl.text.trim();
+                        if (paymentDay) {
+                          final v = int.tryParse(text);
+                          if (v == null || v < 1 || v > 31) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  '임금 지급일은 매월 1일~31일만 입력할 수 있습니다.',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+                        }
+                        Navigator.pop(ctx, text);
+                      },
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: AppColors.grey0,
@@ -2867,7 +3019,13 @@ class _EmploymentContractFormScreenState
       ),
     );
     if (val != null && mounted) {
-      setState(() => _c[key]?.text = val);
+      setState(() {
+        if (wonAmount) {
+          _c[key]?.text = _formatWonForDisplay(val);
+        } else {
+          _c[key]?.text = val;
+        }
+      });
     }
   }
 

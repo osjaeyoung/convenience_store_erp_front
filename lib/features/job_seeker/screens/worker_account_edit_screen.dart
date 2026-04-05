@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:kpostal/kpostal.dart';
 
 import '../../../data/models/account_profile.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../account/account_dio_message.dart';
+import '../../account/widgets/account_form_fields.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../widgets/worker_common.dart';
 
@@ -33,15 +35,20 @@ class _WorkerAccountEditScreenState extends State<WorkerAccountEditScreen> {
   int? _birthMonth;
   int? _birthDay;
   String? _gender;
+  String _originalPhoneNumber = '';
+  String? _phoneConfirmedValue;
+  bool _checkingPhone = false;
 
   @override
   void initState() {
     super.initState();
+    _phoneController.addListener(_handlePhoneChanged);
     _load();
   }
 
   @override
   void dispose() {
+    _phoneController.removeListener(_handlePhoneChanged);
     _emailController.dispose();
     _nameController.dispose();
     _phoneController.dispose();
@@ -80,81 +87,87 @@ class _WorkerAccountEditScreenState extends State<WorkerAccountEditScreen> {
     _birthMonth = profile.birthMonth;
     _birthDay = profile.birthDay;
     _gender = profile.gender;
+    _originalPhoneNumber = _normalizePhoneNumber(profile.phoneNumber ?? '');
+    _phoneConfirmedValue = _originalPhoneNumber;
   }
 
-  Future<void> _editPhoneNumber() async {
-    final changed = await _showTextEditDialog(
-      title: '휴대폰 번호',
-      initialValue: _phoneController.text,
-      hintText: '휴대폰 번호를 입력해주세요.',
-      keyboardType: TextInputType.phone,
-      inputFormatters: [
-        FilteringTextInputFormatter.digitsOnly,
-        LengthLimitingTextInputFormatter(11),
-      ],
-    );
-    if (changed == null || !mounted) return;
-    setState(() => _phoneController.text = changed);
+  void _handlePhoneChanged() {
+    final currentPhone = _normalizePhoneNumber(_phoneController.text);
+    if (_phoneConfirmedValue != null && currentPhone != _phoneConfirmedValue) {
+      setState(() {
+        _phoneConfirmedValue = null;
+      });
+    }
   }
 
-  Future<void> _editAddress() async {
-    final changed = await _showTextEditDialog(
-      title: '주소',
-      initialValue: _addressController.text,
-      hintText: '주소를 입력해주세요.',
-      confirmLabel: '완료',
-    );
-    if (changed == null || !mounted) return;
-    setState(() => _addressController.text = changed);
+  String _normalizePhoneNumber(String value) {
+    return value.replaceAll(RegExp(r'[^0-9]'), '');
   }
 
-  Future<String?> _showTextEditDialog({
-    required String title,
-    required String initialValue,
-    required String hintText,
-    String confirmLabel = '저장',
-    TextInputType keyboardType = TextInputType.text,
-    List<TextInputFormatter>? inputFormatters,
-  }) async {
-    final controller = TextEditingController(text: initialValue);
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(
-            title,
-            style: AppTypography.bodyLargeB.copyWith(
-              color: AppColors.textPrimary,
-            ),
-          ),
-          content: TextField(
-            controller: controller,
-            keyboardType: keyboardType,
-            inputFormatters: inputFormatters,
-            autofocus: true,
-            decoration: InputDecoration(
-              hintText: hintText,
-              hintStyle: AppTypography.bodyMediumR.copyWith(
-                color: AppColors.textDisabled,
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('취소'),
-            ),
-            FilledButton(
-              onPressed: () =>
-                  Navigator.of(context).pop(controller.text.trim()),
-              child: Text(confirmLabel),
-            ),
-          ],
-        );
-      },
-    );
-    controller.dispose();
-    return result;
+  bool _isValidPhoneNumber(String value) {
+    return RegExp(r'^01[0-9]{8,9}$').hasMatch(value);
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _checkPhoneNumberDuplicate() async {
+    final candidate = _normalizePhoneNumber(_phoneController.text);
+    if (candidate.isEmpty) {
+      _showMessage('휴대폰 번호를 입력해주세요.');
+      return;
+    }
+    if (!_isValidPhoneNumber(candidate)) {
+      _showMessage('올바른 휴대폰 번호를 입력해주세요.');
+      return;
+    }
+    if (candidate == _originalPhoneNumber) {
+      setState(() {
+        _phoneConfirmedValue = candidate;
+      });
+      _showMessage('현재 등록된 휴대폰 번호입니다.');
+      return;
+    }
+
+    setState(() => _checkingPhone = true);
+    try {
+      final result = await context
+          .read<AuthRepository>()
+          .checkPhoneNumberExists(phoneNumber: candidate);
+      if (!mounted) return;
+      if (result.exists) {
+        setState(() {
+          _checkingPhone = false;
+          _phoneConfirmedValue = null;
+        });
+        _showMessage('이미 사용 중인 휴대폰 번호입니다.');
+        return;
+      }
+
+      setState(() {
+        _checkingPhone = false;
+        _phoneConfirmedValue = candidate;
+      });
+      _showMessage('사용 가능한 휴대폰 번호입니다.');
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _checkingPhone = false);
+      _showMessage(accountDioMessage(error));
+    }
+  }
+
+  Future<void> _searchAddress() async {
+    final result = await Navigator.of(
+      context,
+    ).push<Kpostal>(MaterialPageRoute<Kpostal>(builder: (_) => KpostalView()));
+    if (!mounted || result == null) return;
+    final address = result.address.trim();
+    if (address.isEmpty) return;
+    _addressController.text = address;
+    setState(() {});
   }
 
   Future<void> _selectBirthYear() async {
@@ -302,16 +315,23 @@ class _WorkerAccountEditScreenState extends State<WorkerAccountEditScreen> {
   Future<void> _save() async {
     final email = _emailController.text.trim();
     final fullName = _nameController.text.trim();
+    final phoneNumber = _normalizePhoneNumber(_phoneController.text);
     if (email.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('이메일을 입력해주세요.')));
+      _showMessage('이메일을 입력해주세요.');
       return;
     }
     if (fullName.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('이름을 입력해주세요.')));
+      _showMessage('이름을 입력해주세요.');
+      return;
+    }
+    if (phoneNumber.isNotEmpty && !_isValidPhoneNumber(phoneNumber)) {
+      _showMessage('올바른 휴대폰 번호를 입력해주세요.');
+      return;
+    }
+    if (phoneNumber.isNotEmpty &&
+        phoneNumber != _originalPhoneNumber &&
+        _phoneConfirmedValue != phoneNumber) {
+      _showMessage('휴대폰 번호 변경 버튼을 눌러 중복 확인을 완료해주세요.');
       return;
     }
     final hasPartialBirthDate = [
@@ -322,9 +342,7 @@ class _WorkerAccountEditScreenState extends State<WorkerAccountEditScreen> {
     final isBirthDateComplete =
         _birthYear != null && _birthMonth != null && _birthDay != null;
     if (hasPartialBirthDate && !isBirthDateComplete) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('생년월일은 연, 월, 일을 모두 선택해주세요.')),
-      );
+      _showMessage('생년월일은 연, 월, 일을 모두 선택해주세요.');
       return;
     }
 
@@ -337,9 +355,7 @@ class _WorkerAccountEditScreenState extends State<WorkerAccountEditScreen> {
         birthMonth: _birthMonth,
         birthDay: _birthDay,
         gender: _gender,
-        phoneNumber: _phoneController.text.trim().isEmpty
-            ? null
-            : _phoneController.text.trim(),
+        phoneNumber: phoneNumber.isEmpty ? null : phoneNumber,
         address: _addressController.text.trim().isEmpty
             ? null
             : _addressController.text.trim(),
@@ -373,15 +389,11 @@ class _WorkerAccountEditScreenState extends State<WorkerAccountEditScreen> {
         return;
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('회원정보가 변경되었습니다.')));
+      _showMessage('회원정보가 변경되었습니다.');
     } catch (error) {
       if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(accountDioMessage(error))));
+      _showMessage(accountDioMessage(error));
     }
   }
 
@@ -401,38 +413,28 @@ class _WorkerAccountEditScreenState extends State<WorkerAccountEditScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _EditableField(
+                      AccountFieldSection(
                         label: '이메일',
-                        child: _InputBox(
-                          child: TextField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            style: AppTypography.bodyMediumR.copyWith(
-                              color: AppColors.textPrimary,
-                            ),
-                            decoration: _inputDecoration('등록된 이메일을 입력해주세요.'),
-                          ),
+                        child: AccountGreyTextField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          hintText: '등록된 이메일을 입력해주세요.',
                         ),
                       ),
                       SizedBox(height: 20.h),
-                      _EditableField(
+                      AccountFieldSection(
                         label: '이름',
-                        child: _InputBox(
-                          child: TextField(
-                            controller: _nameController,
-                            style: AppTypography.bodyMediumR.copyWith(
-                              color: AppColors.textPrimary,
-                            ),
-                            decoration: _inputDecoration('이름을 입력해주세요.'),
-                          ),
+                        child: AccountGreyTextField(
+                          controller: _nameController,
+                          hintText: '이름을 입력해주세요.',
                         ),
                       ),
                       SizedBox(height: 20.h),
-                      _EditableField(
+                      AccountFieldSection(
                         label: '생년월일',
                         child: Column(
                           children: [
-                            _SelectBox(
+                            AccountGreySelectField(
                               label: _birthYear?.toString() ?? '년도',
                               hasValue: _birthYear != null,
                               onTap: _selectBirthYear,
@@ -441,7 +443,7 @@ class _WorkerAccountEditScreenState extends State<WorkerAccountEditScreen> {
                             Row(
                               children: [
                                 Expanded(
-                                  child: _SelectBox(
+                                  child: AccountGreySelectField(
                                     label: _birthMonth?.toString() ?? '월',
                                     hasValue: _birthMonth != null,
                                     onTap: _selectBirthMonth,
@@ -449,7 +451,7 @@ class _WorkerAccountEditScreenState extends State<WorkerAccountEditScreen> {
                                 ),
                                 SizedBox(width: 20.w),
                                 Expanded(
-                                  child: _SelectBox(
+                                  child: AccountGreySelectField(
                                     label: _birthDay?.toString() ?? '일',
                                     hasValue: _birthDay != null,
                                     onTap: _selectBirthDay,
@@ -461,32 +463,42 @@ class _WorkerAccountEditScreenState extends State<WorkerAccountEditScreen> {
                         ),
                       ),
                       SizedBox(height: 20.h),
-                      _EditableField(
+                      AccountFieldSection(
                         label: '성별',
-                        child: _SelectLikeBox(
+                        child: AccountGreySelectField(
                           label: _genderLabel ?? '성별을 입력해주세요.',
                           hasValue: _genderLabel != null,
                           onTap: _selectGender,
+                          showArrow: false,
                         ),
                       ),
                       SizedBox(height: 28.h),
-                      _EditableField(
+                      AccountFieldSection(
                         label: '휴대폰',
-                        child: _ActionFieldBox(
-                          value: _phoneController.text,
+                        child: AccountGreyActionField(
+                          controller: _phoneController,
                           placeholder: '휴대폰 번호를 입력해주세요.',
                           actionLabel: '변경',
-                          onActionTap: _editPhoneNumber,
+                          keyboardType: TextInputType.phone,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(11),
+                          ],
+                          onActionTap: _checkPhoneNumberDuplicate,
+                          onChanged: (_) => setState(() {}),
+                          enabled: !_checkingPhone && !_saving,
                         ),
                       ),
                       SizedBox(height: 20.h),
-                      _EditableField(
+                      AccountFieldSection(
                         label: '주소',
-                        child: _ActionFieldBox(
-                          value: _addressController.text,
+                        child: AccountGreyActionField(
+                          controller: _addressController,
                           placeholder: '주소를 입력해주세요.',
                           actionLabel: '검색',
-                          onActionTap: _editAddress,
+                          onActionTap: _searchAddress,
+                          readOnly: true,
+                          enabled: !_saving,
                         ),
                       ),
                     ],
@@ -534,210 +546,6 @@ class _WorkerAccountEditScreenState extends State<WorkerAccountEditScreen> {
                 ),
               ],
             ),
-    );
-  }
-
-  InputDecoration _inputDecoration(String hintText) {
-    return InputDecoration(
-      border: InputBorder.none,
-      hintText: hintText,
-      hintStyle: AppTypography.bodyMediumR.copyWith(
-        color: AppColors.textDisabled,
-      ),
-      isDense: true,
-    );
-  }
-}
-
-class _EditableField extends StatelessWidget {
-  const _EditableField({required this.label, required this.child});
-
-  final String label;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: AppTypography.bodyMediumM.copyWith(
-            color: AppColors.textPrimary,
-          ),
-        ),
-        SizedBox(height: 8.h),
-        child,
-      ],
-    );
-  }
-}
-
-class _InputBox extends StatelessWidget {
-  const _InputBox({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-      decoration: BoxDecoration(
-        color: AppColors.grey0Alt,
-        border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(12.r),
-      ),
-      child: child,
-    );
-  }
-}
-
-class _SelectBox extends StatelessWidget {
-  const _SelectBox({
-    required this.label,
-    required this.hasValue,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool hasValue;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12.r),
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-          decoration: BoxDecoration(
-            color: AppColors.grey0Alt,
-            border: Border.all(color: AppColors.border),
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  label,
-                  style: AppTypography.bodyMediumR.copyWith(
-                    color: hasValue
-                        ? AppColors.textPrimary
-                        : AppColors.textDisabled,
-                  ),
-                ),
-              ),
-              const Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: AppColors.textTertiary,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SelectLikeBox extends StatelessWidget {
-  const _SelectLikeBox({
-    required this.label,
-    required this.hasValue,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool hasValue;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12.r),
-        child: Container(
-          width: double.infinity,
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-          decoration: BoxDecoration(
-            color: AppColors.grey0Alt,
-            border: Border.all(color: AppColors.border),
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-          child: Text(
-            label,
-            style: AppTypography.bodyMediumR.copyWith(
-              color: hasValue ? AppColors.textPrimary : AppColors.textDisabled,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ActionFieldBox extends StatelessWidget {
-  const _ActionFieldBox({
-    required this.value,
-    required this.placeholder,
-    required this.actionLabel,
-    required this.onActionTap,
-  });
-
-  final String value;
-  final String placeholder;
-  final String actionLabel;
-  final VoidCallback onActionTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final hasValue = value.trim().isNotEmpty;
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-      decoration: BoxDecoration(
-        color: AppColors.grey0Alt,
-        border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(12.r),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              hasValue ? value : placeholder,
-              style: AppTypography.bodyMediumR.copyWith(
-                color: hasValue
-                    ? AppColors.textPrimary
-                    : AppColors.textDisabled,
-              ),
-            ),
-          ),
-          SizedBox(width: 8.w),
-          SizedBox(
-            height: 32.h,
-            child: FilledButton(
-              onPressed: onActionTap,
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.grey0,
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6.r),
-                ),
-                elevation: 0,
-              ),
-              child: Text(
-                actionLabel,
-                style: AppTypography.bodySmallB.copyWith(
-                  color: AppColors.grey0,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
