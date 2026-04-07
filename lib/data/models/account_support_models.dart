@@ -18,6 +18,137 @@ class PhoneNumberExistsResult {
   }
 }
 
+/// `GET /auth/email-exists` 응답 (`email`, `exists`만 사용)
+class EmailExistsResult {
+  const EmailExistsResult({
+    required this.email,
+    required this.exists,
+  });
+
+  final String email;
+  final bool exists;
+
+  factory EmailExistsResult.fromJson(Map<String, dynamic> json) {
+    return EmailExistsResult(
+      email: json['email']?.toString() ?? '',
+      exists: json['exists'] == true,
+    );
+  }
+}
+
+class AccountFaq {
+  const AccountFaq({
+    required this.faqId,
+    required this.question,
+    required this.answer,
+    this.sortOrder,
+  });
+
+  final int faqId;
+  final String question;
+  final String answer;
+  final int? sortOrder;
+
+  factory AccountFaq.fromJson(Map<String, dynamic> json) {
+    return AccountFaq(
+      faqId: (json['faq_id'] as num?)?.toInt() ?? 0,
+      question: json['question']?.toString() ?? '',
+      answer: json['answer']?.toString() ?? '',
+      sortOrder: (json['sort_order'] as num?)?.toInt(),
+    );
+  }
+}
+
+class AccountSupportCenterData {
+  const AccountSupportCenterData({
+    this.supportEmail,
+    this.supportEmailLabel,
+    this.faqs = const [],
+  });
+
+  final String? supportEmail;
+  final String? supportEmailLabel;
+  final List<AccountFaq> faqs;
+
+  factory AccountSupportCenterData.fromJson(Map<String, dynamic> json) {
+    final rawFaqs = json['faqs'] as List<dynamic>? ?? const [];
+    return AccountSupportCenterData(
+      supportEmail: json['support_email']?.toString(),
+      supportEmailLabel: json['support_email_label']?.toString(),
+      faqs: rawFaqs
+          .whereType<Map>()
+          .map((item) => AccountFaq.fromJson(Map<String, dynamic>.from(item)))
+          .toList(),
+    );
+  }
+}
+
+class AccountPolicySummary {
+  const AccountPolicySummary({
+    required this.policyType,
+    required this.title,
+    this.updatedAt,
+    required this.isConfigured,
+  });
+
+  final String policyType;
+  final String title;
+  final String? updatedAt;
+  final bool isConfigured;
+
+  factory AccountPolicySummary.fromJson(Map<String, dynamic> json) {
+    return AccountPolicySummary(
+      policyType: json['policy_type']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      updatedAt: json['updated_at']?.toString(),
+      isConfigured: json['is_configured'] == true,
+    );
+  }
+}
+
+class AccountPolicyList {
+  const AccountPolicyList({required this.items});
+
+  final List<AccountPolicySummary> items;
+
+  factory AccountPolicyList.fromJson(Map<String, dynamic> json) {
+    final rawItems = json['items'] as List<dynamic>? ?? const [];
+    return AccountPolicyList(
+      items: rawItems
+          .whereType<Map>()
+          .map(
+            (item) => AccountPolicySummary.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
+          )
+          .toList(),
+    );
+  }
+}
+
+class AccountPolicyDetail {
+  const AccountPolicyDetail({
+    required this.policyType,
+    required this.title,
+    required this.content,
+    this.updatedAt,
+  });
+
+  final String policyType;
+  final String title;
+  final String content;
+  final String? updatedAt;
+
+  factory AccountPolicyDetail.fromJson(Map<String, dynamic> json) {
+    return AccountPolicyDetail(
+      policyType: json['policy_type']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      content: json['content']?.toString() ?? '',
+      updatedAt: json['updated_at']?.toString(),
+    );
+  }
+}
+
 class AccountNotice {
   const AccountNotice({
     required this.noticeId,

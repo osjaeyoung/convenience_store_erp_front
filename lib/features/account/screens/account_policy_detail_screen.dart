@@ -10,26 +10,28 @@ import '../../../theme/app_typography.dart';
 import '../account_dio_message.dart';
 import '../widgets/account_figma_styles.dart';
 
-class AccountNoticeDetailScreen extends StatefulWidget {
-  const AccountNoticeDetailScreen({
+class AccountPolicyDetailScreen extends StatefulWidget {
+  const AccountPolicyDetailScreen({
     super.key,
-    required this.noticeId,
+    required this.policyType,
+    this.fallbackTitle,
   });
 
-  final int noticeId;
+  final String policyType;
+  final String? fallbackTitle;
 
   @override
-  State<AccountNoticeDetailScreen> createState() =>
-      _AccountNoticeDetailScreenState();
+  State<AccountPolicyDetailScreen> createState() =>
+      _AccountPolicyDetailScreenState();
 }
 
-class _AccountNoticeDetailScreenState extends State<AccountNoticeDetailScreen> {
+class _AccountPolicyDetailScreenState extends State<AccountPolicyDetailScreen> {
   static final DateFormat _dateTimeFormat = DateFormat(
     'yyyy.MM.dd HH:mm:ss',
     'ko_KR',
   );
 
-  AccountNotice? _notice;
+  AccountPolicyDetail? _detail;
   Object? _error;
   bool _loading = true;
 
@@ -45,12 +47,12 @@ class _AccountNoticeDetailScreenState extends State<AccountNoticeDetailScreen> {
       _error = null;
     });
     try {
-      final notice = await context.read<AuthRepository>().getNoticeDetail(
-            noticeId: widget.noticeId,
+      final detail = await context.read<AuthRepository>().getPolicyDetail(
+            policyType: widget.policyType,
           );
       if (!mounted) return;
       setState(() {
-        _notice = notice;
+        _detail = detail;
         _loading = false;
       });
     } catch (error) {
@@ -64,13 +66,14 @@ class _AccountNoticeDetailScreenState extends State<AccountNoticeDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final title = _detail?.title ?? widget.fallbackTitle ?? _titleForType();
     return Scaffold(
       backgroundColor: AppColors.grey0Alt,
-      appBar: accountFigmaAppBar(context: context, title: '공지사항'),
+      appBar: accountFigmaAppBar(context: context, title: title),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _AccountSupportErrorView(
+              ? _PolicyErrorView(
                   message: accountDioMessage(_error!),
                   onRetry: _load,
                 )
@@ -89,27 +92,18 @@ class _AccountNoticeDetailScreenState extends State<AccountNoticeDetailScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _notice?.title ?? '',
+                            _detail?.content ?? '',
                             style: AppTypography.bodyMediumR.copyWith(
                               color: AppColors.textPrimary,
-                              fontWeight: FontWeight.w500,
                               height: 20 / 14,
                             ),
                           ),
                           SizedBox(height: 8.h),
                           Text(
-                            _formatDate(_notice?.publishedAt),
+                            _formatDate(_detail?.updatedAt),
                             style: AppTypography.bodySmallR.copyWith(
                               color: AppColors.textDisabled,
                               height: 18 / 12,
-                            ),
-                          ),
-                          SizedBox(height: 16.h),
-                          Text(
-                            _notice?.content ?? '',
-                            style: AppTypography.bodyMediumR.copyWith(
-                              color: AppColors.textPrimary,
-                              height: 20 / 14,
                             ),
                           ),
                         ],
@@ -120,6 +114,16 @@ class _AccountNoticeDetailScreenState extends State<AccountNoticeDetailScreen> {
     );
   }
 
+  String _titleForType() {
+    switch (widget.policyType) {
+      case 'privacy':
+        return '개인정보처리방침';
+      case 'terms':
+      default:
+        return '이용약관';
+    }
+  }
+
   String _formatDate(String? value) {
     final parsed = value == null ? null : DateTime.tryParse(value);
     if (parsed == null) return '-';
@@ -127,8 +131,8 @@ class _AccountNoticeDetailScreenState extends State<AccountNoticeDetailScreen> {
   }
 }
 
-class _AccountSupportErrorView extends StatelessWidget {
-  const _AccountSupportErrorView({
+class _PolicyErrorView extends StatelessWidget {
+  const _PolicyErrorView({
     required this.message,
     required this.onRetry,
   });

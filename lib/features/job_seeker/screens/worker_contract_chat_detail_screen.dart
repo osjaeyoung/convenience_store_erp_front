@@ -9,6 +9,7 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../account/account_dio_message.dart';
 import '../widgets/worker_common.dart';
+import '../widgets/worker_contract_chat_leave_dialog.dart';
 import 'worker_contract_document_screen.dart';
 
 /// Figma: 계약채팅 상세 — 앱바·문서 말풍선(밑줄)·타임스탬프
@@ -28,6 +29,7 @@ class _WorkerContractChatDetailScreenState
 
   bool _loading = true;
   bool _changed = false;
+  bool _deleting = false;
   Object? _error;
   WorkerContractChatDetail? _detail;
 
@@ -84,6 +86,33 @@ class _WorkerContractChatDetailScreenState
     }
   }
 
+  Future<void> _showDeleteDialog() async {
+    final confirmed = await showWorkerContractChatLeaveDialog(context);
+    if (!confirmed || !mounted) return;
+    await _deleteChatRoom();
+  }
+
+  Future<void> _deleteChatRoom() async {
+    setState(() => _deleting = true);
+    try {
+      await context.read<WorkerRecruitmentRepository>().deleteContractChat(
+            contractId: widget.contractId,
+          );
+      if (!mounted) return;
+      _changed = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('계약 채팅이 삭제되었습니다.')),
+      );
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _deleting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(accountDioMessage(error))),
+      );
+    }
+  }
+
   static TextStyle get _appBarTitleStyle => AppTypography.bodyLargeM.copyWith(
         fontSize: 18.sp,
         height: 24 / 18,
@@ -108,8 +137,9 @@ class _WorkerContractChatDetailScreenState
   @override
   Widget build(BuildContext context) {
     final detail = _detail;
+    final isCompleted = detail?.thread.isCompleted == true;
     return Scaffold(
-      backgroundColor: AppColors.grey0Alt,
+      backgroundColor: isCompleted ? AppColors.grey0 : AppColors.grey0Alt,
       appBar: AppBar(
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -131,7 +161,7 @@ class _WorkerContractChatDetailScreenState
         ),
         actions: [
           IconButton(
-            onPressed: () {},
+            onPressed: _deleting ? null : _showDeleteDialog,
             icon: const Icon(
               Icons.more_horiz_rounded,
               size: 24,
@@ -143,27 +173,52 @@ class _WorkerContractChatDetailScreenState
           SizedBox(width: 4.w),
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? workerErrorView(
-                  message: accountDioMessage(_error!),
-                  onRetry: _load,
-                )
-              : _buildContent(detail!),
+      body: Stack(
+        children: [
+          if (_loading)
+            const Center(child: CircularProgressIndicator())
+          else if (_error != null)
+            workerErrorView(
+              message: accountDioMessage(_error!),
+              onRetry: _load,
+            )
+          else
+            _buildContent(detail!),
+          if (_deleting)
+            const Positioned.fill(
+              child: IgnorePointer(
+                child: Center(
+                  child: SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
   Widget _buildContent(WorkerContractChatDetail detail) {
     final messages = detail.messages;
     return ListView.builder(
-      padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 24.h),
+      padding: EdgeInsets.fromLTRB(
+        20.w,
+        detail.thread.isCompleted ? 45.h : 24.h,
+        20.w,
+        24.h,
+      ),
       itemCount: messages.length,
       itemBuilder: (context, index) {
         final message = messages[index];
         final workerMessage = message.fromWorker;
         final time = _formatTime(message.createdAt);
         final isDocument = message.messageType == 'document';
+        final canOpenDocument =
+            isDocument &&
+            (message.canOpenDocument || detail.canOpenDocument);
 
         if (workerMessage) {
           return Padding(
@@ -180,7 +235,7 @@ class _WorkerContractChatDetailScreenState
                   maxBubbleWidth: _maxBubbleWidth(context, incoming: false),
                   text: message.text,
                   isDocument: isDocument,
-                  onTapDocument: isDocument ? _openDocument : null,
+                  onTapDocument: canOpenDocument ? _openDocument : null,
                 ),
               ],
             ),
@@ -206,7 +261,7 @@ class _WorkerContractChatDetailScreenState
                             _maxBubbleWidth(context, incoming: true),
                         text: message.text,
                         isDocument: isDocument,
-                        onTapDocument: isDocument ? _openDocument : null,
+                        onTapDocument: canOpenDocument ? _openDocument : null,
                       ),
                       if (time.isNotEmpty) ...[
                         SizedBox(width: 6.w),

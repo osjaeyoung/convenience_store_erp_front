@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../data/models/account_profile.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../account/account_dio_message.dart';
-import '../../account/screens/account_inquiries_screen.dart';
 import '../../account/screens/account_notices_screen.dart';
 import '../../account/screens/account_password_verify_screen.dart';
+import '../../account/screens/account_policies_screen.dart';
 import '../../account/screens/account_settings_menu_screen.dart';
+import '../../account/screens/account_support_center_screen.dart';
 import '../../account/widgets/account_confirm_dialogs.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../manager/widgets/home_common_app_bar.dart';
@@ -54,28 +54,6 @@ class _WorkerMyPageScreenState extends State<WorkerMyPageScreen> {
         _error = error;
         _loading = false;
       });
-    }
-  }
-
-  Future<void> _openLink(String? url) async {
-    if (url == null || url.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('준비 중입니다.')));
-      return;
-    }
-    final uri = Uri.tryParse(url);
-    if (uri == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('링크를 열 수 없습니다.')));
-      return;
-    }
-    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!opened && mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('링크를 열 수 없습니다.')));
     }
   }
 
@@ -176,20 +154,26 @@ class _WorkerMyPageScreenState extends State<WorkerMyPageScreen> {
                         ),
                         _MenuRow(
                           icon: Icons.chat_bubble_outline_rounded,
-                          title: '고객센터/문의하기',
+                          title: '고객센터',
                           onTap: () {
                             Navigator.of(context).push<void>(
                               MaterialPageRoute<void>(
-                                builder: (_) => const AccountInquiriesScreen(),
+                                builder: (_) =>
+                                    const AccountSupportCenterScreen(),
                               ),
                             );
                           },
                         ),
                         _MenuRow(
                           icon: Icons.article_outlined,
-                          title: '이용약관, 개인정보처리방침',
-                          onTap: () =>
-                              _openLink(profile?.settingsLinks.policyUrl),
+                          title: '이용 정책',
+                          onTap: () {
+                            Navigator.of(context).push<void>(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const AccountPoliciesScreen(),
+                              ),
+                            );
+                          },
                           isLast: true,
                         ),
                       ],

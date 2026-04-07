@@ -827,6 +827,8 @@ class WorkerContractChatMessage {
     required this.text,
     this.createdAt,
     this.documentStatus,
+    this.canOpenDocument = false,
+    this.openDocumentPath,
   });
 
   final String messageId;
@@ -836,6 +838,8 @@ class WorkerContractChatMessage {
   final String text;
   final String? createdAt;
   final String? documentStatus;
+  final bool canOpenDocument;
+  final String? openDocumentPath;
 
   bool get fromWorker => senderRole == 'worker';
 
@@ -848,6 +852,8 @@ class WorkerContractChatMessage {
       text: _stringOf(json['text']),
       createdAt: _nullableString(json['created_at']),
       documentStatus: _nullableString(json['document_status']),
+      canOpenDocument: _boolOf(json['can_open_document']),
+      openDocumentPath: _nullableString(json['open_document_path']),
     );
   }
 }
@@ -885,6 +891,19 @@ class WorkerContractChatDetail {
           .toList(),
       canOpenDocument: _boolOf(json['can_open_document']),
       canDownloadDocument: _boolOf(json['can_download_document']),
+    );
+  }
+}
+
+/// `DELETE /contract-chats/{contract_id}` 응답 — `docs/api_spec_contract_chat.md` §3-1
+class WorkerContractChatDeleteResult {
+  const WorkerContractChatDeleteResult({required this.deleted});
+
+  final bool deleted;
+
+  factory WorkerContractChatDeleteResult.fromJson(Map<String, dynamic> json) {
+    return WorkerContractChatDeleteResult(
+      deleted: _boolOf(json['deleted']),
     );
   }
 }

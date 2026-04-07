@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-import '../../../data/models/account_profile.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../account_dio_message.dart';
 import '../widgets/account_confirm_dialogs.dart';
 import '../widgets/account_figma_styles.dart';
-import 'account_inquiries_screen.dart';
 import 'account_my_info_settings_screen.dart';
 import 'account_notices_screen.dart';
+import 'account_policies_screen.dart';
+import 'account_support_center_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 설정 (Figma 2634:16151)
@@ -25,7 +24,6 @@ class AccountSettingsMenuScreen extends StatefulWidget {
 }
 
 class _AccountSettingsMenuScreenState extends State<AccountSettingsMenuScreen> {
-  AccountProfile? _profile;
   Object? _error;
   bool _loading = true;
 
@@ -41,10 +39,9 @@ class _AccountSettingsMenuScreenState extends State<AccountSettingsMenuScreen> {
       _error = null;
     });
     try {
-      final p = await context.read<AuthRepository>().getAccountProfile();
+      await context.read<AuthRepository>().getAccountProfile();
       if (mounted) {
         setState(() {
-          _profile = p;
           _loading = false;
         });
       }
@@ -55,24 +52,6 @@ class _AccountSettingsMenuScreenState extends State<AccountSettingsMenuScreen> {
           _loading = false;
         });
       }
-    }
-  }
-
-  Future<void> _openLink(String? url) async {
-    if (url == null || url.isEmpty) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('준비 중입니다.')),
-      );
-      return;
-    }
-    final uri = Uri.tryParse(url);
-    if (uri == null) return;
-    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('링크를 열 수 없습니다.')),
-      );
     }
   }
 
@@ -141,12 +120,12 @@ class _AccountSettingsMenuScreenState extends State<AccountSettingsMenuScreen> {
                                   },
                                 ),
                                 _row(
-                                  '고객센터/문의하기',
+                                  '고객센터',
                                   onTap: () {
                                     Navigator.of(context).push<void>(
                                       MaterialPageRoute<void>(
                                         builder: (_) =>
-                                            const AccountInquiriesScreen(),
+                                            const AccountSupportCenterScreen(),
                                       ),
                                     );
                                   },
@@ -163,9 +142,15 @@ class _AccountSettingsMenuScreenState extends State<AccountSettingsMenuScreen> {
                                   },
                                 ),
                                 _row(
-                                  '이용정책',
-                                  onTap: () =>
-                                      _openLink(_profile?.settingsLinks.policyUrl),
+                                  '이용 정책',
+                                  onTap: () {
+                                    Navigator.of(context).push<void>(
+                                      MaterialPageRoute<void>(
+                                        builder: (_) =>
+                                            const AccountPoliciesScreen(),
+                                      ),
+                                    );
+                                  },
                                 ),
                               ],
                             ),

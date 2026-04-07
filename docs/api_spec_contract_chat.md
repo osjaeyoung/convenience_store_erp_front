@@ -270,7 +270,9 @@
       "message_type": "document",
       "text": "김현수 표준 근로 계약서",
       "created_at": "2026-04-01T09:30:00Z",
-      "document_status": "waiting_worker"
+      "document_status": "waiting_worker",
+      "can_open_document": true,
+      "open_document_path": "/api/v1/contract-chats/901/document"
     },
     {
       "message_id": "901-worker-completed",
@@ -279,11 +281,32 @@
       "message_type": "document",
       "text": "김현수 표준 근로 계약서[작성 완료]",
       "created_at": "2026-04-01T10:05:00Z",
-      "document_status": "completed"
+      "document_status": "completed",
+      "can_open_document": true,
+      "open_document_path": "/api/v1/contract-chats/901/document"
     }
   ],
   "can_open_document": true,
   "can_download_document": true
+}
+```
+
+- 프론트 구현 가이드:
+  - `messages[].can_open_document == true` 인 문서 메시지는 말풍선 클릭 시 `messages[].open_document_path`를 호출해 문서 화면으로 이동합니다.
+  - 근로자가 `action=complete`를 수행하면 `messages`에 `text="[작성 완료]"` 문구의 문서 메시지가 추가됩니다.
+
+## 3-1) 계약 채팅 삭제
+
+- `DELETE /contract-chats/{contract_id}`
+- 권한: 해당 점포 **경영주/점장**, 또는 해당 계약에 연결된 **근로자**(`worker_user_id` 또는 직원 `linked_user_id`가 로그인 사용자와 일치)
+- **`chat_status`(임시저장·미완료·작성 완료)와 무관**하게 삭제 가능
+- `employment_contract_files` 첨부를 먼저 삭제한 뒤 `employment_contracts` 행을 삭제합니다 (직원관리의 근로계약 삭제와 동일한 정리 방식).
+
+### Response Body (200)
+
+```json
+{
+  "deleted": true
 }
 ```
 

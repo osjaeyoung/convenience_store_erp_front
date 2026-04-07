@@ -77,64 +77,41 @@ class _AccountNoticesScreenState extends State<AccountNoticesScreen> {
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
                         padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 24.h),
                         itemCount: _items.length,
-                        separatorBuilder: (_, __) => SizedBox(height: 12.h),
+                        separatorBuilder: (_, __) => Divider(
+                          color: AppColors.border,
+                          height: 1.h,
+                        ),
                         itemBuilder: (context, index) {
                           final item = _items[index];
-                          return Material(
-                            color: AppColors.grey0,
-                            borderRadius: BorderRadius.circular(16.r),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(16.r),
-                              onTap: () => _openDetail(item),
-                              child: Container(
-                                padding: EdgeInsets.all(18.r),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(16.r),
-                                  border: Border.all(
-                                    color: AppColors.borderLight,
+                          return InkWell(
+                            onTap: () => _openDetail(item),
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(vertical: 20.h),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.title,
+                                    style: AppTypography.bodyLargeM.copyWith(
+                                      color: AppColors.textPrimary,
+                                      fontSize: 18.sp,
+                                      height: 24 / 18,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item.title,
-                                      style: AppTypography.bodyMediumB.copyWith(
-                                        color: AppColors.textPrimary,
-                                      ),
+                                  SizedBox(height: 8.h),
+                                  Text(
+                                    _formatDate(item.publishedAt),
+                                    style: AppTypography.bodySmallR.copyWith(
+                                      color: AppColors.textDisabled,
+                                      fontSize: 12.sp,
+                                      height: 18 / 12,
                                     ),
-                                    SizedBox(height: 8.h),
-                                    Text(
-                                      item.content,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: AppTypography.bodySmallR.copyWith(
-                                        color: AppColors.textSecondary,
-                                        height: 18 / 12,
-                                      ),
-                                    ),
-                                    SizedBox(height: 12.h),
-                                    Row(
-                                      children: [
-                                        Text(
-                                          _formatDate(item.publishedAt),
-                                          style:
-                                              AppTypography.bodySmallR.copyWith(
-                                            color: AppColors.textTertiary,
-                                          ),
-                                        ),
-                                        const Spacer(),
-                                        Icon(
-                                          Icons.chevron_right_rounded,
-                                          size: 18.r,
-                                          color: AppColors.textDisabled,
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             ),
                           );

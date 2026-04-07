@@ -174,6 +174,28 @@ class WorkerRecruitmentRepository {
     return WorkerContractChatDetail.fromJson(res.data ?? const {});
   }
 
+  /// 계약 채팅 삭제 — `DELETE /contract-chats/{contract_id}` (`api_spec_contract_chat.md` §3-1)
+  Future<WorkerContractChatDeleteResult> deleteContractChat({
+    required int contractId,
+  }) async {
+    final res = await _apiClient.dio.delete<Map<String, dynamic>>(
+      '/contract-chats/$contractId',
+    );
+    final data = res.data;
+    if (data == null || data.isEmpty) {
+      return const WorkerContractChatDeleteResult(deleted: true);
+    }
+    final result = WorkerContractChatDeleteResult.fromJson(data);
+    if (!result.deleted) {
+      throw DioException(
+        requestOptions: res.requestOptions,
+        response: res,
+        message: '계약 채팅 삭제에 실패했습니다.',
+      );
+    }
+    return result;
+  }
+
   Future<WorkerContractChatDocument> getContractChatDocument({
     required int contractId,
   }) async {

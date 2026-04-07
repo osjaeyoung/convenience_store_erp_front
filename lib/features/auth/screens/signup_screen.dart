@@ -38,6 +38,10 @@ class _SignupScreenState extends State<SignupScreen> {
   UserRole _selectedRole = UserRole.manager;
   bool _isPhoneVerified = false;
   bool _isSendingPhoneCode = false;
+  bool _isCheckingEmailDuplicate = false;
+  bool _isEmailChecked = false;
+  bool _isEmailAvailable = false;
+  String _lastCheckedEmail = '';
   bool _agreeTerms = false;
   bool _agreeAge = false;
   bool _agreePrivacy = false;
@@ -61,6 +65,7 @@ class _SignupScreenState extends State<SignupScreen> {
       _currentStep = _SignupStep.role;
       _isResumedFromStep1 = true;
     }
+    _emailController.addListener(_onEmailChanged);
   }
 
   void _onAuthRepositoryChanged() {
@@ -123,6 +128,7 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   void dispose() {
     _authRepository.removeListener(_onAuthRepositoryChanged);
+    _emailController.removeListener(_onEmailChanged);
     _emailController.dispose();
     _pwController.dispose();
     _pwConfirmController.dispose();
@@ -147,6 +153,12 @@ class _SignupScreenState extends State<SignupScreen> {
     if (_currentStep == _SignupStep.basicInfo) {
       setState(() => _submittedBasicInfo = true);
       if (!_formKey.currentState!.validate()) return;
+      if (!_isEmailChecked || !_isEmailAvailable) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('이메일 중복 검사를 완료해주세요.')));
+        return;
+      }
       if (!_isPhoneVerified) {
         ScaffoldMessenger.of(
           context,
@@ -165,6 +177,12 @@ class _SignupScreenState extends State<SignupScreen> {
       return;
     }
     if (!_formKey.currentState!.validate()) return;
+    if (!_isEmailChecked || !_isEmailAvailable) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('이메일 중복 검사를 완료해주세요.')));
+      return;
+    }
 
     context.read<AuthBloc>().add(
       AuthSignupStep1Requested(
@@ -475,6 +493,48 @@ class _SignupScreenState extends State<SignupScreen> {
                   : AutovalidateMode.disabled,
               hintText: '이메일을 입력해주세요.',
               focusedBorderColor: AppColors.primary,
+              suffixIconConstraints: BoxConstraints(
+                minHeight: 0,
+                minWidth: 84.w,
+              ),
+              suffix: Padding(
+                padding: EdgeInsets.only(right: 6.w),
+                child: SizedBox(
+                  width: 72.w,
+                  height: 28.h,
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: _isCheckingEmailDuplicate ? null : _onCheckEmailDuplicate,
+                      child: Container(
+                        width: 72.w,
+                        height: 28.h,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        alignment: Alignment.center,
+                        child: _isCheckingEmailDuplicate
+                            ? const SizedBox(
+                                width: 12,
+                                height: 12,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.grey0,
+                                ),
+                              )
+                            : Text(
+                                '중복검사',
+                                style: AppTypography.bodyMediumB.copyWith(
+                                  color: AppColors.grey0,
+                                  fontSize: 11.sp,
+                                  height: 1,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
               validator: (v) {
                 final value = (v ?? '').trim();
                 if (value.isEmpty) return '*이메일을 입력해주세요.';
@@ -482,9 +542,23 @@ class _SignupScreenState extends State<SignupScreen> {
                 if (!emailRegex.hasMatch(value)) {
                   return '*올바른 이메일을 입력해주세요.';
                 }
+                if (_submittedBasicInfo && (!_isEmailChecked || !_isEmailAvailable)) {
+                  return '*이메일 중복 검사를 완료해주세요.';
+                }
                 return null;
               },
             ),
+            if (_isEmailChecked) ...[
+              SizedBox(height: 6.h),
+              Text(
+                _isEmailAvailable
+                    ? '사용 가능한 이메일입니다.'
+                    : '이미 가입된 이메일입니다.',
+                style: AppTypography.bodySmallR.copyWith(
+                  color: _isEmailAvailable ? AppColors.primary : const Color(0xFFFF4834),
+                ),
+              ),
+            ],
             SizedBox(height: 20.h),
             _buildFieldLabel('이름'),
             AuthInputField(
@@ -712,6 +786,66 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _isKoreanMobile(String raw) {
     final d = raw.replaceAll(RegExp(r'[^\d]'), '');
     return RegExp(r'^01[016789]\d{7,8}$').hasMatch(d);
+  }
+
+  bool _isValidEmailFormat(String value) {
+    final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+    return emailRegex.hasMatch(value.trim());
+  }
+
+  void _onEmailChanged() {
+    final current = _emailController.text.trim();
+    if (current == _lastCheckedEmail) return;
+    if (!_isEmailChecked && !_isEmailAvailable) return;
+    if (!mounted) return;
+    setState(() {
+      _isEmailChecked = false;
+      _isEmailAvailable = false;
+    });
+  }
+
+  Future<void> _onCheckEmailDuplicate() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('이메일을 입력해주세요.')));
+      return;
+    }
+    if (!_isValidEmailFormat(email)) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('올바른 이메일 형식을 입력해주세요.')));
+      return;
+    }
+
+    setState(() => _isCheckingEmailDuplicate = true);
+    try {
+      final result = await context.read<AuthRepository>().checkEmailExists(
+        email: email,
+      );
+      if (!mounted) return;
+      final available = !result.exists;
+      setState(() {
+        _isEmailChecked = true;
+        _isEmailAvailable = available;
+        _lastCheckedEmail = email;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            available ? '사용 가능한 이메일입니다.' : '이미 가입된 이메일입니다.',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    } finally {
+      if (mounted) setState(() => _isCheckingEmailDuplicate = false);
+    }
   }
 
   Future<void> _onRequestPhoneVerification() async {

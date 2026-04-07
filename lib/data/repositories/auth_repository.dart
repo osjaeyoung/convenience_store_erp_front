@@ -509,6 +509,17 @@ class AuthRepository extends ChangeNotifier {
     return PhoneNumberExistsResult.fromJson(res.data!);
   }
 
+  /// 회원가입 전 이메일 가입 여부 (인증 불필요). 서버는 trim 후 소문자로 정규화해 비교.
+  Future<EmailExistsResult> checkEmailExists({
+    required String email,
+  }) async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/auth/email-exists',
+      queryParameters: {'email': email.trim()},
+    );
+    return EmailExistsResult.fromJson(res.data!);
+  }
+
   /// 이름·전화번호 부분 갱신 (`PATCH /me/account`)
   Future<AccountProfile> patchAccount({
     String? email,
@@ -598,6 +609,26 @@ class AuthRepository extends ChangeNotifier {
       '/me/notices/$noticeId',
     );
     return AccountNotice.fromJson(res.data!);
+  }
+
+  Future<AccountSupportCenterData> getSupportCenter() async {
+    final res =
+        await _apiClient.dio.get<Map<String, dynamic>>('/me/support-center');
+    return AccountSupportCenterData.fromJson(res.data!);
+  }
+
+  Future<AccountPolicyList> getPolicies() async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>('/me/policies');
+    return AccountPolicyList.fromJson(res.data!);
+  }
+
+  Future<AccountPolicyDetail> getPolicyDetail({
+    required String policyType,
+  }) async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/me/policies/${policyType.trim()}',
+    );
+    return AccountPolicyDetail.fromJson(res.data!);
   }
 
   Future<AccountInquiryPage> getInquiries({

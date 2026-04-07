@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -104,8 +107,39 @@ class _WorkerAccountEditScreenState extends State<WorkerAccountEditScreen> {
     return value.replaceAll(RegExp(r'[^0-9]'), '');
   }
 
+  String _toE164(String phone) {
+    final digits = _normalizePhoneNumber(phone);
+    if (digits.startsWith('0') && digits.length >= 10) {
+      return '+82${digits.substring(1)}';
+    }
+    return '+$digits';
+  }
+
   bool _isValidPhoneNumber(String value) {
     return RegExp(r'^01[0-9]{8,9}$').hasMatch(value);
+  }
+
+  bool get _didPhoneChange {
+    return _normalizePhoneNumber(_phoneController.text) != _originalPhoneNumber;
+  }
+
+  bool get _isCurrentPhoneVerified {
+    final currentPhone = _normalizePhoneNumber(_phoneController.text);
+    return currentPhone.isNotEmpty && currentPhone == _phoneConfirmedValue;
+  }
+
+  bool get _canSave {
+    return !_saving &&
+        !_checkingPhone &&
+        (!_didPhoneChange || _isCurrentPhoneVerified);
+  }
+
+  String get _phoneActionLabel {
+    final currentPhone = _normalizePhoneNumber(_phoneController.text);
+    if (currentPhone.isEmpty || currentPhone == _originalPhoneNumber) {
+      return '변경';
+    }
+    return _isCurrentPhoneVerified ? '인증완료' : '인증';
   }
 
   void _showMessage(String message) {
@@ -114,21 +148,140 @@ class _WorkerAccountEditScreenState extends State<WorkerAccountEditScreen> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _checkPhoneNumberDuplicate() async {
+  Future<void> _showPhoneVerificationDialog({
+    required String phoneNumber,
+    required String verificationId,
+  }) async {
+    final codeController = TextEditingController();
+    String? errorText;
+    var submitting = false;
+
+    final verified = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            Future<void> submitCode() async {
+              if (submitting) return;
+              final code = codeController.text.trim();
+              if (code.length != 6) {
+                setDialogState(() {
+                  errorText = '인증번호 6자리를 입력해주세요.';
+                });
+                return;
+              }
+
+              setDialogState(() {
+                submitting = true;
+                errorText = null;
+              });
+
+              try {
+                final credential = PhoneAuthProvider.credential(
+                  verificationId: verificationId,
+                  smsCode: code,
+                );
+                await FirebaseAuth.instance.signInWithCredential(credential);
+                await FirebaseAuth.instance.signOut();
+                if (!dialogContext.mounted) return;
+                Navigator.of(dialogContext).pop(true);
+              } catch (_) {
+                setDialogState(() {
+                  submitting = false;
+                  errorText = '인증번호가 올바르지 않습니다.';
+                });
+              }
+            }
+
+            return AlertDialog(
+              title: Text(
+                '휴대폰 인증',
+                style: AppTypography.bodyLargeB.copyWith(
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$phoneNumber 번호로 전송된 인증번호를 입력해주세요.',
+                    style: AppTypography.bodyMediumR.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+                  TextField(
+                    controller: codeController,
+                    enabled: !submitting,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(6),
+                    ],
+                    decoration: InputDecoration(
+                      hintText: '인증번호 6자리',
+                      errorText: errorText,
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: submitting
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('취소'),
+                ),
+                FilledButton(
+                  onPressed: submitting ? null : submitCode,
+                  child: submitting
+                      ? SizedBox(
+                          width: 18.r,
+                          height: 18.r,
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.grey0,
+                          ),
+                        )
+                      : const Text('확인'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    codeController.dispose();
+
+    if (verified != true || !mounted) return;
+    setState(() {
+      _phoneConfirmedValue = _normalizePhoneNumber(phoneNumber);
+    });
+    _showMessage('휴대폰 인증이 완료되었습니다.');
+  }
+
+  Future<void> _verifyPhoneNumberChange() async {
     final candidate = _normalizePhoneNumber(_phoneController.text);
     if (candidate.isEmpty) {
-      _showMessage('휴대폰 번호를 입력해주세요.');
+      _showMessage('새 휴대폰 번호를 입력해주세요.');
       return;
     }
     if (!_isValidPhoneNumber(candidate)) {
       _showMessage('올바른 휴대폰 번호를 입력해주세요.');
       return;
     }
+    if (candidate == _phoneConfirmedValue) {
+      _showMessage('휴대폰 인증이 완료되었습니다.');
+      return;
+    }
     if (candidate == _originalPhoneNumber) {
       setState(() {
         _phoneConfirmedValue = candidate;
       });
-      _showMessage('현재 등록된 휴대폰 번호입니다.');
+      _showMessage('휴대폰 번호가 변경되지 않았습니다.');
       return;
     }
 
@@ -147,11 +300,47 @@ class _WorkerAccountEditScreenState extends State<WorkerAccountEditScreen> {
         return;
       }
 
-      setState(() {
-        _checkingPhone = false;
-        _phoneConfirmedValue = candidate;
-      });
-      _showMessage('사용 가능한 휴대폰 번호입니다.');
+      await context.read<AuthRepository>().verifyPhoneNumber(
+            phoneNumber: _toE164(candidate),
+            codeSent: (verificationId, _) {
+              if (!mounted) return;
+              setState(() => _checkingPhone = false);
+              _showMessage('인증번호가 발송되었습니다.');
+              unawaited(
+                _showPhoneVerificationDialog(
+                  phoneNumber: candidate,
+                  verificationId: verificationId,
+                ),
+              );
+            },
+            verificationCompleted: (credential) {
+              unawaited(() async {
+                try {
+                  await FirebaseAuth.instance.signInWithCredential(credential);
+                  await FirebaseAuth.instance.signOut();
+                  if (!mounted) return;
+                  setState(() {
+                    _checkingPhone = false;
+                    _phoneConfirmedValue = candidate;
+                  });
+                  _showMessage('휴대폰 인증이 완료되었습니다.');
+                } catch (_) {
+                  if (!mounted) return;
+                  setState(() => _checkingPhone = false);
+                  _showMessage('휴대폰 인증 처리 중 오류가 발생했습니다.');
+                }
+              }());
+            },
+            verificationFailed: (error) {
+              if (!mounted) return;
+              setState(() => _checkingPhone = false);
+              _showMessage(error.message ?? error.code);
+            },
+            codeAutoRetrievalTimeout: (_) {
+              if (!mounted) return;
+              setState(() => _checkingPhone = false);
+            },
+          );
     } catch (error) {
       if (!mounted) return;
       setState(() => _checkingPhone = false);
@@ -328,10 +517,9 @@ class _WorkerAccountEditScreenState extends State<WorkerAccountEditScreen> {
       _showMessage('올바른 휴대폰 번호를 입력해주세요.');
       return;
     }
-    if (phoneNumber.isNotEmpty &&
-        phoneNumber != _originalPhoneNumber &&
+    if (phoneNumber != _originalPhoneNumber &&
         _phoneConfirmedValue != phoneNumber) {
-      _showMessage('휴대폰 번호 변경 버튼을 눌러 중복 확인을 완료해주세요.');
+      _showMessage('변경된 휴대폰 번호 인증을 완료해주세요.');
       return;
     }
     final hasPartialBirthDate = [
@@ -478,17 +666,26 @@ class _WorkerAccountEditScreenState extends State<WorkerAccountEditScreen> {
                         child: AccountGreyActionField(
                           controller: _phoneController,
                           placeholder: '휴대폰 번호를 입력해주세요.',
-                          actionLabel: '변경',
                           keyboardType: TextInputType.phone,
                           inputFormatters: [
                             FilteringTextInputFormatter.digitsOnly,
                             LengthLimitingTextInputFormatter(11),
                           ],
-                          onActionTap: _checkPhoneNumberDuplicate,
+                          actionLabel: _phoneActionLabel,
+                          onActionTap: _verifyPhoneNumberChange,
                           onChanged: (_) => setState(() {}),
                           enabled: !_checkingPhone && !_saving,
                         ),
                       ),
+                      if (_didPhoneChange && !_isCurrentPhoneVerified) ...[
+                        SizedBox(height: 8.h),
+                        Text(
+                          '전화번호가 변경되어 인증이 필요합니다.',
+                          style: AppTypography.bodySmallM.copyWith(
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
                       SizedBox(height: 20.h),
                       AccountFieldSection(
                         label: '주소',
@@ -514,7 +711,7 @@ class _WorkerAccountEditScreenState extends State<WorkerAccountEditScreen> {
                         width: double.infinity,
                         height: 56.h,
                         child: FilledButton(
-                          onPressed: _saving ? null : _save,
+                          onPressed: _canSave ? _save : null,
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: AppColors.grey0,
