@@ -790,3 +790,37 @@ class RecruitmentApplicationSummary extends Equatable {
         reviewCount,
       ];
 }
+
+/// `POST .../job-seekers/{id}/contact` 응답
+class RecruitmentContactResult extends Equatable {
+  const RecruitmentContactResult({
+    required this.requested,
+    this.inquiryId,
+    required this.branchId,
+    required this.employeeId,
+    required this.employeeName,
+    this.message,
+  });
+
+  final bool requested;
+  final int? inquiryId;
+  final int branchId;
+  final int employeeId;
+  final String employeeName;
+  final String? message;
+
+  factory RecruitmentContactResult.fromJson(Map<String, dynamic> json) {
+    return RecruitmentContactResult(
+      requested: json['requested'] == true,
+      inquiryId: (json['inquiry_id'] as num?)?.toInt(),
+      branchId: (json['branch_id'] as num?)?.toInt() ?? 0,
+      employeeId: (json['employee_id'] as num?)?.toInt() ?? 0,
+      employeeName: json['employee_name'] as String? ?? '',
+      message: json['message'] as String?,
+    );
+  }
+
+  @override
+  List<Object?> get props =>
+      [requested, inquiryId, branchId, employeeId, employeeName, message];
+}

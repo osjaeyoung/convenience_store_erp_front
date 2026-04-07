@@ -192,6 +192,36 @@
 
 ---
 
+## 3-2) 월 묶음 수정
+
+- `PATCH /store-expenses/branches/{branch_id}/months/{expense_month_id}`
+- 월 카드의 연/월 변경에 사용
+- 동일 점포에 같은 `year+month`가 이미 있으면 `409`
+
+### Request Body
+```json
+{
+  "year": 2025,
+  "month": 10
+}
+```
+
+### Response Body (200)
+```json
+{
+  "expense_month_id": 41,
+  "year": 2025,
+  "month": 10,
+  "period_label": "2025.10",
+  "total_amount": 4346000,
+  "item_count": 4,
+  "created_at": "2025-09-01T09:00:00Z",
+  "updated_at": "2025-09-12T11:20:00Z"
+}
+```
+
+---
+
 ## 4) 카테고리 목록 조회 (항목 선택용)
 
 - `GET /store-expenses/categories`

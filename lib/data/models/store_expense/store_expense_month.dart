@@ -207,3 +207,75 @@ class StoreExpenseCategory {
   }
 }
 
+/// `GET .../trend` 응답
+class StoreExpenseYearTrend {
+  const StoreExpenseYearTrend({
+    required this.branchId,
+    required this.year,
+    required this.rangeType,
+    this.monthlyTrends = const [],
+  });
+
+  final int branchId;
+  final int year;
+  final String rangeType;
+  final List<StoreExpenseMonthlyTrendPoint> monthlyTrends;
+
+  factory StoreExpenseYearTrend.fromJson(Map<String, dynamic> json) {
+    final raw = json['monthly_trends'] as List<dynamic>? ?? const [];
+    return StoreExpenseYearTrend(
+      branchId: (json['branch_id'] as num?)?.toInt() ?? 0,
+      year: (json['year'] as num?)?.toInt() ?? 0,
+      rangeType: json['range_type'] as String? ?? 'year',
+      monthlyTrends: raw
+          .map(
+            (e) => StoreExpenseMonthlyTrendPoint.fromJson(
+              e as Map<String, dynamic>,
+            ),
+          )
+          .toList(),
+    );
+  }
+}
+
+class StoreExpenseMonthlyTrendPoint {
+  const StoreExpenseMonthlyTrendPoint({
+    required this.month,
+    required this.totalAmount,
+  });
+
+  final String month;
+  final int totalAmount;
+
+  factory StoreExpenseMonthlyTrendPoint.fromJson(Map<String, dynamic> json) {
+    return StoreExpenseMonthlyTrendPoint(
+      month: json['month'] as String? ?? '',
+      totalAmount: (json['total_amount'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+/// `POST .../receipt-ocr` 응답
+class StoreExpenseReceiptOcrResult {
+  const StoreExpenseReceiptOcrResult({
+    this.expenseDate,
+    this.amount,
+    this.categoryCode,
+    this.memo,
+  });
+
+  final String? expenseDate;
+  final int? amount;
+  final String? categoryCode;
+  final String? memo;
+
+  factory StoreExpenseReceiptOcrResult.fromJson(Map<String, dynamic> json) {
+    return StoreExpenseReceiptOcrResult(
+      expenseDate: json['expense_date'] as String?,
+      amount: (json['amount'] as num?)?.toInt(),
+      categoryCode: json['category_code'] as String?,
+      memo: json['memo'] as String?,
+    );
+  }
+}
+

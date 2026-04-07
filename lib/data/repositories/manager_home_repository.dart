@@ -161,6 +161,22 @@ class ManagerHomeRepository {
     return JobSeekerProfile.fromJson(res.data!);
   }
 
+  /// 구직자 채용 문의 등록 (`message` 생략·빈 값이면 서버 기본 문구 저장)
+  Future<RecruitmentContactResult> postJobSeekerContact({
+    required int branchId,
+    required int employeeId,
+    String? message,
+  }) async {
+    final trimmed = message?.trim();
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/recruitment/branches/$branchId/job-seekers/$employeeId/contact',
+      data: trimmed != null && trimmed.isNotEmpty
+          ? {'message': trimmed}
+          : <String, dynamic>{},
+    );
+    return RecruitmentContactResult.fromJson(res.data!);
+  }
+
   /// 구직자 리뷰 상세 조회
   Future<JobSeekerReviewPage> getJobSeekerReviews({
     required int branchId,

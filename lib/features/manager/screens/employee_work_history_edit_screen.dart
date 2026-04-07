@@ -4,28 +4,16 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
-import '../widgets/employee_profile_box.dart';
 import '../widgets/work_status_badge.dart';
-import 'employee_work_history_edit_screen.dart';
 
-class EmployeeWorkHistoryScreen extends StatelessWidget {
-  const EmployeeWorkHistoryScreen({
+class EmployeeWorkHistoryEditScreen extends StatelessWidget {
+  const EmployeeWorkHistoryEditScreen({
     super.key,
     required this.branchName,
-    required this.employeeName,
-    required this.hireDate,
-    required this.contact,
-    this.resignationDate,
-    this.starCount,
     required this.workHistories,
   });
 
   final String branchName;
-  final String employeeName;
-  final String hireDate;
-  final String contact;
-  final String? resignationDate;
-  final int? starCount;
   final List<Map<String, dynamic>> workHistories;
 
   static const String fixedWorkDate = '2025.10.10';
@@ -40,84 +28,74 @@ class EmployeeWorkHistoryScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('근무 이력'),
+        title: const Text('근무 이력 수정'),
         backgroundColor: AppColors.grey0,
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 24.h),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            EmployeeProfileBox(
-              name: employeeName,
-              hireDate: hireDate,
-              contact: contact,
-              resignationDate: resignationDate,
-              showEditButton: false,
-              starCount: starCount,
-            ),
-            SizedBox(height: 24.h),
-            Row(
-              children: [
-                Text(
-                  '근무 이력',
-                  style: AppTypography.heading3.copyWith(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.w500,
-                    height: 24 / 18,
-                    color: AppColors.textPrimary,
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 24.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    '근무 이력',
+                    style: AppTypography.heading3.copyWith(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w500,
+                      height: 24 / 18,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                ),
-                const Spacer(),
-                FilledButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => EmployeeWorkHistoryEditScreen(
-                          branchName: branchName,
-                          workHistories: workHistories,
-                        ),
-                      ),
-                    );
-                  },
+                  SizedBox(height: 12.h),
+                  _EditWorkHistoryTable(
+                    branchName: branchName,
+                    rows: workHistories,
+                    fixedWorkDate: fixedWorkDate,
+                    fixedWorkTime: fixedWorkTime,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SafeArea(
+            top: false,
+            child: Container(
+              color: AppColors.grey0,
+              padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 36.h),
+              child: SizedBox(
+                width: double.infinity,
+                height: 56.h,
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF9D9DAA),
+                    backgroundColor: AppColors.primary,
                     foregroundColor: AppColors.grey0,
-                    minimumSize: Size(58.w, 30.h),
-                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.r),
+                      borderRadius: BorderRadius.circular(8.r),
                     ),
                   ),
                   child: Text(
-                    '수정',
-                    style: AppTypography.bodySmallB.copyWith(
+                    '저장',
+                    style: AppTypography.bodyLargeB.copyWith(
                       color: AppColors.grey0,
-                      fontSize: 12.sp,
-                      height: 16 / 12,
                     ),
                   ),
                 ),
-              ],
+              ),
             ),
-            SizedBox(height: 10.h),
-            _WorkHistoryTable(
-              branchName: branchName,
-              rows: workHistories,
-              fixedWorkDate: fixedWorkDate,
-              fixedWorkTime: fixedWorkTime,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _WorkHistoryTable extends StatelessWidget {
-  const _WorkHistoryTable({
+class _EditWorkHistoryTable extends StatelessWidget {
+  const _EditWorkHistoryTable({
     required this.branchName,
     required this.rows,
     required this.fixedWorkDate,
@@ -146,11 +124,11 @@ class _WorkHistoryTable extends StatelessWidget {
             color: AppColors.grey25,
             child: const Row(
               children: [
-                _HeaderCell('근무지점', flex: _branchFlex),
-                _HeaderCell('근무날짜', flex: _dateFlex),
-                _HeaderCell('근무시간', flex: _timeFlex),
-                _HeaderCell('근무상태', flex: _statusFlex),
-                _HeaderCell('메모', flex: _memoFlex),
+                _EditHeaderCell('근무지점', flex: _branchFlex),
+                _EditHeaderCell('근무날짜', flex: _dateFlex),
+                _EditHeaderCell('근무시간', flex: _timeFlex),
+                _EditHeaderCell('근무상태', flex: _statusFlex),
+                _EditHeaderCell('메모', flex: _memoFlex),
               ],
             ),
           ),
@@ -179,12 +157,12 @@ class _WorkHistoryTable extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    _BodyCell(
+                    _EditBodyCell(
                       _extractBranchName(row, branchName),
                       flex: _branchFlex,
                     ),
-                    _BodyCell(fixedWorkDate, flex: _dateFlex),
-                    _BodyCell(fixedWorkTime, flex: _timeFlex),
+                    _EditBodyCell(fixedWorkDate, flex: _dateFlex),
+                    _EditBodyCell(fixedWorkTime, flex: _timeFlex),
                     Expanded(
                       flex: _statusFlex,
                       child: SizedBox(
@@ -201,7 +179,9 @@ class _WorkHistoryTable extends StatelessWidget {
                       flex: _memoFlex,
                       child: SizedBox(
                         height: 40.h,
-                        child: Center(child: _MemoButton(memo: memo)),
+                        child: Center(
+                          child: _EditMemoButton(memo: memo),
+                        ),
                       ),
                     ),
                   ],
@@ -226,8 +206,8 @@ class _WorkHistoryTable extends StatelessWidget {
   }
 }
 
-class _MemoButton extends StatelessWidget {
-  const _MemoButton({required this.memo});
+class _EditMemoButton extends StatelessWidget {
+  const _EditMemoButton({required this.memo});
 
   final String memo;
 
@@ -271,9 +251,9 @@ class _MemoButton extends StatelessWidget {
   }
 }
 
-class _HeaderCell extends StatelessWidget {
+class _EditHeaderCell extends StatelessWidget {
   // ignore: unused_element_parameter
-  const _HeaderCell(this.text, {this.width, this.flex});
+  const _EditHeaderCell(this.text, {this.width, this.flex});
 
   final String text;
   final double? width;
@@ -305,9 +285,9 @@ class _HeaderCell extends StatelessWidget {
   }
 }
 
-class _BodyCell extends StatelessWidget {
+class _EditBodyCell extends StatelessWidget {
   // ignore: unused_element_parameter
-  const _BodyCell(this.text, {this.width, this.flex});
+  const _EditBodyCell(this.text, {this.width, this.flex});
 
   final String text;
   final double? width;

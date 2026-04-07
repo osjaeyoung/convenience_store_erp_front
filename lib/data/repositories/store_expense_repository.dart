@@ -1,3 +1,6 @@
+import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
+
 import '../models/store_expense/store_expense_dashboard.dart';
 import '../models/store_expense/store_expense_month.dart';
 import '../network/api_client.dart';
@@ -39,6 +42,102 @@ class StoreExpenseRepository {
     return items
         .map((e) => StoreExpenseMonthSummary.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  /// 월 묶음 연/월 수정 (스펙 3-2)
+  Future<StoreExpenseMonthSummary> patchMonth({
+    required int branchId,
+    required int expenseMonthId,
+    required int year,
+    required int month,
+  }) async {
+    final res = await _apiClient.dio.patch<Map<String, dynamic>>(
+      '/store-expenses/branches/$branchId/months/$expenseMonthId',
+      data: {'year': year, 'month': month},
+    );
+    return StoreExpenseMonthSummary.fromJson(res.data!);
+  }
+
+  /// 항목에 증빙 파일 추가 (스펙 6)
+  Future<StoreExpenseItem> appendItemFiles({
+    required int branchId,
+    required int expenseItemId,
+    required List<StoreExpenseFileDraft> files,
+  }) async {
+    final res = await _apiClient.dio.patch<Map<String, dynamic>>(
+      '/store-expenses/branches/$branchId/items/$expenseItemId/file',
+      data: {
+        'files': files.map((f) => f.toJson()).toList(),
+      },
+    );
+    return StoreExpenseItem.fromJson(res.data!);
+  }
+
+  /// 연간 점내 비용 추이 (스펙 11)
+  Future<StoreExpenseYearTrend> getTrend({
+    required int branchId,
+    required int year,
+    String rangeType = 'year',
+  }) async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/store-expenses/branches/$branchId/trend',
+      queryParameters: {
+        'range_type': rangeType,
+        'year': year,
+      },
+    );
+    return StoreExpenseYearTrend.fromJson(res.data!);
+  }
+
+  /// 영수증 OCR (스펙 12)
+  Future<StoreExpenseReceiptOcrResult> postReceiptOcr({
+    required PlatformFile file,
+  }) async {
+    final formData = FormData.fromMap({
+      'file': await _expenseOcrMultipartFile(file),
+    });
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/store-expenses/receipt-ocr',
+      data: formData,
+      options: Options(
+        connectTimeout: const Duration(seconds: 60),
+        sendTimeout: const Duration(minutes: 2),
+        receiveTimeout: const Duration(minutes: 2),
+      ),
+    );
+    return StoreExpenseReceiptOcrResult.fromJson(res.data!);
+  }
+
+  static Future<MultipartFile> _expenseOcrMultipartFile(PlatformFile file) async {
+    final name = file.name.trim().isEmpty ? 'receipt.jpg' : file.name.trim();
+    final contentType = _ocrMediaType(name);
+    if (file.bytes != null) {
+      return MultipartFile.fromBytes(
+        file.bytes!,
+        filename: name,
+        contentType: contentType,
+      );
+    }
+    final path = file.path;
+    if (path != null && path.isNotEmpty) {
+      return MultipartFile.fromFile(
+        path,
+        filename: name,
+        contentType: contentType,
+      );
+    }
+    throw StateError('영수증 이미지를 읽을 수 없습니다. 다시 선택해 주세요.');
+  }
+
+  static DioMediaType? _ocrMediaType(String filename) {
+    final lower = filename.toLowerCase();
+    if (lower.endsWith('.png')) return DioMediaType('image', 'png');
+    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
+      return DioMediaType('image', 'jpeg');
+    }
+    if (lower.endsWith('.webp')) return DioMediaType('image', 'webp');
+    if (lower.endsWith('.pdf')) return DioMediaType('application', 'pdf');
+    return null;
   }
 
   /// 월별 점내 비용 추가

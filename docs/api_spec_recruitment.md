@@ -52,7 +52,7 @@
 - `keyword` (optional): 이름/지역/편의점명 검색
 - `gender` (optional): `male` | `female` | `all`
 - `age_min`, `age_max` (optional)
-- `region` (optional): `서울`, `경기`, `부산` 같은 상위 지역 필터. 서버는 지점의 채용공고 `region_summary`, `address`, `company_name`, `title`를 함께 보고 매칭
+- `region` (optional): `서울`, `경기`, `부산` 같은 상위 지역 필터. 서버는 지점의 채용공고 `region_summary`, `address`에서 상위 지역을 추출해 매칭
 - `min_rating` (optional, 0~3)
 - `page` (default=1), `page_size` (default=20)
 
@@ -141,6 +141,37 @@
 
 ---
 
+## 3-1) 구직자 채용 문의 등록
+
+- `POST /recruitment/branches/{branch_id}/job-seekers/{employee_id}/contact`
+- 구직자 상세 화면의 `채용 문의하기` 액션
+- 문의 내용은 관리자 문의함 연동을 위해 서버에 저장됨
+
+### Request Body
+```json
+{
+  "message": "야간 근무 가능 여부 문의드립니다."
+}
+```
+
+### Response Body (200)
+```json
+{
+  "requested": true,
+  "inquiry_id": 120,
+  "branch_id": 13,
+  "employee_id": 602,
+  "employee_name": "이사라",
+  "message": "야간 근무 가능 여부 문의드립니다."
+}
+```
+
+### 비고
+
+- `message`가 비어 오면 서버 기본 문구(`채용 문의를 요청했습니다.`)로 저장
+
+---
+
 ## 4) 구직자 리뷰 상세 조회
 
 - `GET /recruitment/branches/{branch_id}/job-seekers/{employee_id}/reviews?page=1&page_size=20`
@@ -187,7 +218,7 @@
 ### Query Params
 
 - `keyword` (optional): 제목/업체명 검색
-- `region` (optional): 지역 필터. 서버는 `region_summary`, `address`, `company_name`, `title`를 함께 보고 매칭
+- `region` (optional): 지역 필터. 서버는 `region_summary`, `address`에서 상위 지역을 추출해 매칭
 - `include_draft` (optional, default=false): `true`면 draft 포함
 - `page`, `page_size`
 

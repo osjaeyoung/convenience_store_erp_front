@@ -35,6 +35,7 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
   final List<PlatformFile> _pickedFiles = <PlatformFile>[];
   bool _loadingCategories = true;
   bool _saving = false;
+  bool _ocrLoading = false;
 
   @override
   void initState() {
@@ -94,6 +95,33 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
                       ),
                     ),
                     SizedBox(height: 28.h),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: (_ocrLoading || _loadingCategories) ? null : _onReceiptOcr,
+                        icon: _ocrLoading
+                            ? SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.primary,
+                                ),
+                              )
+                            : Icon(
+                                Icons.document_scanner_outlined,
+                                size: 20.sp,
+                                color: AppColors.primary,
+                              ),
+                        label: Text(
+                          '영수증 스캔으로 입력',
+                          style: AppTypography.bodySmallM.copyWith(
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 8.h),
                     _label('구체 일자'),
                     SizedBox(height: 8.h),
                     _selectorTile(
@@ -317,6 +345,62 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
     );
     if (selected != null && mounted) {
       setState(() => _selectedCategory = selected);
+    }
+  }
+
+  Future<void> _onReceiptOcr() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowMultiple: false,
+    );
+    if (result == null || result.files.isEmpty || !mounted) return;
+    final file = result.files.single;
+
+    setState(() => _ocrLoading = true);
+    try {
+      final ocr = await context.read<StoreExpenseRepository>().postReceiptOcr(
+            file: file,
+          );
+      if (!mounted) return;
+      final dateStr = ocr.expenseDate;
+      if (dateStr != null && dateStr.isNotEmpty) {
+        final parsed = DateTime.tryParse(dateStr);
+        if (parsed != null) {
+          setState(() => _expenseDate = parsed);
+        }
+      }
+      if (ocr.amount != null && ocr.amount! > 0) {
+        _amountCtrl.text = '${ocr.amount}';
+      }
+      StoreExpenseCategory? match;
+      final code = ocr.categoryCode?.trim();
+      if (code != null && code.isNotEmpty) {
+        for (final c in _categories) {
+          if (c.categoryCode == code) {
+            match = c;
+            break;
+          }
+        }
+      }
+      setState(() {
+        if (match != null) _selectedCategory = match;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ocr.memo != null && ocr.memo!.trim().isNotEmpty
+                ? '추출 완료: ${ocr.memo!.trim()}'
+                : '영수증에서 금액·일자를 반영했습니다. 필요 시 수정해 주세요.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('영수증 인식에 실패했습니다: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _ocrLoading = false);
     }
   }
 

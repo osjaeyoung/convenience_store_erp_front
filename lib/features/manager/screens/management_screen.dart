@@ -586,14 +586,7 @@ class _ManagementScreenState extends State<ManagementScreen>
                     ),
                   ),
                   padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 8.w),
-                  child: Row(
-                    children: const [
-                      Expanded(child: Text('시간', textAlign: TextAlign.center)),
-                      Expanded(child: Text('근무자', textAlign: TextAlign.start)),
-                      Expanded(child: Text('메모', textAlign: TextAlign.center)),
-                      Expanded(child: Text('상태', textAlign: TextAlign.center)),
-                    ],
-                  ),
+                  child: const _MemoInfoHeaderRow(),
                 ),
                 Container(
                   padding: EdgeInsets.symmetric(
@@ -603,31 +596,10 @@ class _ManagementScreenState extends State<ManagementScreen>
                   decoration: BoxDecoration(
                     border: Border(bottom: BorderSide(color: AppColors.grey25)),
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(row.time, textAlign: TextAlign.center),
-                      ),
-                      Expanded(
-                        child: Text(row.workerName, textAlign: TextAlign.start),
-                      ),
-                      const Expanded(
-                        child: Center(
-                          child: Icon(
-                            Icons.edit_outlined,
-                            color: AppColors.grey150,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Center(
-                          child: WorkStatusBadge(
-                            status: _toDisplayStatus(status),
-                            compact: true,
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: _MemoInfoDataRow(
+                    time: row.time,
+                    workerName: row.workerName,
+                    statusLabel: _toDisplayStatus(status),
                   ),
                 ),
                 SizedBox(height: 14.h),
@@ -748,14 +720,7 @@ class _ManagementScreenState extends State<ManagementScreen>
                     ),
                   ),
                   padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 8.w),
-                  child: Row(
-                    children: const [
-                      Expanded(child: Text('시간', textAlign: TextAlign.center)),
-                      Expanded(child: Text('근무자', textAlign: TextAlign.start)),
-                      Expanded(child: Text('메모', textAlign: TextAlign.center)),
-                      Expanded(child: Text('상태', textAlign: TextAlign.center)),
-                    ],
-                  ),
+                  child: const _MemoInfoHeaderRow(),
                 ),
                 Container(
                   padding: EdgeInsets.symmetric(
@@ -765,31 +730,10 @@ class _ManagementScreenState extends State<ManagementScreen>
                   decoration: BoxDecoration(
                     border: Border(bottom: BorderSide(color: AppColors.grey25)),
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(row.time, textAlign: TextAlign.center),
-                      ),
-                      Expanded(
-                        child: Text(row.workerName, textAlign: TextAlign.start),
-                      ),
-                      const Expanded(
-                        child: Center(
-                          child: Icon(
-                            Icons.edit_outlined,
-                            color: AppColors.grey150,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Center(
-                          child: WorkStatusBadge(
-                            status: _toDisplayStatus(row.status),
-                            compact: true,
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: _MemoInfoDataRow(
+                    time: row.time,
+                    workerName: row.workerName,
+                    statusLabel: _toDisplayStatus(row.status),
                   ),
                 ),
                 SizedBox(height: 14.h),
@@ -1340,5 +1284,111 @@ class _ManagementScreenState extends State<ManagementScreen>
     final month = date.month.toString().padLeft(2, '0');
     final day = date.day.toString().padLeft(2, '0');
     return '${date.year}.$month.$day(${weekdays[date.weekday - 1]})';
+  }
+}
+
+class _MemoInfoHeaderRow extends StatelessWidget {
+  const _MemoInfoHeaderRow();
+
+  static const int _timeFlex = 22;
+  static const int _workerFlex = 30;
+  static const int _memoFlex = 16;
+  static const int _statusFlex = 32;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = AppTypography.bodySmallB.copyWith(
+      color: AppColors.textSecondary,
+      fontSize: 12.sp,
+      height: 16 / 12,
+    );
+    return Row(
+      children: [
+        Expanded(
+          flex: _timeFlex,
+          child: Text('시간', textAlign: TextAlign.center, style: style),
+        ),
+        Expanded(
+          flex: _workerFlex,
+          child: Text('근무자', textAlign: TextAlign.start, style: style),
+        ),
+        Expanded(
+          flex: _memoFlex,
+          child: Text('메모', textAlign: TextAlign.center, style: style),
+        ),
+        Expanded(
+          flex: _statusFlex,
+          child: Text('상태', textAlign: TextAlign.center, style: style),
+        ),
+      ],
+    );
+  }
+}
+
+class _MemoInfoDataRow extends StatelessWidget {
+  const _MemoInfoDataRow({
+    required this.time,
+    required this.workerName,
+    required this.statusLabel,
+  });
+
+  final String time;
+  final String workerName;
+  final String statusLabel;
+
+  static const int _timeFlex = 22;
+  static const int _workerFlex = 30;
+  static const int _memoFlex = 16;
+  static const int _statusFlex = 32;
+
+  @override
+  Widget build(BuildContext context) {
+    final valueStyle = AppTypography.bodyMediumR.copyWith(
+      color: AppColors.textPrimary,
+      fontSize: 14.sp,
+      height: 19 / 14,
+    );
+    return Row(
+      children: [
+        Expanded(
+          flex: _timeFlex,
+          child: Text(
+            time,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: valueStyle,
+          ),
+        ),
+        Expanded(
+          flex: _workerFlex,
+          child: Text(
+            workerName,
+            textAlign: TextAlign.start,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: valueStyle,
+          ),
+        ),
+        const Expanded(
+          flex: _memoFlex,
+          child: Center(
+            child: Icon(
+              Icons.edit_outlined,
+              color: AppColors.grey150,
+            ),
+          ),
+        ),
+        Expanded(
+          flex: _statusFlex,
+          child: Center(
+            child: WorkStatusBadge(
+              status: statusLabel,
+              compact: true,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

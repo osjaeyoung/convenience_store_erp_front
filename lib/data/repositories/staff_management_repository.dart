@@ -612,4 +612,49 @@ class StaffManagementRepository {
     );
     return res.data!;
   }
+
+  /// 근무자 번호로 단건 조회 — 스펙 ##8
+  Future<Map<String, dynamic>> getEmployeeByNumber({
+    required int branchId,
+    required String employeeNumber,
+  }) async {
+    final encoded = Uri.encodeComponent(employeeNumber);
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/by-number/$encoded',
+    );
+    return res.data!;
+  }
+
+  /// 주간 출결 확정 저장 — 스펙 ##29
+  Future<Map<String, dynamic>> confirmWeeklyAttendance({
+    required int branchId,
+    required String weekStartDate,
+    List<int>? employeeIds,
+  }) async {
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/attendance/weekly/confirm',
+      data: {
+        'week_start_date': weekStartDate,
+        if (employeeIds != null && employeeIds.isNotEmpty)
+          'employee_ids': employeeIds,
+      },
+    );
+    return res.data!;
+  }
+
+  /// 주간 출결 확정 조회 — 스펙 ##30
+  Future<Map<String, dynamic>> getWeeklyAttendance({
+    required int branchId,
+    required String weekStartDate,
+    int? employeeId,
+  }) async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/attendance/weekly',
+      queryParameters: {
+        'week_start_date': weekStartDate,
+        if (employeeId != null) 'employee_id': employeeId,
+      },
+    );
+    return res.data!;
+  }
 }

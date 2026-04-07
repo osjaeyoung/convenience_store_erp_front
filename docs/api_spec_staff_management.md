@@ -859,6 +859,8 @@
   - `POST /staff-management/branches/{branch_id}/employees/{employee_id}/records/etc`
 - 단건:
   - `GET /staff-management/branches/{branch_id}/employees/{employee_id}/records/{record_type}/{record_id}`
+- 수정:
+  - `PATCH /staff-management/branches/{branch_id}/employees/{employee_id}/records/{record_id}`
 - 삭제:
   - `DELETE /staff-management/branches/{branch_id}/employees/{employee_id}/records/{record_id}`
 
@@ -973,6 +975,22 @@ curl -X POST "${BASE}/api/v1/staff-management/branches/${BRANCH_ID}/employees/${
 ```
 
 ### 단건 Response Body (200)
+등록 Response Body와 동일
+
+### 수정 Request Body (`PATCH .../records/{record_id}`)
+```json
+{
+  "title": "기타 자료(수정)",
+  "note": "메모 수정",
+  "file_url": "https://files.example.com/etc-2026-01-v2.pdf",
+  "issued_date": "2026-01-06"
+}
+```
+- 보낸 필드만 수정됩니다.
+- `title`은 공백 문자열 불가.
+- `file_url`을 수정하면 해당 레코드는 URL 기준으로 갱신됩니다.
+
+### 수정 Response Body (200)
 등록 Response Body와 동일
 
 ### 삭제 Response Body (200)
@@ -1099,7 +1117,9 @@ curl -X POST "${BASE}/api/v1/staff-management/branches/${BRANCH_ID}/employees/${
 
 **주의:** `employer_name`은 상단 "사업주" 칩이고, `employer_business_name`은 하단 "사업체명" 칩입니다. `employer_name`이 비어 있으면 `employer_business_name`으로 자동 채움되므로, 사업체명만 보내도 됩니다.
 
-**앱 연결 직원(`linked_user_id`가 있는 직원):** `standard_v1`·`minor_standard_v1`에서 `status=completed`일 때는 위 표준 필수 외에 **근로자** `worker_address`, `worker_phone`, `worker_signature_text`도 모두 채워져야 합니다. 점장만 입력한 단계라면 `status=draft`로 저장하거나, 계약 채팅(`contract-chat`) API로 전송해 근로자가 마무리하세요. 앱 미연동 직원(수기 계약)은 기존처럼 근로자 필드 없이 완료 가능합니다.
+**앱 연결 직원(`linked_user_id`가 있는 직원):**
+- **`standard_v1`:** 점장이 `status=completed`로내도 근로자 필드(`worker_address`, `worker_phone`, `worker_signature_text`)가 비어 있으면 **400이 아니라** 계약이 `status=draft`, `chat_status=waiting_worker`로 저장되며, 계약 채팅과 동일하게 **근로자** `GET /contract-chats` 목록에 뜹니다. 이 경우 사업장 쪽은 계약 채팅의 `send_to_worker`와 같은 **사업장 필수 항목**(연락처·주소·서명 등 포함)을 모두 채운 상태여야 합니다. 근로자가 `PATCH /contract-chats/{id}/document`에서 `action=complete`로 마무리하면 최종 완료됩니다. 앱 미연동 직원은 기존처럼 근로자 필드 없이 `completed` 저장 가능합니다.
+- **`minor_standard_v1`:** 계약 채팅 API는 표준만 지원하므로, 근로자 필드 없이 `status=completed`면 **400**(위 근로자 3필드 필수)입니다. 연소 계약은 `draft` 저장 또는 별도 정책을 따릅니다.
 
 **Flutter 수집 시 흔한 누락:** 하단 사업주 영역만 채우고 상단 `employer_name`, `contract_start_date`, `work_place`, `job_description`을 `form_values`에 넣지 않으면 400 에러가 납니다. 제출 직전에 위 16개 키가 모두 포함되는지 확인하세요.
 

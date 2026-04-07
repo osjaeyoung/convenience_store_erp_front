@@ -85,10 +85,58 @@ class _RecruitmentJobSeekerDetailScreenState
     );
   }
 
-  void _showContactSnackBar() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('채용 문의 기능은 곧 연결됩니다.')),
+  Future<void> _onContactTap() async {
+    final messageCtrl = TextEditingController();
+    final send = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(
+            '채용 문의',
+            style: AppTypography.heading3.copyWith(fontSize: 18.sp),
+          ),
+          content: TextField(
+            controller: messageCtrl,
+            minLines: 3,
+            maxLines: 6,
+            decoration: const InputDecoration(
+              hintText: '문의 내용을 입력해 주세요. (비워두면 기본 문구로 전송됩니다)',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('취소'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('보내기'),
+            ),
+          ],
+        );
+      },
     );
+    final trimmed = messageCtrl.text.trim();
+    messageCtrl.dispose();
+    if (send != true || !mounted) return;
+
+    try {
+      await context.read<ManagerHomeRepository>().postJobSeekerContact(
+            branchId: widget.branchId,
+            employeeId: widget.employeeId,
+            message: trimmed.isEmpty ? null : trimmed,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('채용 문의가 전송되었습니다.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('전송에 실패했습니다: $e')),
+      );
+    }
   }
 
   @override
@@ -155,7 +203,7 @@ class _RecruitmentJobSeekerDetailScreenState
                             child: SizedBox(
                               height: 56,
                               child: FilledButton(
-                                onPressed: _showContactSnackBar,
+                                onPressed: _onContactTap,
                                 style: FilledButton.styleFrom(
                                   backgroundColor: AppColors.primary,
                                   foregroundColor: AppColors.grey0,

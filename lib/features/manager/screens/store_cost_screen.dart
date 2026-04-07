@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -153,10 +154,122 @@ class _StoreCostScreenState extends State<StoreCostScreen>
     }
   }
 
-  void _showEditMonthUnavailable() {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('월 수정 기능은 곧 지원됩니다.')));
+  Future<void> _editMonth(int branchId, StoreExpenseMonthSummary month) async {
+    var year = month.year;
+    var monthNum = month.month;
+    final changed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('월 변경'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ListTile(
+                    title: Text('$year년'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () async {
+                      final now = DateTime.now().year;
+                      final years = List<int>.generate(7, (i) => now - 3 + i);
+                      final y = await showModalBottomSheet<int>(
+                        context: context,
+                        builder: (sheetCtx) => SafeArea(
+                          child: ListView(
+                            shrinkWrap: true,
+                            children: [
+                              for (final yy in years)
+                                ListTile(
+                                  title: Text('$yy년'),
+                                  onTap: () => Navigator.pop(sheetCtx, yy),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                      if (y != null) setDialogState(() => year = y);
+                    },
+                  ),
+                  ListTile(
+                    title: Text('$monthNum월'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () async {
+                      final m = await showModalBottomSheet<int>(
+                        context: context,
+                        builder: (sheetCtx) => SafeArea(
+                          child: ListView(
+                            shrinkWrap: true,
+                            children: [
+                              for (var mm = 1; mm <= 12; mm++)
+                                ListTile(
+                                  title: Text('$mm월'),
+                                  onTap: () => Navigator.pop(sheetCtx, mm),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                      if (m != null) setDialogState(() => monthNum = m);
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('취소'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text('저장'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    if (changed != true || !mounted) return;
+    if (year == month.year && monthNum == month.month) return;
+
+    try {
+      final repo = context.read<StoreExpenseRepository>();
+      await repo.patchMonth(
+        branchId: branchId,
+        expenseMonthId: month.expenseMonthId,
+        year: year,
+        month: monthNum,
+      );
+      if (!mounted) return;
+      if (_monthsYear != year) {
+        setState(() => _monthsYear = year);
+      }
+      await _loadMonths(branchId);
+      if (!mounted) return;
+      _loadDashboard(branchId);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('월 정보가 변경되었습니다.')),
+      );
+    } on DioException catch (e) {
+      if (!mounted) return;
+      final code = e.response?.statusCode;
+      if (code == 409) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('해당 연·월에 이미 다른 월 묶음이 있습니다.')),
+        );
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('월 변경에 실패했습니다: ${e.message ?? e}')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('월 변경에 실패했습니다: $e')),
+      );
+    }
   }
 
   Future<void> _deleteMonth(int branchId, int expenseMonthId) async {
@@ -260,7 +373,7 @@ class _StoreCostScreenState extends State<StoreCostScreen>
                           onRefresh: () => _loadMonths(branchId),
                           onAddMonth: () => _openAddMonth(branchId),
                           onAddItem: (month) => _openAddItem(branchId, month),
-                          onEditMonth: (_) => _showEditMonthUnavailable(),
+                          onEditMonth: (m) => _editMonth(branchId, m),
                           onDeleteMonth: (monthId) =>
                               _deleteMonth(branchId, monthId),
                         ),
