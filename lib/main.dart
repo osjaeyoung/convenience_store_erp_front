@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -9,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'firebase_options.dart';
+import 'core/constants/app_assets.dart';
 import 'core/screen/app_design.dart';
 import 'core/router/app_router.dart';
 import 'core/storage/token_storage.dart';
@@ -28,6 +30,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await dotenv.load(fileName: '.env');
+  final splashImageBytes =
+      (await rootBundle.load(AppAssets.splashScreen)).buffer.asUint8List();
 
   final prefs = await SharedPreferences.getInstance();
   final tokenStorage = TokenStorage(prefs);
@@ -51,6 +55,7 @@ void main() async {
       storeExpenseRepository: storeExpenseRepository,
       staffManagementRepository: staffManagementRepository,
       workerRecruitmentRepository: workerRecruitmentRepository,
+      splashImageBytes: splashImageBytes,
     ),
   );
 }
@@ -65,6 +70,7 @@ class ConvenienceStoreApp extends StatefulWidget {
     required this.storeExpenseRepository,
     required this.staffManagementRepository,
     required this.workerRecruitmentRepository,
+    required this.splashImageBytes,
   });
 
   final AuthRepository authRepository;
@@ -74,6 +80,7 @@ class ConvenienceStoreApp extends StatefulWidget {
   final StoreExpenseRepository storeExpenseRepository;
   final StaffManagementRepository staffManagementRepository;
   final WorkerRecruitmentRepository workerRecruitmentRepository;
+  final Uint8List splashImageBytes;
 
   @override
   State<ConvenienceStoreApp> createState() => _ConvenienceStoreAppState();
@@ -142,7 +149,7 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
             ],
             supportedLocales: const [Locale('ko', 'KR'), Locale('en', 'US')],
             locale: const Locale('ko', 'KR'),
-            home: const AppSplashScreen(),
+            home: AppSplashScreen(splashImageBytes: widget.splashImageBytes),
           );
         }
 
