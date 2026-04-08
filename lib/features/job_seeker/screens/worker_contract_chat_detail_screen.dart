@@ -113,12 +113,7 @@ class _WorkerContractChatDetailScreenState
     }
   }
 
-  static TextStyle get _appBarTitleStyle => AppTypography.bodyLargeM.copyWith(
-        fontSize: 18.sp,
-        height: 24 / 18,
-        fontWeight: FontWeight.w500,
-        color: AppColors.textPrimary,
-      );
+  static TextStyle get _appBarTitleStyle => AppTypography.appBarTitle;
 
   static TextStyle get _timeStyle => AppTypography.bodyXSmallM.copyWith(
         color: const Color(0xFFC7C9D7),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_assets.dart';
@@ -67,9 +68,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final supportsAppleLogin =
+        !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.macOS);
+
     return BlocConsumer<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state.isAuthenticated && state.user != null) {
+          final repo = context.read<AuthRepository>();
+          if (repo.needsSignupCompletion) {
+            context.go(AppRouter.signup);
+            return;
+          }
           final role = state.user!.role;
           context.go(
             role.isJobSeeker ? AppRouter.jobSeekerMain : AppRouter.managerMain,
@@ -231,11 +242,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           assetPath: AppAssets.loginSocialGoogle,
                           onTap: _onGoogleLogin,
                         ),
-                        SizedBox(width: 16.w),
-                        _SocialButton(
-                          assetPath: AppAssets.loginSocialApple,
-                          onTap: _onAppleLogin,
-                        ),
+                        if (supportsAppleLogin) ...[
+                          SizedBox(width: 16.w),
+                          _SocialButton(
+                            assetPath: AppAssets.loginSocialApple,
+                            onTap: _onAppleLogin,
+                          ),
+                        ],
                       ],
                     ),
                     SizedBox(height: 28.h),

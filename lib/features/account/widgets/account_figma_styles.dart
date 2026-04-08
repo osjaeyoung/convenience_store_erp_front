@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../theme/app_typography.dart';
 import '../../../theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -12,11 +13,7 @@ class AccountFigmaStyles {
   static const Color mutedValueColor = Color(0xFFC7C9D7);
   static const Color footerMutedColor = Color(0xFFA3A4AF);
 
-  static TextStyle get appBarTitle => TextStyle(
-    fontFamily: 'Pretendard',
-    fontSize: 18.sp,
-    fontWeight: FontWeight.w600,
-    height: 26 / 18,
+  static TextStyle get appBarTitle => AppTypography.appBarTitle.copyWith(
     letterSpacing: -0.3,
     color: titleColor,
   );

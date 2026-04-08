@@ -1,7 +1,10 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -27,6 +30,9 @@ class SignupScreen extends StatefulWidget {
 }
 
 class _SignupScreenState extends State<SignupScreen> {
+  static const Set<String> _phoneVerificationBypassNumbers = {
+    '01012345678', '01087654321',
+  };
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _pwController = TextEditingController();
@@ -36,98 +42,39 @@ class _SignupScreenState extends State<SignupScreen> {
 
   _SignupStep _currentStep = _SignupStep.terms;
   UserRole _selectedRole = UserRole.manager;
-  bool _isPhoneVerified = false;
-  bool _isSendingPhoneCode = false;
+  bool _isCheckingPhoneNumber = false;
+  bool _isSendingPhoneVerification = false;
   bool _isCheckingEmailDuplicate = false;
   bool _isEmailChecked = false;
   bool _isEmailAvailable = false;
   String _lastCheckedEmail = '';
+  String? _verifiedPhoneDigits;
   bool _agreeTerms = false;
   bool _agreeAge = false;
   bool _agreePrivacy = false;
   bool _agreeThirdParty = false;
   bool _agreeMarketing = false;
   bool _submittedBasicInfo = false;
-  bool _isResumedFromStep1 = false;
+  bool _isAccountCompletionFlow = false;
   static const String _checkActiveIcon =
       'assets/icons/png/common/check_active.png';
   static const String _checkInactiveIcon =
       'assets/icons/png/common/check_inactive.png';
-  late final AuthRepository _authRepository;
 
   @override
   void initState() {
     super.initState();
-    _authRepository = context.read<AuthRepository>();
-    _restoreSignupDraft(_authRepository.signupDraft);
-    _authRepository.addListener(_onAuthRepositoryChanged);
-    if (_authRepository.shouldStartAtRoleSelection) {
-      _currentStep = _SignupStep.role;
-      _isResumedFromStep1 = true;
+    final repo = context.read<AuthRepository>();
+    _isAccountCompletionFlow = repo.isLoggedIn && repo.needsSignupCompletion;
+    if (_isAccountCompletionFlow) {
+      _prefillCompletionAccount(repo);
+      _currentStep = _SignupStep.terms;
     }
     _emailController.addListener(_onEmailChanged);
   }
 
-  void _onAuthRepositoryChanged() {
-    if (!mounted) return;
-    final draft = _authRepository.signupDraft;
-    if (draft == null) return;
-    final formattedPhone = _formatPhoneForInput(draft.phoneNumber);
-    var needsRebuild = false;
-
-    if (draft.phoneVerified &&
-        formattedPhone.isNotEmpty &&
-        _phoneController.text.trim() != formattedPhone) {
-      // 인증 완료로 readOnly가 되는 순간 iOS 컨텍스트 메뉴 충돌을 피하기 위해 먼저 포커스를 해제합니다.
-      FocusManager.instance.primaryFocus?.unfocus();
-      _phoneController.value = TextEditingValue(
-        text: formattedPhone,
-        selection: TextSelection.collapsed(offset: formattedPhone.length),
-      );
-    }
-
-    if (_isPhoneVerified != draft.phoneVerified) {
-      if (draft.phoneVerified) {
-        FocusManager.instance.primaryFocus?.unfocus();
-      }
-      _isPhoneVerified = draft.phoneVerified;
-      needsRebuild = true;
-    }
-
-    if (needsRebuild) {
-      setState(() {});
-    }
-  }
-
-  void _restoreSignupDraft(SignupDraft? draft) {
-    if (draft == null) return;
-    _emailController.text = draft.email;
-    _pwController.text = draft.password;
-    _pwConfirmController.text = draft.password;
-    _nameController.text = draft.fullName;
-    _phoneController.text = _formatPhoneForInput(draft.phoneNumber);
-    _agreeTerms = draft.agreeTerms;
-    _agreeAge = draft.agreeAge;
-    _agreePrivacy = draft.agreePrivacy;
-    _agreeThirdParty = draft.agreeThirdParty;
-    _agreeMarketing = draft.agreeMarketing;
-    _isPhoneVerified = draft.phoneVerified;
-    switch (draft.currentStep) {
-      case 'role':
-        _currentStep = _SignupStep.role;
-        break;
-      case 'basicInfo':
-      case 'phone_verification':
-        _currentStep = _SignupStep.basicInfo;
-        break;
-      default:
-        _currentStep = _SignupStep.terms;
-    }
-  }
-
   @override
   void dispose() {
-    _authRepository.removeListener(_onAuthRepositoryChanged);
     _emailController.removeListener(_onEmailChanged);
     _emailController.dispose();
     _pwController.dispose();
@@ -146,33 +93,75 @@ class _SignupScreenState extends State<SignupScreen> {
         return;
       }
       setState(() => _currentStep = _SignupStep.basicInfo);
-      unawaited(_persistSignupDraft(currentStep: 'basicInfo'));
       return;
     }
 
     if (_currentStep == _SignupStep.basicInfo) {
-      setState(() => _submittedBasicInfo = true);
-      if (!_formKey.currentState!.validate()) return;
-      if (!_isEmailChecked || !_isEmailAvailable) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('이메일 중복 검사를 완료해주세요.')));
-        return;
+      unawaited(_completeBasicInfoAndGoToRole());
+    }
+  }
+
+  Future<void> _completeBasicInfoAndGoToRole() async {
+    setState(() => _submittedBasicInfo = true);
+    if (!_formKey.currentState!.validate()) return;
+    if (!_isAccountCompletionFlow && (!_isEmailChecked || !_isEmailAvailable)) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('이메일 중복 검사를 완료해주세요.')));
+      return;
+    }
+    if (!_isPhoneVerified) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('휴대폰 인증을 완료해주세요.')));
+      return;
+    }
+
+    final repo = context.read<AuthRepository>();
+    final phoneNumber = _phoneController.text.trim();
+    final currentPhoneDigits = _digitsOnly(repo.currentPhoneNumber);
+    final nextPhoneDigits = _digitsOnly(phoneNumber);
+    final bypassVerification = _isPhoneVerificationBypassed;
+    setState(() => _isCheckingPhoneNumber = true);
+    try {
+      if (bypassVerification && currentPhoneDigits != nextPhoneDigits) {
+        final result = await repo.checkPhoneNumberExists(phoneNumber: phoneNumber);
+        if (!mounted) return;
+        if (result.exists) {
+          final message = result.hasPasswordLogin
+              ? '이미 가입된 전화번호입니다.'
+              : '이미 가입된 전화번호입니다. 소셜 계정으로 가입된 번호인지 확인해주세요.';
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(message)));
+          return;
+        }
       }
-      if (!_isPhoneVerified) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('휴대폰 문자 인증을 완료해주세요.')));
-        return;
+
+      if (_isAccountCompletionFlow) {
+        await repo.signupSocialProfile(
+          fullName: _nameController.text.trim(),
+          phoneNumber: phoneNumber,
+          agreeTermsRequired: _agreeTerms,
+          agreeAgeRequired: _agreeAge,
+          agreePrivacyRequired: _agreePrivacy && _agreeThirdParty,
+          agreeMarketingOptional: _agreeMarketing,
+        );
+        if (!mounted) return;
       }
       setState(() => _currentStep = _SignupStep.role);
-      unawaited(_persistSignupDraft(currentStep: 'role', phoneVerified: true));
-      return;
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_friendlyErrorMessage(error))));
+    } finally {
+      if (mounted) setState(() => _isCheckingPhoneNumber = false);
     }
   }
 
   void _onSignupSubmit() {
-    if (_isResumedFromStep1) {
+    if (_isAccountCompletionFlow) {
       _proceedToSignupStep2();
       return;
     }
@@ -206,25 +195,275 @@ class _SignupScreenState extends State<SignupScreen> {
     context.push(AppRouter.signupComplete, extra: _selectedRole);
   }
 
-  Future<void> _persistSignupDraft({
-    String? currentStep,
-    bool? phoneVerified,
+  void _prefillCompletionAccount(AuthRepository repo) {
+    final email = repo.currentEmail;
+    if (email != null) {
+      _emailController.text = email;
+      _isEmailChecked = true;
+      _isEmailAvailable = true;
+      _lastCheckedEmail = email;
+    }
+    final fullName = repo.currentFullName;
+    if (fullName != null) {
+      _nameController.text = fullName;
+    }
+    final phoneNumber = repo.currentPhoneNumber;
+    if (phoneNumber != null) {
+      _phoneController.text = phoneNumber;
+    }
+  }
+
+  Future<void> _exitIncompleteSignup() async {
+    await context.read<AuthRepository>().logout();
+    if (!mounted) return;
+    context.go(AppRouter.login);
+  }
+
+  bool get _isPhoneVerified {
+    final current = _digitsOnly(_phoneController.text);
+    if (current.isEmpty) return false;
+    return current == _verifiedPhoneDigits || _phoneVerificationBypassNumbers.contains(current);
+  }
+
+  bool get _isPhoneVerificationBypassed =>
+      _phoneVerificationBypassNumbers.contains(_digitsOnly(_phoneController.text));
+
+  String get _phoneActionLabel {
+    if (_isSendingPhoneVerification) return '';
+    return _isPhoneVerified ? '인증완료' : '인증';
+  }
+
+  Future<void> _requestPhoneVerification() async {
+    if (kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('휴대폰 인증은 Android/iOS 앱에서 진행해 주세요.')),
+      );
+      return;
+    }
+
+    final phoneNumber = _phoneController.text.trim();
+    if (phoneNumber.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('휴대폰 번호를 입력해주세요.')));
+      return;
+    }
+    if (!_isKoreanMobile(phoneNumber)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('올바른 휴대폰 번호를 입력해주세요. (010 등)')),
+      );
+      return;
+    }
+    if (_isPhoneVerified) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(
+        SnackBar(
+          content: Text(
+            _isPhoneVerificationBypassed
+                ? '테스트 번호는 인증 없이 진행됩니다.'
+                : '휴대폰 인증이 완료되었습니다.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final repo = context.read<AuthRepository>();
+    final currentPhoneDigits = _digitsOnly(repo.currentPhoneNumber);
+    final nextPhoneDigits = _digitsOnly(phoneNumber);
+
+    setState(() => _isSendingPhoneVerification = true);
+    try {
+      if (currentPhoneDigits != nextPhoneDigits) {
+        final result = await repo.checkPhoneNumberExists(phoneNumber: phoneNumber);
+        if (!mounted) return;
+        if (result.exists) {
+          final message = result.hasPasswordLogin
+              ? '이미 가입된 전화번호입니다.'
+              : '이미 가입된 전화번호입니다. 소셜 계정으로 가입된 번호인지 확인해주세요.';
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(message)));
+          return;
+        }
+      }
+
+      await repo.verifyPhoneNumber(
+        phoneNumber: _toE164(phoneNumber),
+        codeSent: (verificationId, _) {
+          if (!mounted) return;
+          setState(() => _isSendingPhoneVerification = false);
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('인증번호가 발송되었습니다.')));
+          unawaited(
+            _showPhoneVerificationDialog(
+              phoneNumber: phoneNumber,
+              verificationId: verificationId,
+            ),
+          );
+        },
+        verificationCompleted: (credential) {
+          unawaited(() async {
+            try {
+              await FirebaseAuth.instance.signInWithCredential(credential);
+              await FirebaseAuth.instance.signOut();
+              if (!mounted) return;
+              setState(() {
+                _isSendingPhoneVerification = false;
+                _verifiedPhoneDigits = nextPhoneDigits;
+              });
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('휴대폰 인증이 완료되었습니다.')));
+            } catch (_) {
+              if (!mounted) return;
+              setState(() => _isSendingPhoneVerification = false);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('휴대폰 인증 처리 중 오류가 발생했습니다.')),
+              );
+            }
+          }());
+        },
+        verificationFailed: (error) {
+          if (!mounted) return;
+          setState(() => _isSendingPhoneVerification = false);
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(
+            SnackBar(content: Text(_friendlyFirebaseErrorMessage(error))),
+          );
+        },
+        codeAutoRetrievalTimeout: (_) {
+          if (!mounted) return;
+          setState(() => _isSendingPhoneVerification = false);
+        },
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _isSendingPhoneVerification = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_friendlyErrorMessage(error))));
+    }
+  }
+
+  Future<void> _showPhoneVerificationDialog({
+    required String phoneNumber,
+    required String verificationId,
   }) async {
-    await context.read<AuthRepository>().saveSignupDraft(
-      SignupDraft(
-        email: _emailController.text.trim(),
-        password: _pwController.text,
-        fullName: _nameController.text.trim(),
-        phoneNumber: _phoneController.text.trim(),
-        agreeTerms: _agreeTerms,
-        agreeAge: _agreeAge,
-        agreePrivacy: _agreePrivacy,
-        agreeThirdParty: _agreeThirdParty,
-        agreeMarketing: _agreeMarketing,
-        currentStep: currentStep ?? _currentStep.name,
-        phoneVerified: phoneVerified ?? _isPhoneVerified,
-      ),
+    final codeController = TextEditingController();
+    String? errorText;
+    var submitting = false;
+
+    final verified = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            Future<void> submitCode() async {
+              if (submitting) return;
+              final code = codeController.text.trim();
+              if (code.length != 6) {
+                setDialogState(() {
+                  errorText = '인증번호 6자리를 입력해주세요.';
+                });
+                return;
+              }
+
+              setDialogState(() {
+                submitting = true;
+                errorText = null;
+              });
+
+              try {
+                final credential = PhoneAuthProvider.credential(
+                  verificationId: verificationId,
+                  smsCode: code,
+                );
+                await FirebaseAuth.instance.signInWithCredential(credential);
+                await FirebaseAuth.instance.signOut();
+                if (!dialogContext.mounted) return;
+                Navigator.of(dialogContext).pop(true);
+              } catch (_) {
+                setDialogState(() {
+                  submitting = false;
+                  errorText = '인증번호가 올바르지 않습니다.';
+                });
+              }
+            }
+
+            return AlertDialog(
+              title: Text(
+                '휴대폰 인증',
+                style: AppTypography.bodyLargeB.copyWith(
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$phoneNumber 번호로 전송된 인증번호를 입력해주세요.',
+                    style: AppTypography.bodyMediumR.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+                  TextField(
+                    controller: codeController,
+                    enabled: !submitting,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(6),
+                    ],
+                    decoration: InputDecoration(
+                      hintText: '인증번호 6자리',
+                      errorText: errorText,
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: submitting
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('취소'),
+                ),
+                FilledButton(
+                  onPressed: submitting ? null : submitCode,
+                  child: submitting
+                      ? SizedBox(
+                          width: 18.r,
+                          height: 18.r,
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.grey0,
+                          ),
+                        )
+                      : const Text('확인'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
+
+    codeController.dispose();
+
+    if (verified != true || !mounted) return;
+    setState(() {
+      _verifiedPhoneDigits = _digitsOnly(phoneNumber);
+    });
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('휴대폰 인증이 완료되었습니다.')));
   }
 
   @override
@@ -240,6 +479,8 @@ class _SignupScreenState extends State<SignupScreen> {
           );
         }
         if (state.isAuthenticated && state.user != null) {
+          final repo = context.read<AuthRepository>();
+          if (repo.needsSignupCompletion) return;
           final role = state.user!.role;
           context.go(
             role.isJobSeeker ? AppRouter.jobSeekerMain : AppRouter.managerMain,
@@ -257,17 +498,19 @@ class _SignupScreenState extends State<SignupScreen> {
               icon: const Icon(Icons.arrow_back_ios_new_rounded),
               onPressed: () {
                 if (_currentStep == _SignupStep.terms) {
+                  if (_isAccountCompletionFlow) {
+                    unawaited(_exitIncompleteSignup());
+                    return;
+                  }
                   context.go(AppRouter.login);
                 } else if (_currentStep == _SignupStep.basicInfo) {
-                  setState(() => _currentStep = _SignupStep.terms);
-                  unawaited(_persistSignupDraft(currentStep: 'terms'));
-                } else {
-                  if (_isResumedFromStep1) {
-                    context.pop();
-                  } else {
-                    setState(() => _currentStep = _SignupStep.basicInfo);
-                    unawaited(_persistSignupDraft(currentStep: 'basicInfo'));
+                  if (_isAccountCompletionFlow) {
+                    unawaited(_exitIncompleteSignup());
+                    return;
                   }
+                  setState(() => _currentStep = _SignupStep.terms);
+                } else {
+                  setState(() => _currentStep = _SignupStep.basicInfo);
                 }
               },
             ),
@@ -302,7 +545,8 @@ class _SignupScreenState extends State<SignupScreen> {
                     (MediaQuery.of(context).viewInsets.bottom > 0 ? 8 : 20),
                   ),
                   child: FilledButton(
-                    onPressed: state.status == AuthStatus.loading
+                    onPressed: state.status == AuthStatus.loading ||
+                            _isCheckingPhoneNumber
                         ? null
                         : (_currentStep == _SignupStep.role
                               ? _onSignupSubmit
@@ -314,7 +558,8 @@ class _SignupScreenState extends State<SignupScreen> {
                         borderRadius: BorderRadius.circular(12.r),
                       ),
                     ),
-                    child: state.status == AuthStatus.loading
+                    child: state.status == AuthStatus.loading ||
+                            _isCheckingPhoneNumber
                         ? const SizedBox(
                             height: 20,
                             width: 20,
@@ -484,71 +729,76 @@ class _SignupScreenState extends State<SignupScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildFieldLabel('이메일'),
-            AuthInputField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              autovalidateMode: _submittedBasicInfo
-                  ? AutovalidateMode.always
-                  : AutovalidateMode.disabled,
-              hintText: '이메일을 입력해주세요.',
-              focusedBorderColor: AppColors.primary,
-              suffixIconConstraints: BoxConstraints(
-                minHeight: 0,
-                minWidth: 84.w,
-              ),
-              suffix: Padding(
-                padding: EdgeInsets.only(right: 6.w),
-                child: SizedBox(
-                  width: 72.w,
-                  height: 28.h,
-                  child: Center(
-                    child: GestureDetector(
-                      onTap: _isCheckingEmailDuplicate ? null : _onCheckEmailDuplicate,
-                      child: Container(
-                        width: 72.w,
-                        height: 28.h,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(8.r),
+            if (!_isAccountCompletionFlow) ...[
+              _buildFieldLabel('이메일'),
+              AuthInputField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                autovalidateMode: _submittedBasicInfo
+                    ? AutovalidateMode.always
+                    : AutovalidateMode.disabled,
+                hintText: '이메일을 입력해주세요.',
+                focusedBorderColor: AppColors.primary,
+                suffixIconConstraints: BoxConstraints(
+                  minHeight: 0,
+                  minWidth: 84.w,
+                ),
+                suffix: Padding(
+                  padding: EdgeInsets.only(right: 6.w),
+                  child: SizedBox(
+                    width: 72.w,
+                    height: 28.h,
+                    child: Center(
+                      child: GestureDetector(
+                        onTap: _isCheckingEmailDuplicate
+                            ? null
+                            : _onCheckEmailDuplicate,
+                        child: Container(
+                          width: 72.w,
+                          height: 28.h,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          alignment: Alignment.center,
+                          child: _isCheckingEmailDuplicate
+                              ? const SizedBox(
+                                  width: 12,
+                                  height: 12,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.grey0,
+                                  ),
+                                )
+                              : Text(
+                                  '중복검사',
+                                  style: AppTypography.bodyMediumB.copyWith(
+                                    color: AppColors.grey0,
+                                    fontSize: 11.sp,
+                                    height: 1,
+                                  ),
+                                ),
                         ),
-                        alignment: Alignment.center,
-                        child: _isCheckingEmailDuplicate
-                            ? const SizedBox(
-                                width: 12,
-                                height: 12,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppColors.grey0,
-                                ),
-                              )
-                            : Text(
-                                '중복검사',
-                                style: AppTypography.bodyMediumB.copyWith(
-                                  color: AppColors.grey0,
-                                  fontSize: 11.sp,
-                                  height: 1,
-                                ),
-                              ),
                       ),
                     ),
                   ),
                 ),
+                validator: (v) {
+                  final value = (v ?? '').trim();
+                  if (value.isEmpty) return '*이메일을 입력해주세요.';
+                  final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+                  if (!emailRegex.hasMatch(value)) {
+                    return '*올바른 이메일을 입력해주세요.';
+                  }
+                  if (_submittedBasicInfo &&
+                      (!_isEmailChecked || !_isEmailAvailable)) {
+                    return '*이메일 중복 검사를 완료해주세요.';
+                  }
+                  return null;
+                },
               ),
-              validator: (v) {
-                final value = (v ?? '').trim();
-                if (value.isEmpty) return '*이메일을 입력해주세요.';
-                final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-                if (!emailRegex.hasMatch(value)) {
-                  return '*올바른 이메일을 입력해주세요.';
-                }
-                if (_submittedBasicInfo && (!_isEmailChecked || !_isEmailAvailable)) {
-                  return '*이메일 중복 검사를 완료해주세요.';
-                }
-                return null;
-              },
-            ),
-            if (_isEmailChecked) ...[
+            ],
+            if (!_isAccountCompletionFlow && _isEmailChecked) ...[
               SizedBox(height: 6.h),
               Text(
                 _isEmailAvailable
@@ -571,145 +821,148 @@ class _SignupScreenState extends State<SignupScreen> {
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? '*이름을 입력해주세요.' : null,
             ),
-            SizedBox(height: 20.h),
-            _buildFieldLabel('휴대폰 인증'),
-            _isPhoneVerified
-                ? Container(
-                    height: 52.h,
-                    padding: EdgeInsets.symmetric(horizontal: 16.w),
-                    decoration: BoxDecoration(
-                      color: AppColors.grey0Alt,
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(color: AppColors.grey50),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            _resolvedVerifiedPhoneText(),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTypography.bodyMediumR.copyWith(
-                              color: AppColors.textPrimary,
-                              height: 19 / 14,
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 8.w),
-                        Text(
-                          '인증완료',
-                          style: AppTypography.bodySmallB.copyWith(
-                            color: AppColors.primary,
-                            height: 1,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : AuthInputField(
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    autovalidateMode: _submittedBasicInfo
-                        ? AutovalidateMode.always
-                        : AutovalidateMode.disabled,
-                    hintText: '휴대폰 번호를 입력해주세요.',
-                    focusedBorderColor: AppColors.primary,
-                    suffixIconConstraints: BoxConstraints(
-                      minHeight: 0,
-                      minWidth: 55.w,
-                    ),
-                    suffix: Padding(
-                      padding: EdgeInsets.only(right: 6.w),
-                      child: SizedBox(
-                        width: 43.w,
-                        height: 24.h,
-                        child: Center(
-                          child: GestureDetector(
-                            onTap: _isSendingPhoneCode
-                                ? null
-                                : _onRequestPhoneVerification,
-                            child: Container(
-                              width: 43.w,
-                              height: 24.h,
-                              decoration: BoxDecoration(
-                                color: AppColors.primary,
-                                borderRadius: BorderRadius.circular(8.r),
-                              ),
-                              alignment: Alignment.center,
-                              child: _isSendingPhoneCode
-                                  ? const SizedBox(
-                                      width: 12,
-                                      height: 12,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: AppColors.grey0,
-                                      ),
-                                    )
-                                  : Text(
-                                      '요청',
-                                      style: AppTypography.bodyMediumB.copyWith(
-                                        color: AppColors.grey0,
-                                        fontSize: 12.sp,
-                                        height: 1,
-                                      ),
-                                    ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    validator: (v) {
-                      final t = (v ?? '').trim();
-                      if (t.isEmpty) return '*휴대폰 번호를 입력해주세요.';
-                      if (!_isKoreanMobile(t)) {
-                        return '*올바른 휴대폰 번호를 입력해주세요. (010 등)';
-                      }
-                      return null;
-                    },
+            if (_isAccountCompletionFlow &&
+                _emailController.text.trim().isNotEmpty) ...[
+              SizedBox(height: 20.h),
+              _buildFieldLabel('이메일'),
+              Container(
+                height: 52.h,
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                decoration: BoxDecoration(
+                  color: AppColors.grey0Alt,
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(color: AppColors.grey50),
+                ),
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  _emailController.text.trim(),
+                  style: AppTypography.bodyMediumR.copyWith(
+                    color: AppColors.textPrimary,
+                    height: 19 / 14,
                   ),
+                ),
+              ),
+            ],
             SizedBox(height: 20.h),
-            _buildFieldLabel('비밀번호'),
+            _buildFieldLabel('휴대폰 번호'),
             AuthInputField(
-              controller: _pwController,
-              obscureText: true,
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              onChanged: (_) => setState(() {}),
               autovalidateMode: _submittedBasicInfo
                   ? AutovalidateMode.always
                   : AutovalidateMode.disabled,
-              hintText: '비밀번호를 입력해주세요.',
+              hintText: '휴대폰 번호를 입력해주세요.',
               focusedBorderColor: AppColors.primary,
+              suffixIconConstraints: BoxConstraints(
+                minHeight: 0,
+                minWidth: 72.w,
+              ),
+              suffix: Padding(
+                padding: EdgeInsets.only(right: 6.w),
+                child: SizedBox(
+                  width: 60.w,
+                  height: 28.h,
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: _isSendingPhoneVerification
+                          ? null
+                          : _requestPhoneVerification,
+                      child: Container(
+                        width: 60.w,
+                        height: 28.h,
+                        decoration: BoxDecoration(
+                          color: _isPhoneVerified
+                              ? AppColors.grey100
+                              : AppColors.primary,
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        alignment: Alignment.center,
+                        child: _isSendingPhoneVerification
+                            ? const SizedBox(
+                                width: 12,
+                                height: 12,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.grey0,
+                                ),
+                              )
+                            : Text(
+                                _phoneActionLabel,
+                                style: AppTypography.bodyMediumB.copyWith(
+                                  color: AppColors.grey0,
+                                  fontSize: 11.sp,
+                                  height: 1,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
               validator: (v) {
-                final value = v ?? '';
-                if (value.isEmpty) return '*비밀번호를 입력해주세요.';
-                final hasAlpha = RegExp(r'[A-Za-z]').hasMatch(value);
-                final hasNumber = RegExp(r'[0-9]').hasMatch(value);
-                final hasSpecial = RegExp(
-                  r'[!@#$%^&*(),.?":{}|<>_\-+=/\\\[\]~`]',
-                ).hasMatch(value);
-                if (value.length < 8 ||
-                    !hasAlpha ||
-                    !hasNumber ||
-                    !hasSpecial) {
-                  return '*영어, 숫자, 특수문자 중 2가지 이상을 포함해 8~16자를 입력해주세요.';
+                final t = (v ?? '').trim();
+                if (t.isEmpty) return '*휴대폰 번호를 입력해주세요.';
+                if (!_isKoreanMobile(t)) {
+                  return '*올바른 휴대폰 번호를 입력해주세요. (010 등)';
                 }
                 return null;
               },
             ),
-            SizedBox(height: 20.h),
-            _buildFieldLabel('비밀번호 확인'),
-            AuthInputField(
-              controller: _pwConfirmController,
-              obscureText: true,
-              autovalidateMode: _submittedBasicInfo
-                  ? AutovalidateMode.always
-                  : AutovalidateMode.disabled,
-              hintText: '비밀번호를 한번 더 입력해주세요.',
-              focusedBorderColor: AppColors.primary,
-              validator: (v) {
-                if ((v ?? '').isEmpty) return '*비밀번호가 일치하지 않습니다.';
-                if (v != _pwController.text) return '*비밀번호가 일치하지 않습니다.';
-                return null;
-              },
-            ),
+            if (_isPhoneVerified) ...[
+              SizedBox(height: 6.h),
+              Text(
+                '휴대폰 인증이 완료되었습니다.',
+                style: AppTypography.bodySmallR.copyWith(
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+            if (!_isAccountCompletionFlow) ...[
+              SizedBox(height: 20.h),
+              _buildFieldLabel('비밀번호'),
+              AuthInputField(
+                controller: _pwController,
+                obscureText: true,
+                autovalidateMode: _submittedBasicInfo
+                    ? AutovalidateMode.always
+                    : AutovalidateMode.disabled,
+                hintText: '비밀번호를 입력해주세요.',
+                focusedBorderColor: AppColors.primary,
+                validator: (v) {
+                  final value = v ?? '';
+                  if (value.isEmpty) return '*비밀번호를 입력해주세요.';
+                  final hasAlpha = RegExp(r'[A-Za-z]').hasMatch(value);
+                  final hasNumber = RegExp(r'[0-9]').hasMatch(value);
+                  final hasSpecial = RegExp(
+                    r'[!@#$%^&*(),.?":{}|<>_\-+=/\\\[\]~`]',
+                  ).hasMatch(value);
+                  if (value.length < 8 ||
+                      !hasAlpha ||
+                      !hasNumber ||
+                      !hasSpecial) {
+                    return '*영어, 숫자, 특수문자 중 2가지 이상을 포함해 8~16자를 입력해주세요.';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20.h),
+              _buildFieldLabel('비밀번호 확인'),
+              AuthInputField(
+                controller: _pwConfirmController,
+                obscureText: true,
+                autovalidateMode: _submittedBasicInfo
+                    ? AutovalidateMode.always
+                    : AutovalidateMode.disabled,
+                hintText: '비밀번호를 한번 더 입력해주세요.',
+                focusedBorderColor: AppColors.primary,
+                validator: (v) {
+                  if ((v ?? '').isEmpty) return '*비밀번호가 일치하지 않습니다.';
+                  if (v != _pwController.text) return '*비밀번호가 일치하지 않습니다.';
+                  return null;
+                },
+              ),
+            ],
           ],
         );
       case _SignupStep.role:
@@ -738,48 +991,22 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
+  String _digitsOnly(String? raw) {
+    return (raw ?? '').replaceAll(RegExp(r'[^\d]'), '');
+  }
+
   String _toE164(String phone) {
-    final digits = phone.replaceAll(RegExp(r'[^\d]'), '');
+    final digits = _digitsOnly(phone);
     if (digits.startsWith('82') && digits.length >= 11) {
       return '+$digits';
     }
-    if (digits.startsWith('0')) {
+    if (digits.startsWith('0') && digits.length >= 10) {
       return '+82${digits.substring(1)}';
-    }
-    if (digits.length >= 9 && digits.length <= 11) {
-      return '+82$digits';
     }
     if (digits.isNotEmpty) {
       return '+$digits';
     }
     return '';
-  }
-
-  String _formatPhoneForInput(String phone) {
-    final digits = phone.replaceAll(RegExp(r'\D'), '');
-    if (digits.startsWith('82') && digits.length >= 11) {
-      final local = '0${digits.substring(2)}';
-      if (local.length == 11) {
-        return '${local.substring(0, 3)}-${local.substring(3, 7)}-${local.substring(7)}';
-      }
-      if (local.length == 10) {
-        return '${local.substring(0, 3)}-${local.substring(3, 6)}-${local.substring(6)}';
-      }
-    }
-    if (digits.length == 11) {
-      return '${digits.substring(0, 3)}-${digits.substring(3, 7)}-${digits.substring(7)}';
-    }
-    if (digits.length == 10) {
-      return '${digits.substring(0, 3)}-${digits.substring(3, 6)}-${digits.substring(6)}';
-    }
-    return phone.trim();
-  }
-
-  String _resolvedVerifiedPhoneText() {
-    final fromController = _phoneController.text.trim();
-    if (fromController.isNotEmpty) return fromController;
-    final fromDraft = _authRepository.signupDraft?.phoneNumber ?? '';
-    return _formatPhoneForInput(fromDraft);
   }
 
   /// 한국 휴대전화 (010, 011, 016~019)
@@ -842,79 +1069,96 @@ class _SignupScreenState extends State<SignupScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ).showSnackBar(SnackBar(content: Text(_friendlyErrorMessage(error))));
     } finally {
       if (mounted) setState(() => _isCheckingEmailDuplicate = false);
     }
   }
 
-  Future<void> _onRequestPhoneVerification() async {
-    if (kIsWeb) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('휴대폰 문자 인증은 Android/iOS 앱에서 진행해 주세요.')),
-      );
-      return;
+  String _friendlyErrorMessage(Object error) {
+    if (error is FirebaseAuthException) {
+      return _friendlyFirebaseErrorMessage(error);
     }
-
-    final raw = _phoneController.text.trim();
-    if (!_isKoreanMobile(raw)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('휴대폰 번호를 확인해 주세요. (예: 01012345678)')),
-      );
-      return;
-    }
-
-    final phone = _toE164(raw);
-    if (phone.length < 12) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('올바른 전화번호를 입력해주세요.')));
-      return;
-    }
-
-    final repo = context.read<AuthRepository>();
-    setState(() => _isSendingPhoneCode = true);
-    try {
-      final existsResult = await repo.checkPhoneNumberExists(
-        phoneNumber: _phoneController.text.trim(),
-      );
-      if (!mounted) return;
-      if (existsResult.exists) {
-        final message = existsResult.hasPasswordLogin
-            ? '이미 가입된 전화번호입니다.'
-            : '이미 가입된 전화번호입니다. 소셜 계정으로 가입된 번호인지 확인해주세요.';
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(message)));
-        setState(() => _isSendingPhoneCode = false);
-        return;
+    if (error is DioException) {
+      final statusCode = error.response?.statusCode;
+      final data = error.response?.data;
+      String rawMessage;
+      if (data is Map) {
+        final detail = data['detail'];
+        if (detail is List && detail.isNotEmpty) {
+          final first = detail.first;
+          if (first is Map) {
+            final loc = (first['loc'] as List<dynamic>? ?? const [])
+                .map((e) => e.toString())
+                .join('.');
+            if (loc.contains('email')) return '이메일 정보를 다시 확인해주세요.';
+            if (loc.contains('phone_number')) return '휴대폰 번호를 다시 확인해주세요.';
+            if (loc.contains('password')) return '비밀번호를 다시 확인해주세요.';
+          }
+        }
+        rawMessage =
+            (data['message'] ?? data['detail'] ?? data['error'])?.toString() ??
+            '';
+      } else {
+        rawMessage = error.message ?? '';
       }
 
-      await repo.clearPhoneVerificationSession(notify: false);
-      await repo.saveSignupDraft(
-        SignupDraft(
-          email: _emailController.text.trim(),
-          password: _pwController.text,
-          fullName: _nameController.text.trim(),
-          phoneNumber: _phoneController.text.trim(),
-          agreeTerms: _agreeTerms,
-          agreeAge: _agreeAge,
-          agreePrivacy: _agreePrivacy,
-          agreeThirdParty: _agreeThirdParty,
-          agreeMarketing: _agreeMarketing,
-          currentStep: 'phone_verification',
-          phoneVerified: false,
-        ),
-      );
-      if (!mounted) return;
-      setState(() => _isSendingPhoneCode = false);
-      context.go(AppRouter.signupPhoneVerification);
-    } catch (error) {
-      if (!mounted) return;
-      setState(() => _isSendingPhoneCode = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      final normalized = rawMessage.toLowerCase();
+      if (normalized.contains('email already registered')) {
+        return '이미 가입된 이메일입니다.';
+      }
+      if (normalized.contains('manager') &&
+          (normalized.contains('registration') ||
+              normalized.contains('pre-registered') ||
+              normalized.contains('not registered'))) {
+        return '사업주가 사전 등록한 점장 정보와 일치하지 않습니다.';
+      }
+      if (RegExp(r'[가-힣]').hasMatch(rawMessage)) {
+        return rawMessage;
+      }
+      switch (statusCode) {
+        case 400:
+          return '입력한 정보를 다시 확인해주세요.';
+        case 401:
+          return '인증 정보가 올바르지 않습니다.';
+        case 403:
+          return '접근 권한이 없습니다.';
+        case 404:
+          return '요청한 정보를 찾을 수 없습니다.';
+        case 409:
+          return '이미 등록된 정보입니다.';
+        case 422:
+          return '입력한 형식을 다시 확인해주세요.';
+        default:
+          return '요청 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+      }
+    }
+
+    final message = error.toString().replaceFirst('Exception: ', '').trim();
+    if (RegExp(r'[가-힣]').hasMatch(message)) return message;
+    return '처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+  }
+
+  String _friendlyFirebaseErrorMessage(FirebaseAuthException error) {
+    switch (error.code) {
+      case 'invalid-phone-number':
+        return '올바른 휴대폰 번호를 입력해주세요.';
+      case 'invalid-verification-code':
+        return '인증번호가 올바르지 않습니다.';
+      case 'session-expired':
+        return '인증 시간이 만료되었습니다. 다시 시도해주세요.';
+      case 'too-many-requests':
+        return '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
+      case 'network-request-failed':
+        return '네트워크 연결을 확인해주세요.';
+      case 'captcha-check-failed':
+        return '휴대폰 인증 검증에 실패했습니다. 다시 시도해주세요.';
+      default:
+        final message = error.message?.trim();
+        if (message != null && RegExp(r'[가-힣]').hasMatch(message)) {
+          return message;
+        }
+        return '휴대폰 인증 중 오류가 발생했습니다. 다시 시도해주세요.';
     }
   }
 

@@ -49,9 +49,6 @@
   "phone_number": "01012345678",
   "role": "worker",
   "approval_status": "approved_by_owner",
-  "signup_step": "completed",
-  "signup_step1_passed": true,
-  "signup_step2_passed": true,
   "is_active": true,
   "created_at": "2026-01-01T00:00:00Z",
   "owner": null,
@@ -87,9 +84,6 @@
   "usage_type_label_ko": "근무자",
   "approval_status": "approved_by_owner",
   "approval_status_label_ko": "점주 승인 완료",
-  "signup_step": "completed",
-  "signup_step1_passed": true,
-  "signup_step2_passed": true,
   "is_active": true,
   "member_since": "2026-01-01T00:00:00Z",
   "birth_date": "1999-03-08",
@@ -148,6 +142,7 @@
 
 - 이메일이 변경되면 `session_refresh_required=true`
 - 이메일 중복이면 `400`
+- **회원가입 전** 이메일 중복 여부만 확인할 때는 `GET /auth/email-exists?email=...` 를 사용합니다. (`PATCH /me/account` 는 로그인 후 계정 수정용입니다.)
 - 생년월일은 연/월/일을 모두 보내야 하며 잘못된 날짜면 `400`
 
 ---

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import '../enums/user_role.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../features/auth/screens/login_screen.dart';
-import '../../features/auth/screens/signup_phone_verification_screen.dart';
 import '../../features/auth/screens/signup_screen.dart';
 import '../../features/auth/screens/signup_step2_screen.dart';
 import '../../features/manager/screens/manager_main_screen.dart';
@@ -19,7 +18,6 @@ class AppRouter {
 
   static const String login = '/login';
   static const String signup = '/signup';
-  static const String signupPhoneVerification = '/signup/phone-verification';
   static const String signupComplete = '/signup/complete';
   static const String managerMain = '/manager';
   static const String jobSeekerMain = '/job-seeker';
@@ -37,23 +35,15 @@ GoRouter createAppRouter(
       final userRole = authRepository.role;
       final isLoggingIn = state.matchedLocation == AppRouter.login;
       final isSigningUp = state.matchedLocation == AppRouter.signup;
-      final isPhoneVerification =
-          state.matchedLocation == AppRouter.signupPhoneVerification;
       final isSignupComplete =
           state.matchedLocation == AppRouter.signupComplete;
       final isManagerMain = state.matchedLocation == AppRouter.managerMain;
       final isJobSeekerMain = state.matchedLocation == AppRouter.jobSeekerMain;
-      final signupFlowRoute =
-          isSigningUp || isPhoneVerification || isSignupComplete;
-
-      if (authRepository.shouldShowPhoneVerification && !isPhoneVerification) {
-        return AppRouter.signupPhoneVerification;
-      }
+      final signupFlowRoute = isSigningUp || isSignupComplete;
 
       if (!authRepository.isLoggedIn &&
           !isLoggingIn &&
           !isSigningUp &&
-          !isPhoneVerification &&
           !isSignupComplete) {
         return AppRouter.login;
       }
@@ -85,10 +75,6 @@ GoRouter createAppRouter(
       GoRoute(path: AppRouter.login, builder: (_, __) => const LoginScreen()),
       GoRoute(path: AppRouter.signup, builder: (_, __) => const SignupScreen()),
       GoRoute(
-        path: AppRouter.signupPhoneVerification,
-        builder: (_, __) => const SignupPhoneVerificationScreen(),
-      ),
-      GoRoute(
         path: AppRouter.signupComplete,
         builder: (context, state) {
           final role = state.extra as UserRole? ?? UserRole.jobSeeker;
@@ -119,9 +105,6 @@ int? _queryInt(GoRouterState state, String key) {
 }
 
 String _initialLocationFor(AuthRepository authRepository) {
-  if (authRepository.shouldShowPhoneVerification) {
-    return AppRouter.signupPhoneVerification;
-  }
   if (authRepository.isLoggedIn && authRepository.isSignupInProgress) {
     return AppRouter.signup;
   }

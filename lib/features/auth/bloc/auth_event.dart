@@ -71,13 +71,15 @@ class AuthSignupStep2OwnerRequested extends AuthEvent {
 
 class AuthSignupStep2ManagerRequested extends AuthEvent {
   const AuthSignupStep2ManagerRequested({
-    required this.requestedBranchId,
+    required this.registrationIds,
+    required this.managerPhoneNumber,
   });
 
-  final int requestedBranchId;
+  final List<int> registrationIds;
+  final String managerPhoneNumber;
 
   @override
-  List<Object?> get props => [requestedBranchId];
+  List<Object?> get props => [registrationIds, managerPhoneNumber];
 }
 
 class AuthSignupStep2ManagerPreRegisteredRequested extends AuthEvent {

@@ -5,6 +5,9 @@
 // You can also use WidgetTester to find child widgets in the widget tree,
 // read text, and verify that the values of widget properties are correct.
 
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,10 +18,16 @@ import 'package:convenience_store_erp_front/data/repositories/auth_repository.da
 import 'package:convenience_store_erp_front/data/repositories/labor_cost_repository.dart';
 import 'package:convenience_store_erp_front/data/repositories/manager_home_repository.dart';
 import 'package:convenience_store_erp_front/data/repositories/owner_home_repository.dart';
+import 'package:convenience_store_erp_front/data/repositories/push_repository.dart';
 import 'package:convenience_store_erp_front/data/repositories/staff_management_repository.dart';
 import 'package:convenience_store_erp_front/data/repositories/store_expense_repository.dart';
 import 'package:convenience_store_erp_front/data/repositories/worker_recruitment_repository.dart';
 import 'package:convenience_store_erp_front/main.dart';
+
+/// Minimal 1×1 PNG for [ConvenienceStoreApp.splashImageBytes] in tests.
+final Uint8List _testSplashPngBytes = base64Decode(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+);
 
 void main() {
   setUpAll(() async {
@@ -41,6 +50,7 @@ void main() {
     final storeExpenseRepository = StoreExpenseRepository(apiClient);
     final staffManagementRepository = StaffManagementRepository(apiClient);
     final workerRecruitmentRepository = WorkerRecruitmentRepository(apiClient);
+    final pushRepository = PushRepository(apiClient);
 
     await tester.pumpWidget(
       ConvenienceStoreApp(
@@ -51,9 +61,14 @@ void main() {
         storeExpenseRepository: storeExpenseRepository,
         staffManagementRepository: staffManagementRepository,
         workerRecruitmentRepository: workerRecruitmentRepository,
+        pushRepository: pushRepository,
+        splashImageBytes: _testSplashPngBytes,
       ),
     );
 
+    await tester.pump();
+    // [ConvenienceStoreApp] keeps splash until a 1s minimum elapses in _bootstrap.
+    await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
   });
 }

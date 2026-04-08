@@ -35,7 +35,7 @@ PreferredSizeWidget workerSubPageAppBar(
     titleSpacing: 0,
     title: Text(
       title,
-      style: AppTypography.bodyLargeB.copyWith(color: AppColors.textPrimary),
+      style: AppTypography.appBarTitle,
     ),
   );
 }

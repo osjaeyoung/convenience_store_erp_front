@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core/firebase_core.dart' show Firebase, FirebaseException;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -47,14 +47,12 @@ class PushNotificationService {
     _onTokenReceived = onTokenReceived;
 
     if (_initialized) {
-      await syncTokenToServer();
       flushPendingNavigation();
       return;
     }
     _initialized = true;
 
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-    await _requestPermission();
     await _messaging.setForegroundNotificationPresentationOptions(
       alert: true,
       badge: true,
@@ -67,8 +65,6 @@ class PushNotificationService {
     _onTokenRefreshSub = _messaging.onTokenRefresh.listen((token) async {
       await _safeUpsertToken(token);
     });
-
-    await syncTokenToServer();
 
     final initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
@@ -87,9 +83,73 @@ class PushNotificationService {
   }
 
   Future<void> syncTokenToServer() async {
-    final token = await _messaging.getToken();
-    if (token == null || token.isEmpty) return;
-    await _safeUpsertToken(token);
+    if (kIsWeb) return;
+    try {
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        await _waitForApnsToken();
+      }
+      final token = await _getFcmTokenWithIosRetry();
+      if (token == null || token.isEmpty) return;
+      await _safeUpsertToken(token);
+    } on FirebaseException catch (e) {
+      if (e.code == 'apns-token-not-set' || e.code == 'missing-apns-token') {
+        return;
+      }
+    } catch (_) {}
+  }
+
+  /// iOS: 권한 직후에도 APNS 토큰이 늦게 올 수 있어 짧게 대기한다.
+  Future<void> _waitForApnsToken({
+    Duration timeout = const Duration(seconds: 15),
+  }) async {
+    final deadline = DateTime.now().add(timeout);
+    while (DateTime.now().isBefore(deadline)) {
+      final apns = await _messaging.getAPNSToken();
+      if (apns != null && apns.isNotEmpty) return;
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+    }
+  }
+
+  Future<String?> _getFcmTokenWithIosRetry() async {
+    const maxAttempts = 6;
+    for (var i = 0; i < maxAttempts; i++) {
+      try {
+        final t = await _messaging.getToken();
+        if (t != null && t.isNotEmpty) return t;
+      } on FirebaseException catch (e) {
+        if (e.code != 'apns-token-not-set' && e.code != 'missing-apns-token') {
+          rethrow;
+        }
+      }
+      await Future<void>.delayed(Duration(milliseconds: 350 * (i + 1)));
+    }
+    try {
+      return await _messaging.getToken();
+    } on FirebaseException {
+      return null;
+    }
+  }
+
+  /// 로그인 성공 후 호출: FCM·로컬 알림 권한 요청 → 토큰 발급/서버 등록
+  Future<void> onUserAuthenticated() async {
+    if (!_initialized || kIsWeb) return;
+
+    await requestFcmPermission();
+    await _requestPlatformLocalNotificationPermission();
+    await syncTokenToServer();
+  }
+
+  /// FCM 푸시 권한 (iOS 시스템 다이얼로그, Android는 주로 no-op)
+  Future<NotificationSettings> requestFcmPermission() {
+    return _messaging.requestPermission(
+      alert: true,
+      announcement: false,
+      badge: true,
+      carPlay: false,
+      criticalAlert: false,
+      provisional: false,
+      sound: true,
+    );
   }
 
   void flushPendingNavigation() {
@@ -99,16 +159,22 @@ class PushNotificationService {
     _navigate(route);
   }
 
-  Future<void> _requestPermission() async {
-    await _messaging.requestPermission(
-      alert: true,
-      announcement: false,
-      badge: true,
-      carPlay: false,
-      criticalAlert: false,
-      provisional: false,
-      sound: true,
-    );
+  Future<void> _requestPlatformLocalNotificationPermission() async {
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      final ios = _localNotifications
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >();
+      await ios?.requestPermissions(alert: true, badge: true, sound: true);
+      return;
+    }
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final android = _localNotifications
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      await android?.requestNotificationsPermission();
+    }
   }
 
   Future<void> _initializeLocalNotifications() async {

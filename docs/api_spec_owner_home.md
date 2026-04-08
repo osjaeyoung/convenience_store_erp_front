@@ -719,9 +719,6 @@
   "phone_number": "01012345678",
   "role": "owner",
   "approval_status": "pending_admin_approval",
-  "signup_step": "completed",
-  "signup_step1_passed": true,
-  "signup_step2_passed": true,
   "is_active": true,
   "created_at": "2026-03-05T00:00:00Z",
   "owner": {
@@ -1013,7 +1010,6 @@
     "full_name": "이사라",
     "phone_number": "01033333333",
     "role": "manager",
-    "signup_step": "completed",
     "approval_status": "approved_by_owner",
     "is_active": true,
     "created_at": "2026-03-05T00:00:00Z",
@@ -1228,9 +1224,6 @@
   "phone_number": "01012345678",
   "role": "owner",
   "approval_status": "pending_admin_approval",
-  "signup_step": "completed",
-  "signup_step1_passed": true,
-  "signup_step2_passed": true,
   "is_active": true,
   "created_at": "2026-03-05T00:00:00Z",
   "owner": {
@@ -1514,7 +1507,6 @@
     "full_name": "이사라",
     "phone_number": "01033333333",
     "role": "manager",
-    "signup_step": "completed",
     "approval_status": "approved_by_owner",
     "is_active": true,
     "created_at": "2026-03-05T00:00:00Z",
@@ -1770,9 +1762,6 @@
   "phone_number": "01012345678",
   "role": "owner",
   "approval_status": "pending_admin_approval",
-  "signup_step": "completed",
-  "signup_step1_passed": true,
-  "signup_step2_passed": true,
   "is_active": true,
   "created_at": "2026-03-05T00:00:00Z",
   "owner": {
@@ -1892,6 +1881,9 @@
   "manager_phone_number": "01033333333"
 }
 ```
+
+- 이 값은 점장 회원가입 시 계정에 저장된 `full_name` + `phone_number` 와 매칭 기준으로 사용됩니다.
+- 즉, 사업주는 실제 점장 본인이 회원가입에 사용할 이름/전화번호로 등록해야 하며, 다르면 점장 `signup/complete` 또는 점장 가입 API가 실패합니다.
 
 ### Request Body C: 번호로 기존 점장 계정 검색 후 배정
 

@@ -92,6 +92,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       await _repository.setSignupStep1Token(
         accessToken: response.accessToken,
         refreshToken: response.refreshToken,
+        user: response.user,
       );
       emit(AuthState.signupStep1Completed(response));
     } on AuthException catch (e) {
@@ -127,7 +128,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(const AuthState.loading());
     try {
       await _repository.signupCompleteManager(
-        requestedBranchId: event.requestedBranchId,
+        registrationIds: event.registrationIds,
+        managerPhoneNumber: event.managerPhoneNumber,
       );
       emit(AuthState.authenticated(_repository.user!));
     } on AuthException catch (e) {
@@ -233,9 +235,22 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   String _extractErrorMessage(DioException e) {
+    final statusCode = e.response?.statusCode;
     final data = e.response?.data;
     String rawMessage;
     if (data is Map) {
+      final detail = data['detail'];
+      if (detail is List && detail.isNotEmpty) {
+        final first = detail.first;
+        if (first is Map) {
+          final loc = (first['loc'] as List<dynamic>? ?? const [])
+              .map((e) => e.toString())
+              .join('.');
+          if (loc.contains('email')) return '이메일 정보를 다시 확인해주세요.';
+          if (loc.contains('phone_number')) return '휴대폰 번호를 다시 확인해주세요.';
+          if (loc.contains('password')) return '비밀번호를 다시 확인해주세요.';
+        }
+      }
       rawMessage =
           (data['message'] ?? data['detail'] ?? data['error'])?.toString() ??
           '요청에 실패했습니다.';
@@ -247,7 +262,40 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     if (normalized.contains('email already registered')) {
       return '이미 가입된 이메일입니다.';
     }
+    if (normalized.contains('invalid') &&
+        (normalized.contains('credential') ||
+            normalized.contains('password') ||
+            normalized.contains('login'))) {
+      return '이메일 또는 비밀번호를 다시 확인해주세요.';
+    }
+    if (normalized.contains('manager') &&
+        (normalized.contains('registration') ||
+            normalized.contains('pre-registered') ||
+            normalized.contains('not registered'))) {
+      return '사업주가 사전 등록한 점장 정보와 일치하지 않습니다.';
+    }
+    if (normalized.contains('phone')) {
+      return '휴대폰 번호를 다시 확인해주세요.';
+    }
+    if (RegExp(r'[가-힣]').hasMatch(rawMessage)) {
+      return rawMessage;
+    }
 
-    return rawMessage;
+    switch (statusCode) {
+      case 400:
+        return '입력한 정보를 다시 확인해주세요.';
+      case 401:
+        return '인증 정보가 올바르지 않습니다.';
+      case 403:
+        return '접근 권한이 없습니다.';
+      case 404:
+        return '요청한 정보를 찾을 수 없습니다.';
+      case 409:
+        return '이미 등록된 정보입니다.';
+      case 422:
+        return '입력 형식을 다시 확인해주세요.';
+      default:
+        return '요청 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+    }
   }
 }

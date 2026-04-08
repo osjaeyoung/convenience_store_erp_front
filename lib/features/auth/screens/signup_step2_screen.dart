@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -6,6 +8,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/enums/user_role.dart';
 import '../../../core/router/app_router.dart';
 import '../../../data/models/branch.dart';
+import '../../../data/models/manager_registration_lookup_item.dart';
+import '../../../data/repositories/auth_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
@@ -32,8 +36,23 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
   final _formKey = GlobalKey<FormState>();
   final _branchSearchController = TextEditingController();
   final List<_OwnerBranchForm> _ownerBranchForms = [_OwnerBranchForm()];
+  List<ManagerRegistrationLookupItem> _managerRegistrations = const [];
+  final List<Branch> _addedBranches = [];
+  final Map<int, Branch> _checkedSearchBranches = {};
+  bool _loadingManagerRegistrations = false;
+  String _managerName = '';
+  String _managerPhoneNumber = '';
 
-  Branch? _selectedBranch;
+  @override
+  void initState() {
+    super.initState();
+    if (widget.role == UserRole.storeManager) {
+      final repo = context.read<AuthRepository>();
+      _managerName = repo.currentFullName ?? '';
+      _managerPhoneNumber = repo.currentPhoneNumber ?? '';
+      unawaited(_loadManagerRegistrations());
+    }
+  }
 
   @override
   void dispose() {
@@ -69,13 +88,28 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
             );
         break;
       case UserRole.storeManager:
-        if (_selectedBranch == null) {
+        if (_loadingManagerRegistrations) return;
+        if (_managerName.isEmpty || _managerPhoneNumber.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('회원가입 시 입력한 이름과 휴대폰 번호를 확인해주세요.')),
+          );
+          return;
+        }
+        if (_addedBranches.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('지점을 1개 이상 추가해주세요.')),
+          );
+          return;
+        }
+        final registrationIds = _selectedRegistrationIds;
+        if (registrationIds.length != _addedBranches.length) {
           _showBranchNotSelectedDialog();
           return;
         }
         context.read<AuthBloc>().add(
               AuthSignupStep2ManagerRequested(
-                requestedBranchId: _selectedBranch!.id,
+                registrationIds: registrationIds,
+                managerPhoneNumber: _managerPhoneNumber,
               ),
             );
         break;
@@ -126,7 +160,7 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                               children: [
                                 _buildHeader(),
                                 SizedBox(height: 28.h),
-                                _buildRoleFields(),
+                                _buildRoleFields(state),
                               ],
                             ),
                           ),
@@ -207,7 +241,7 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
     );
   }
 
-  Widget _buildRoleFields() {
+  Widget _buildRoleFields(AuthState state) {
     switch (widget.role) {
       case UserRole.manager:
         return Column(
@@ -231,7 +265,7 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
             _buildFieldLabel('회사명'),
             AuthInputField(
               controller: _branchSearchController,
-              hintText: '회사를 검색해주세요.',
+              hintText: '회사명을 검색해주세요',
               focusedBorderColor: AppColors.primary,
               prefixIconWidget: Padding(
                 padding: EdgeInsets.all(14.r),
@@ -241,63 +275,19 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                   height: 20,
                 ),
               ),
-              onChanged: (q) {
-                if (q.trim().isNotEmpty) {
-                  context
-                      .read<AuthBloc>()
-                      .add(AuthBranchesSearchRequested(query: q.trim()));
+              onChanged: (query) {
+                final normalized = query.trim();
+                if (normalized.isNotEmpty) {
+                  context.read<AuthBloc>().add(
+                    AuthBranchesSearchRequested(query: normalized),
+                  );
                 }
               },
             ),
-            SizedBox(height: 10.h),
-            BlocBuilder<AuthBloc, AuthState>(
-              buildWhen: (a, b) =>
-                  b.status == AuthStatus.branchesLoaded ||
-                  b.status == AuthStatus.signupStep1Completed,
-              builder: (context, state) {
-                return Container(
-                  constraints: const BoxConstraints(minHeight: 64),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(color: AppColors.grey50),
-                    color: AppColors.grey0Alt,
-                  ),
-                  child: state.branches.isEmpty
-                      ? const SizedBox.shrink()
-                      : Column(
-                          children: state.branches.map((b) {
-                            final selected = _selectedBranch?.id == b.id;
-                            return ListTile(
-                              dense: true,
-                              title: Text(
-                                b.name,
-                                style: AppTypography.bodyMediumM.copyWith(
-                                  color: selected
-                                      ? AppColors.primaryDark
-                                      : AppColors.textPrimary,
-                                ),
-                              ),
-                              subtitle: b.code != null ? Text(b.code!) : null,
-                              selected: selected,
-                              onTap: () => setState(() => _selectedBranch = b),
-                            );
-                          }).toList(),
-                        ),
-                );
-              },
-            ),
-            SizedBox(height: 20.h),
-            const MintAddButton(),
-            if (_selectedBranch != null)
-              Padding(
-                padding: EdgeInsets.only(top: 8.h),
-                child: Text(
-                  '선택: ${_selectedBranch!.name}',
-                  style: AppTypography.bodySmallM.copyWith(
-                    color: AppColors.primaryDark,
-                  ),
-                ),
-              ),
+            SizedBox(height: 8.h),
+            _buildManagerSelectionCard(state.branches),
+            SizedBox(height: 28.h),
+            _buildManagerAddButton(),
           ],
         );
       case UserRole.jobSeeker:
@@ -318,6 +308,264 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
         style: AppTypography.bodyLargeB.copyWith(color: AppColors.textPrimary),
       ),
     );
+  }
+
+  Widget _buildManagerSelectionCard(List<Branch> searchResults) {
+    final query = _branchSearchController.text.trim();
+    final showSearchResults = query.isNotEmpty;
+
+    return Container(
+      constraints: BoxConstraints(minHeight: 56.h),
+      decoration: BoxDecoration(
+        color: AppColors.grey0Alt,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: AppColors.grey50),
+      ),
+      child: showSearchResults
+          ? _buildSearchResults(searchResults)
+          : _buildAddedBranchesList(),
+    );
+  }
+
+  Widget _buildSearchResults(List<Branch> searchResults) {
+    if (searchResults.isEmpty) {
+      return SizedBox(height: 56.h);
+    }
+
+    return Column(
+      children: [
+        for (var index = 0; index < searchResults.length; index++) ...[
+          _buildSearchResultTile(searchResults[index]),
+          if (index != searchResults.length - 1)
+            Divider(height: 1, color: AppColors.grey50),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSearchResultTile(Branch branch) {
+    final selected = _isBranchChecked(branch);
+    return InkWell(
+      borderRadius: BorderRadius.circular(12.r),
+      onTap: () {
+        setState(() {
+          if (_checkedSearchBranches.containsKey(branch.id)) {
+            _checkedSearchBranches.remove(branch.id);
+          } else {
+            _checkedSearchBranches[branch.id] = branch;
+          }
+        });
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+        color: selected ? AppColors.primaryLight : Colors.transparent,
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    branch.name,
+                    style: AppTypography.bodyMediumM.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  if ((branch.code ?? '').isNotEmpty) ...[
+                    SizedBox(height: 2.h),
+                    Text(
+                      branch.code!,
+                      style: AppTypography.bodySmallR.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (selected)
+              Icon(
+                Icons.check_rounded,
+                color: AppColors.primary,
+                size: 18.r,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddedBranchesList() {
+    if (_addedBranches.isEmpty) {
+      return SizedBox(height: 56.h);
+    }
+
+    return Column(
+      children: [
+        for (var index = 0; index < _addedBranches.length; index++) ...[
+          _buildAddedBranchTile(_addedBranches[index]),
+          if (index != _addedBranches.length - 1)
+            Divider(height: 1, color: AppColors.grey50),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildAddedBranchTile(Branch branch) {
+    final isRegistered = _matchingRegistrationFor(branch) != null;
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  branch.name,
+                  style: AppTypography.bodyMediumM.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  isRegistered ? '사전 등록된 지점입니다.' : '사전 등록되지 않은 지점입니다.',
+                  style: AppTypography.bodySmallR.copyWith(
+                    color: isRegistered ? AppColors.primary : AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () {
+              setState(() {
+                _addedBranches.removeWhere((item) => item.id == branch.id);
+              });
+            },
+            icon: Icon(
+              Icons.close_rounded,
+              size: 18.r,
+              color: AppColors.grey150,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildManagerAddButton() {
+    return OutlinedButton(
+      onPressed: _addSelectedBranch,
+      style: OutlinedButton.styleFrom(
+        minimumSize: Size(double.infinity, 36.h),
+        side: const BorderSide(color: AppColors.primary),
+        backgroundColor: const Color(0xFFE2F6F0),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+        padding: EdgeInsets.zero,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '추가하기',
+            style: AppTypography.bodySmallM.copyWith(
+              color: AppColors.primary,
+              height: 16 / 12,
+            ),
+          ),
+          SizedBox(width: 8.w),
+          SvgPicture.asset(
+            'assets/icons/svg/icon/plus_mint_20.svg',
+            width: 20,
+            height: 20,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _addSelectedBranch() {
+    if (_checkedSearchBranches.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('추가할 지점을 선택해주세요.')),
+      );
+      return;
+    }
+
+    final selectedBranches = _checkedSearchBranches.values.toList();
+    final newBranches = selectedBranches
+        .where((branch) => !_addedBranches.any((item) => item.id == branch.id))
+        .toList();
+
+    if (newBranches.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('이미 추가한 지점입니다.')));
+      return;
+    }
+
+    setState(() {
+      _addedBranches.addAll(newBranches);
+      for (final branch in newBranches) {
+        _checkedSearchBranches.remove(branch.id);
+      }
+      _branchSearchController.clear();
+    });
+
+    if (newBranches.length != selectedBranches.length) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('이미 추가한 지점은 제외하고 추가했습니다.')));
+    }
+  }
+
+  Future<void> _loadManagerRegistrations() async {
+    if (_managerName.isEmpty || _managerPhoneNumber.isEmpty) return;
+    setState(() => _loadingManagerRegistrations = true);
+    try {
+      final items = await context.read<AuthRepository>().lookupManagerRegistrations(
+        managerName: _managerName,
+        managerPhoneNumber: _managerPhoneNumber,
+      );
+      if (!mounted) return;
+      setState(() {
+        _managerRegistrations = items;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _managerRegistrations = const [];
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _loadingManagerRegistrations = false);
+      }
+    }
+  }
+
+  ManagerRegistrationLookupItem? _matchingRegistrationFor(Branch branch) {
+    for (final item in _managerRegistrations) {
+      if (item.branchId == branch.id) return item;
+    }
+    return null;
+  }
+
+  List<int> get _selectedRegistrationIds {
+    return _addedBranches
+        .map(_matchingRegistrationFor)
+        .whereType<ManagerRegistrationLookupItem>()
+        .map((item) => item.registrationId)
+        .toSet()
+        .toList();
+  }
+
+  bool _isBranchChecked(Branch branch) {
+    if (_checkedSearchBranches.containsKey(branch.id)) return true;
+    return _addedBranches.any((item) => item.id == branch.id);
   }
 
   List<Widget> _buildOwnerBranchFields() {
@@ -370,56 +618,99 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
   void _showBranchNotSelectedDialog() {
     showDialog<void>(
       context: context,
-      barrierColor: Colors.black54,
+      barrierColor: Colors.black.withValues(alpha: 0.55),
       builder: (_) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 18.h),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        insetPadding: EdgeInsets.symmetric(horizontal: 20.w),
+        child: Container(
+          width: 320.w,
+          padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 16.h),
+          decoration: BoxDecoration(
+            color: AppColors.grey0,
+            borderRadius: BorderRadius.circular(16.r),
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 '알림',
-                style: AppTypography.heading3.copyWith(color: AppColors.textPrimary),
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w500,
+                  height: 24 / 18,
+                  color: AppColors.textPrimary,
+                ),
               ),
               SizedBox(height: 20.h),
-              Icon(
-                Icons.warning_amber_rounded,
-                color: Color(0xFFF2C94C),
-                size: 56,
+              Container(
+                width: 80.r,
+                height: 80.r,
+                decoration: const BoxDecoration(
+                  color: AppColors.grey0Alt,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.warning_amber_rounded,
+                  color: const Color(0xFFFFD159),
+                  size: 48.r,
+                ),
               ),
               SizedBox(height: 16.h),
               Text(
                 '해당 지점에 점장으로\n등록되지 않았습니다.',
-                style: AppTypography.bodyLargeB.copyWith(
+                textAlign: TextAlign.center,
+                style: AppTypography.bodyMediumM.copyWith(
                   color: AppColors.textPrimary,
                 ),
-                textAlign: TextAlign.center,
               ),
-              SizedBox(height: 20.h),
+              SizedBox(height: 28.h),
               Row(
                 children: [
                   Expanded(
-                    child: FilledButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: FilledButton.styleFrom(
-                        minimumSize: Size.fromHeight(48.h),
-                        backgroundColor: AppColors.grey25,
-                        foregroundColor: AppColors.grey150,
+                    child: SizedBox(
+                      height: 52.h,
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: TextButton.styleFrom(
+                          backgroundColor: AppColors.grey25,
+                          foregroundColor: AppColors.grey150,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                        ),
+                        child: Text(
+                          '취소',
+                          style: AppTypography.bodyLargeB.copyWith(
+                            color: AppColors.grey150,
+                          ),
+                        ),
                       ),
-                      child: const Text('취소'),
                     ),
                   ),
-                  SizedBox(width: 10.w),
+                  SizedBox(width: 12.w),
                   Expanded(
-                    child: FilledButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: FilledButton.styleFrom(
-                        minimumSize: Size.fromHeight(48.h),
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.grey0,
+                    child: SizedBox(
+                      height: 52.h,
+                      child: FilledButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.grey0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          '확인',
+                          style: AppTypography.bodyLargeB.copyWith(
+                            color: AppColors.grey0,
+                          ),
+                        ),
                       ),
-                      child: const Text('확인'),
                     ),
                   ),
                 ],
