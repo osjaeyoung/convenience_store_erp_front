@@ -18,7 +18,12 @@ import 'worker_my_page_screen.dart';
 /// 근로자 메인 화면
 /// 경영/점장과 별개의 상단 탭 구조를 사용한다.
 class JobSeekerMainScreen extends StatefulWidget {
-  const JobSeekerMainScreen({super.key});
+  const JobSeekerMainScreen({
+    super.key,
+    this.initialTabIndex = 0,
+  });
+
+  final int initialTabIndex;
 
   @override
   State<JobSeekerMainScreen> createState() => _JobSeekerMainScreenState();
@@ -37,10 +42,21 @@ class _JobSeekerMainScreenState extends State<JobSeekerMainScreen>
   @override
   void initState() {
     super.initState();
+    _currentTabIndex = widget.initialTabIndex.clamp(0, 3);
     _logoTapHandler = _onLogoGoToRecruitment;
     JobSeekerLogoNavigation.register(_logoTapHandler);
     _tabController = TabController(length: 4, vsync: this);
+    _tabController.index = _currentTabIndex;
     _tabController.addListener(_handleTabChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant JobSeekerMainScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final nextTab = widget.initialTabIndex.clamp(0, 3);
+    if (nextTab == _currentTabIndex) return;
+    _tabController.animateTo(nextTab);
+    setState(() => _currentTabIndex = nextTab);
   }
 
   void _onLogoGoToRecruitment() {

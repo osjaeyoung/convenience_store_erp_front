@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>315149487915-cpjg2ainqbpgi7uvaje5d2rk5ld4hgv3.apps.googleusercontent.com</string>
+	<string>315149487915-ko5rnpu2m0v7gbg25qlud5cbbb1po37a.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.315149487915-cpjg2ainqbpgi7uvaje5d2rk5ld4hgv3</string>
+	<string>com.googleusercontent.apps.315149487915-ko5rnpu2m0v7gbg25qlud5cbbb1po37a</string>
 	<key>ANDROID_CLIENT_ID</key>
 	<string>315149487915-2432ehl9lhiti0ijphbev6ponnfg8oi4.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
@@ -15,7 +15,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.example.convenienceStoreErpFront</string>
+	<string>com.nanum.store</string>
 	<key>PROJECT_ID</key>
 	<string>convenience-c851d</string>
 	<key>STORAGE_BUCKET</key>
@@ -31,6 +31,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:315149487915:ios:b5c05dca66b69b2e907f6e</string>
+	<string>1:315149487915:ios:dbeef03fd6799403907f6e</string>
 </dict>
 </plist>

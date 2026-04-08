@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'firebase_options.dart';
 import 'core/constants/app_assets.dart';
+import 'core/push/push_notification_service.dart';
 import 'core/screen/app_design.dart';
 import 'core/router/app_router.dart';
 import 'core/storage/token_storage.dart';
@@ -19,6 +20,7 @@ import 'data/repositories/auth_repository.dart';
 import 'data/repositories/labor_cost_repository.dart';
 import 'data/repositories/manager_home_repository.dart';
 import 'data/repositories/owner_home_repository.dart';
+import 'data/repositories/push_repository.dart';
 import 'data/repositories/staff_management_repository.dart';
 import 'data/repositories/store_expense_repository.dart';
 import 'data/repositories/worker_recruitment_repository.dart';
@@ -45,6 +47,7 @@ void main() async {
   final storeExpenseRepository = StoreExpenseRepository(apiClient);
   final staffManagementRepository = StaffManagementRepository(apiClient);
   final workerRecruitmentRepository = WorkerRecruitmentRepository(apiClient);
+  final pushRepository = PushRepository(apiClient);
 
   runApp(
     ConvenienceStoreApp(
@@ -55,6 +58,7 @@ void main() async {
       storeExpenseRepository: storeExpenseRepository,
       staffManagementRepository: staffManagementRepository,
       workerRecruitmentRepository: workerRecruitmentRepository,
+      pushRepository: pushRepository,
       splashImageBytes: splashImageBytes,
     ),
   );
@@ -70,6 +74,7 @@ class ConvenienceStoreApp extends StatefulWidget {
     required this.storeExpenseRepository,
     required this.staffManagementRepository,
     required this.workerRecruitmentRepository,
+    required this.pushRepository,
     required this.splashImageBytes,
   });
 
@@ -80,6 +85,7 @@ class ConvenienceStoreApp extends StatefulWidget {
   final StoreExpenseRepository storeExpenseRepository;
   final StaffManagementRepository staffManagementRepository;
   final WorkerRecruitmentRepository workerRecruitmentRepository;
+  final PushRepository pushRepository;
   final Uint8List splashImageBytes;
 
   @override
@@ -87,6 +93,8 @@ class ConvenienceStoreApp extends StatefulWidget {
 }
 
 class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
+  final GlobalKey<NavigatorState> _rootNavigatorKey =
+      GlobalKey<NavigatorState>();
   GoRouter? _router;
   AuthBloc? _authBloc;
   bool _isBootstrapped = false;
@@ -114,12 +122,28 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
       await Future<void>.delayed(minimumSplash - elapsed);
     }
 
-    _router = createAppRouter(widget.authRepository);
+    _router = createAppRouter(
+      widget.authRepository,
+      navigatorKey: _rootNavigatorKey,
+    );
     _authBloc = AuthBloc(widget.authRepository)..add(const AuthCheckRequested());
+    await PushNotificationService.instance.initialize(
+      navigatorKey: _rootNavigatorKey,
+      onTokenReceived: (token) async {
+        if (!widget.authRepository.isLoggedIn) return;
+        await widget.pushRepository.upsertDeviceToken(
+          token: token,
+          platform: PushNotificationService.platformName,
+        );
+      },
+    );
 
     if (!mounted) return;
     setState(() {
       _isBootstrapped = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      PushNotificationService.instance.flushPendingNavigation();
     });
   }
 
@@ -165,18 +189,28 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
           ],
           child: BlocProvider.value(
             value: _authBloc!,
-            child: MaterialApp.router(
-              title: '편의점 ERP',
-              theme: AppTheme.light,
-              debugShowCheckedModeBanner: false,
-              localizationsDelegates: const [
-                GlobalMaterialLocalizations.delegate,
-                GlobalWidgetsLocalizations.delegate,
-                GlobalCupertinoLocalizations.delegate,
-              ],
-              supportedLocales: const [Locale('ko', 'KR'), Locale('en', 'US')],
-              locale: const Locale('ko', 'KR'),
-              routerConfig: _router!,
+            child: BlocListener<AuthBloc, AuthState>(
+              listenWhen: (previous, current) =>
+                  previous.status != current.status,
+              listener: (_, state) async {
+                if (state.status == AuthStatus.authenticated) {
+                  await PushNotificationService.instance.syncTokenToServer();
+                  PushNotificationService.instance.flushPendingNavigation();
+                }
+              },
+              child: MaterialApp.router(
+                title: '편의점 ERP',
+                theme: AppTheme.light,
+                debugShowCheckedModeBanner: false,
+                localizationsDelegates: const [
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                supportedLocales: const [Locale('ko', 'KR'), Locale('en', 'US')],
+                locale: const Locale('ko', 'KR'),
+                routerConfig: _router!,
+              ),
             ),
           ),
         );

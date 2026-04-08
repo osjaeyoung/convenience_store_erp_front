@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:flutter/material.dart';
 
 import '../enums/user_role.dart';
 import '../../data/repositories/auth_repository.dart';
@@ -24,8 +25,12 @@ class AppRouter {
   static const String jobSeekerMain = '/job-seeker';
 }
 
-GoRouter createAppRouter(AuthRepository authRepository) {
+GoRouter createAppRouter(
+  AuthRepository authRepository, {
+  GlobalKey<NavigatorState>? navigatorKey,
+}) {
   return GoRouter(
+    navigatorKey: navigatorKey,
     initialLocation: _initialLocationFor(authRepository),
     refreshListenable: authRepository,
     redirect: (context, state) {
@@ -92,14 +97,25 @@ GoRouter createAppRouter(AuthRepository authRepository) {
       ),
       GoRoute(
         path: AppRouter.managerMain,
-        builder: (_, __) => const ManagerMainScreen(),
+        builder: (_, state) => ManagerMainScreen(
+          initialTabIndex: _queryInt(state, 'tab') ?? 0,
+          initialLaborCostTabIndex: _queryInt(state, 'laborCostTab') ?? 0,
+          initialRecruitmentTabIndex: _queryInt(state, 'recruitmentTab') ?? 0,
+        ),
       ),
       GoRoute(
         path: AppRouter.jobSeekerMain,
-        builder: (_, __) => const JobSeekerMainScreen(),
+        builder: (_, state) =>
+            JobSeekerMainScreen(initialTabIndex: _queryInt(state, 'tab') ?? 0),
       ),
     ],
   );
+}
+
+int? _queryInt(GoRouterState state, String key) {
+  final raw = state.uri.queryParameters[key];
+  if (raw == null) return null;
+  return int.tryParse(raw);
 }
 
 String _initialLocationFor(AuthRepository authRepository) {

@@ -28,7 +28,16 @@ import 'store_cost_screen.dart';
 /// 경영자/점장 메인 화면
 /// 바텀바로 5개 탭 전환
 class ManagerMainScreen extends StatefulWidget {
-  const ManagerMainScreen({super.key});
+  const ManagerMainScreen({
+    super.key,
+    this.initialTabIndex = 0,
+    this.initialLaborCostTabIndex = 0,
+    this.initialRecruitmentTabIndex = 0,
+  });
+
+  final int initialTabIndex;
+  final int initialLaborCostTabIndex;
+  final int initialRecruitmentTabIndex;
 
   @override
   State<ManagerMainScreen> createState() => _ManagerMainScreenState();
@@ -46,6 +55,9 @@ class _ManagerMainScreenState extends State<ManagerMainScreen> {
   @override
   void initState() {
     super.initState();
+    _currentIndex = widget.initialTabIndex.clamp(0, 4);
+    _laborCostInitialTabIndex = widget.initialLaborCostTabIndex.clamp(0, 2);
+    _recruitmentInitialTabIndex = widget.initialRecruitmentTabIndex.clamp(0, 2);
     _logoTapHandler = _onLogoGoHome;
     ManagerLogoNavigation.register(_logoTapHandler);
   }
@@ -54,6 +66,27 @@ class _ManagerMainScreenState extends State<ManagerMainScreen> {
   void dispose() {
     ManagerLogoNavigation.unregister(_logoTapHandler);
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant ManagerMainScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final requestedTab = widget.initialTabIndex.clamp(0, 4);
+    final requestedLaborCostTab = widget.initialLaborCostTabIndex.clamp(0, 2);
+    final requestedRecruitmentTab = widget.initialRecruitmentTabIndex.clamp(0, 2);
+    if (requestedTab == _currentIndex &&
+        requestedLaborCostTab == _laborCostInitialTabIndex &&
+        requestedRecruitmentTab == _recruitmentInitialTabIndex) {
+      return;
+    }
+
+    setState(() {
+      _currentIndex = requestedTab;
+      _laborCostInitialTabIndex = requestedLaborCostTab;
+      _recruitmentInitialTabIndex = requestedRecruitmentTab;
+      _laborCostNavigationRequestId += 1;
+      _recruitmentNavigationRequestId += 1;
+    });
   }
 
   void _onLogoGoHome() {

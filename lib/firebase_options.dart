@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyCDd9A76zhcTJ4VCZon-GlZEZFXBQEk--w',
-    appId: '1:315149487915:android:ba311a5eac8e84f1907f6e',
+    appId: '1:315149487915:android:59ed9bf65d2406cb907f6e',
     messagingSenderId: '315149487915',
     projectId: 'convenience-c851d',
     storageBucket: 'convenience-c851d.firebasestorage.app',
@@ -59,20 +59,24 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyCsX-wG6edY_a9szPNMenK3tiSflErpJ_c',
-    appId: '1:315149487915:ios:b5c05dca66b69b2e907f6e',
+    appId: '1:315149487915:ios:dbeef03fd6799403907f6e',
     messagingSenderId: '315149487915',
     projectId: 'convenience-c851d',
     storageBucket: 'convenience-c851d.firebasestorage.app',
-    iosBundleId: 'com.example.convenienceStoreErpFront',
+    androidClientId: '315149487915-2432ehl9lhiti0ijphbev6ponnfg8oi4.apps.googleusercontent.com',
+    iosClientId: '315149487915-ko5rnpu2m0v7gbg25qlud5cbbb1po37a.apps.googleusercontent.com',
+    iosBundleId: 'com.nanum.store',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyCsX-wG6edY_a9szPNMenK3tiSflErpJ_c',
-    appId: '1:315149487915:ios:b5c05dca66b69b2e907f6e',
+    appId: '1:315149487915:ios:dbeef03fd6799403907f6e',
     messagingSenderId: '315149487915',
     projectId: 'convenience-c851d',
     storageBucket: 'convenience-c851d.firebasestorage.app',
-    iosBundleId: 'com.example.convenienceStoreErpFront',
+    androidClientId: '315149487915-2432ehl9lhiti0ijphbev6ponnfg8oi4.apps.googleusercontent.com',
+    iosClientId: '315149487915-ko5rnpu2m0v7gbg25qlud5cbbb1po37a.apps.googleusercontent.com',
+    iosBundleId: 'com.nanum.store',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
@@ -83,4 +87,5 @@ class DefaultFirebaseOptions {
     authDomain: 'convenience-c851d.firebaseapp.com',
     storageBucket: 'convenience-c851d.firebasestorage.app',
   );
+
 }
