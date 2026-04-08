@@ -11,6 +11,7 @@ import '../../../data/repositories/owner_home_repository.dart';
 import '../../../data/repositories/staff_management_repository.dart';
 import '../../../data/repositories/store_expense_repository.dart';
 import '../../../theme/app_colors.dart';
+import '../../../theme/app_typography.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/labor_cost_bloc.dart';
@@ -73,7 +74,10 @@ class _ManagerMainScreenState extends State<ManagerMainScreen> {
     super.didUpdateWidget(oldWidget);
     final requestedTab = widget.initialTabIndex.clamp(0, 4);
     final requestedLaborCostTab = widget.initialLaborCostTabIndex.clamp(0, 2);
-    final requestedRecruitmentTab = widget.initialRecruitmentTabIndex.clamp(0, 2);
+    final requestedRecruitmentTab = widget.initialRecruitmentTabIndex.clamp(
+      0,
+      2,
+    );
     if (requestedTab == _currentIndex &&
         requestedLaborCostTab == _laborCostInitialTabIndex &&
         requestedRecruitmentTab == _recruitmentInitialTabIndex) {
@@ -91,9 +95,125 @@ class _ManagerMainScreenState extends State<ManagerMainScreen> {
 
   void _onLogoGoHome() {
     if (!mounted) return;
-    Navigator.of(context, rootNavigator: true)
-        .popUntil((route) => route.isFirst);
+    Navigator.of(
+      context,
+      rootNavigator: true,
+    ).popUntil((route) => route.isFirst);
     setState(() => _currentIndex = 0);
+  }
+
+  bool _isPendingBranchStatus(String? status) {
+    return (status ?? '').trim().toLowerCase() == 'pending';
+  }
+
+  bool _isSelectedBranchPendingFromState(
+    int? selectedBranchId,
+    HomeState homeState,
+  ) {
+    if (selectedBranchId == null) return false;
+
+    for (final branch in homeState.ownerBranches) {
+      if (branch.id == selectedBranchId) {
+        return _isPendingBranchStatus(branch.reviewStatus);
+      }
+    }
+    for (final branch in homeState.managerBranches) {
+      if (branch.id == selectedBranchId) {
+        return _isPendingBranchStatus(branch.reviewStatus);
+      }
+    }
+    return false;
+  }
+
+  bool _isSelectedBranchPending(BuildContext context) {
+    final selectedBranchId = context.read<SelectedBranchCubit>().state;
+    final homeState = context.read<HomeBloc>().state;
+    return _isSelectedBranchPendingFromState(selectedBranchId, homeState);
+  }
+
+  Future<void> _showHomeAccessDialog(
+    BuildContext context, {
+    required String title,
+    required String description,
+  }) async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withValues(alpha: 0.55),
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(maxWidth: 320),
+            padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+            decoration: BoxDecoration(
+              color: AppColors.grey0,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.bodyLargeB.copyWith(
+                    color: AppColors.textPrimary,
+                    fontSize: 18,
+                    height: 24 / 18,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  description,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.bodyMediumR.copyWith(
+                    color: AppColors.textPrimary,
+                    fontSize: 16,
+                    height: 24 / 16,
+                  ),
+                ),
+                const SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.grey0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      '닫기',
+                      style: AppTypography.bodyLargeB.copyWith(
+                        color: AppColors.grey0,
+                        fontSize: 16,
+                        height: 22 / 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showPendingBranchAccessDialog(BuildContext context) async {
+    await _showHomeAccessDialog(
+      context,
+      title: '점포 심사 대기 중이에요.',
+      description:
+          '직원관리, 인건비, 매장 비용, 구인·채용은\n승인 후 이용 가능합니다.',
+    );
   }
 
   Future<void> _handleBottomTap(BuildContext context, int index) async {
@@ -116,33 +236,18 @@ class _ManagerMainScreenState extends State<ManagerMainScreen> {
     final requiresBranchSelection = index != 0;
 
     if (requiresBranchSelection && selectedBranchId == null) {
-      final moveHome =
-          await showDialog<bool>(
-            context: context,
-            builder: (dialogContext) {
-              return AlertDialog(
-                title: const Text('매장을 선택해주세요'),
-                content: const Text(
-                  '직원관리, 인건비, 매장·비용, 구인·채용 페이지는\n홈에서 매장을 선택한 뒤 이용할 수 있어요.',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(dialogContext).pop(false),
-                    child: const Text('닫기'),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.of(dialogContext).pop(true),
-                    child: const Text('홈으로 이동'),
-                  ),
-                ],
-              );
-            },
-          ) ??
-          false;
+      await _showHomeAccessDialog(
+        context,
+        title: '매장을 먼저 선택해 주세요.',
+        description:
+            '직원관리, 인건비, 매장 비용, 구인·채용은\n'
+            '홈에서 매장을 선택한 뒤 이용할 수 있어요.',
+      );
+      return;
+    }
 
-      if (moveHome && mounted) {
-        setState(() => _currentIndex = 0);
-      }
+    if (index != 0 && _isSelectedBranchPending(context)) {
+      await _showPendingBranchAccessDialog(context);
       return;
     }
 
@@ -210,6 +315,23 @@ class _ManagerMainScreenState extends State<ManagerMainScreen> {
       ],
       child: Builder(
         builder: (context) {
+          final selectedBranchId = context.select<SelectedBranchCubit, int?>(
+            (cubit) => cubit.state,
+          );
+          final homeState = context.select<HomeBloc, HomeState>(
+            (bloc) => bloc.state,
+          );
+          final selectedBranchPending = _isSelectedBranchPendingFromState(
+            selectedBranchId,
+            homeState,
+          );
+          if (selectedBranchPending && _currentIndex != 0) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted || _currentIndex == 0) return;
+              setState(() => _currentIndex = 0);
+            });
+          }
+
           return Scaffold(
             backgroundColor: AppColors.background,
             body: IndexedStack(
