@@ -5,7 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class ApiConfig {
   ApiConfig._();
 
-  static const String _defaultBaseUrl = 'http://3.39.67.86:8000/api/v1';
+  static const String _defaultBaseUrl = 'https://nanum-store.com/api/v1';
 
   static String get baseUrl {
     try {
