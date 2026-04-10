@@ -111,10 +111,6 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
     if (widget.authRepository.isLoggedIn) {
       try {
         await widget.authRepository.getMe();
-        // 미완료 회원가입(역할 미선택 등)은 앱을 다시 켰을 때 이어가지 않고 로그인 화면부터
-        if (widget.authRepository.needsSignupCompletion) {
-          await widget.authRepository.logout();
-        }
       } catch (_) {
         await widget.authRepository.logout();
       }

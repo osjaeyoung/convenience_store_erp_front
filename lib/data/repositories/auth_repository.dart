@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -21,7 +23,6 @@ import '../network/api_client.dart';
 class AuthRepository extends ChangeNotifier {
   AuthRepository(this._apiClient, this._tokenStorage) {
     _user = _cachedUser;
-    Future<void>.microtask(() => clearSignupDraft(notify: false));
   }
 
   final ApiClient _apiClient;
@@ -46,7 +47,11 @@ class AuthRepository extends ChangeNotifier {
 
   bool get isJobSeeker => _user?.role.isJobSeeker ?? false;
   bool get isSignupInProgress => _isSignupInProgress;
+  bool get hasSignupDraft => signupDraft != null;
   String? get signupStep => _signupStep;
+  Map<String, dynamic>? get signupDraft => _readJson(_signupDraftKey);
+  Map<String, dynamic>? get phoneVerificationSession =>
+      _readJson(_phoneVerificationSessionKey);
   String? get currentEmail {
     final value = _authUser?.email?.trim();
     if (value == null || value.isEmpty) return null;
@@ -385,6 +390,30 @@ class AuthRepository extends ChangeNotifier {
     if (notify) notifyListeners();
   }
 
+  Future<void> saveSignupDraft(
+    Map<String, dynamic> draft, {
+    bool notify = false,
+  }) async {
+    await _tokenStorage.saveString(_signupDraftKey, jsonEncode(draft));
+    if (notify) notifyListeners();
+  }
+
+  Future<void> savePhoneVerificationSession(
+    Map<String, dynamic> session, {
+    bool notify = false,
+  }) async {
+    await _tokenStorage.saveString(
+      _phoneVerificationSessionKey,
+      jsonEncode(session),
+    );
+    if (notify) notifyListeners();
+  }
+
+  Future<void> clearPhoneVerificationSession({bool notify = false}) async {
+    await _tokenStorage.remove(_phoneVerificationSessionKey);
+    if (notify) notifyListeners();
+  }
+
   /// 내 정보 조회
   Future<AuthUser> getMe() async {
     final res = await _apiClient.dio.get<Map<String, dynamic>>('/auth/me');
@@ -651,5 +680,22 @@ class AuthRepository extends ChangeNotifier {
     _signupStep = auth.signupStep;
     _approvalStatus = auth.approvalStatus;
     _isSignupInProgress = needsSignupCompletion;
+  }
+
+  Map<String, dynamic>? _readJson(String key) {
+    final raw = _tokenStorage.getString(key);
+    if (raw == null || raw.trim().isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) return decoded;
+      if (decoded is Map) {
+        return decoded.map(
+          (key, value) => MapEntry(key.toString(), value),
+        );
+      }
+    } catch (_) {
+      return null;
+    }
+    return null;
   }
 }

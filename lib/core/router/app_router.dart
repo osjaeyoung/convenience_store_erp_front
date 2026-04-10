@@ -42,6 +42,12 @@ GoRouter createAppRouter(
       final signupFlowRoute = isSigningUp || isSignupComplete;
 
       if (!authRepository.isLoggedIn &&
+          authRepository.hasSignupDraft &&
+          !signupFlowRoute) {
+        return AppRouter.signup;
+      }
+
+      if (!authRepository.isLoggedIn &&
           !isLoggingIn &&
           !isSigningUp &&
           !isSignupComplete) {
@@ -106,6 +112,9 @@ int? _queryInt(GoRouterState state, String key) {
 
 String _initialLocationFor(AuthRepository authRepository) {
   if (authRepository.isLoggedIn && authRepository.isSignupInProgress) {
+    return AppRouter.signup;
+  }
+  if (!authRepository.isLoggedIn && authRepository.hasSignupDraft) {
     return AppRouter.signup;
   }
   if (authRepository.isLoggedIn) {
