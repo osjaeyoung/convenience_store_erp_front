@@ -65,12 +65,13 @@ class StaffManagementRepository {
     required int scheduleId,
     String? status,
     String? memo,
+    bool includeMemo = false,
   }) async {
     final res = await _apiClient.dio.patch<Map<String, dynamic>>(
       '/staff-management/branches/$branchId/schedules/$scheduleId',
       data: {
         if (status != null) 'status': status,
-        if (memo != null) 'memo': memo,
+        if (includeMemo) 'memo': memo,
       },
     );
     return res.data!;

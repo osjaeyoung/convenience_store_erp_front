@@ -8,9 +8,10 @@ import '../widgets/employee_profile_box.dart';
 import '../widgets/work_status_badge.dart';
 import 'employee_work_history_edit_screen.dart';
 
-class EmployeeWorkHistoryScreen extends StatelessWidget {
+class EmployeeWorkHistoryScreen extends StatefulWidget {
   const EmployeeWorkHistoryScreen({
     super.key,
+    required this.branchId,
     required this.branchName,
     required this.employeeName,
     required this.hireDate,
@@ -20,6 +21,7 @@ class EmployeeWorkHistoryScreen extends StatelessWidget {
     required this.workHistories,
   });
 
+  final int branchId;
   final String branchName;
   final String employeeName;
   final String hireDate;
@@ -28,8 +30,42 @@ class EmployeeWorkHistoryScreen extends StatelessWidget {
   final int? starCount;
   final List<Map<String, dynamic>> workHistories;
 
-  static const String fixedWorkDate = '2025.10.10';
-  static const String fixedWorkTime = '00:00~07:00';
+  @override
+  State<EmployeeWorkHistoryScreen> createState() =>
+      _EmployeeWorkHistoryScreenState();
+}
+
+class _EmployeeWorkHistoryScreenState extends State<EmployeeWorkHistoryScreen> {
+  late List<Map<String, dynamic>> _workHistories;
+  bool _hasUpdated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _workHistories = widget.workHistories
+        .map((row) => Map<String, dynamic>.from(row))
+        .toList();
+  }
+
+  Future<void> _openEditScreen() async {
+    final updatedRows = await Navigator.of(context).push<List<Map<String, dynamic>>>(
+      MaterialPageRoute<List<Map<String, dynamic>>>(
+        builder: (_) => EmployeeWorkHistoryEditScreen(
+          branchId: widget.branchId,
+          branchName: widget.branchName,
+          workHistories: _workHistories,
+        ),
+      ),
+    );
+
+    if (updatedRows == null || !mounted) return;
+    setState(() {
+      _workHistories = updatedRows
+          .map((row) => Map<String, dynamic>.from(row))
+          .toList();
+      _hasUpdated = true;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +74,7 @@ class EmployeeWorkHistoryScreen extends StatelessWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context, _hasUpdated),
         ),
         title: const Text('근무 이력'),
         backgroundColor: AppColors.grey0,
@@ -51,12 +87,12 @@ class EmployeeWorkHistoryScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             EmployeeProfileBox(
-              name: employeeName,
-              hireDate: hireDate,
-              contact: contact,
-              resignationDate: resignationDate,
+              name: widget.employeeName,
+              hireDate: widget.hireDate,
+              contact: widget.contact,
+              resignationDate: widget.resignationDate,
               showEditButton: false,
-              starCount: starCount,
+              starCount: widget.starCount,
             ),
             SizedBox(height: 24.h),
             Row(
@@ -72,16 +108,7 @@ class EmployeeWorkHistoryScreen extends StatelessWidget {
                 ),
                 const Spacer(),
                 FilledButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => EmployeeWorkHistoryEditScreen(
-                          branchName: branchName,
-                          workHistories: workHistories,
-                        ),
-                      ),
-                    );
-                  },
+                  onPressed: _openEditScreen,
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFF9D9DAA),
                     foregroundColor: AppColors.grey0,
@@ -104,10 +131,8 @@ class EmployeeWorkHistoryScreen extends StatelessWidget {
             ),
             SizedBox(height: 10.h),
             _WorkHistoryTable(
-              branchName: branchName,
-              rows: workHistories,
-              fixedWorkDate: fixedWorkDate,
-              fixedWorkTime: fixedWorkTime,
+              branchName: widget.branchName,
+              rows: _workHistories,
             ),
           ],
         ),
@@ -120,14 +145,10 @@ class _WorkHistoryTable extends StatelessWidget {
   const _WorkHistoryTable({
     required this.branchName,
     required this.rows,
-    required this.fixedWorkDate,
-    required this.fixedWorkTime,
   });
 
   final String branchName;
   final List<Map<String, dynamic>> rows;
-  final String fixedWorkDate;
-  final String fixedWorkTime;
   static const int _branchFlex = 22;
   static const int _dateFlex = 23;
   static const int _timeFlex = 27;
@@ -183,8 +204,8 @@ class _WorkHistoryTable extends StatelessWidget {
                       _extractBranchName(row, branchName),
                       flex: _branchFlex,
                     ),
-                    _BodyCell(fixedWorkDate, flex: _dateFlex),
-                    _BodyCell(fixedWorkTime, flex: _timeFlex),
+                    _BodyCell(_formatWorkDate(row), flex: _dateFlex),
+                    _BodyCell(_formatWorkTime(row), flex: _timeFlex),
                     Expanded(
                       flex: _statusFlex,
                       child: SizedBox(
@@ -223,6 +244,52 @@ class _WorkHistoryTable extends StatelessWidget {
     final fallback = fallbackBranchName.trim();
     if (fallback.isNotEmpty) return fallback;
     return '-';
+  }
+
+  String _formatWorkDate(Map<String, dynamic> row) {
+    final directDate = _parseDate(row['work_date']?.toString());
+    if (directDate != null) return _toDotDate(directDate);
+
+    final updatedAt = _parseDate(row['updated_at']?.toString());
+    if (updatedAt != null) return _toDotDate(updatedAt);
+
+    return '-';
+  }
+
+  String _formatWorkTime(Map<String, dynamic> row) {
+    final start = row['start_time']?.toString().trim() ?? '';
+    final end = row['end_time']?.toString().trim() ?? '';
+    if (start.isNotEmpty && end.isNotEmpty) {
+      return '$start~$end';
+    }
+
+    final timeLabel = row['time_label']?.toString().trim() ?? '';
+    if (timeLabel.isNotEmpty) return timeLabel;
+    return '-';
+  }
+
+  DateTime? _parseDate(String? raw) {
+    final text = raw?.trim() ?? '';
+    if (text.isEmpty) return null;
+
+    final match = RegExp(
+      r'(\d{4})[.\-](\d{1,2})[.\-](\d{1,2})',
+    ).firstMatch(text);
+    if (match != null) {
+      return DateTime(
+        int.parse(match.group(1)!),
+        int.parse(match.group(2)!),
+        int.parse(match.group(3)!),
+      );
+    }
+
+    return DateTime.tryParse(text);
+  }
+
+  String _toDotDate(DateTime date) {
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '${date.year}.$month.$day';
   }
 }
 

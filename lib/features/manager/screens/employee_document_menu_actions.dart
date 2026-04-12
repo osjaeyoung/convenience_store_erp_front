@@ -20,12 +20,14 @@ Future<void> openEmployeeDocumentMenuItem(
   required List<Map<String, dynamic>> workHistories,
   Object? payrollStatementsRaw,
   VoidCallback? onPayrollFlowFinished,
+  VoidCallback? onWorkHistoryFlowFinished,
 }) async {
   switch (title) {
     case '근무이력':
-      await Navigator.of(context).push<void>(
-        MaterialPageRoute<void>(
+      final changed = await Navigator.of(context).push<bool>(
+        MaterialPageRoute<bool>(
           builder: (_) => EmployeeWorkHistoryScreen(
+            branchId: branchId,
             branchName: branchName,
             employeeName: employeeName,
             hireDate: hireDate,
@@ -36,6 +38,9 @@ Future<void> openEmployeeDocumentMenuItem(
           ),
         ),
       );
+      if (changed == true) {
+        onWorkHistoryFlowFinished?.call();
+      }
       return;
     case '급여명세':
       final changed = await Navigator.of(context).push<bool>(

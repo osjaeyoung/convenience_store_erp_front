@@ -23,13 +23,25 @@ class ScheduleDateSelector extends StatefulWidget {
 
 class _ScheduleDateSelectorState extends State<ScheduleDateSelector> {
   static const _weekdays = ['월', '화', '수', '목', '금', '토', '일'];
+  static const _dayItemExtent = 56.0;
+  static const _visibleDayRange = 28;
   late final ScrollController _scrollController;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToToday());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _jumpToSelectedDate());
+  }
+
+  @override
+  void didUpdateWidget(covariant ScheduleDateSelector oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_isSameDate(oldWidget.selectedDate, widget.selectedDate)) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _animateToSelectedDate(),
+      );
+    }
   }
 
   @override
@@ -38,18 +50,53 @@ class _ScheduleDateSelectorState extends State<ScheduleDateSelector> {
     super.dispose();
   }
 
-  void _scrollToToday() {
-    if (!_scrollController.hasClients) return;
-    const itemWidth = 56.0;
-    final today = DateTime.now();
-    final start = today.subtract(const Duration(days: 14));
-    final days = List.generate(28, (i) => start.add(Duration(days: i)));
-    final todayIndex = days.indexWhere(
-      (d) => d.year == today.year && d.month == today.month && d.day == today.day,
+  bool _isSameDate(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  List<DateTime> _buildVisibleDates(DateTime centerDate) {
+    final start = centerDate.subtract(
+      Duration(days: _visibleDayRange ~/ 2),
     );
-    if (todayIndex >= 0) {
-      final offset = (todayIndex * itemWidth) - (_scrollController.position.viewportDimension / 2) + (itemWidth / 2);
-      _scrollController.jumpTo(offset.clamp(0.0, _scrollController.position.maxScrollExtent));
+    return List.generate(
+      _visibleDayRange,
+      (i) => start.add(Duration(days: i)),
+    );
+  }
+
+  void _jumpToSelectedDate() {
+    _scrollToSelectedDate(animated: false);
+  }
+
+  void _animateToSelectedDate() {
+    _scrollToSelectedDate(animated: true);
+  }
+
+  void _scrollToSelectedDate({required bool animated}) {
+    if (!_scrollController.hasClients) return;
+    final visibleDates = _buildVisibleDates(widget.selectedDate);
+    final selectedIndex = visibleDates.indexWhere(
+      (d) => _isSameDate(d, widget.selectedDate),
+    );
+    if (selectedIndex < 0) return;
+
+    final offset =
+        (selectedIndex * _dayItemExtent) -
+        (_scrollController.position.viewportDimension / 2) +
+        (_dayItemExtent / 2);
+    final targetOffset = offset.clamp(
+      0.0,
+      _scrollController.position.maxScrollExtent,
+    ).toDouble();
+
+    if (animated) {
+      _scrollController.animateTo(
+        targetOffset,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+      );
+    } else {
+      _scrollController.jumpTo(targetOffset);
     }
   }
 
@@ -66,8 +113,7 @@ class _ScheduleDateSelectorState extends State<ScheduleDateSelector> {
     final daysInMonth = DateTime(year, month + 1, 0).day;
     final days = List.generate(daysInMonth, (i) => i + 1);
 
-    final start = now.subtract(const Duration(days: 14));
-    final weekDays = List.generate(28, (i) => start.add(Duration(days: i)));
+    final weekDays = _buildVisibleDates(selectedDate);
 
     final labelStyle = TextStyle(
       fontFamily: 'Pretendard',
@@ -91,6 +137,8 @@ class _ScheduleDateSelectorState extends State<ScheduleDateSelector> {
                   value: year,
                   options: years,
                   onChanged: (v) => _apply(year: v),
+                  minWidth: 72.w,
+                  maxWidth: 88.w,
                 ),
                 SizedBox(width: 8.w),
                 Text('년', style: labelStyle),
@@ -121,7 +169,7 @@ class _ScheduleDateSelectorState extends State<ScheduleDateSelector> {
             controller: _scrollController,
             scrollDirection: Axis.horizontal,
             padding: EdgeInsets.zero,
-            itemExtent: 56,
+            itemExtent: _dayItemExtent,
             itemCount: weekDays.length,
             itemBuilder: (context, index) {
               final d = weekDays[index];
@@ -197,16 +245,20 @@ class _Selector extends StatelessWidget {
     required this.value,
     required this.options,
     required this.onChanged,
+    this.minWidth = 56,
+    this.maxWidth = 80,
   });
 
   final int value;
   final List<int> options;
   final ValueChanged<int> onChanged;
+  final double minWidth;
+  final double maxWidth;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minWidth: 56, maxWidth: 80),
+      constraints: BoxConstraints(minWidth: minWidth, maxWidth: maxWidth),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10.r),
         border: Border.all(color: AppColors.grey50),
@@ -233,7 +285,12 @@ class _Selector extends StatelessWidget {
               .map(
                 (v) => DropdownMenuItem(
                   value: v,
-                  child: Text('$v', textAlign: TextAlign.center),
+                  child: Text(
+                    '$v',
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.visible,
+                  ),
                 ),
               )
               .toList(),

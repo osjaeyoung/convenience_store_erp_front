@@ -569,6 +569,11 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
                 resignationDate: resignationDate,
                 starCount: starCount,
                 workHistories: workHistories,
+                onWorkHistoryFlowFinished: () {
+                  if (!mounted) return;
+                  setState(() => _needsRefresh = true);
+                  _loadDetail();
+                },
                 payrollStatementsRaw: payrollStatementsRaw,
                 onPayrollFlowFinished: () {
                   if (mounted) _loadDetail();

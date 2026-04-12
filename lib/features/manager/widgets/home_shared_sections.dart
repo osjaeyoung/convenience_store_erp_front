@@ -16,11 +16,13 @@ class HomeTodayWorkersSection extends StatelessWidget {
     this.onTapMemo,
     this.showHeader = true,
     this.tableHorizontalPadding = 8,
+    this.alwaysShowMemoIcon = false,
   });
 
   final String dateLabel;
   final bool showHeader;
   final double tableHorizontalPadding;
+  final bool alwaysShowMemoIcon;
   final List<
       ({
         String time,
@@ -147,7 +149,9 @@ class HomeTodayWorkersSection extends StatelessWidget {
                   _WorkerNameCell(row.workerName),
                   _MemoIconCell(
                     hasMemo: row.hasMemo,
-                    onTap: row.hasMemo && onTapMemo != null
+                    alwaysVisible: alwaysShowMemoIcon,
+                    onTap:
+                        (row.hasMemo || alwaysShowMemoIcon) && onTapMemo != null
                         ? () => onTapMemo!(index, row)
                         : null,
                   ),
@@ -434,21 +438,24 @@ class _BodyCell extends StatelessWidget {
 class _MemoIconCell extends StatelessWidget {
   const _MemoIconCell({
     required this.hasMemo,
+    this.alwaysVisible = false,
     this.onTap,
   });
 
   final bool hasMemo;
+  final bool alwaysVisible;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final isVisible = hasMemo || alwaysVisible;
     return Expanded(
       child: Center(
         child: InkWell(
-          onTap: onTap,
+          onTap: isVisible ? onTap : null,
           borderRadius: BorderRadius.circular(8.r),
           child: Opacity(
-            opacity: hasMemo ? 1 : 0,
+            opacity: isVisible ? 1 : 0,
             child: Container(
               width: 28,
               height: 28,

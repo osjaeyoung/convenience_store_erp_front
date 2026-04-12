@@ -324,36 +324,25 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
   }
 
   Widget _buildWeeklyTableContent(List<DateTime> weekDays) {
-    const minRowHeight = 44.0;
-    final tableBodyHeight = _slotTimes.length * minRowHeight * 2.5;
-    final tableHeaderHeight = 120.0;
-    final totalTableHeight = tableHeaderHeight + tableBodyHeight;
-    return SizedBox(
-      height: totalTableHeight,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.zero,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: weekDays.asMap().entries.map((e) {
-            final i = e.key;
-            final d = e.value;
-            return Padding(
-              padding: EdgeInsets.only(right: i < weekDays.length - 1 ? 12 : 0),
-              child: _WeekDayTable(
-                dateLabel:
-                    '${d.year}.${d.month.toString().padLeft(2, '0')}.${d.day.toString().padLeft(2, '0')}(${_weekdays[d.weekday - 1]})',
-                dateStr: _toIsoDate(d),
-                assignments: _weekAssignments[_toIsoDate(d)] ?? {},
-                slotTimes: _slotTimes,
-                isDragMode: false,
-                dragSelectedSlots: const {},
-                onSlotTap: (time) =>
-                    _showEmployeePickerForSlot(time, _toIsoDate(d)),
-              ),
-            );
-          }).toList(),
-        ),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: EdgeInsets.zero,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: weekDays.asMap().entries.map((e) {
+          final i = e.key;
+          final d = e.value;
+          return Padding(
+            padding: EdgeInsets.only(right: i < weekDays.length - 1 ? 12 : 0),
+            child: _WeekDayTable(
+              dateLabel:
+                  '${d.year}.${d.month.toString().padLeft(2, '0')}.${d.day.toString().padLeft(2, '0')}(${_weekdays[d.weekday - 1]})',
+              assignments: _weekAssignments[_toIsoDate(d)] ?? {},
+              slotTimes: _slotTimes,
+              onSlotTap: (time) => _showEmployeePickerForSlot(time, _toIsoDate(d)),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
@@ -490,7 +479,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
           children: [
             const TextSpan(text: '현 근무자 '),
             TextSpan(
-              text: '$name',
+              text: name,
               style: TextStyle(color: AppColors.primary),
             ),
             const TextSpan(text: ' 사원의\n근무 배정 시간대를\n드래그 해주세요.'),
@@ -593,13 +582,23 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
       }
       return;
     }
-    final picked = await showDialog<({int id, String name})>(
+    final weekDayAssignments = dateStr != null ? _weekAssignments[dateStr] : null;
+    final initialSelected = dateStr != null
+        ? List<({int id, String name})>.from(
+            weekDayAssignments?[time] ?? <({int id, String name})>[],
+          )
+        : List<({int id, String name})>.from(
+            _assignments[time] ?? <({int id, String name})>[],
+          );
+    final picked = await showDialog<List<({int id, String name})>>(
       context: context,
       barrierColor: Colors.black54,
-      builder: (ctx) => _EmployeeSelectionModal(
+      builder: (ctx) => _EmployeeMultiSelectionModal(
         activeWorkers: active,
         retiredWorkers: retired,
+        initialSelected: initialSelected,
         title: '직원 선택',
+        maxSelectableCount: 2,
       ),
     );
     if (picked != null && mounted) {
@@ -608,16 +607,10 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
           final dayMap = Map<String, List<({int id, String name})>>.from(
             _weekAssignments[dateStr] ?? {},
           );
-          final list = dayMap[time] ?? [];
-          if (!list.any((e) => e.id == picked.id)) {
-            dayMap[time] = [...list, picked];
-            _weekAssignments = {..._weekAssignments, dateStr: dayMap};
-          }
+          dayMap[time] = picked;
+          _weekAssignments = {..._weekAssignments, dateStr: dayMap};
         } else {
-          final list = _assignments[time] ?? [];
-          if (!list.any((e) => e.id == picked.id)) {
-            _assignments[time] = [...list, picked];
-          }
+          _assignments[time] = picked;
         }
       });
     }
@@ -634,7 +627,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     });
   }
 
-  static String _dragSlotKey(String dateStr, String time) => '$dateStr\_$time';
+  static String _dragSlotKey(String dateStr, String time) => '${dateStr}_$time';
 
   void _onCompleteDrag() {
     final emp = _dragFilterEmployee;
@@ -710,20 +703,14 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
 class _WeekDayTable extends StatelessWidget {
   const _WeekDayTable({
     required this.dateLabel,
-    required this.dateStr,
     required this.assignments,
     required this.slotTimes,
-    required this.isDragMode,
-    required this.dragSelectedSlots,
     required this.onSlotTap,
   });
 
   final String dateLabel;
-  final String dateStr;
   final Map<String, List<({int id, String name})>> assignments;
   final List<String> slotTimes;
-  final bool isDragMode;
-  final Set<String> dragSelectedSlots;
   final void Function(String time) onSlotTap;
 
   @override
@@ -793,15 +780,10 @@ class _WeekDayTable extends StatelessWidget {
               ],
             ),
           ),
-          // 30분 단위 행 - 같은 사람이어도 30분씩 끊어서 표시, 행마다 회색 디바이더
+          // 30분 단위 행 표시
           ...slotTimes.map((time) {
             final endTime = _slotEndTime(time);
-            final assigned = isDragMode
-                ? <({int id, String name})>[]
-                : (assignments[time] ?? []);
-            final isDragSelected = dragSelectedSlots.contains(
-              '$dateStr\_$time',
-            );
+            final assigned = assignments[time] ?? [];
             return Container(
               decoration: BoxDecoration(
                 border: Border(bottom: BorderSide(color: AppColors.grey25)),
@@ -810,8 +792,8 @@ class _WeekDayTable extends StatelessWidget {
                 startTime: time,
                 endTime: endTime,
                 assigned: assigned,
-                isDragSelected: isDragSelected,
-                showPlusButton: !isDragMode,
+                isDragSelected: false,
+                showPlusButton: true,
                 onSlotTap: onSlotTap,
               ),
             );
@@ -838,7 +820,7 @@ class _SlotRow extends StatelessWidget {
   final List<({int id, String name})> assigned;
   final bool isDragSelected;
   final bool showPlusButton;
-  final void Function(String time) onSlotTap;
+  final void Function(String time)? onSlotTap;
 
   @override
   Widget build(BuildContext context) {
@@ -886,12 +868,12 @@ class _SlotRow extends StatelessWidget {
             ),
             Expanded(
               child: GestureDetector(
-                onTap: () => onSlotTap(startTime),
+                onTap: showPlusButton ? () => onSlotTap?.call(startTime) : null,
                 behavior: HitTestBehavior.opaque,
                 child: _StaffSlotCell(
                   assigned: assigned,
                   showPlusButton: showPlusButton,
-                  onAddTap: () => onSlotTap(startTime),
+                  onAddTap: () => onSlotTap?.call(startTime),
                 ),
               ),
             ),
@@ -1173,19 +1155,17 @@ class _SlotCard extends StatelessWidget {
   }
 }
 
-/// 직원 선택 모달 - 드래그 지정/슬롯 추가 공통
+/// 직원 선택 모달 - 드래그 지정용 단일 선택
 class _EmployeeSelectionModal extends StatefulWidget {
   const _EmployeeSelectionModal({
     required this.activeWorkers,
     required this.retiredWorkers,
     this.initialSelected,
-    this.title = '드래그 입력 직원 지정',
   });
 
   final List<({int id, String name})> activeWorkers;
   final List<({int id, String name})> retiredWorkers;
   final ({int id, String name})? initialSelected;
-  final String title;
 
   @override
   State<_EmployeeSelectionModal> createState() =>
@@ -1221,7 +1201,7 @@ class _EmployeeSelectionModalState extends State<_EmployeeSelectionModal>
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              widget.title,
+              '드래그 입력 직원 지정',
               style: AppTypography.heading3.copyWith(
                 color: AppColors.textPrimary,
                 fontWeight: FontWeight.w600,
@@ -1312,6 +1292,202 @@ class _EmployeeSelectionModalState extends State<_EmployeeSelectionModal>
   }
 }
 
+class _EmployeeMultiSelectionModal extends StatefulWidget {
+  const _EmployeeMultiSelectionModal({
+    required this.activeWorkers,
+    required this.retiredWorkers,
+    required this.initialSelected,
+    required this.maxSelectableCount,
+    this.title = '직원 선택',
+  });
+
+  final List<({int id, String name})> activeWorkers;
+  final List<({int id, String name})> retiredWorkers;
+  final List<({int id, String name})> initialSelected;
+  final int maxSelectableCount;
+  final String title;
+
+  @override
+  State<_EmployeeMultiSelectionModal> createState() =>
+      _EmployeeMultiSelectionModalState();
+}
+
+class _EmployeeMultiSelectionModalState
+    extends State<_EmployeeMultiSelectionModal>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  late final Map<int, ({int id, String name})> _selectedWorkers;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _selectedWorkers = {
+      for (final worker in widget.initialSelected) worker.id: worker,
+    };
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _toggleWorker(({int id, String name}) worker) {
+    if (_selectedWorkers.containsKey(worker.id)) {
+      setState(() => _selectedWorkers.remove(worker.id));
+      return;
+    }
+
+    if (_selectedWorkers.length >= widget.maxSelectableCount) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('직원은 최대 ${widget.maxSelectableCount}명까지 선택할 수 있습니다.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _selectedWorkers[worker.id] = worker);
+  }
+
+  List<({int id, String name})> _selectedWorkersInOrder() {
+    final orderedWorkers = <({int id, String name})>[
+      ...widget.activeWorkers,
+      ...widget.retiredWorkers,
+    ];
+    final seen = <int>{};
+    final selected = <({int id, String name})>[];
+
+    for (final worker in orderedWorkers) {
+      if (!_selectedWorkers.containsKey(worker.id) || !seen.add(worker.id)) {
+        continue;
+      }
+      selected.add(worker);
+    }
+
+    for (final worker in _selectedWorkers.values) {
+      if (seen.add(worker.id)) {
+        selected.add(worker);
+      }
+    }
+
+    return selected;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedIds = _selectedWorkers.keys.toSet();
+    final orderedSelected = _selectedWorkersInOrder();
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
+      child: Padding(
+        padding: EdgeInsets.all(24.r),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              widget.title,
+              style: AppTypography.heading3.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              '최대 ${widget.maxSelectableCount}명까지 선택할 수 있어요.',
+              style: AppTypography.bodyMediumR.copyWith(
+                color: AppColors.textSecondary,
+                fontSize: 13.sp,
+              ),
+            ),
+            SizedBox(height: 20.h),
+            TabBar(
+              controller: _tabController,
+              labelColor: AppColors.textPrimary,
+              unselectedLabelColor: AppColors.grey150,
+              indicatorColor: AppColors.textPrimary,
+              indicatorWeight: 0.5,
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerHeight: 0,
+              dividerColor: Colors.transparent,
+              labelStyle: AppTypography.bodyLargeB.copyWith(
+                color: AppColors.textPrimary,
+                height: 24 / 16,
+              ),
+              unselectedLabelStyle: AppTypography.bodyLargeB.copyWith(
+                color: AppColors.grey150,
+                height: 24 / 16,
+              ),
+              tabs: const [
+                Tab(text: '현근무자'),
+                Tab(text: '퇴사자'),
+              ],
+            ),
+            SizedBox(
+              height: 220.h,
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _EmployeeMultiGrid(
+                    workers: widget.activeWorkers,
+                    selectedIds: selectedIds,
+                    onToggle: _toggleWorker,
+                  ),
+                  _EmployeeMultiGrid(
+                    workers: widget.retiredWorkers,
+                    selectedIds: selectedIds,
+                    onToggle: _toggleWorker,
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 20.h),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: Size.fromHeight(48.h),
+                      backgroundColor: AppColors.grey0,
+                      foregroundColor: AppColors.grey150,
+                      side: const BorderSide(color: AppColors.grey25),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                    ),
+                    child: const Text('취소'),
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: orderedSelected.isNotEmpty
+                        ? () => Navigator.of(context).pop(orderedSelected)
+                        : null,
+                    style: FilledButton.styleFrom(
+                      minimumSize: Size.fromHeight(48.h),
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.grey0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                    ),
+                    child: const Text('확인'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// 직원 그리드 - 1줄에 2개씩, 선택: 연두 배경/테두리, 미선택: 회색 배경/테두리
 class _EmployeeGrid extends StatelessWidget {
   const _EmployeeGrid({
@@ -1360,6 +1536,68 @@ class _EmployeeGrid extends StatelessWidget {
             child: Center(
               child: Text(
                 w.name,
+                textAlign: TextAlign.center,
+                style: AppTypography.bodyMediumM.copyWith(
+                  color: isSelected ? AppColors.primary : AppColors.grey200,
+                  height: 16 / 14,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _EmployeeMultiGrid extends StatelessWidget {
+  const _EmployeeMultiGrid({
+    required this.workers,
+    required this.selectedIds,
+    required this.onToggle,
+  });
+
+  final List<({int id, String name})> workers;
+  final Set<int> selectedIds;
+  final ValueChanged<({int id, String name})> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    if (workers.isEmpty) {
+      return Center(
+        child: Text(
+          '직원이 없습니다.',
+          style: AppTypography.bodyMediumR.copyWith(color: AppColors.grey150),
+        ),
+      );
+    }
+
+    return GridView.builder(
+      padding: EdgeInsets.only(top: 16.h),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        childAspectRatio: 2.5,
+      ),
+      itemCount: workers.length,
+      itemBuilder: (context, i) {
+        final worker = workers[i];
+        final isSelected = selectedIds.contains(worker.id);
+        return GestureDetector(
+          onTap: () => onToggle(worker),
+          child: Container(
+            padding: EdgeInsets.symmetric(vertical: 12.h),
+            decoration: BoxDecoration(
+              color: isSelected ? AppColors.primaryLight : AppColors.grey0Alt,
+              borderRadius: BorderRadius.circular(isSelected ? 12 : 8),
+              border: Border.all(
+                color: isSelected ? AppColors.primary : AppColors.grey150,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                worker.name,
                 textAlign: TextAlign.center,
                 style: AppTypography.bodyMediumM.copyWith(
                   color: isSelected ? AppColors.primary : AppColors.grey200,

@@ -22,6 +22,18 @@ import 'employee_detail_screen.dart';
 import 'worker_registration_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+typedef _DayScheduleRow =
+    ({
+      String startTime,
+      String endTime,
+      String displayTime,
+      List<String> timeLabels,
+      String workerName,
+      String status,
+      bool hasMemo,
+      String memo,
+    });
+
 /// 직원관리 화면
 class ManagementScreen extends StatefulWidget {
   const ManagementScreen({super.key});
@@ -291,29 +303,18 @@ class _ManagementScreenState extends State<ManagementScreen>
     int branchId,
     StaffManagementBlocState state,
   ) {
-    final slots = ((state.daySchedule?['slots'] as List?) ?? const [])
-        .whereType<Map>();
-    final rows =
-        <({String time, String workerName, String status, bool hasMemo})>[];
-    final memoMap = <String, String>{};
-    for (final slot in slots) {
-      final time = slot['time']?.toString() ?? '-';
-      final employees = ((slot['employees'] as List?) ?? const [])
-          .whereType<Map>();
-      for (final employee in employees) {
-        final workerName = employee['worker_name']?.toString() ?? '-';
-        final memo = employee['memo']?.toString().trim();
-        rows.add((
-          time: time,
-          workerName: workerName,
-          status: _toDisplayStatus(employee['status']?.toString() ?? ''),
-          hasMemo: memo != null && memo.isNotEmpty,
-        ));
-        if (memo != null && memo.isNotEmpty) {
-          memoMap['${rows.length - 1}'] = memo;
-        }
-      }
-    }
+    final slots = ((state.daySchedule?['slots'] as List?) ?? const []).whereType<Map>();
+    final scheduleRows = _buildMergedDayScheduleRows(slots);
+    final rows = scheduleRows
+        .map(
+          (row) => (
+            time: row.displayTime,
+            workerName: row.workerName,
+            status: row.status,
+            hasMemo: row.hasMemo,
+          ),
+        )
+        .toList();
     final workDate =
         state.daySchedule?['work_date']?.toString() ??
         _toIsoDate(_selectedDate);
@@ -337,23 +338,36 @@ class _ManagementScreenState extends State<ManagementScreen>
             rows: rows,
             showHeader: false,
             tableHorizontalPadding: 4,
-            onTapStatus: rows.isEmpty
+            alwaysShowMemoIcon: true,
+            onTapStatus: scheduleRows.isEmpty
                 ? null
                 : (index, row) {
+                    final selectedRow = scheduleRows[index];
                     _showWorkStatusModal(
                       context,
-                      row,
+                      selectedRow,
                       branchId: branchId,
                       workDate: workDate,
                     );
                   },
-            onTapMemo: rows.isEmpty
+            onTapMemo: scheduleRows.isEmpty
                 ? null
                 : (index, row) {
-                    _showMemoDetailModal(
+                    final selectedRow = scheduleRows[index];
+                    if (selectedRow.hasMemo) {
+                      _showMemoDetailModal(
+                        context,
+                        selectedRow,
+                        memo: selectedRow.memo,
+                        branchId: branchId,
+                        workDate: workDate,
+                      );
+                      return;
+                    }
+                    _showMemoModal(
                       context,
-                      row,
-                      memo: memoMap['$index'] ?? '',
+                      selectedRow,
+                      selectedRow.status,
                       branchId: branchId,
                       workDate: workDate,
                     );
@@ -366,7 +380,7 @@ class _ManagementScreenState extends State<ManagementScreen>
 
   Future<void> _showWorkStatusModal(
     BuildContext context,
-    ({String time, String workerName, String status, bool hasMemo}) row, {
+    _DayScheduleRow row, {
     required int branchId,
     required String workDate,
   }) async {
@@ -519,7 +533,7 @@ class _ManagementScreenState extends State<ManagementScreen>
                               _saveWorkerStatus(
                                 bloc,
                                 workDate: workDate,
-                                timeLabel: row.time,
+                                timeLabels: row.timeLabels,
                                 workerName: row.workerName,
                                 status: selectedStatus,
                                 branchId: branchId,
@@ -550,7 +564,7 @@ class _ManagementScreenState extends State<ManagementScreen>
 
   Future<void> _showMemoModal(
     BuildContext context,
-    ({String time, String workerName, String status, bool hasMemo}) row,
+    _DayScheduleRow row,
     String status, {
     required int branchId,
     required String workDate,
@@ -597,7 +611,7 @@ class _ManagementScreenState extends State<ManagementScreen>
                     border: Border(bottom: BorderSide(color: AppColors.grey25)),
                   ),
                   child: _MemoInfoDataRow(
-                    time: row.time,
+                    time: row.displayTime,
                     workerName: row.workerName,
                     statusLabel: _toDisplayStatus(status),
                   ),
@@ -654,7 +668,7 @@ class _ManagementScreenState extends State<ManagementScreen>
                           _saveWorkerStatus(
                             bloc,
                             workDate: workDate,
-                            timeLabel: row.time,
+                            timeLabels: row.timeLabels,
                             workerName: row.workerName,
                             status: status,
                             memo: memoText.isNotEmpty ? memoText : null,
@@ -684,7 +698,7 @@ class _ManagementScreenState extends State<ManagementScreen>
 
   Future<void> _showMemoDetailModal(
     BuildContext context,
-    ({String time, String workerName, String status, bool hasMemo}) row, {
+    _DayScheduleRow row, {
     required String memo,
     required int branchId,
     required String workDate,
@@ -731,7 +745,7 @@ class _ManagementScreenState extends State<ManagementScreen>
                     border: Border(bottom: BorderSide(color: AppColors.grey25)),
                   ),
                   child: _MemoInfoDataRow(
-                    time: row.time,
+                    time: row.displayTime,
                     workerName: row.workerName,
                     statusLabel: _toDisplayStatus(row.status),
                   ),
@@ -773,7 +787,7 @@ class _ManagementScreenState extends State<ManagementScreen>
                           _saveWorkerStatus(
                             bloc,
                             workDate: workDate,
-                            timeLabel: row.time,
+                            timeLabels: row.timeLabels,
                             workerName: row.workerName,
                             status: row.status,
                             memo: null,
@@ -819,22 +833,124 @@ class _ManagementScreenState extends State<ManagementScreen>
   void _saveWorkerStatus(
     StaffManagementBloc bloc, {
     required String workDate,
-    required String timeLabel,
+    required List<String> timeLabels,
     required String workerName,
     required String status,
     String? memo,
     required int branchId,
   }) {
-    bloc.add(
-      StaffManagementWorkerStatusSaveRequested(
-        branchId: branchId,
-        workDate: workDate,
-        timeLabel: timeLabel,
-        workerName: workerName,
-        status: status,
-        memo: memo,
-      ),
-    );
+    for (final timeLabel in timeLabels) {
+      bloc.add(
+        StaffManagementWorkerStatusSaveRequested(
+          branchId: branchId,
+          workDate: workDate,
+          timeLabel: timeLabel,
+          workerName: workerName,
+          status: status,
+          memo: memo,
+        ),
+      );
+    }
+  }
+
+  List<_DayScheduleRow> _buildMergedDayScheduleRows(Iterable<Map> slots) {
+    final rows = <_DayScheduleRow>[];
+    final openSegments =
+        <String, ({String startTime, List<String> timeLabels, String workerName, String status, String memo})>{};
+
+    _DayScheduleRow closeSegment(
+      ({String startTime, List<String> timeLabels, String workerName, String status, String memo}) segment,
+    ) {
+      final labels = List<String>.from(segment.timeLabels);
+      final endTime = labels.isEmpty
+          ? _slotEndTime(segment.startTime)
+          : _slotEndTime(labels.last);
+      return (
+        startTime: segment.startTime,
+        endTime: endTime,
+        displayTime: '${segment.startTime}\n$endTime',
+        timeLabels: labels,
+        workerName: segment.workerName,
+        status: segment.status,
+        hasMemo: segment.memo.isNotEmpty,
+        memo: segment.memo,
+      );
+    }
+
+    for (final slot in slots) {
+      final time = slot['time']?.toString().trim() ?? '';
+      if (time.isEmpty) continue;
+
+      final employees = ((slot['employees'] as List?) ?? const []).whereType<Map>();
+      final activeKeys = <String>{};
+
+      for (final employee in employees) {
+        final workerName = employee['worker_name']?.toString().trim() ?? '-';
+        final status = _toDisplayStatus(employee['status']?.toString() ?? '');
+        final memo = employee['memo']?.toString().trim() ?? '';
+        final employeeId = employee['employee_id']?.toString().trim();
+        final identityKey = (employeeId != null && employeeId.isNotEmpty)
+            ? employeeId
+            : workerName;
+
+        activeKeys.add(identityKey);
+
+        final existing = openSegments[identityKey];
+        final isContinuous =
+            existing != null &&
+            existing.timeLabels.isNotEmpty &&
+            _slotEndTime(existing.timeLabels.last) == time &&
+            existing.status == status &&
+            existing.memo == memo;
+
+        if (isContinuous) {
+          existing.timeLabels.add(time);
+          continue;
+        }
+
+        if (existing != null) {
+          rows.add(closeSegment(existing));
+        }
+
+        openSegments[identityKey] = (
+          startTime: time,
+          timeLabels: [time],
+          workerName: workerName,
+          status: status,
+          memo: memo,
+        );
+      }
+
+      for (final key in openSegments.keys.toList()) {
+        if (activeKeys.contains(key)) continue;
+        rows.add(closeSegment(openSegments.remove(key)!));
+      }
+    }
+
+    for (final segment in openSegments.values) {
+      rows.add(closeSegment(segment));
+    }
+
+    rows.sort((a, b) {
+      final byStart = a.startTime.compareTo(b.startTime);
+      if (byStart != 0) return byStart;
+      return a.workerName.compareTo(b.workerName);
+    });
+    return rows;
+  }
+
+  String _slotEndTime(String time) {
+    final parts = time.split(':');
+    var hour = int.tryParse(parts.first) ?? 0;
+    var minute = int.tryParse(parts.length > 1 ? parts[1] : '0') ?? 0;
+
+    minute += 30;
+    if (minute >= 60) {
+      minute -= 60;
+      hour += 1;
+    }
+    if (hour >= 24) hour = 24;
+    return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
   }
 
   Widget _buildWeekScheduleTab(
