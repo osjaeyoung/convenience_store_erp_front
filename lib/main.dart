@@ -40,7 +40,6 @@ void main() async {
   final tokenStorage = TokenStorage(prefs);
   final apiClient = ApiClient(tokenStorage);
   final authRepository = AuthRepository(apiClient, tokenStorage);
-  apiClient.setUnauthorizedHandler(authRepository.handleUnauthorized);
 
   final ownerHomeRepository = OwnerHomeRepository(apiClient);
   final managerHomeRepository = ManagerHomeRepository(apiClient);
@@ -52,6 +51,7 @@ void main() async {
 
   runApp(
     ConvenienceStoreApp(
+      apiClient: apiClient,
       authRepository: authRepository,
       ownerHomeRepository: ownerHomeRepository,
       managerHomeRepository: managerHomeRepository,
@@ -68,6 +68,7 @@ void main() async {
 class ConvenienceStoreApp extends StatefulWidget {
   const ConvenienceStoreApp({
     super.key,
+    required this.apiClient,
     required this.authRepository,
     required this.ownerHomeRepository,
     required this.managerHomeRepository,
@@ -79,6 +80,7 @@ class ConvenienceStoreApp extends StatefulWidget {
     required this.splashImageBytes,
   });
 
+  final ApiClient apiClient;
   final AuthRepository authRepository;
   final OwnerHomeRepository ownerHomeRepository;
   final ManagerHomeRepository managerHomeRepository;
@@ -96,6 +98,8 @@ class ConvenienceStoreApp extends StatefulWidget {
 class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
   final GlobalKey<NavigatorState> _rootNavigatorKey =
       GlobalKey<NavigatorState>();
+  final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
+      GlobalKey<ScaffoldMessengerState>();
   GoRouter? _router;
   AuthBloc? _authBloc;
   bool _isBootstrapped = false;
@@ -103,7 +107,24 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
   @override
   void initState() {
     super.initState();
+    widget.apiClient.setUnauthorizedHandler(_handleUnauthorized);
     _bootstrap();
+  }
+
+  Future<void> _handleUnauthorized() async {
+    await widget.authRepository.handleUnauthorized();
+    if (!mounted) return;
+
+    _router?.go(AppRouter.login);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final messenger = _scaffoldMessengerKey.currentState;
+      messenger
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(content: Text('로그인이 필요합니다. 다시 로그인해주세요.')),
+        );
+    });
   }
 
   Future<void> _bootstrap() async {
@@ -177,6 +198,7 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
             title: '편의점 ERP',
             theme: AppTheme.light,
             debugShowCheckedModeBanner: false,
+            scaffoldMessengerKey: _scaffoldMessengerKey,
             localizationsDelegates: const [
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
@@ -219,6 +241,7 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
                 title: '편의점 ERP',
                 theme: AppTheme.light,
                 debugShowCheckedModeBanner: false,
+                scaffoldMessengerKey: _scaffoldMessengerKey,
                 localizationsDelegates: const [
                   GlobalMaterialLocalizations.delegate,
                   GlobalWidgetsLocalizations.delegate,

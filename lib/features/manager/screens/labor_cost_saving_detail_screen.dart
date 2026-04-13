@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:intl/intl.dart';
 
 import '../../../data/models/labor_cost/saving_detail.dart';
 import '../../../data/repositories/labor_cost_repository.dart';
@@ -29,7 +30,8 @@ class LaborCostSavingDetailScreen extends StatefulWidget {
       _LaborCostSavingDetailScreenState();
 }
 
-class _LaborCostSavingDetailScreenState extends State<LaborCostSavingDetailScreen> {
+class _LaborCostSavingDetailScreenState
+    extends State<LaborCostSavingDetailScreen> {
   late int _year;
   late int _month;
   LaborSavingDetail? _data;
@@ -63,7 +65,12 @@ class _LaborCostSavingDetailScreenState extends State<LaborCostSavingDetailScree
         _data = d;
         _expandedPointIndex
           ..clear()
-          ..addAll(List<int>.generate(d.weeklyAllowanceImprovementPoints.length, (i) => i));
+          ..addAll(
+            List<int>.generate(
+              d.weeklyAllowanceImprovementPoints.length,
+              (i) => i,
+            ),
+          );
         _loading = false;
       });
     } catch (e) {
@@ -96,26 +103,26 @@ class _LaborCostSavingDetailScreenState extends State<LaborCostSavingDetailScree
     final body = _loading
         ? const Center(child: CircularProgressIndicator())
         : _error != null
-            ? Center(
-                child: Padding(
-                  padding: EdgeInsets.all(24.r),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _error!,
-                        textAlign: TextAlign.center,
-                        style: AppTypography.bodyMediumR.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      SizedBox(height: 16.h),
-                      FilledButton(onPressed: _load, child: const Text('다시 시도')),
-                    ],
+        ? Center(
+            child: Padding(
+              padding: EdgeInsets.all(24.r),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _error!,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.bodyMediumR.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
-                ),
-              )
-            : _buildScroll(_data!);
+                  SizedBox(height: 16.h),
+                  FilledButton(onPressed: _load, child: const Text('다시 시도')),
+                ],
+              ),
+            ),
+          )
+        : _buildScroll(_data!);
 
     if (widget.embedded) {
       return ColoredBox(color: AppColors.grey0, child: body);
@@ -133,7 +140,10 @@ class _LaborCostSavingDetailScreenState extends State<LaborCostSavingDetailScree
         actions: [
           IconButton(
             onPressed: _pickMonth,
-            icon: Icon(Icons.calendar_month_outlined, color: AppColors.textPrimary),
+            icon: Icon(
+              Icons.calendar_month_outlined,
+              color: AppColors.textPrimary,
+            ),
           ),
         ],
       ),
@@ -165,11 +175,7 @@ class _LaborCostSavingDetailScreenState extends State<LaborCostSavingDetailScree
           SizedBox(height: 20.h),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 20),
-            child: Divider(
-              height: 1,
-              thickness: 1,
-              color: AppColors.grey25,
-            ),
+            child: Divider(height: 1, thickness: 1, color: AppColors.grey25),
           ),
           SizedBox(height: 20.h),
           Padding(
@@ -194,11 +200,7 @@ class _LaborCostSavingDetailScreenState extends State<LaborCostSavingDetailScree
           SizedBox(height: 20.h),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 20),
-            child: Divider(
-              height: 1,
-              thickness: 1,
-              color: AppColors.grey25,
-            ),
+            child: Divider(height: 1, thickness: 1, color: AppColors.grey25),
           ),
           SizedBox(height: 20.h),
           Padding(
@@ -239,9 +241,7 @@ class _LaborCostSavingDetailScreenState extends State<LaborCostSavingDetailScree
         Container(
           decoration: BoxDecoration(
             color: AppColors.grey0,
-            border: Border(
-              bottom: BorderSide(color: AppColors.grey50),
-            ),
+            border: Border(bottom: BorderSide(color: AppColors.grey50)),
           ),
           child: Material(
             color: Colors.transparent,
@@ -311,7 +311,6 @@ class _LaborCostSavingDetailScreenState extends State<LaborCostSavingDetailScree
       ],
     );
   }
-
 }
 
 class _SectionTitle extends StatelessWidget {
@@ -343,11 +342,8 @@ class _RetirementTable extends StatelessWidget {
     return _ThreeColumnTable(
       headers: const ['이름', '근로 계약일', '퇴직금 발생일'],
       rows: [
-        for (final w in workers) [
-          w.employeeName,
-          w.hireDate,
-          w.severanceEligibleDate,
-        ],
+        for (final w in workers)
+          [w.employeeName, w.hireDate, w.severanceEligibleDate],
       ],
     );
   }
@@ -366,6 +362,8 @@ class _WorkersMiniTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final layout = _WorkerRowLayout.resolve(context, rows);
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.grey0,
@@ -396,19 +394,63 @@ class _WorkersMiniTable extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: EdgeInsets.fromLTRB(20.w, 0.h, 20.w, 8.h),
+            padding: EdgeInsets.fromLTRB(20.w, 0.h, 20.w, 0.h),
             child: Column(
               children: [
                 for (var i = 0; i < rows.length; i++)
                   _WorkerDetailRow(
                     worker: rows[i],
                     showDivider: i != rows.length - 1,
+                    layout: layout,
                   ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _WorkerRowLayout {
+  const _WorkerRowLayout({
+    required this.categoryWidth,
+    required this.workHoursWidth,
+  });
+
+  final double categoryWidth;
+  final double workHoursWidth;
+
+  static _WorkerRowLayout resolve(BuildContext context, List<WorkerInfo> rows) {
+    final labelStyle = AppTypography.bodySmallB.copyWith(
+      color: AppColors.textTertiary,
+      fontSize: 12.sp,
+      height: 16 / 12,
+    );
+    final valueStyle = AppTypography.bodyMediumR.copyWith(
+      color: AppColors.textSecondary,
+      fontSize: 14.sp,
+      height: 19 / 14,
+    );
+
+    final categoryWidth = _metaItemWidth(
+      context: context,
+      label: '구분',
+      values: rows.map((row) => row.category),
+      labelStyle: labelStyle,
+      valueStyle: valueStyle,
+    );
+    final workHoursWidth = _metaItemWidth(
+      context: context,
+      label: '주 근로시간',
+      values: rows.map((row) => _weeklyHoursLabel(row.weeklyWorkMinutes)),
+      labelStyle: labelStyle,
+      valueStyle: valueStyle,
+    );
+
+    return _WorkerRowLayout(
+      categoryWidth: categoryWidth,
+      workHoursWidth: workHoursWidth,
     );
   }
 }
@@ -422,12 +464,14 @@ class _OverlapTable extends StatelessWidget {
   Widget build(BuildContext context) {
     return _ThreeColumnTable(
       headers: const ['날짜', '근무자', '근무시간'],
+      columnFlexes: const [56, 52, 53],
       rows: [
-        for (final i in items) [
-          i.workDate,
-          i.employeeName,
-          i.overlapTimeRange,
-        ],
+        for (final i in items)
+          [
+            _overlapWorkDateLabel(i.workDate),
+            i.employeeName,
+            i.overlapTimeRange,
+          ],
       ],
     );
   }
@@ -470,13 +514,7 @@ class _PointFlowArrow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: SvgPicture.string(
-        _arrowSvg,
-        width: 17,
-        height: 11,
-      ),
-    );
+    return Center(child: SvgPicture.string(_arrowSvg, width: 17, height: 11));
   }
 }
 
@@ -484,10 +522,12 @@ class _WorkerDetailRow extends StatelessWidget {
   const _WorkerDetailRow({
     required this.worker,
     required this.showDivider,
+    required this.layout,
   });
 
   final WorkerInfo worker;
   final bool showDivider;
+  final _WorkerRowLayout layout;
 
   @override
   Widget build(BuildContext context) {
@@ -498,13 +538,10 @@ class _WorkerDetailRow extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: 12.h),
       decoration: BoxDecoration(
         border: showDivider
-            ? const Border(
-                bottom: BorderSide(color: AppColors.grey25),
-              )
+            ? const Border(bottom: BorderSide(color: AppColors.grey25))
             : null,
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
             child: Text(
@@ -512,7 +549,6 @@ class _WorkerDetailRow extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: AppTypography.bodyLargeR.copyWith(
-                height: 1,
                 color: isNewHire ? AppColors.primary : AppColors.textPrimary,
               ),
             ),
@@ -520,16 +556,19 @@ class _WorkerDetailRow extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _WorkerMetaItem(label: '구분', value: worker.category),
+              SizedBox(
+                width: layout.categoryWidth,
+                child: _WorkerMetaItem(label: '구분', value: worker.category),
+              ),
               Container(
                 width: 1,
-                height: 14,
+                height: 16,
                 margin: EdgeInsets.symmetric(horizontal: 6.w),
-                color: AppColors.grey25,
+                color: AppColors.grey50,
               ),
-              _WorkerMetaItem(
-                label: '주 근로시간',
-                value: workHours,
+              SizedBox(
+                width: layout.workHoursWidth,
+                child: _WorkerMetaItem(label: '주 근로시간', value: workHours),
               ),
             ],
           ),
@@ -540,10 +579,7 @@ class _WorkerDetailRow extends StatelessWidget {
 }
 
 class _WorkerMetaItem extends StatelessWidget {
-  const _WorkerMetaItem({
-    required this.label,
-    required this.value,
-  });
+  const _WorkerMetaItem({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -551,11 +587,10 @@ class _WorkerMetaItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: MainAxisSize.max,
       children: [
         Text(
           label,
-          textAlign: TextAlign.center,
           style: AppTypography.bodySmallB.copyWith(
             color: AppColors.textTertiary,
             fontSize: 12.sp,
@@ -563,15 +598,16 @@ class _WorkerMetaItem extends StatelessWidget {
           ),
         ),
         SizedBox(width: 8.w),
-        Text(
-          value,
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: AppTypography.bodyMediumR.copyWith(
-            color: AppColors.textSecondary,
-            fontSize: 14.sp,
-            height: 19 / 14,
+        Expanded(
+          child: Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTypography.bodyMediumR.copyWith(
+              color: AppColors.textSecondary,
+              fontSize: 14.sp,
+              height: 19 / 14,
+            ),
           ),
         ),
       ],
@@ -583,31 +619,22 @@ class _ThreeColumnTable extends StatelessWidget {
   const _ThreeColumnTable({
     required this.headers,
     required this.rows,
+    this.columnFlexes = _defaultColumnFlexes,
   });
 
   final List<String> headers;
   final List<List<String>> rows;
+  final List<int> columnFlexes;
 
-  static const List<int> _columnFlexes = [47, 57, 57];
+  static const List<int> _defaultColumnFlexes = [47, 57, 57];
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _TableRow(
-          cells: headers,
-          flexes: _columnFlexes,
-          isHeader: true,
-        ),
-        for (final row in rows)
-          _TableRow(
-            cells: row,
-            flexes: _columnFlexes,
-          ),
-        Container(
-          height: 1,
-          color: AppColors.grey200,
-        ),
+        _TableRow(cells: headers, flexes: columnFlexes, isHeader: true),
+        for (final row in rows) _TableRow(cells: row, flexes: columnFlexes),
+        Container(height: 1, color: AppColors.grey200),
       ],
     );
   }
@@ -679,4 +706,50 @@ String _weeklyHoursLabel(int minutes) {
     return '${minutes ~/ 60}';
   }
   return LaborCostFormatters.workMinutesLabel(minutes);
+}
+
+double _metaItemWidth({
+  required BuildContext context,
+  required String label,
+  required Iterable<String> values,
+  required TextStyle labelStyle,
+  required TextStyle valueStyle,
+}) {
+  final labelWidth = _measureTextWidth(context, label, labelStyle);
+  double maxValueWidth = 0;
+
+  for (final value in values) {
+    final width = _measureTextWidth(context, value, valueStyle);
+    if (width > maxValueWidth) {
+      maxValueWidth = width;
+    }
+  }
+
+  return labelWidth + 8.w + maxValueWidth + 4.w;
+}
+
+double _measureTextWidth(BuildContext context, String text, TextStyle style) {
+  final painter = TextPainter(
+    text: TextSpan(text: text, style: style),
+    textDirection: Directionality.of(context),
+    textScaler: MediaQuery.textScalerOf(context),
+    maxLines: 1,
+  )..layout();
+
+  return painter.width;
+}
+
+String _overlapWorkDateLabel(String value) {
+  final normalized = value.trim();
+  if (normalized.isEmpty) {
+    return value;
+  }
+
+  final datePart = normalized.split('T').first.split(' ').first;
+  final parsed = DateTime.tryParse(datePart);
+  if (parsed != null) {
+    return DateFormat('yyyy.MM.dd').format(parsed);
+  }
+
+  return datePart.replaceAll('-', '.').replaceAll('/', '.');
 }

@@ -15,13 +15,9 @@ class ApiClient {
       baseUrl: ApiConfig.baseUrl,
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
-      headers: {
-        'Accept': 'application/json',
-      },
+      headers: {'Accept': 'application/json'},
     );
-    _dio = Dio(
-      baseOptions,
-    );
+    _dio = Dio(baseOptions);
     _refreshDio = Dio(baseOptions);
     _dio.interceptors.add(
       InterceptorsWrapper(
@@ -111,7 +107,10 @@ class ApiClient {
 
   void _handleUnauthorized(DioException error) {
     final statusCode = error.response?.statusCode;
-    if (statusCode != 401 || _isHandlingUnauthorized) return;
+    final path = error.requestOptions.path;
+    if (statusCode != 401 || _isHandlingUnauthorized || _isAuthPath(path)) {
+      return;
+    }
     _isHandlingUnauthorized = true;
     () async {
       try {
@@ -125,9 +124,7 @@ class ApiClient {
     }();
   }
 
-  Future<Response<dynamic>?> _tryRecoverWithRefresh(
-    DioException error,
-  ) async {
+  Future<Response<dynamic>?> _tryRecoverWithRefresh(DioException error) async {
     final statusCode = error.response?.statusCode;
     final request = error.requestOptions;
     final alreadyRetried = request.extra['retried_after_refresh'] == true;
@@ -161,9 +158,7 @@ class ApiClient {
       try {
         final response = await _refreshDio.post<Map<String, dynamic>>(
           '/auth/refresh',
-          data: {
-            'refresh_token': refreshToken,
-          },
+          data: {'refresh_token': refreshToken},
         );
         final data = response.data ?? const <String, dynamic>{};
         final newAccessToken = data['access_token']?.toString();
