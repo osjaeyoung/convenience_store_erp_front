@@ -225,11 +225,14 @@ class _HomeScreenState extends State<HomeScreen> {
               detailLoading: state.detailLoading,
               onTapTodayWorkerStatus: (row) =>
                   _showWorkStatusModal(context, row),
-              onTapTodayWorkerMemo: (row) => _showMemoDetailModal(
-                context,
-                row,
-                homeBloc: context.read<HomeBloc>(),
-              ),
+              onTapTodayWorkerMemo: (row) {
+                final homeBloc = context.read<HomeBloc>();
+                if ((row.memo ?? '').trim().isNotEmpty) {
+                  _showMemoDetailModal(context, row, homeBloc: homeBloc);
+                  return;
+                }
+                _showMemoModal(context, row, row.status, homeBloc: homeBloc);
+              },
               onOpenManagementTab: widget.onOpenManagementTab,
               onOpenLaborCostTab: widget.onOpenLaborCostTab,
               onOpenRecruitmentTab: widget.onOpenRecruitmentTab,
@@ -985,6 +988,7 @@ class _SelectedBranchOverview extends StatelessWidget {
         HomeTodayWorkersSection(
           dateLabel: detail?.dateLabel ?? _todayDateLabel(),
           onTapHeader: onOpenManagementTab,
+          alwaysShowMemoIcon: true,
           rows: workerRows
               .map(
                 (e) => (

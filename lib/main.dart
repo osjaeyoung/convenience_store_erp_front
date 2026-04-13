@@ -32,8 +32,9 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await dotenv.load(fileName: '.env');
-  final splashImageBytes =
-      (await rootBundle.load(AppAssets.splashScreen)).buffer.asUint8List();
+  final splashImageBytes = (await rootBundle.load(
+    AppAssets.splashScreen,
+  )).buffer.asUint8List();
 
   final prefs = await SharedPreferences.getInstance();
   final tokenStorage = TokenStorage(prefs);
@@ -126,7 +127,8 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
       widget.authRepository,
       navigatorKey: _rootNavigatorKey,
     );
-    _authBloc = AuthBloc(widget.authRepository)..add(const AuthCheckRequested());
+    _authBloc = AuthBloc(widget.authRepository)
+      ..add(const AuthCheckRequested());
     await PushNotificationService.instance.initialize(
       navigatorKey: _rootNavigatorKey,
       onTokenReceived: (token) async {
@@ -140,6 +142,11 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
 
     if (widget.authRepository.isLoggedIn) {
       await PushNotificationService.instance.onUserAuthenticated();
+      if (!widget.authRepository.hasLoadedNotificationUnreadCount) {
+        try {
+          await widget.authRepository.refreshNotificationUnreadCount();
+        } catch (_) {}
+      }
     }
 
     if (!mounted) return;
@@ -199,6 +206,12 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
               listener: (_, state) async {
                 if (state.status == AuthStatus.authenticated) {
                   await PushNotificationService.instance.onUserAuthenticated();
+                  if (!widget.authRepository.hasLoadedNotificationUnreadCount) {
+                    try {
+                      await widget.authRepository
+                          .refreshNotificationUnreadCount();
+                    } catch (_) {}
+                  }
                   PushNotificationService.instance.flushPendingNavigation();
                 }
               },
@@ -211,7 +224,10 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
                   GlobalWidgetsLocalizations.delegate,
                   GlobalCupertinoLocalizations.delegate,
                 ],
-                supportedLocales: const [Locale('ko', 'KR'), Locale('en', 'US')],
+                supportedLocales: const [
+                  Locale('ko', 'KR'),
+                  Locale('en', 'US'),
+                ],
                 locale: const Locale('ko', 'KR'),
                 routerConfig: _router!,
               ),

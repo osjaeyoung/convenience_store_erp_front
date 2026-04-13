@@ -16,6 +16,7 @@
 | `2634:16329` | 소셜 로그인 계정 설정 | `GET /me/account` |
 | `2634:16243` | 비밀번호 변경 | `POST /me/account/password` |
 | `2634:16384` | 회원 탈퇴 확인 | `POST /me/account/withdraw` |
+| `2634:16422` | 알림 내역 | `GET /me/notifications` |
 
 ### 지원 콘텐츠
 
@@ -144,6 +145,54 @@
 - 이메일 중복이면 `400`
 - **회원가입 전** 이메일 중복 여부만 확인할 때는 `GET /auth/email-exists?email=...` 를 사용합니다. (`PATCH /me/account` 는 로그인 후 계정 수정용입니다.)
 - 생년월일은 연/월/일을 모두 보내야 하며 잘못된 날짜면 `400`
+
+---
+
+## 2-1) 내 알림 내역 조회
+
+- `GET /me/notifications`
+
+### Query
+
+- `only_unread` (optional, default=false): `true`면 읽지 않은 알림만 반환
+- `page` (default=1, >=1)
+- `page_size` (default=20, 1~100)
+
+### Response (200)
+
+```json
+{
+  "items": [
+    {
+      "notification_id": 9301,
+      "title": "[나눔 강남점] 근로계약서가 왔습니다.",
+      "body": "새로운 계약 요청을 확인해주세요.",
+      "type": "job_seeker_contract",
+      "target_role": "job_seeker",
+      "target_route": "/job-seeker?tab=3",
+      "tab": "3",
+      "recruitment_tab": null,
+      "labor_cost_tab": null,
+      "branch_id": "12",
+      "entity_type": "contract_chat",
+      "entity_id": "301",
+      "is_read": false,
+      "read_at": null,
+      "created_at": "2026-04-12T08:30:00Z"
+    }
+  ],
+  "total_count": 1,
+  "unread_count": 1,
+  "page": 1,
+  "page_size": 20
+}
+```
+
+### 비고
+
+- 정렬: `created_at DESC`, 동순위는 `notification_id DESC`
+- `unread_count`는 `only_unread` 필터와 무관하게 전체 미읽음 개수입니다.
+- 알림 상세 액션은 `target_route`, `tab`, `entity_type`, `entity_id`를 사용해 화면 전환합니다.
 
 ---
 

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_assets.dart';
 import '../../../core/navigation/logo_navigation_bridge.dart';
 import '../../../core/router/app_router.dart';
+import '../../../data/repositories/auth_repository.dart';
+import '../../account/screens/account_notifications_screen.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../../theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -12,7 +15,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 class HomeCommonAppBar extends StatelessWidget implements PreferredSizeWidget {
   const HomeCommonAppBar({
     super.key,
-    required this.alarmActive,
+    this.alarmActive = false,
     this.onAlarmTap,
     this.onMenuTap,
   });
@@ -27,6 +30,10 @@ class HomeCommonAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final currentUser = context.read<AuthBloc>().state.user;
+    final authRepository = context.watch<AuthRepository>();
+    final showUnreadAlarm = authRepository.hasLoadedNotificationUnreadCount
+        ? authRepository.hasUnreadNotifications
+        : alarmActive;
 
     return AppBar(
       elevation: 0,
@@ -60,11 +67,11 @@ class HomeCommonAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       actions: [
         IconButton(
-          onPressed: onAlarmTap,
+          onPressed: () => _openNotifications(context),
           icon: Image.asset(
-            alarmActive
-                ? 'assets/icons/png/common/alarm_active.png'
-                : 'assets/icons/png/common/alarm_inactive.png',
+            showUnreadAlarm
+                ? AppAssets.alarmBlackIcon
+                : AppAssets.alarmInactiveIcon,
             width: 24,
             height: 24,
             fit: BoxFit.contain,
@@ -82,5 +89,19 @@ class HomeCommonAppBar extends StatelessWidget implements PreferredSizeWidget {
         SizedBox(width: 6.w),
       ],
     );
+  }
+
+  Future<void> _openNotifications(BuildContext context) async {
+    final route = await openAccountNotificationsScreen(context);
+    if (!context.mounted || route == null) return;
+
+    final router = GoRouter.of(context);
+    Navigator.of(
+      context,
+      rootNavigator: true,
+    ).popUntil((route) => route.isFirst);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      router.go(route);
+    });
   }
 }

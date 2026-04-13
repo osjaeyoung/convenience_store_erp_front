@@ -24,6 +24,15 @@ Future<bool> showWithdrawConfirmDialog(BuildContext context) async {
   return ok == true;
 }
 
+Future<bool> showNotificationDeleteConfirmDialog(BuildContext context) async {
+  final ok = await _showAccountActionConfirmDialog(
+    context,
+    message: '이 알림을 삭제하시겠습니까?',
+    confirmLabel: '삭제',
+  );
+  return ok == true;
+}
+
 Future<bool?> _showAccountActionConfirmDialog(
   BuildContext context, {
   String? iconSvgAsset,
@@ -91,18 +100,10 @@ class _AccountActionConfirmDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (iconSvgAsset != null) ...[
-              SvgPicture.asset(
-                iconSvgAsset!,
-                width: 60,
-                height: 60,
-              ),
+              SvgPicture.asset(iconSvgAsset!, width: 60, height: 60),
               SizedBox(height: 20.h),
             ],
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: _messageStyle,
-            ),
+            Text(message, textAlign: TextAlign.center, style: _messageStyle),
             SizedBox(height: 28.h),
             Row(
               children: [

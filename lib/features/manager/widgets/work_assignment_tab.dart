@@ -112,6 +112,10 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
   Map<String, List<({int id, String name})>> _assignments = {};
   bool _isDailyView = true;
   DateTime _weekSelectedDate = DateTime.now();
+  final Map<String, GlobalKey> _dragSlotKeys = {};
+  int? _activeDragPointer;
+  bool? _activeDragSelectionValue;
+  final Set<String> _dragVisitedSlots = <String>{};
 
   @override
   void initState() {
@@ -339,7 +343,8 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
                   '${d.year}.${d.month.toString().padLeft(2, '0')}.${d.day.toString().padLeft(2, '0')}(${_weekdays[d.weekday - 1]})',
               assignments: _weekAssignments[_toIsoDate(d)] ?? {},
               slotTimes: _slotTimes,
-              onSlotTap: (time) => _showEmployeePickerForSlot(time, _toIsoDate(d)),
+              onSlotTap: (time) =>
+                  _showEmployeePickerForSlot(time, _toIsoDate(d)),
             ),
           );
         }).toList(),
@@ -350,79 +355,82 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
   /// 드래그 시 주별: 가로 스크롤, 1줄=1날짜, 1화면에 2개 날짜 넓이, 날짜 chip + 슬롯 세로 배치
   Widget _buildWeeklyGridContent(List<DateTime> weekDays) {
     const columnSpacing = 12.0;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final columnWidth = (constraints.maxWidth - columnSpacing) / 2;
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: EdgeInsets.zero,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: weekDays.asMap().entries.map((e) {
-              final i = e.key;
-              final d = e.value;
-              final dateStr = _toIsoDate(d);
-              final dateLabel =
-                  '${d.year}.${d.month.toString().padLeft(2, '0')}.${d.day.toString().padLeft(2, '0')}(${_weekdays[d.weekday - 1]})';
-              return SizedBox(
-                width: columnWidth,
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    right: i < weekDays.length - 1 ? columnSpacing : 0,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(0.w, 0.h, 0.w, 12.h),
-                        child: Center(
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12.w,
-                              vertical: 6.h,
-                            ),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(100.r),
-                              border: Border.all(color: AppColors.grey25),
-                              color: AppColors.grey0Alt,
-                            ),
-                            child: Text(
-                              dateLabel,
-                              style: AppTypography.bodyMediumM.copyWith(
-                                color: AppColors.textPrimary,
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w500,
+    return _wrapDragSelectionListener(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final columnWidth = (constraints.maxWidth - columnSpacing) / 2;
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.zero,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: weekDays.asMap().entries.map((e) {
+                final i = e.key;
+                final d = e.value;
+                final dateStr = _toIsoDate(d);
+                final dateLabel =
+                    '${d.year}.${d.month.toString().padLeft(2, '0')}.${d.day.toString().padLeft(2, '0')}(${_weekdays[d.weekday - 1]})';
+                return SizedBox(
+                  width: columnWidth,
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      right: i < weekDays.length - 1 ? columnSpacing : 0,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(0.w, 0.h, 0.w, 12.h),
+                          child: Center(
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12.w,
+                                vertical: 6.h,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(100.r),
+                                border: Border.all(color: AppColors.grey25),
+                                color: AppColors.grey0Alt,
+                              ),
+                              child: Text(
+                                dateLabel,
+                                style: AppTypography.bodyMediumM.copyWith(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      ..._slotTimes.map((time) {
-                        final isSelected = _dragSelectedSlots.contains(
-                          _dragSlotKey(dateStr, time),
-                        );
-                        return Padding(
-                          padding: EdgeInsets.only(bottom: 8.h),
-                          child: _SlotCard(
-                            startTime: time,
-                            endTime: _slotEndTime(time),
-                            assignedNames: const [],
-                            isDragSelected: isSelected,
-                            showPlusButton: false,
-                            onPlusTap: () {},
-                            onTap: () => _toggleDragSlot(time, dateStr),
-                          ),
-                        );
-                      }),
-                    ],
+                        ..._slotTimes.map((time) {
+                          final isSelected = _dragSelectedSlots.contains(
+                            _dragSlotKey(dateStr, time),
+                          );
+                          return Padding(
+                            padding: EdgeInsets.only(bottom: 8.h),
+                            child: _SlotCard(
+                              key: _slotKeyFor(dateStr, time),
+                              startTime: time,
+                              endTime: _slotEndTime(time),
+                              assignedNames: const [],
+                              isDragSelected: isSelected,
+                              showPlusButton: false,
+                              onPlusTap: () {},
+                              isDragModeSlot: true,
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            }).toList(),
-          ),
-        );
-      },
+                );
+              }).toList(),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -489,37 +497,114 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     );
   }
 
+  GlobalKey _slotKeyFor(String dateStr, String time) {
+    final slotKey = _dragSlotKey(dateStr, time);
+    return _dragSlotKeys.putIfAbsent(slotKey, () => GlobalKey());
+  }
+
+  Widget _wrapDragSelectionListener({required Widget child}) {
+    if (!_isDragMode) return child;
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: _handleDragPointerDown,
+      onPointerMove: _handleDragPointerMove,
+      onPointerUp: (event) => _resetPointerDragState(event.pointer),
+      onPointerCancel: (event) => _resetPointerDragState(event.pointer),
+      child: child,
+    );
+  }
+
+  void _handleDragPointerDown(PointerDownEvent event) {
+    final slotKey = _slotKeyAtGlobalPosition(event.position);
+    if (slotKey == null) return;
+    _activeDragPointer = event.pointer;
+    _activeDragSelectionValue = !_dragSelectedSlots.contains(slotKey);
+    _dragVisitedSlots
+      ..clear()
+      ..add(slotKey);
+    _applyDragSelection(slotKey, _activeDragSelectionValue!);
+  }
+
+  void _handleDragPointerMove(PointerMoveEvent event) {
+    if (_activeDragPointer != event.pointer) return;
+    final shouldSelect = _activeDragSelectionValue;
+    if (shouldSelect == null) return;
+    final slotKey = _slotKeyAtGlobalPosition(event.position);
+    if (slotKey == null || _dragVisitedSlots.contains(slotKey)) return;
+    _dragVisitedSlots.add(slotKey);
+    _applyDragSelection(slotKey, shouldSelect);
+  }
+
+  void _resetPointerDragState([int? pointer]) {
+    if (pointer != null && _activeDragPointer != pointer) return;
+    _activeDragPointer = null;
+    _activeDragSelectionValue = null;
+    _dragVisitedSlots.clear();
+  }
+
+  String? _slotKeyAtGlobalPosition(Offset globalPosition) {
+    for (final entry in _dragSlotKeys.entries) {
+      final context = entry.value.currentContext;
+      if (context == null) continue;
+      final renderObject = context.findRenderObject();
+      if (renderObject is! RenderBox || !renderObject.hasSize) continue;
+      final rect = renderObject.localToGlobal(Offset.zero) & renderObject.size;
+      if (rect.contains(globalPosition)) {
+        return entry.key;
+      }
+    }
+    return null;
+  }
+
+  void _applyDragSelection(String slotKey, bool shouldSelect) {
+    final isSelected = _dragSelectedSlots.contains(slotKey);
+    if (isSelected == shouldSelect) return;
+    setState(() {
+      final next = {..._dragSelectedSlots};
+      if (shouldSelect) {
+        next.add(slotKey);
+      } else {
+        next.remove(slotKey);
+      }
+      _dragSelectedSlots = next;
+    });
+  }
+
   Widget _buildSlotGridContent() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const spacing = 8.0;
-        final itemWidth = (constraints.maxWidth - spacing * 2) / 3;
-        return Wrap(
-          spacing: spacing,
-          runSpacing: spacing,
-          children: _slotTimes.map((time) {
-            final assigned = _assignments[time] ?? [];
-            final isSelected = _dragSelectedSlots.contains(
-              _dragSlotKey(_toIsoDate(widget.today), time),
-            );
-            final names = _isDragMode
-                ? <String>[]
-                : _expandNames(assigned.map((a) => a.name).toList());
-            return SizedBox(
-              width: itemWidth,
-              child: _SlotCard(
-                startTime: time,
-                endTime: _slotEndTime(time),
-                assignedNames: names,
-                isDragSelected: isSelected,
-                showPlusButton: !_isDragMode,
-                onPlusTap: () => _showEmployeePickerForSlot(time),
-                onTap: _isDragMode ? () => _toggleDragSlot(time) : null,
-              ),
-            );
-          }).toList(),
-        );
-      },
+    final todayStr = _toIsoDate(widget.today);
+    return _wrapDragSelectionListener(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          const spacing = 8.0;
+          final itemWidth = (constraints.maxWidth - spacing * 2) / 3;
+          return Wrap(
+            spacing: spacing,
+            runSpacing: spacing,
+            children: _slotTimes.map((time) {
+              final assigned = _assignments[time] ?? [];
+              final isSelected = _dragSelectedSlots.contains(
+                _dragSlotKey(todayStr, time),
+              );
+              final names = _isDragMode
+                  ? <String>[]
+                  : _expandNames(assigned.map((a) => a.name).toList());
+              return SizedBox(
+                width: itemWidth,
+                child: _SlotCard(
+                  key: _isDragMode ? _slotKeyFor(todayStr, time) : null,
+                  startTime: time,
+                  endTime: _slotEndTime(time),
+                  assignedNames: names,
+                  isDragSelected: isSelected,
+                  showPlusButton: !_isDragMode,
+                  onPlusTap: () => _showEmployeePickerForSlot(time),
+                  isDragModeSlot: _isDragMode,
+                ),
+              );
+            }).toList(),
+          );
+        },
+      ),
     );
   }
 
@@ -564,6 +649,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     );
     if (mounted) {
       setState(() {
+        _resetPointerDragState();
         _dragFilterEmployee = selected;
         _dragSelectedSlots = {};
       });
@@ -582,7 +668,9 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
       }
       return;
     }
-    final weekDayAssignments = dateStr != null ? _weekAssignments[dateStr] : null;
+    final weekDayAssignments = dateStr != null
+        ? _weekAssignments[dateStr]
+        : null;
     final initialSelected = dateStr != null
         ? List<({int id, String name})>.from(
             weekDayAssignments?[time] ?? <({int id, String name})>[],
@@ -616,17 +704,6 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     }
   }
 
-  void _toggleDragSlot(String time, [String? dateStr]) {
-    final key = _dragSlotKey(dateStr ?? _toIsoDate(widget.today), time);
-    setState(() {
-      if (_dragSelectedSlots.contains(key)) {
-        _dragSelectedSlots = {..._dragSelectedSlots}..remove(key);
-      } else {
-        _dragSelectedSlots = {..._dragSelectedSlots, key};
-      }
-    });
-  }
-
   static String _dragSlotKey(String dateStr, String time) => '${dateStr}_$time';
 
   void _onCompleteDrag() {
@@ -634,6 +711,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     if (emp == null) return;
     final todayStr = _toIsoDate(widget.today);
     setState(() {
+      _resetPointerDragState();
       for (final key in _dragSelectedSlots) {
         final idx = key.indexOf('_');
         if (idx < 0) continue;
@@ -1033,13 +1111,14 @@ class _SelectorChip extends StatelessWidget {
 /// 슬롯 카드: 시작/종료 시간 2줄, 추가버튼, 근무자칩
 class _SlotCard extends StatelessWidget {
   const _SlotCard({
+    super.key,
     required this.startTime,
     required this.endTime,
     required this.assignedNames,
     required this.isDragSelected,
     required this.showPlusButton,
     required this.onPlusTap,
-    this.onTap,
+    this.isDragModeSlot = false,
   });
 
   final String startTime;
@@ -1048,108 +1127,101 @@ class _SlotCard extends StatelessWidget {
   final bool isDragSelected;
   final bool showPlusButton;
   final VoidCallback onPlusTap;
-  final VoidCallback? onTap;
+  final bool isDragModeSlot;
 
   @override
   Widget build(BuildContext context) {
-    final isDragSlot = onTap != null;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.all(isDragSlot ? 16 : 8),
-        decoration: BoxDecoration(
-          color: isDragSelected ? AppColors.primaryLight : AppColors.grey0,
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(
-            color: isDragSelected ? AppColors.primary : AppColors.grey50,
-          ),
+    final isDragSlot = isDragModeSlot;
+    return Container(
+      padding: EdgeInsets.all(isDragSlot ? 16 : 8),
+      decoration: BoxDecoration(
+        color: isDragSelected ? AppColors.primaryLight : AppColors.grey0,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: isDragSelected ? AppColors.primary : AppColors.grey50,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              startTime,
-              textAlign: TextAlign.center,
-              style: AppTypography.bodyMediumM.copyWith(
-                color: isDragSelected ? AppColors.primary : AppColors.grey200,
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w500,
-                height: 16 / 14,
-              ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            startTime,
+            textAlign: TextAlign.center,
+            style: AppTypography.bodyMediumM.copyWith(
+              color: isDragSelected ? AppColors.primary : AppColors.grey200,
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
+              height: 16 / 14,
             ),
-            if (isDragSlot) SizedBox(height: 8.h),
-            Text(
-              endTime,
-              textAlign: TextAlign.center,
-              style: AppTypography.bodyMediumM.copyWith(
-                color: isDragSelected ? AppColors.primary : AppColors.grey200,
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w500,
-                height: 16 / 14,
-              ),
+          ),
+          if (isDragSlot) SizedBox(height: 8.h),
+          Text(
+            endTime,
+            textAlign: TextAlign.center,
+            style: AppTypography.bodyMediumM.copyWith(
+              color: isDragSelected ? AppColors.primary : AppColors.grey200,
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
+              height: 16 / 14,
             ),
-            if (assignedNames.isNotEmpty)
-              Padding(
-                padding: EdgeInsets.only(top: 6.h),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: assignedNames
-                      .map(
-                        (n) => Padding(
-                          padding: EdgeInsets.only(bottom: 6.h),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 6,
+          ),
+          if (assignedNames.isNotEmpty)
+            Padding(
+              padding: EdgeInsets.only(top: 6.h),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: assignedNames
+                    .map(
+                      (n) => Padding(
+                        padding: EdgeInsets.only(bottom: 6.h),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.grey0Alt,
+                            borderRadius: BorderRadius.circular(8.r),
+                            border: Border.all(color: AppColors.grey150),
+                          ),
+                          child: Text(
+                            n,
+                            textAlign: TextAlign.center,
+                            style: AppTypography.bodyMediumM.copyWith(
+                              color: AppColors.grey200,
+                              fontSize: 14.sp,
+                              height: 16 / 14,
                             ),
-                            decoration: BoxDecoration(
-                              color: AppColors.grey0Alt,
-                              borderRadius: BorderRadius.circular(8.r),
-                              border: Border.all(color: AppColors.grey150),
-                            ),
-                            child: Text(
-                              n,
-                              textAlign: TextAlign.center,
-                              style: AppTypography.bodyMediumM.copyWith(
-                                color: AppColors.grey200,
-                                fontSize: 14.sp,
-                                height: 16 / 14,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      )
-                      .toList(),
-                ),
-              ),
-            if (showPlusButton)
-              Padding(
-                padding: EdgeInsets.only(top: 6.h),
-                child: GestureDetector(
-                  onTap: onPlusTap,
-                  child: Container(
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(8.r),
-                      border: Border.all(color: AppColors.primary),
-                    ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.add,
-                        size: 20,
-                        color: AppColors.primary,
                       ),
-                    ),
+                    )
+                    .toList(),
+              ),
+            ),
+          if (showPlusButton)
+            Padding(
+              padding: EdgeInsets.only(top: 6.h),
+              child: GestureDetector(
+                onTap: onPlusTap,
+                child: Container(
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(color: AppColors.primary),
+                  ),
+                  child: const Center(
+                    child: Icon(Icons.add, size: 20, color: AppColors.primary),
                   ),
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }

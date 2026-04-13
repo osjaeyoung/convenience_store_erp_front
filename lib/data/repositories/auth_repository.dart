@@ -10,6 +10,7 @@ import '../../features/auth/exceptions/auth_exception.dart';
 import '../../core/models/user.dart';
 import '../../core/storage/token_storage.dart';
 import '../models/account_profile.dart';
+import '../models/account_notification_models.dart';
 import '../models/account_support_models.dart';
 import '../models/auth_user.dart';
 import '../models/branch.dart';
@@ -36,6 +37,8 @@ class AuthRepository extends ChangeNotifier {
   String? _rawRole;
   String? _signupStep;
   String? _approvalStatus;
+  int _notificationUnreadCount = 0;
+  bool _notificationUnreadCountLoaded = false;
 
   User? get user => _user;
 
@@ -48,6 +51,9 @@ class AuthRepository extends ChangeNotifier {
   bool get isJobSeeker => _user?.role.isJobSeeker ?? false;
   bool get isSignupInProgress => _isSignupInProgress;
   bool get hasSignupDraft => signupDraft != null;
+  int get notificationUnreadCount => _notificationUnreadCount;
+  bool get hasUnreadNotifications => _notificationUnreadCount > 0;
+  bool get hasLoadedNotificationUnreadCount => _notificationUnreadCountLoaded;
   String? get signupStep => _signupStep;
   Map<String, dynamic>? get signupDraft => _readJson(_signupDraftKey);
   Map<String, dynamic>? get phoneVerificationSession =>
@@ -268,9 +274,8 @@ class AuthRepository extends ChangeNotifier {
     final items = res.data!['items'] as List<dynamic>? ?? [];
     return items
         .map(
-          (e) => ManagerRegistrationLookupItem.fromJson(
-            e as Map<String, dynamic>,
-          ),
+          (e) =>
+              ManagerRegistrationLookupItem.fromJson(e as Map<String, dynamic>),
         )
         .toList();
   }
@@ -429,6 +434,57 @@ class AuthRepository extends ChangeNotifier {
     return AccountProfile.fromJson(res.data!);
   }
 
+  Future<AccountNotificationPage> getNotifications({
+    bool onlyUnread = false,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/me/notifications',
+      queryParameters: {
+        'only_unread': onlyUnread,
+        'page': page,
+        'page_size': pageSize,
+      },
+    );
+    final notificationPage = AccountNotificationPage.fromJson(res.data!);
+    _setNotificationUnreadCount(notificationPage.unreadCount);
+    return notificationPage;
+  }
+
+  Future<int> refreshNotificationUnreadCount() async {
+    final notificationPage = await getNotifications(pageSize: 1);
+    return notificationPage.unreadCount;
+  }
+
+  Future<AccountNotificationReadResult> setNotificationRead({
+    required int notificationId,
+    required bool isRead,
+    required bool wasRead,
+  }) async {
+    final res = await _apiClient.dio.patch<Map<String, dynamic>>(
+      '/push/notifications/$notificationId/read',
+      data: {'is_read': isRead},
+    );
+    final result = AccountNotificationReadResult.fromJson(res.data!);
+    if (_notificationUnreadCountLoaded && wasRead != isRead) {
+      _setNotificationUnreadCount(_notificationUnreadCount + (isRead ? -1 : 1));
+    }
+    return result;
+  }
+
+  Future<void> deleteNotification({
+    required int notificationId,
+    required bool wasUnread,
+  }) async {
+    await _apiClient.dio.delete<Map<String, dynamic>>(
+      '/push/notifications/$notificationId',
+    );
+    if (_notificationUnreadCountLoaded && wasUnread) {
+      _setNotificationUnreadCount(_notificationUnreadCount - 1);
+    }
+  }
+
   Future<PhoneNumberExistsResult> checkPhoneNumberExists({
     required String phoneNumber,
   }) async {
@@ -440,9 +496,7 @@ class AuthRepository extends ChangeNotifier {
   }
 
   /// 회원가입 전 이메일 가입 여부 (인증 불필요). 서버는 trim 후 소문자로 정규화해 비교.
-  Future<EmailExistsResult> checkEmailExists({
-    required String email,
-  }) async {
+  Future<EmailExistsResult> checkEmailExists({required String email}) async {
     final res = await _apiClient.dio.get<Map<String, dynamic>>(
       '/auth/email-exists',
       queryParameters: {'email': email.trim()},
@@ -505,10 +559,7 @@ class AuthRepository extends ChangeNotifier {
   }) async {
     final res = await _apiClient.dio.post<Map<String, dynamic>>(
       '/auth/password/reset/by-phone',
-      data: {
-        'phone_number': phoneNumber.trim(),
-        'new_password': newPassword,
-      },
+      data: {'phone_number': phoneNumber.trim(), 'new_password': newPassword},
     );
     return PasswordResetByPhoneResult.fromJson(res.data!);
   }
@@ -532,9 +583,7 @@ class AuthRepository extends ChangeNotifier {
     return AccountNoticePage.fromJson(res.data!);
   }
 
-  Future<AccountNotice> getNoticeDetail({
-    required int noticeId,
-  }) async {
+  Future<AccountNotice> getNoticeDetail({required int noticeId}) async {
     final res = await _apiClient.dio.get<Map<String, dynamic>>(
       '/me/notices/$noticeId',
     );
@@ -542,8 +591,9 @@ class AuthRepository extends ChangeNotifier {
   }
 
   Future<AccountSupportCenterData> getSupportCenter() async {
-    final res =
-        await _apiClient.dio.get<Map<String, dynamic>>('/me/support-center');
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/me/support-center',
+    );
     return AccountSupportCenterData.fromJson(res.data!);
   }
 
@@ -588,18 +638,14 @@ class AuthRepository extends ChangeNotifier {
     return AccountInquiry.fromJson(res.data!);
   }
 
-  Future<AccountInquiry> getInquiryDetail({
-    required int inquiryId,
-  }) async {
+  Future<AccountInquiry> getInquiryDetail({required int inquiryId}) async {
     final res = await _apiClient.dio.get<Map<String, dynamic>>(
       '/me/inquiries/$inquiryId',
     );
     return AccountInquiry.fromJson(res.data!);
   }
 
-  Future<void> checkInquiryAnswer({
-    required int inquiryId,
-  }) async {
+  Future<void> checkInquiryAnswer({required int inquiryId}) async {
     await _apiClient.dio.post<Map<String, dynamic>>(
       '/me/inquiries/$inquiryId/answer-check',
     );
@@ -613,6 +659,7 @@ class AuthRepository extends ChangeNotifier {
       refreshToken: response.refreshToken,
     );
     _syncAuthUser(response.user);
+    _clearNotificationUnreadCount(notify: false);
     notifyListeners();
   }
 
@@ -628,6 +675,7 @@ class AuthRepository extends ChangeNotifier {
       refreshToken: refreshToken,
     );
     _syncAuthUser(user);
+    _clearNotificationUnreadCount(notify: false);
     notifyListeners();
   }
 
@@ -648,6 +696,7 @@ class AuthRepository extends ChangeNotifier {
     _rawRole = null;
     _signupStep = null;
     _approvalStatus = null;
+    _clearNotificationUnreadCount(notify: false);
     notifyListeners();
   }
 
@@ -661,6 +710,7 @@ class AuthRepository extends ChangeNotifier {
     _rawRole = null;
     _signupStep = null;
     _approvalStatus = null;
+    _clearNotificationUnreadCount(notify: false);
     notifyListeners();
   }
 
@@ -682,6 +732,28 @@ class AuthRepository extends ChangeNotifier {
     _isSignupInProgress = needsSignupCompletion;
   }
 
+  void _setNotificationUnreadCount(int value, {bool notify = true}) {
+    final normalized = value < 0 ? 0 : value;
+    final changed =
+        _notificationUnreadCount != normalized ||
+        !_notificationUnreadCountLoaded;
+    _notificationUnreadCount = normalized;
+    _notificationUnreadCountLoaded = true;
+    if (notify && changed) {
+      notifyListeners();
+    }
+  }
+
+  void _clearNotificationUnreadCount({bool notify = true}) {
+    final changed =
+        _notificationUnreadCount != 0 || _notificationUnreadCountLoaded;
+    _notificationUnreadCount = 0;
+    _notificationUnreadCountLoaded = false;
+    if (notify && changed) {
+      notifyListeners();
+    }
+  }
+
   Map<String, dynamic>? _readJson(String key) {
     final raw = _tokenStorage.getString(key);
     if (raw == null || raw.trim().isEmpty) return null;
@@ -689,9 +761,7 @@ class AuthRepository extends ChangeNotifier {
       final decoded = jsonDecode(raw);
       if (decoded is Map<String, dynamic>) return decoded;
       if (decoded is Map) {
-        return decoded.map(
-          (key, value) => MapEntry(key.toString(), value),
-        );
+        return decoded.map((key, value) => MapEntry(key.toString(), value));
       }
     } catch (_) {
       return null;
