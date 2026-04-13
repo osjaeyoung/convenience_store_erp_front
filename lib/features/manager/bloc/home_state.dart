@@ -13,26 +13,18 @@ class HomeState extends Equatable {
     this.errorMessage,
   });
 
-  const HomeState.initial()
-      : this._(status: HomeStatus.initial);
+  const HomeState.initial() : this._(status: HomeStatus.initial);
 
-  const HomeState.loading()
-      : this._(status: HomeStatus.loading);
+  const HomeState.loading() : this._(status: HomeStatus.loading);
 
-  HomeState.ownerBranchesLoaded(List<OwnerBranch> branches)
-      : this._(
-          status: HomeStatus.success,
-          ownerBranches: branches,
-        );
+  const HomeState.ownerBranchesLoaded(List<OwnerBranch> branches)
+    : this._(status: HomeStatus.success, ownerBranches: branches);
 
-  HomeState.managerBranchesLoaded(List<ManagerBranch> branches)
-      : this._(
-          status: HomeStatus.success,
-          managerBranches: branches,
-        );
+  const HomeState.managerBranchesLoaded(List<ManagerBranch> branches)
+    : this._(status: HomeStatus.success, managerBranches: branches);
 
   const HomeState.failure(String message)
-      : this._(status: HomeStatus.failure, errorMessage: message);
+    : this._(status: HomeStatus.failure, errorMessage: message);
 
   HomeState copyWith({
     HomeStatus? status,
@@ -64,14 +56,14 @@ class HomeState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status,
-        ownerBranches,
-        managerBranches,
-        selectedBranchDetail,
-        detailLoading,
-        detailErrorMessage,
-        errorMessage,
-      ];
+    status,
+    ownerBranches,
+    managerBranches,
+    selectedBranchDetail,
+    detailLoading,
+    detailErrorMessage,
+    errorMessage,
+  ];
 }
 
 class HomeBranchDetail extends Equatable {
@@ -79,6 +71,7 @@ class HomeBranchDetail extends Equatable {
     required this.branchId,
     required this.managerName,
     required this.alertTitle,
+    this.todayAlertTitles = const [],
     required this.waitingInterview,
     required this.newApplicants,
     required this.newContacts,
@@ -93,6 +86,7 @@ class HomeBranchDetail extends Equatable {
   final int branchId;
   final String managerName;
   final String alertTitle;
+  final List<String> todayAlertTitles;
   final int waitingInterview;
   final int newApplicants;
   final int newContacts;
@@ -105,19 +99,20 @@ class HomeBranchDetail extends Equatable {
 
   @override
   List<Object?> get props => [
-        branchId,
-        managerName,
-        alertTitle,
-        waitingInterview,
-        newApplicants,
-        newContacts,
-        rows,
-        workDate,
-        dateLabel,
-        expectedTotalAmountText,
-        expectedChangeText,
-        savingPointTexts,
-      ];
+    branchId,
+    managerName,
+    alertTitle,
+    todayAlertTitles,
+    waitingInterview,
+    newApplicants,
+    newContacts,
+    rows,
+    workDate,
+    dateLabel,
+    expectedTotalAmountText,
+    expectedChangeText,
+    savingPointTexts,
+  ];
 }
 
 class HomeWorkerRow extends Equatable {

@@ -977,6 +977,7 @@ class _SelectedBranchOverview extends StatelessWidget {
         _TodayAlertCard(
           alertCount: alertCount,
           alertTitle: detail?.alertTitle,
+          todayAlertTitles: detail?.todayAlertTitles ?? const [],
           onDetailTap: () => _openAlerts(context),
         ),
         SizedBox(height: 28.h),
@@ -1383,21 +1384,10 @@ class _RecruitmentStatusCard extends StatelessWidget {
           ),
           SizedBox(height: 8.h),
           _RecruitmentRow(
-            label: '구인게시물 ',
-            value: '$waitingInterview건',
-            onDetailTap: onTapWaitingInterviewDetail,
-          ),
-          SizedBox(height: 8.h),
-          _RecruitmentRow(
             label: '새로운 지원자 ',
             value: '$newApplicants명',
             onDetailTap: onTapNewApplicantsDetail,
-          ),
-          SizedBox(height: 8.h),
-          _RecruitmentRow(
-            label: '새로운 연락 ',
-            value: '$newContacts건',
-            onDetailTap: onTapNewContactsDetail,
+            valueColor: const Color(0xFFFF453A),
           ),
           SizedBox(height: 12.h),
           Container(
@@ -1446,11 +1436,13 @@ class _RecruitmentRow extends StatelessWidget {
     required this.label,
     required this.value,
     required this.onDetailTap,
+    this.valueColor = AppColors.primary,
   });
 
   final String label;
   final String value;
   final VoidCallback onDetailTap;
+  final Color valueColor;
 
   @override
   Widget build(BuildContext context) {
@@ -1469,7 +1461,7 @@ class _RecruitmentRow extends StatelessWidget {
                 TextSpan(text: label),
                 TextSpan(
                   text: value,
-                  style: TextStyle(color: AppColors.primary),
+                  style: TextStyle(color: valueColor),
                 ),
               ],
             ),
@@ -1485,15 +1477,25 @@ class _TodayAlertCard extends StatelessWidget {
   const _TodayAlertCard({
     required this.alertCount,
     required this.alertTitle,
+    required this.todayAlertTitles,
     required this.onDetailTap,
   });
 
   final int alertCount;
   final String? alertTitle;
+  final List<String> todayAlertTitles;
   final VoidCallback onDetailTap;
 
   @override
   Widget build(BuildContext context) {
+    final visibleAlertTitles = todayAlertTitles
+        .map((title) => title.trim())
+        .where((title) => title.isNotEmpty)
+        .toList();
+    final fallbackText = alertTitle?.trim().isNotEmpty == true
+        ? alertTitle!.trim()
+        : (alertCount > 0 ? '주의 알림 $alertCount건' : '오늘 등록된 알림이 없습니다.');
+
     return Container(
       padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 12.h),
       decoration: BoxDecoration(
@@ -1528,12 +1530,25 @@ class _TodayAlertCard extends StatelessWidget {
             ],
           ),
           SizedBox(height: 8.h),
-          Text(
-            alertTitle ?? (alertCount > 0 ? '주의 알림 $alertCount건' : '퇴직금 발생'),
-            style: AppTypography.bodyLargeM.copyWith(
-              color: AppColors.textPrimary,
+          if (visibleAlertTitles.isEmpty)
+            Text(
+              fallbackText,
+              style: AppTypography.bodyLargeM.copyWith(
+                color: AppColors.textPrimary,
+              ),
+            )
+          else
+            ...visibleAlertTitles.asMap().entries.map(
+              (entry) => Padding(
+                padding: EdgeInsets.only(
+                  bottom: entry.key == visibleAlertTitles.length - 1 ? 0 : 10.h,
+                ),
+                child: _AlertSummaryRow(
+                  title: entry.value,
+                  onDetailTap: onDetailTap,
+                ),
+              ),
             ),
-          ),
           SizedBox(height: 12.h),
           Container(
             width: double.infinity,
@@ -1600,7 +1615,7 @@ class _OutlineDetailButton extends StatelessWidget {
         ),
         child: Center(
           child: Text(
-            '상세보기',
+            '상세 보기',
             textAlign: TextAlign.center,
             style: AppTypography.bodyXSmallM.copyWith(
               color: AppColors.primary,
@@ -1611,6 +1626,33 @@ class _OutlineDetailButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _AlertSummaryRow extends StatelessWidget {
+  const _AlertSummaryRow({required this.title, required this.onDetailTap});
+
+  final String title;
+  final VoidCallback onDetailTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTypography.bodyLargeM.copyWith(
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
+        SizedBox(width: 10.w),
+        _OutlineDetailButton(onTap: onDetailTap),
+      ],
     );
   }
 }

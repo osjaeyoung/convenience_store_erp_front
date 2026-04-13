@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import 'package:dio/dio.dart';
 
 import '../../../data/models/labor_cost/expected_labor_cost.dart';
+import '../../../data/models/manager_home/manager_alert.dart';
 import '../../../data/models/manager_home/manager_branch.dart';
 import '../../../data/models/owner_home/owner_branch.dart';
 import '../../../data/repositories/labor_cost_repository.dart';
@@ -24,8 +25,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     this._laborCostRepository,
     StaffManagementRepository staffManagementRepository, {
     required bool isOwner,
-  })  : _isOwner = isOwner,
-        super(const HomeState.initial()) {
+  }) : _isOwner = isOwner,
+       super(const HomeState.initial()) {
     on<HomeBranchesRequested>(_onBranchesRequested);
     on<HomeBranchDetailRequested>(_onBranchDetailRequested);
     on<HomeWorkerStatusSaveRequested>(_onWorkerStatusSaveRequested);
@@ -79,7 +80,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     try {
       final date = _normalizeWorkDate(event.date ?? _todayDate());
       if (_isOwner) {
-        final branch = await _ownerHomeRepository.getBranchDetail(event.branchId);
+        final branch = await _ownerHomeRepository.getBranchDetail(
+          event.branchId,
+        );
         final recruitment = await _ownerHomeRepository.getRecruitmentStatus(
           event.branchId,
         );
@@ -96,16 +99,18 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         );
 
         final openAlerts = alerts.where((a) => a['is_open'] == true).toList();
+        final todayAlertTitles = _ownerTodayAlertTitles(alerts);
         final alertTitle = openAlerts.isNotEmpty
             ? (openAlerts.first['title']?.toString() ?? '오늘의 알림')
             : (alerts.isNotEmpty
-                ? (alerts.first['title']?.toString() ?? '오늘의 알림')
-                : '오늘의 알림');
+                  ? (alerts.first['title']?.toString() ?? '오늘의 알림')
+                  : '오늘의 알림');
 
         final detail = HomeBranchDetail(
           branchId: event.branchId,
           managerName: branch.manager?.fullName ?? '',
           alertTitle: alertTitle,
+          todayAlertTitles: todayAlertTitles,
           waitingInterview: _recruitmentCount(
             recruitment,
             primaryKey: 'application_count',
@@ -130,7 +135,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           expectedChangeText: expected == null
               ? null
               : '전월 대비 총 ${expected.changeRatePercent.toStringAsFixed(1)}% 올랐어요',
-          savingPointTexts: expected?.savingPoints
+          savingPointTexts:
+              expected?.savingPoints
                   .map((e) => '${e.title} ${e.description}')
                   .toList() ??
               const [],
@@ -157,11 +163,13 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         final workDate = _normalizeWorkDate(
           workers.isNotEmpty ? workers.first.workDate : date,
         );
+        final todayAlertTitles = _managerTodayAlertTitles(alerts);
 
         final detail = HomeBranchDetail(
           branchId: event.branchId,
           managerName: '등록된 점장',
           alertTitle: alerts.isNotEmpty ? alerts.first.title : '오늘의 알림',
+          todayAlertTitles: todayAlertTitles,
           waitingInterview: _recruitmentCount(
             recruitment,
             primaryKey: 'application_count',
@@ -186,7 +194,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           expectedChangeText: expected == null
               ? null
               : '전월 대비 총 ${expected.changeRatePercent.toStringAsFixed(1)}% 올랐어요',
-          savingPointTexts: expected?.savingPoints
+          savingPointTexts:
+              expected?.savingPoints
                   .map((e) => '${e.title} ${e.description}')
                   .toList() ??
               const [],
@@ -201,10 +210,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       }
     } catch (e) {
       emit(
-        state.copyWith(
-          detailLoading: false,
-          detailErrorMessage: e.toString(),
-        ),
+        state.copyWith(detailLoading: false, detailErrorMessage: e.toString()),
       );
     }
   }
@@ -243,7 +249,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       final displayStatus = _mapWorkerStatus(apiStatus);
       final updatedRows = detail.rows
           .map(
-            (r) => (r.time == event.timeLabel && r.workerName == event.workerName)
+            (r) =>
+                (r.time == event.timeLabel && r.workerName == event.workerName)
                 ? HomeWorkerRow(
                     time: r.time,
                     workerName: r.workerName,
@@ -261,6 +268,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
             branchId: detail.branchId,
             managerName: detail.managerName,
             alertTitle: detail.alertTitle,
+            todayAlertTitles: detail.todayAlertTitles,
             waitingInterview: detail.waitingInterview,
             newApplicants: detail.newApplicants,
             newContacts: detail.newContacts,
@@ -351,7 +359,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   }
 
   List<HomeWorkerRow> _todayWorkersToRows(Map<String, dynamic> data) {
-    final rowsRaw = (data['rows'] as List?) ??
+    final rowsRaw =
+        (data['rows'] as List?) ??
         (data['items'] as List?) ??
         (data['today_workers'] as List?) ??
         (data['today_shift_rows'] as List?) ??
@@ -389,6 +398,42 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     if (value is int) return value;
     if (value is num) return value.toInt();
     return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  List<String> _ownerTodayAlertTitles(List<Map<String, dynamic>> alerts) {
+    return alerts
+        .map(
+          (alert) => (
+            title: alert['title']?.toString().trim() ?? '',
+            createdAt: _parseAlertDateTime(alert['created_at']),
+          ),
+        )
+        .where(
+          (alert) =>
+              alert.title.isNotEmpty &&
+              alert.createdAt != null &&
+              _isToday(alert.createdAt!),
+        )
+        .map((alert) => alert.title)
+        .toList();
+  }
+
+  List<String> _managerTodayAlertTitles(List<ManagerAlert> alerts) {
+    return alerts
+        .map(
+          (alert) => (
+            title: alert.title.trim(),
+            createdAt: _parseAlertDateTime(alert.createdAt),
+          ),
+        )
+        .where(
+          (alert) =>
+              alert.title.isNotEmpty &&
+              alert.createdAt != null &&
+              _isToday(alert.createdAt!),
+        )
+        .map((alert) => alert.title)
+        .toList();
   }
 
   int _recruitmentCount(
@@ -480,6 +525,19 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     final mm = now.month.toString().padLeft(2, '0');
     final dd = now.day.toString().padLeft(2, '0');
     return '${now.year}-$mm-$dd';
+  }
+
+  DateTime? _parseAlertDateTime(Object? value) {
+    final raw = value?.toString().trim();
+    if (raw == null || raw.isEmpty) return null;
+    return DateTime.tryParse(raw)?.toLocal();
+  }
+
+  bool _isToday(DateTime dateTime) {
+    final now = DateTime.now();
+    return now.year == dateTime.year &&
+        now.month == dateTime.month &&
+        now.day == dateTime.day;
   }
 
   String _formatWon(int value) {

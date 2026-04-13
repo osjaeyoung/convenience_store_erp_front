@@ -166,7 +166,11 @@ Figma: [`개인 공간`](https://www.figma.com/design/unoGN3istoEgvyJKbfuICS/%EA
   - 퇴직금 발생 예정 인원
   - 주휴수당 개선안(여러 개 Point)
   - 중복 근무 발생 현황
-- 주휴 개선안 Point마다 `after_workers`에 `"employee_name": "신규채용"` 행이 붙는 경우, 초과 주간 근로를 신규 인력에 넘겨 주휴 부담을 줄이는 안을 제시하는 것으로 보며 이때 `recommends_new_hire`는 `true`, `new_hire_weekly_minutes`는 해당 신규 인력에 배정되는 주간 분, `recommendation_note`는 동일 의미의 안내 문구가 내려갑니다. 초과 분배가 없으면 `recommends_new_hire`는 `false`이고 나머지 두 필드는 `null`입니다.
+- 주휴 개선안 Point마다 `after_workers`에 `"employee_name": "신규채용"` 행이 붙는 경우, 초과 주간 근로를 신규 인력에 넘겨 주휴 부담을 줄이는 안을 제시하는 것으로 보며 이때 `recommends_new_hire`는 `true`, `new_hire_weekly_minutes`는 **신규 채용 인력 전체에 분배하는 주간 분 합계**입니다.
+- 분배 추천은 **1분 단위**로 계산하며, 고정 40분 단위로 끊지 않습니다.
+- 필요 시 `after_workers`에는 `"신규채용"` 행이 여러 개 내려올 수 있습니다. 각 행은 주휴 기준(주 15시간 미만) 이하로 분배된 개별 제안 단위입니다.
+- 신규채용 행 1개당 최소 추천 근무시간은 `180분`(3시간)입니다.
+- 초과 분배가 없으면 `recommends_new_hire`는 `false`이고 나머지 두 필드는 `null`입니다.
 
 ### Request Body
 없음
@@ -192,7 +196,7 @@ Figma: [`개인 공간`](https://www.figma.com/design/unoGN3istoEgvyJKbfuICS/%EA
       "point_title": "Point 1", // 개선안 제목
       "legal_basis": "출결 확정 기준으로 개근 + 주 소정근로시간 15시간 이상(900분) 충족 여부를 우선 적용", // 한국 기준 안내
       "recommends_new_hire": true, // 주휴 부담 완화를 위해 초과 시간을 신규 인력에 넘기는 안을 권하는지
-      "new_hire_weekly_minutes": 80, // 신규 채용으로 분배하는 주간 근무(분). 없으면 null
+      "new_hire_weekly_minutes": 180, // 신규 채용 인력 전체에 분배하는 주간 근무(분) 합계. 없으면 null
       "recommendation_note": "주휴수당 부담을 줄이기 위해 초과 주간 근로시간은 신규 단기·알바 채용으로 분배하는 방안을 검토할 수 있습니다.", // 미권장 시 null
       "before_workers": [
         {
@@ -205,12 +209,12 @@ Figma: [`개인 공간`](https://www.figma.com/design/unoGN3istoEgvyJKbfuICS/%EA
         {
           "employee_name": "이사라",
           "category": "개선안",
-          "weekly_work_minutes": 880
+          "weekly_work_minutes": 780
         },
         {
           "employee_name": "신규채용",
           "category": "개선안",
-          "weekly_work_minutes": 80
+          "weekly_work_minutes": 180
         }
       ]
     },
@@ -218,25 +222,25 @@ Figma: [`개인 공간`](https://www.figma.com/design/unoGN3istoEgvyJKbfuICS/%EA
       "point_title": "Point 2",
       "legal_basis": "출결 확정 기준으로 개근 + 주 소정근로시간 15시간 이상(900분) 충족 여부를 우선 적용",
       "recommends_new_hire": true,
-      "new_hire_weekly_minutes": 60,
+      "new_hire_weekly_minutes": 181,
       "recommendation_note": "주휴수당 부담을 줄이기 위해 초과 주간 근로시간은 신규 단기·알바 채용으로 분배하는 방안을 검토할 수 있습니다.",
       "before_workers": [
         {
           "employee_name": "홍승민",
           "category": "현주휴인력",
-          "weekly_work_minutes": 930
+          "weekly_work_minutes": 1080
         }
       ],
       "after_workers": [
         {
           "employee_name": "홍승민",
           "category": "개선안",
-          "weekly_work_minutes": 870
+          "weekly_work_minutes": 899
         },
         {
           "employee_name": "신규채용",
           "category": "개선안",
-          "weekly_work_minutes": 60
+          "weekly_work_minutes": 181
         }
       ]
     }
@@ -258,7 +262,11 @@ Figma: [`개인 공간`](https://www.figma.com/design/unoGN3istoEgvyJKbfuICS/%EA
 
 - 퇴직금 발생 예정 인원: `입사 1년 도달 예정` + `최근 4주 평균 주15시간(900분) 이상`인 인원
 - 주휴수당 개선안: `출결 확정 데이터가 있는 경우` 해당 확정값의 `개근 + 주15시간(900분) 이상` 조건을 우선 적용
-- 주휴수당 개선안: `출결 확정 데이터가 없는 경우` 기존 스케줄 기반 평균 주근로시간(15시간 이상)으로 보조 판단
+- 주휴수당 개선안: `출결 확정 데이터가 없는 경우` 기존 스케줄의 **실제 주간 합계**(주15시간 이상인 주들) 기준으로 보조 판단
+- 주휴수당 개선안: 개선 후 기존 인력은 원칙적으로 `주 899분 이하`가 되도록 조정합니다.
+- 주휴수당 개선안: 분배 시간은 `1분 단위`로 계산합니다.
+- 주휴수당 개선안: 신규채용 1명당 최소 추천 근무시간은 `180분`입니다.
+- 주휴수당 개선안: 초과분은 필요 시 여러 `신규채용` 행으로 분배합니다.
 - 중복 근무 발생 현황:
   - **서로 다른 두 직원**이 같은 날짜에 근무 시간대가 겹치면 `employee_names`에 두 명(이름 정렬)
   - **동일 직원**에게 같은 날 두 건 이상의 스케줄이 시간으로 겹치면 `employee_names`에 한 명
