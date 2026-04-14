@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "315149487915-uau93j3qmlg3dsg0k3pks1iiuli46llc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.nanum.store",
+            "certificate_hash": "97956c02bb7df16adb58a6eecef1fe1400488757"
+          }
+        },
+        {
           "client_id": "315149487915-flhgv52j6vveo14ncmukb66jlckjm7lu.apps.googleusercontent.com",
           "client_type": 3
         }

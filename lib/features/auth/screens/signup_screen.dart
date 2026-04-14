@@ -29,11 +29,13 @@ class SignupScreen extends StatefulWidget {
   State<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _SignupScreenState extends State<SignupScreen> {
+class _SignupScreenState extends State<SignupScreen>
+    with WidgetsBindingObserver {
   static const Set<String> _phoneVerificationBypassNumbers = {
     '01012345678', '01087654321',
   };
   final _formKey = GlobalKey<FormState>();
+  final _emailFieldKey = GlobalKey<FormFieldState<String>>();
   final _emailController = TextEditingController();
   final _pwController = TextEditingController();
   final _pwConfirmController = TextEditingController();
@@ -57,6 +59,13 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _submittedBasicInfo = false;
   bool _isAccountCompletionFlow = false;
   Timer? _draftPersistTimer;
+  ({
+    String phoneNumber,
+    String verificationId,
+    int? resendToken,
+    DateTime expiresAt,
+  })? _pendingPhoneVerificationRoute;
+  bool _isOpeningPhoneVerificationScreen = false;
   static const String _checkActiveIcon =
       'assets/icons/png/common/check_active.png';
   static const String _checkInactiveIcon =
@@ -65,6 +74,7 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final repo = context.read<AuthRepository>();
     _isAccountCompletionFlow = repo.isLoggedIn && repo.needsSignupCompletion;
     if (_isAccountCompletionFlow) {
@@ -82,6 +92,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _emailController.removeListener(_onEmailChanged);
     _emailController.removeListener(_scheduleSignupDraftPersist);
     _nameController.removeListener(_scheduleSignupDraftPersist);
@@ -93,6 +104,16 @@ class _SignupScreenState extends State<SignupScreen> {
     _nameController.dispose();
     _phoneController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _logPhoneVerification('lifecycle=$state');
+    if (state != AppLifecycleState.resumed) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(_drainPendingPhoneVerificationRoute());
+    });
   }
 
   void _goNextStep() {
@@ -272,13 +293,11 @@ class _SignupScreenState extends State<SignupScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('이전 휴대폰 인증을 이어서 진행해주세요.')),
       );
-      unawaited(
-        _openPhoneVerificationScreen(
-          phoneNumber: phoneNumber,
-          verificationId: verificationId,
-          resendToken: resendToken,
-          expiresAt: expiresAt,
-        ),
+      _queuePhoneVerificationScreen(
+        phoneNumber: phoneNumber,
+        verificationId: verificationId,
+        resendToken: resendToken,
+        expiresAt: expiresAt,
       );
     });
   }
@@ -333,6 +352,101 @@ class _SignupScreenState extends State<SignupScreen> {
     return _isPhoneVerified ? '완료' : '요청';
   }
 
+  bool get _isEmailDuplicateChecked =>
+      _isEmailChecked &&
+      _isEmailAvailable &&
+      _emailController.text.trim() == _lastCheckedEmail;
+
+  String get _emailDuplicateActionLabel {
+    if (_isCheckingEmailDuplicate) return '';
+    return _isEmailDuplicateChecked ? '완료' : '중복확인';
+  }
+
+  void _logPhoneVerification(String message) {
+    if (!kDebugMode) return;
+    debugPrint('[signup_phone_verification] $message');
+  }
+
+  void _queuePhoneVerificationScreen({
+    required String phoneNumber,
+    required String verificationId,
+    int? resendToken,
+    DateTime? expiresAt,
+  }) {
+    _pendingPhoneVerificationRoute = (
+      phoneNumber: phoneNumber,
+      verificationId: verificationId,
+      resendToken: resendToken,
+      expiresAt: expiresAt ?? DateTime.now().add(const Duration(minutes: 3)),
+    );
+    _logPhoneVerification(
+      'queued screen phone=$phoneNumber lifecycle=${WidgetsBinding.instance.lifecycleState}',
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(_drainPendingPhoneVerificationRoute());
+    });
+  }
+
+  Future<void> _drainPendingPhoneVerificationRoute() async {
+    if (!mounted || _isOpeningPhoneVerificationScreen) return;
+    final pending = _pendingPhoneVerificationRoute;
+    if (pending == null) return;
+
+    final lifecycleState = WidgetsBinding.instance.lifecycleState;
+    final isResumed =
+        lifecycleState == null || lifecycleState == AppLifecycleState.resumed;
+    final route = ModalRoute.of(context);
+    final isCurrentRoute = route == null || route.isCurrent;
+    if (!isResumed || !isCurrentRoute) {
+      _logPhoneVerification(
+        'deferred screen lifecycle=$lifecycleState isCurrent=$isCurrentRoute',
+      );
+      return;
+    }
+
+    _pendingPhoneVerificationRoute = null;
+    _isOpeningPhoneVerificationScreen = true;
+    _logPhoneVerification('opening screen phone=${pending.phoneNumber}');
+    try {
+      await _openPhoneVerificationScreen(
+        phoneNumber: pending.phoneNumber,
+        verificationId: pending.verificationId,
+        resendToken: pending.resendToken,
+        expiresAt: pending.expiresAt,
+      );
+    } finally {
+      _isOpeningPhoneVerificationScreen = false;
+      if (mounted && _pendingPhoneVerificationRoute != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          unawaited(_drainPendingPhoneVerificationRoute());
+        });
+      }
+    }
+  }
+
+  void _showPhoneVerificationRequestFailure([String? detail]) {
+    final trimmedDetail = detail?.trim() ?? '';
+    final message = trimmedDetail.isEmpty
+        ? '인증번호 요청에 실패했습니다. 다시 시도해주세요.'
+        : '인증번호 요청에 실패했습니다. $trimmedDetail';
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _requestEmailDuplicateCheck() async {
+    final emailState = _emailFieldKey.currentState;
+    if (emailState == null || !emailState.validate()) return;
+
+    FocusScope.of(context).unfocus();
+    final available = await _ensureEmailAvailable();
+    if (!mounted || !available) return;
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('사용 가능한 이메일입니다.')));
+  }
+
   void _onPhoneChanged(String value) {
     final digits = _digitsOnly(value);
     final sessionPhoneDigits = _digitsOnly(
@@ -341,6 +455,10 @@ class _SignupScreenState extends State<SignupScreen> {
     );
     if (_verifiedPhoneDigits != null && digits != _verifiedPhoneDigits) {
       _verifiedPhoneDigits = null;
+    }
+    final pendingPhoneDigits = _digitsOnly(_pendingPhoneVerificationRoute?.phoneNumber);
+    if (pendingPhoneDigits.isNotEmpty && pendingPhoneDigits != digits) {
+      _pendingPhoneVerificationRoute = null;
     }
     if (sessionPhoneDigits.isNotEmpty && sessionPhoneDigits != digits) {
       unawaited(context.read<AuthRepository>().clearPhoneVerificationSession());
@@ -387,6 +505,9 @@ class _SignupScreenState extends State<SignupScreen> {
     final repo = context.read<AuthRepository>();
     final currentPhoneDigits = _digitsOnly(repo.currentPhoneNumber);
     final nextPhoneDigits = _digitsOnly(phoneNumber);
+    var didStartPhoneVerificationFlow = false;
+    _pendingPhoneVerificationRoute = null;
+    _logPhoneVerification('request start phone=$phoneNumber');
 
     setState(() => _isSendingPhoneVerification = true);
     await _persistSignupDraft();
@@ -396,6 +517,7 @@ class _SignupScreenState extends State<SignupScreen> {
         final result = await repo.checkPhoneNumberExists(phoneNumber: phoneNumber);
         if (!mounted) return;
         if (result.exists) {
+          setState(() => _isSendingPhoneVerification = false);
           final message = result.hasPasswordLogin
               ? '이미 가입된 전화번호입니다.'
               : '이미 가입된 전화번호입니다. 소셜 계정으로 가입된 번호인지 확인해주세요.';
@@ -410,6 +532,10 @@ class _SignupScreenState extends State<SignupScreen> {
         phoneNumber: _toE164(phoneNumber),
         codeSent: (verificationId, resendToken) {
           if (!mounted) return;
+          didStartPhoneVerificationFlow = true;
+          _logPhoneVerification(
+            'codeSent phone=$phoneNumber resendToken=$resendToken',
+          );
           final expiresAt = DateTime.now().add(const Duration(minutes: 3));
           unawaited(
             repo.savePhoneVerificationSession({
@@ -420,16 +546,16 @@ class _SignupScreenState extends State<SignupScreen> {
             }),
           );
           setState(() => _isSendingPhoneVerification = false);
-          unawaited(
-            _openPhoneVerificationScreen(
-              phoneNumber: phoneNumber,
-              verificationId: verificationId,
-              resendToken: resendToken,
-              expiresAt: expiresAt,
-            ),
+          _queuePhoneVerificationScreen(
+            phoneNumber: phoneNumber,
+            verificationId: verificationId,
+            resendToken: resendToken,
+            expiresAt: expiresAt,
           );
         },
         verificationCompleted: (credential) {
+          didStartPhoneVerificationFlow = true;
+          _logPhoneVerification('verificationCompleted phone=$phoneNumber');
           unawaited(() async {
             try {
               await FirebaseAuth.instance.signInWithCredential(credential);
@@ -456,27 +582,33 @@ class _SignupScreenState extends State<SignupScreen> {
         },
         verificationFailed: (error) {
           if (!mounted) return;
+          _logPhoneVerification(
+            'verificationFailed code=${error.code} message=${error.message}',
+          );
           unawaited(repo.clearPhoneVerificationSession());
           setState(() => _isSendingPhoneVerification = false);
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(
-            SnackBar(content: Text(_friendlyFirebaseErrorMessage(error))),
+          _showPhoneVerificationRequestFailure(
+            _friendlyFirebaseErrorMessage(error),
           );
         },
-        codeAutoRetrievalTimeout: (_) {
+        codeAutoRetrievalTimeout: (verificationId) {
           if (!mounted) return;
+          _logPhoneVerification(
+            'codeAutoRetrievalTimeout verificationId=$verificationId didStart=$didStartPhoneVerificationFlow',
+          );
           unawaited(repo.clearPhoneVerificationSession());
           setState(() => _isSendingPhoneVerification = false);
+          if (!didStartPhoneVerificationFlow) {
+            _showPhoneVerificationRequestFailure('시간이 초과되었습니다.');
+          }
         },
       );
     } catch (error) {
       await repo.clearPhoneVerificationSession();
       if (!mounted) return;
+      _logPhoneVerification('request error=$error');
       setState(() => _isSendingPhoneVerification = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(_friendlyErrorMessage(error))));
+      _showPhoneVerificationRequestFailure(_friendlyErrorMessage(error));
     }
   }
 
@@ -486,6 +618,7 @@ class _SignupScreenState extends State<SignupScreen> {
     int? resendToken,
     DateTime? expiresAt,
   }) async {
+    _logPhoneVerification('push screen phone=$phoneNumber');
     final verified = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
         builder: (_) => SignupPhoneCodeScreen(
@@ -496,6 +629,7 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
       ),
     );
+    _logPhoneVerification('screen closed verified=$verified phone=$phoneNumber');
 
     if (verified != true) return;
     if (!mounted) return;
@@ -843,6 +977,7 @@ class _SignupScreenState extends State<SignupScreen> {
             if (!_isAccountCompletionFlow) ...[
               _buildFieldLabel('이메일'),
               AuthInputField(
+                formFieldKey: _emailFieldKey,
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 autovalidateMode: _submittedBasicInfo
@@ -850,6 +985,52 @@ class _SignupScreenState extends State<SignupScreen> {
                     : AutovalidateMode.disabled,
                 hintText: '이메일을 입력해주세요.',
                 focusedBorderColor: AppColors.primary,
+                suffixIconConstraints: BoxConstraints(
+                  minHeight: 0,
+                  minWidth: 88.w,
+                ),
+                suffix: Padding(
+                  padding: EdgeInsets.only(right: 6.w),
+                  child: SizedBox(
+                    width: 76.w,
+                    height: 28.h,
+                    child: Center(
+                      child: GestureDetector(
+                        onTap: _isCheckingEmailDuplicate
+                            ? null
+                            : () => unawaited(_requestEmailDuplicateCheck()),
+                        child: Container(
+                          width: 76.w,
+                          height: 28.h,
+                          decoration: BoxDecoration(
+                            color: _isEmailDuplicateChecked
+                                ? AppColors.grey100
+                                : AppColors.primary,
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          alignment: Alignment.center,
+                          child: _isCheckingEmailDuplicate
+                              ? const SizedBox(
+                                  width: 12,
+                                  height: 12,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.grey0,
+                                  ),
+                                )
+                              : Text(
+                                  _emailDuplicateActionLabel,
+                                  style: AppTypography.bodyMediumB.copyWith(
+                                    color: AppColors.grey0,
+                                    fontSize: 11.sp,
+                                    height: 1,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 validator: (v) {
                   final value = (v ?? '').trim();
                   if (value.isEmpty) return '*이메일을 입력해주세요.';
@@ -859,6 +1040,15 @@ class _SignupScreenState extends State<SignupScreen> {
                   return null;
                 },
               ),
+              if (_isEmailDuplicateChecked) ...[
+                SizedBox(height: 6.h),
+                Text(
+                  '사용 가능한 이메일입니다.',
+                  style: AppTypography.bodySmallR.copyWith(
+                    color: AppColors.primary,
+                  ),
+                ),
+              ],
             ],
             SizedBox(height: 20.h),
             _buildFieldLabel('이름'),
@@ -1159,6 +1349,11 @@ class _SignupScreenState extends State<SignupScreen> {
         return '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
       case 'network-request-failed':
         return '네트워크 연결을 확인해주세요.';
+      case 'quota-exceeded':
+        return '문자 발송 한도를 초과했습니다. 잠시 후 다시 시도해주세요.';
+      case 'app-not-authorized':
+      case 'invalid-app-credential':
+        return '현재 앱에서 휴대폰 인증을 사용할 수 없습니다. Firebase 설정을 확인해주세요.';
       case 'captcha-check-failed':
         return '휴대폰 인증 검증에 실패했습니다. 다시 시도해주세요.';
       default:
