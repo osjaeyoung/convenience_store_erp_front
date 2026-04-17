@@ -130,6 +130,14 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
   Future<void> _bootstrap() async {
     final startedAt = DateTime.now();
 
+    // 회원가입 중간에 나갔다가 다시 실행한 경우 상태를 초기화하여 로그인 화면으로 이동하게 함
+    if (widget.authRepository.hasSignupDraft) {
+      await widget.authRepository.clearSignupDraft();
+    }
+    if (widget.authRepository.isLoggedIn && widget.authRepository.isSignupInProgress) {
+      await widget.authRepository.logout();
+    }
+
     if (widget.authRepository.isLoggedIn) {
       try {
         await widget.authRepository.getMe();

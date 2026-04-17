@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -117,6 +118,11 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
   bool? _activeDragSelectionValue;
   final Set<String> _dragVisitedSlots = <String>{};
 
+  Timer? _autoScrollTimer;
+  final ScrollController _scrollController = ScrollController();
+  final ScrollController _horizontalScrollController = ScrollController();
+  Offset? _lastDragPosition;
+
   @override
   void initState() {
     super.initState();
@@ -126,6 +132,14 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
       widget.onRefreshToday();
       widget.onRefreshWeek(_toIsoDate(_getWeekStart(widget.today)));
     });
+  }
+
+  @override
+  void dispose() {
+    _autoScrollTimer?.cancel();
+    _scrollController.dispose();
+    _horizontalScrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -276,6 +290,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
 
   Widget _buildDailyView() {
     return SingleChildScrollView(
+      controller: _scrollController,
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(16.w, 24.h, 16.w, 0.h),
       child: Column(
@@ -301,6 +316,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     final weekStart = _getWeekStart(_weekSelectedDate);
     final weekDays = _getWeekDays(weekStart);
     return SingleChildScrollView(
+      controller: _scrollController,
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 16.h),
       child: Column(
@@ -360,6 +376,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
         builder: (context, constraints) {
           final columnWidth = (constraints.maxWidth - columnSpacing) / 2;
           return SingleChildScrollView(
+            controller: _horizontalScrollController,
             scrollDirection: Axis.horizontal,
             padding: EdgeInsets.zero,
             child: Row(
@@ -515,6 +532,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
   }
 
   void _handleDragPointerDown(PointerDownEvent event) {
+    _lastDragPosition = event.position;
     final slotKey = _slotKeyAtGlobalPosition(event.position);
     if (slotKey == null) return;
     _activeDragPointer = event.pointer;
@@ -529,16 +547,133 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     if (_activeDragPointer != event.pointer) return;
     final shouldSelect = _activeDragSelectionValue;
     if (shouldSelect == null) return;
+
+    _lastDragPosition = event.position;
+
+    _checkAutoScroll(shouldSelect);
+
     final slotKey = _slotKeyAtGlobalPosition(event.position);
     if (slotKey == null || _dragVisitedSlots.contains(slotKey)) return;
     _dragVisitedSlots.add(slotKey);
     _applyDragSelection(slotKey, shouldSelect);
   }
 
+  void _checkAutoScroll(bool shouldSelect) {
+    final pos = _lastDragPosition;
+    if (pos == null) return;
+
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dy = pos.dy;
+    final dx = pos.dx;
+
+    const edgeMargin = 120.0; // 드래그 시 스크롤이 시작되는 화면 끝부분의 여백
+
+    bool needsScroll = false;
+
+    if (_scrollController.hasClients) {
+      if (dy < edgeMargin && _scrollController.offset > 0) {
+        needsScroll = true;
+      } else if (dy > screenHeight - edgeMargin &&
+          _scrollController.offset < _scrollController.position.maxScrollExtent) {
+        needsScroll = true;
+      }
+    }
+
+    if (!_isDailyView && _horizontalScrollController.hasClients) {
+      if (dx < edgeMargin && _horizontalScrollController.offset > 0) {
+        needsScroll = true;
+      } else if (dx > screenWidth - edgeMargin &&
+          _horizontalScrollController.offset <
+              _horizontalScrollController.position.maxScrollExtent) {
+        needsScroll = true;
+      }
+    }
+
+    if (needsScroll) {
+      if (_autoScrollTimer == null || !_autoScrollTimer!.isActive) {
+        _autoScrollTimer =
+            Timer.periodic(const Duration(milliseconds: 16), (timer) {
+          _performAutoScroll(shouldSelect);
+        });
+      }
+    } else {
+      _autoScrollTimer?.cancel();
+    }
+  }
+
+  void _performAutoScroll(bool shouldSelect) {
+    final pos = _lastDragPosition;
+    if (pos == null) {
+      _autoScrollTimer?.cancel();
+      return;
+    }
+
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dy = pos.dy;
+    final dx = pos.dx;
+
+    const edgeMargin = 120.0;
+    const scrollStep = 15.0;
+
+    bool scrolled = false;
+
+    // Vertical
+    if (_scrollController.hasClients) {
+      if (dy < edgeMargin) {
+        final newOffset = (_scrollController.offset - scrollStep)
+            .clamp(0.0, _scrollController.position.maxScrollExtent);
+        if (newOffset != _scrollController.offset) {
+          _scrollController.jumpTo(newOffset);
+          scrolled = true;
+        }
+      } else if (dy > screenHeight - edgeMargin) {
+        final newOffset = (_scrollController.offset + scrollStep)
+            .clamp(0.0, _scrollController.position.maxScrollExtent);
+        if (newOffset != _scrollController.offset) {
+          _scrollController.jumpTo(newOffset);
+          scrolled = true;
+        }
+      }
+    }
+
+    // Horizontal
+    if (!_isDailyView && _horizontalScrollController.hasClients) {
+      if (dx < edgeMargin) {
+        final newOffset = (_horizontalScrollController.offset - scrollStep)
+            .clamp(0.0, _horizontalScrollController.position.maxScrollExtent);
+        if (newOffset != _horizontalScrollController.offset) {
+          _horizontalScrollController.jumpTo(newOffset);
+          scrolled = true;
+        }
+      } else if (dx > screenWidth - edgeMargin) {
+        final newOffset = (_horizontalScrollController.offset + scrollStep)
+            .clamp(0.0, _horizontalScrollController.position.maxScrollExtent);
+        if (newOffset != _horizontalScrollController.offset) {
+          _horizontalScrollController.jumpTo(newOffset);
+          scrolled = true;
+        }
+      }
+    }
+
+    if (scrolled) {
+      final slotKey = _slotKeyAtGlobalPosition(pos);
+      if (slotKey != null && !_dragVisitedSlots.contains(slotKey)) {
+        _dragVisitedSlots.add(slotKey);
+        _applyDragSelection(slotKey, shouldSelect);
+      }
+    } else {
+      _autoScrollTimer?.cancel();
+    }
+  }
+
   void _resetPointerDragState([int? pointer]) {
     if (pointer != null && _activeDragPointer != pointer) return;
     _activeDragPointer = null;
     _activeDragSelectionValue = null;
+    _lastDragPosition = null;
+    _autoScrollTimer?.cancel();
     _dragVisitedSlots.clear();
   }
 
