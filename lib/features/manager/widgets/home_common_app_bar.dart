@@ -70,7 +70,7 @@ class HomeCommonAppBar extends StatelessWidget implements PreferredSizeWidget {
           onPressed: () => _openNotifications(context),
           icon: Image.asset(
             showUnreadAlarm
-                ? AppAssets.alarmBlackIcon
+                ? AppAssets.alarmActiveIcon
                 : AppAssets.alarmInactiveIcon,
             width: 24,
             height: 24,

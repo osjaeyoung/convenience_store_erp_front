@@ -116,7 +116,9 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
   final Map<String, GlobalKey> _dragSlotKeys = {};
   int? _activeDragPointer;
   bool? _activeDragSelectionValue;
-  final Set<String> _dragVisitedSlots = <String>{};
+  Set<String> _initialDragSelectedSlots = {};
+  String? _dragStartSlotKey;
+  String? _dragCurrentSlotKey;
 
   Timer? _autoScrollTimer;
   final ScrollController _scrollController = ScrollController();
@@ -291,7 +293,9 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
   Widget _buildDailyView() {
     return SingleChildScrollView(
       controller: _scrollController,
-      physics: const AlwaysScrollableScrollPhysics(),
+      physics: _activeDragPointer != null
+          ? const NeverScrollableScrollPhysics()
+          : const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(16.w, 24.h, 16.w, 0.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -317,7 +321,9 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     final weekDays = _getWeekDays(weekStart);
     return SingleChildScrollView(
       controller: _scrollController,
-      physics: const AlwaysScrollableScrollPhysics(),
+      physics: _activeDragPointer != null
+          ? const NeverScrollableScrollPhysics()
+          : const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 16.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -378,6 +384,9 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
           return SingleChildScrollView(
             controller: _horizontalScrollController,
             scrollDirection: Axis.horizontal,
+            physics: _activeDragPointer != null
+                ? const NeverScrollableScrollPhysics()
+                : const AlwaysScrollableScrollPhysics(),
             padding: EdgeInsets.zero,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -535,12 +544,16 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     _lastDragPosition = event.position;
     final slotKey = _slotKeyAtGlobalPosition(event.position);
     if (slotKey == null) return;
-    _activeDragPointer = event.pointer;
-    _activeDragSelectionValue = !_dragSelectedSlots.contains(slotKey);
-    _dragVisitedSlots
-      ..clear()
-      ..add(slotKey);
-    _applyDragSelection(slotKey, _activeDragSelectionValue!);
+    
+    setState(() {
+      _activeDragPointer = event.pointer;
+      _activeDragSelectionValue = !_dragSelectedSlots.contains(slotKey);
+      _initialDragSelectedSlots = Set.from(_dragSelectedSlots);
+      _dragStartSlotKey = slotKey;
+      _dragCurrentSlotKey = slotKey;
+    });
+    
+    _updateDragSelection();
   }
 
   void _handleDragPointerMove(PointerMoveEvent event) {
@@ -553,9 +566,12 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     _checkAutoScroll(shouldSelect);
 
     final slotKey = _slotKeyAtGlobalPosition(event.position);
-    if (slotKey == null || _dragVisitedSlots.contains(slotKey)) return;
-    _dragVisitedSlots.add(slotKey);
-    _applyDragSelection(slotKey, shouldSelect);
+    if (slotKey != null && slotKey != _dragCurrentSlotKey) {
+      setState(() {
+        _dragCurrentSlotKey = slotKey;
+      });
+      _updateDragSelection();
+    }
   }
 
   void _checkAutoScroll(bool shouldSelect) {
@@ -567,7 +583,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     final dy = pos.dy;
     final dx = pos.dx;
 
-    const edgeMargin = 120.0; // 드래그 시 스크롤이 시작되는 화면 끝부분의 여백
+    const edgeMargin = 160.0; // 드래그 시 스크롤이 시작되는 화면 끝부분의 여백
 
     bool needsScroll = false;
 
@@ -614,14 +630,15 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     final dy = pos.dy;
     final dx = pos.dx;
 
-    const edgeMargin = 120.0;
-    const scrollStep = 15.0;
+    const edgeMargin = 160.0;
 
     bool scrolled = false;
 
     // Vertical
     if (_scrollController.hasClients) {
       if (dy < edgeMargin) {
+        final factor = ((edgeMargin - dy) / edgeMargin).clamp(0.0, 1.0);
+        final scrollStep = 5.0 + (25.0 * factor);
         final newOffset = (_scrollController.offset - scrollStep)
             .clamp(0.0, _scrollController.position.maxScrollExtent);
         if (newOffset != _scrollController.offset) {
@@ -629,6 +646,8 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
           scrolled = true;
         }
       } else if (dy > screenHeight - edgeMargin) {
+        final factor = ((dy - (screenHeight - edgeMargin)) / edgeMargin).clamp(0.0, 1.0);
+        final scrollStep = 5.0 + (25.0 * factor);
         final newOffset = (_scrollController.offset + scrollStep)
             .clamp(0.0, _scrollController.position.maxScrollExtent);
         if (newOffset != _scrollController.offset) {
@@ -641,6 +660,8 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     // Horizontal
     if (!_isDailyView && _horizontalScrollController.hasClients) {
       if (dx < edgeMargin) {
+        final factor = ((edgeMargin - dx) / edgeMargin).clamp(0.0, 1.0);
+        final scrollStep = 5.0 + (25.0 * factor);
         final newOffset = (_horizontalScrollController.offset - scrollStep)
             .clamp(0.0, _horizontalScrollController.position.maxScrollExtent);
         if (newOffset != _horizontalScrollController.offset) {
@@ -648,6 +669,8 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
           scrolled = true;
         }
       } else if (dx > screenWidth - edgeMargin) {
+        final factor = ((dx - (screenWidth - edgeMargin)) / edgeMargin).clamp(0.0, 1.0);
+        final scrollStep = 5.0 + (25.0 * factor);
         final newOffset = (_horizontalScrollController.offset + scrollStep)
             .clamp(0.0, _horizontalScrollController.position.maxScrollExtent);
         if (newOffset != _horizontalScrollController.offset) {
@@ -659,22 +682,78 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
 
     if (scrolled) {
       final slotKey = _slotKeyAtGlobalPosition(pos);
-      if (slotKey != null && !_dragVisitedSlots.contains(slotKey)) {
-        _dragVisitedSlots.add(slotKey);
-        _applyDragSelection(slotKey, shouldSelect);
+      if (slotKey != null && slotKey != _dragCurrentSlotKey) {
+        setState(() {
+          _dragCurrentSlotKey = slotKey;
+        });
+        _updateDragSelection();
       }
     } else {
       _autoScrollTimer?.cancel();
     }
   }
 
+  void _updateDragSelection() {
+    if (_dragStartSlotKey == null ||
+        _dragCurrentSlotKey == null ||
+        _activeDragSelectionValue == null) return;
+
+    final startParts = _dragStartSlotKey!.split('_');
+    final currentParts = _dragCurrentSlotKey!.split('_');
+    if (startParts.length != 2 || currentParts.length != 2) return;
+
+    final startDate = startParts[0];
+    final startTime = startParts[1];
+
+    final currentDate = currentParts[0];
+    final currentTime = currentParts[1];
+
+    final startIndex = _slotTimes.indexOf(startTime);
+    final currentIndex = _slotTimes.indexOf(currentTime);
+    if (startIndex == -1 || currentIndex == -1) return;
+
+    final minTimeIdx = startIndex < currentIndex ? startIndex : currentIndex;
+    final maxTimeIdx = startIndex > currentIndex ? startIndex : currentIndex;
+
+    final sDate = DateTime.parse(startDate);
+    final cDate = DateTime.parse(currentDate);
+    final minDate = sDate.isBefore(cDate) ? sDate : cDate;
+    final maxDate = sDate.isAfter(cDate) ? sDate : cDate;
+
+    final Set<String> boundingBoxKeys = {};
+    for (DateTime d = minDate;
+        d.isBefore(maxDate) || d.isAtSameMomentAs(maxDate);
+        d = d.add(const Duration(days: 1))) {
+      final dStr = _toIsoDate(d);
+      for (int i = minTimeIdx; i <= maxTimeIdx; i++) {
+        boundingBoxKeys.add('${dStr}_${_slotTimes[i]}');
+      }
+    }
+
+    setState(() {
+      final nextSelected = Set<String>.from(_initialDragSelectedSlots);
+      if (_activeDragSelectionValue!) {
+        nextSelected.addAll(boundingBoxKeys);
+      } else {
+        nextSelected.removeAll(boundingBoxKeys);
+      }
+      _dragSelectedSlots = nextSelected;
+    });
+  }
+
   void _resetPointerDragState([int? pointer]) {
     if (pointer != null && _activeDragPointer != pointer) return;
-    _activeDragPointer = null;
-    _activeDragSelectionValue = null;
+    if (_activeDragPointer != null) {
+      setState(() {
+        _activeDragPointer = null;
+        _activeDragSelectionValue = null;
+        _dragStartSlotKey = null;
+        _dragCurrentSlotKey = null;
+        _initialDragSelectedSlots.clear();
+      });
+    }
     _lastDragPosition = null;
     _autoScrollTimer?.cancel();
-    _dragVisitedSlots.clear();
   }
 
   String? _slotKeyAtGlobalPosition(Offset globalPosition) {
@@ -689,20 +768,6 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
       }
     }
     return null;
-  }
-
-  void _applyDragSelection(String slotKey, bool shouldSelect) {
-    final isSelected = _dragSelectedSlots.contains(slotKey);
-    if (isSelected == shouldSelect) return;
-    setState(() {
-      final next = {..._dragSelectedSlots};
-      if (shouldSelect) {
-        next.add(slotKey);
-      } else {
-        next.remove(slotKey);
-      }
-      _dragSelectedSlots = next;
-    });
   }
 
   Widget _buildSlotGridContent() {
@@ -1130,7 +1195,8 @@ class _StaffSlotCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final names = _namesToDisplay();
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: MainAxisSize.max,
+      mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ...names.map(

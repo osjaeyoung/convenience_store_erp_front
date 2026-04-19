@@ -15,6 +15,7 @@ import '../bloc/store_expense_bloc.dart';
 import '../widgets/home_common_app_bar.dart';
 import 'store_expense_add_item_screen.dart';
 import 'store_expense_add_month_screen.dart';
+import 'store_expense_edit_item_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 매장·비용 화면 (월간 표시 / 월별 점내 비용 내역)
@@ -154,78 +155,355 @@ class _StoreCostScreenState extends State<StoreCostScreen>
     }
   }
 
+  Future<void> _editMonthOrItem(
+    int branchId,
+    StoreExpenseMonthSummary month,
+  ) async {
+    final selection = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: AppColors.grey0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(height: 16.h),
+              Center(
+                child: Container(
+                  width: 40.w,
+                  height: 4.h,
+                  decoration: BoxDecoration(
+                    color: AppColors.grey50,
+                    borderRadius: BorderRadius.circular(2.r),
+                  ),
+                ),
+              ),
+              SizedBox(height: 24.h),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.w),
+                child: Text(
+                  '수정할 대상을 선택해주세요',
+                  style: AppTypography.heading3.copyWith(
+                    color: AppColors.textPrimary,
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              SizedBox(height: 16.h),
+              InkWell(
+                onTap: () => Navigator.pop(ctx, 'month'),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 24.w,
+                    vertical: 16.h,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_month_outlined,
+                        color: AppColors.textPrimary,
+                        size: 24,
+                      ),
+                      SizedBox(width: 12.w),
+                      Text(
+                        '해당 월 변경',
+                        style: AppTypography.bodyMediumR.copyWith(
+                          fontSize: 16.sp,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              InkWell(
+                onTap: () => Navigator.pop(ctx, 'items'),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 24.w,
+                    vertical: 16.h,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.list_alt_outlined,
+                        color: AppColors.textPrimary,
+                        size: 24,
+                      ),
+                      SizedBox(width: 12.w),
+                      Text(
+                        '항목 정보 수정',
+                        style: AppTypography.bodyMediumR.copyWith(
+                          fontSize: 16.sp,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 16.h),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (selection == 'month') {
+      await _editMonth(branchId, month);
+    } else if (selection == 'items') {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('수정할 항목을 아래 목록에서 직접 터치해주세요.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _openEditItem(
+    int branchId,
+    StoreExpenseMonthSummary month,
+    StoreExpenseItem item,
+  ) async {
+    final ok = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => StoreExpenseEditItemScreen(
+          branchId: branchId,
+          periodLabel: month.periodLabel,
+          item: item,
+        ),
+      ),
+    );
+    if (ok == true && mounted) {
+      await _loadMonths(branchId);
+      _loadDashboard(branchId);
+    }
+  }
+
   Future<void> _editMonth(int branchId, StoreExpenseMonthSummary month) async {
     var year = month.year;
     var monthNum = month.month;
     final changed = await showDialog<bool>(
       context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.55),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('월 변경'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ListTile(
-                    title: Text('$year년'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () async {
-                      final now = DateTime.now().year;
-                      final years = List<int>.generate(7, (i) => now - 3 + i);
-                      final y = await showModalBottomSheet<int>(
-                        context: context,
-                        builder: (sheetCtx) => SafeArea(
-                          child: ListView(
-                            shrinkWrap: true,
-                            children: [
-                              for (final yy in years)
-                                ListTile(
-                                  title: Text('$yy년'),
-                                  onTap: () => Navigator.pop(sheetCtx, yy),
-                                ),
-                            ],
-                          ),
-                        ),
-                      );
-                      if (y != null) setDialogState(() => year = y);
-                    },
-                  ),
-                  ListTile(
-                    title: Text('$monthNum월'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () async {
-                      final m = await showModalBottomSheet<int>(
-                        context: context,
-                        builder: (sheetCtx) => SafeArea(
-                          child: ListView(
-                            shrinkWrap: true,
-                            children: [
-                              for (var mm = 1; mm <= 12; mm++)
-                                ListTile(
-                                  title: Text('$mm월'),
-                                  onTap: () => Navigator.pop(sheetCtx, mm),
-                                ),
-                            ],
-                          ),
-                        ),
-                      );
-                      if (m != null) setDialogState(() => monthNum = m);
-                    },
-                  ),
-                ],
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24.r),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('취소'),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(24.w, 32.h, 24.w, 24.h),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      '월 변경',
+                      style: AppTypography.heading3.copyWith(
+                        color: AppColors.textPrimary,
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w600,
+                        height: 24 / 18,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 24.h),
+                    InkWell(
+                      onTap: () async {
+                        final now = DateTime.now().year;
+                        final years = List<int>.generate(7, (i) => now - 3 + i);
+                        final y = await showModalBottomSheet<int>(
+                          context: context,
+                          backgroundColor: AppColors.grey0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+                          ),
+                          builder: (sheetCtx) => SafeArea(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(height: 16.h),
+                                Container(
+                                  width: 40.w,
+                                  height: 4.h,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.grey50,
+                                    borderRadius: BorderRadius.circular(2.r),
+                                  ),
+                                ),
+                                SizedBox(height: 16.h),
+                                Flexible(
+                                  child: ListView(
+                                    shrinkWrap: true,
+                                    children: [
+                                      for (final yy in years)
+                                        ListTile(
+                                          title: Text('$yy년', textAlign: TextAlign.center),
+                                          onTap: () => Navigator.pop(sheetCtx, yy),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                        if (y != null) setDialogState(() => year = y);
+                      },
+                      borderRadius: BorderRadius.circular(12.r),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 16.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.grey0Alt,
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(color: AppColors.grey50),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '${year}년',
+                              style: AppTypography.bodyMediumR.copyWith(
+                                fontSize: 16.sp,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const Icon(
+                              Icons.chevron_right,
+                              color: AppColors.grey150,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 12.h),
+                    InkWell(
+                      onTap: () async {
+                        final m = await showModalBottomSheet<int>(
+                          context: context,
+                          backgroundColor: AppColors.grey0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+                          ),
+                          builder: (sheetCtx) => SafeArea(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(height: 16.h),
+                                Container(
+                                  width: 40.w,
+                                  height: 4.h,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.grey50,
+                                    borderRadius: BorderRadius.circular(2.r),
+                                  ),
+                                ),
+                                SizedBox(height: 16.h),
+                                Flexible(
+                                  child: ListView(
+                                    shrinkWrap: true,
+                                    children: [
+                                      for (var mm = 1; mm <= 12; mm++)
+                                        ListTile(
+                                          title: Text('$mm월', textAlign: TextAlign.center),
+                                          onTap: () => Navigator.pop(sheetCtx, mm),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                        if (m != null) setDialogState(() => monthNum = m);
+                      },
+                      borderRadius: BorderRadius.circular(12.r),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 16.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.grey0Alt,
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(color: AppColors.grey50),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '${monthNum}월',
+                              style: AppTypography.bodyMediumR.copyWith(
+                                fontSize: 16.sp,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const Icon(
+                              Icons.chevron_right,
+                              color: AppColors.grey150,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 32.h),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: Size.fromHeight(48.h),
+                              backgroundColor: AppColors.grey0,
+                              foregroundColor: AppColors.primary,
+                              side: const BorderSide(color: AppColors.primary),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12.r),
+                              ),
+                            ),
+                            child: Text(
+                              '취소',
+                              style: AppTypography.bodyMediumM.copyWith(
+                                fontSize: 14.sp,
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            style: FilledButton.styleFrom(
+                              minimumSize: Size.fromHeight(48.h),
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: AppColors.grey0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12.r),
+                              ),
+                            ),
+                            child: Text(
+                              '저장',
+                              style: AppTypography.bodyMediumB.copyWith(
+                                fontSize: 14.sp,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                FilledButton(
-                  onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('저장'),
-                ),
-              ],
+              ),
             );
           },
         );
@@ -249,9 +527,9 @@ class _StoreCostScreenState extends State<StoreCostScreen>
       await _loadMonths(branchId);
       if (!mounted) return;
       _loadDashboard(branchId);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('월 정보가 변경되었습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('월 정보가 변경되었습니다.')));
     } on DioException catch (e) {
       if (!mounted) return;
       final code = e.response?.statusCode;
@@ -266,9 +544,9 @@ class _StoreCostScreenState extends State<StoreCostScreen>
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('월 변경에 실패했습니다: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('월 변경에 실패했습니다: $e')));
     }
   }
 
@@ -276,21 +554,76 @@ class _StoreCostScreenState extends State<StoreCostScreen>
     final sure =
         await showDialog<bool>(
           context: context,
-          builder: (ctx) {
-            return AlertDialog(
-              content: const Text('이 월 데이터를 삭제할까요?'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('취소'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('삭제'),
-                ),
-              ],
-            );
-          },
+          barrierColor: Colors.black.withValues(alpha: 0.55),
+          builder: (ctx) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24.r),
+            ),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(24.w, 32.h, 24.w, 24.h),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    '이 월 데이터를 삭제할까요?',
+                    style: AppTypography.heading3.copyWith(
+                      color: AppColors.textPrimary,
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w600,
+                      height: 24 / 18,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 32.h),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: Size.fromHeight(48.h),
+                            backgroundColor: AppColors.grey0,
+                            foregroundColor: AppColors.primary,
+                            side: const BorderSide(color: AppColors.primary),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                          ),
+                          child: Text(
+                            '취소',
+                            style: AppTypography.bodyMediumM.copyWith(
+                              fontSize: 14.sp,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          style: FilledButton.styleFrom(
+                            minimumSize: Size.fromHeight(48.h),
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: AppColors.grey0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                          ),
+                          child: Text(
+                            '삭제',
+                            style: AppTypography.bodyMediumB.copyWith(
+                              fontSize: 14.sp,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
         ) ??
         false;
     if (!sure) return;
@@ -373,9 +706,13 @@ class _StoreCostScreenState extends State<StoreCostScreen>
                           onRefresh: () => _loadMonths(branchId),
                           onAddMonth: () => _openAddMonth(branchId),
                           onAddItem: (month) => _openAddItem(branchId, month),
-                          onEditMonth: (m) => _editMonth(branchId, m),
+                          onEditMonth: (m) => _editMonthOrItem(branchId, m),
                           onDeleteMonth: (monthId) =>
                               _deleteMonth(branchId, monthId),
+                          onEditItem: (item, monthId) {
+                            final month = _months.firstWhere((m) => m.expenseMonthId == monthId);
+                            _openEditItem(branchId, month, item);
+                          },
                         ),
                       ],
                     ),
@@ -599,7 +936,7 @@ class _DashboardTab extends StatelessWidget {
                         Text(
                           _compactAmountLabel(c.monthAmount),
                           textAlign: TextAlign.center,
-                          style: AppTypography.bodyLargeM.copyWith(
+                          style: AppTypography.bodyLargeB.copyWith(
                             fontSize: 16.sp,
                             height: 20 / 16,
                             color: AppColors.textPrimary,
@@ -609,9 +946,9 @@ class _DashboardTab extends StatelessWidget {
                         Text(
                           c.summaryLabel ?? '${c.transactionCount}회',
                           textAlign: TextAlign.center,
-                          style: AppTypography.bodyMediumR.copyWith(
-                            fontSize: 14.sp,
-                            height: 19 / 14,
+                          style: AppTypography.bodySmallR.copyWith(
+                            fontSize: 12.sp,
+                            height: 16 / 12,
                             color: AppColors.textTertiary,
                           ),
                         ),
@@ -634,16 +971,37 @@ class _DashboardTab extends StatelessWidget {
     final years = List<int>.generate(7, (i) => cur - 3 + i);
     final selected = await showModalBottomSheet<int>(
       context: context,
+      backgroundColor: AppColors.grey0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+      ),
       builder: (ctx) {
         return SafeArea(
-          child: ListView(
-            shrinkWrap: true,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              for (final y in years)
-                ListTile(
-                  title: Text('$y년'),
-                  onTap: () => Navigator.pop(ctx, y),
+              SizedBox(height: 16.h),
+              Container(
+                width: 40.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: AppColors.grey50,
+                  borderRadius: BorderRadius.circular(2.r),
                 ),
+              ),
+              SizedBox(height: 16.h),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (final y in years)
+                      ListTile(
+                        title: Text('$y년', textAlign: TextAlign.center),
+                        onTap: () => Navigator.pop(ctx, y),
+                      ),
+                  ],
+                ),
+              ),
             ],
           ),
         );
@@ -655,16 +1013,37 @@ class _DashboardTab extends StatelessWidget {
   Future<void> _pickMonth(BuildContext context) async {
     final selected = await showModalBottomSheet<int>(
       context: context,
+      backgroundColor: AppColors.grey0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+      ),
       builder: (ctx) {
         return SafeArea(
-          child: ListView(
-            shrinkWrap: true,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              for (var m = 1; m <= 12; m++)
-                ListTile(
-                  title: Text('$m월'),
-                  onTap: () => Navigator.pop(ctx, m),
+              SizedBox(height: 16.h),
+              Container(
+                width: 40.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: AppColors.grey50,
+                  borderRadius: BorderRadius.circular(2.r),
                 ),
+              ),
+              SizedBox(height: 16.h),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (var m = 1; m <= 12; m++)
+                      ListTile(
+                        title: Text('$m월', textAlign: TextAlign.center),
+                        onTap: () => Navigator.pop(ctx, m),
+                      ),
+                  ],
+                ),
+              ),
             ],
           ),
         );
@@ -734,6 +1113,7 @@ class _MonthlyExpenseTab extends StatelessWidget {
     required this.onAddItem,
     required this.onEditMonth,
     required this.onDeleteMonth,
+    required this.onEditItem,
   });
 
   final bool monthsLoading;
@@ -745,6 +1125,7 @@ class _MonthlyExpenseTab extends StatelessWidget {
   final ValueChanged<StoreExpenseMonthSummary> onAddItem;
   final ValueChanged<StoreExpenseMonthSummary> onEditMonth;
   final ValueChanged<int> onDeleteMonth;
+  final void Function(StoreExpenseItem item, int monthId) onEditItem;
 
   @override
   Widget build(BuildContext context) {
@@ -794,6 +1175,7 @@ class _MonthlyExpenseTab extends StatelessWidget {
               onAddItem: () => onAddItem(month),
               onEdit: () => onEditMonth(month),
               onDelete: () => onDeleteMonth(month.expenseMonthId),
+              onEditItem: (item) => onEditItem(item, month.expenseMonthId),
             ),
             SizedBox(height: 20.h),
           ],
@@ -825,6 +1207,7 @@ class _MonthExpenseCard extends StatelessWidget {
     required this.onAddItem,
     required this.onEdit,
     required this.onDelete,
+    required this.onEditItem,
   });
 
   final StoreExpenseMonthSummary month;
@@ -832,6 +1215,7 @@ class _MonthExpenseCard extends StatelessWidget {
   final VoidCallback onAddItem;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final void Function(StoreExpenseItem item) onEditItem;
 
   @override
   Widget build(BuildContext context) {
@@ -934,46 +1318,50 @@ class _MonthExpenseCard extends StatelessWidget {
                 ),
                 for (final item in items) ...[
                   SizedBox(height: 8.h),
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 20.w,
-                      vertical: 12.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.grey0,
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(color: AppColors.grey25),
-                    ),
-                    child: Row(
-                      children: [
-                        Text(
-                          _toMmDd(item.expenseDate),
-                          style: AppTypography.bodyMediumR.copyWith(
-                            fontSize: 14.sp,
-                            height: 19 / 14,
-                            color: AppColors.textSecondary,
+                  InkWell(
+                    onTap: () => onEditItem(item),
+                    borderRadius: BorderRadius.circular(12.r),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20.w,
+                        vertical: 12.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.grey0,
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(color: AppColors.grey25),
+                      ),
+                      child: Row(
+                        children: [
+                          Text(
+                            _toMmDd(item.expenseDate),
+                            style: AppTypography.bodyMediumR.copyWith(
+                              fontSize: 14.sp,
+                              height: 19 / 14,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
-                        ),
-                        const Spacer(),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _CategoryChip(
-                              label: item.categoryLabel,
-                              categoryCode: item.categoryCode,
-                            ),
-                            SizedBox(width: 12.w),
-                            Text(
-                              _StoreCostScreenState.won(item.amount),
-                              style: AppTypography.bodyMediumR.copyWith(
-                                fontSize: 14.sp,
-                                height: 19 / 14,
-                                color: AppColors.textPrimary,
+                          const Spacer(),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _CategoryChip(
+                                label: item.categoryLabel,
+                                categoryCode: item.categoryCode,
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                              SizedBox(width: 12.w),
+                              Text(
+                                _StoreCostScreenState.won(item.amount),
+                                style: AppTypography.bodyMediumR.copyWith(
+                                  fontSize: 14.sp,
+                                  height: 19 / 14,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],

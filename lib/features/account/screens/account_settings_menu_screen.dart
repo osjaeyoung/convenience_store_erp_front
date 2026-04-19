@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../data/repositories/auth_repository.dart';
 import '../../../theme/app_colors.dart';
+import '../../../theme/app_typography.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../account_dio_message.dart';
 import '../widgets/account_confirm_dialogs.dart';
@@ -65,7 +66,7 @@ class _AccountSettingsMenuScreenState extends State<AccountSettingsMenuScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.grey0Alt,
+      backgroundColor: AppColors.grey0,
       appBar: accountFigmaAppBar(context: context, title: '설정'),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -98,62 +99,49 @@ class _AccountSettingsMenuScreenState extends State<AccountSettingsMenuScreen> {
                   children: [
                     Expanded(
                       child: ListView(
-                        padding: EdgeInsets.fromLTRB(20.w, 0.h, 20.w, 16.h),
+                        padding: EdgeInsets.only(top: 8.h),
                         children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: AppColors.grey0,
-                              borderRadius: BorderRadius.circular(16.r),
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: Column(
-                              children: [
-                                _row(
-                                  '내 정보 설정',
-                                  onTap: () {
-                                    Navigator.of(context).push<void>(
-                                      MaterialPageRoute<void>(
-                                        builder: (_) =>
-                                            const AccountMyInfoSettingsScreen(),
-                                      ),
-                                    );
-                                  },
+                          _row(
+                            '내 정보 설정',
+                            onTap: () {
+                              Navigator.of(context).push<void>(
+                                MaterialPageRoute<void>(
+                                  builder: (_) =>
+                                      const AccountMyInfoSettingsScreen(),
                                 ),
-                                _row(
-                                  '고객센터',
-                                  onTap: () {
-                                    Navigator.of(context).push<void>(
-                                      MaterialPageRoute<void>(
-                                        builder: (_) =>
-                                            const AccountSupportCenterScreen(),
-                                      ),
-                                    );
-                                  },
+                              );
+                            },
+                          ),
+                          _row(
+                            '고객센터',
+                            onTap: () {
+                              Navigator.of(context).push<void>(
+                                MaterialPageRoute<void>(
+                                  builder: (_) =>
+                                      const AccountSupportCenterScreen(),
                                 ),
-                                _row(
-                                  '공지사항',
-                                  onTap: () {
-                                    Navigator.of(context).push<void>(
-                                      MaterialPageRoute<void>(
-                                        builder: (_) =>
-                                            const AccountNoticesScreen(),
-                                      ),
-                                    );
-                                  },
+                              );
+                            },
+                          ),
+                          _row(
+                            '공지사항',
+                            onTap: () {
+                              Navigator.of(context).push<void>(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const AccountNoticesScreen(),
                                 ),
-                                _row(
-                                  '이용 정책',
-                                  onTap: () {
-                                    Navigator.of(context).push<void>(
-                                      MaterialPageRoute<void>(
-                                        builder: (_) =>
-                                            const AccountPoliciesScreen(),
-                                      ),
-                                    );
-                                  },
+                              );
+                            },
+                          ),
+                          _row(
+                            '이용 정책',
+                            onTap: () {
+                              Navigator.of(context).push<void>(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const AccountPoliciesScreen(),
                                 ),
-                              ],
-                            ),
+                              );
+                            },
                           ),
                         ],
                       ),
@@ -169,9 +157,15 @@ class _AccountSettingsMenuScreenState extends State<AccountSettingsMenuScreen> {
                             child: TextButton(
                               onPressed: _onLogout,
                               style: TextButton.styleFrom(
-                                foregroundColor:
-                                    AccountFigmaStyles.footerMutedColor,
-                                textStyle: AccountFigmaStyles.footerAction,
+                                foregroundColor: AppColors.textTertiary,
+                                textStyle: AppTypography.bodyMediumM.copyWith(
+                                  fontSize: 14.sp,
+                                  decoration: TextDecoration.underline,
+                                ),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 16.w,
+                                  vertical: 8.h,
+                                ),
                               ),
                               child: const Text('로그아웃'),
                             ),
@@ -190,13 +184,23 @@ class _AccountSettingsMenuScreenState extends State<AccountSettingsMenuScreen> {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 20.h),
+          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
           child: Row(
             children: [
               Expanded(
-                child: Text(title, style: AccountFigmaStyles.rowTitle),
+                child: Text(
+                  title,
+                  style: AppTypography.bodyLargeM.copyWith(
+                    color: AppColors.textPrimary,
+                    fontSize: 16.sp,
+                  ),
+                ),
               ),
-              AccountFigmaStyles.chevronNext16(),
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 24,
+                color: AppColors.grey100,
+              ),
             ],
           ),
         ),

@@ -71,48 +71,58 @@ class BranchSelectCard extends StatelessWidget {
           if (isExpanded) ...[
             const Divider(height: 1, color: AppColors.grey50),
             SizedBox(height: 4.h),
-            ...List.generate(branches.length, (index) {
-              final branch = branches[index];
-              return InkWell(
-                onTap: () => onBranchTap(branch.id),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12.h),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          branch.name,
-                          style: AppTypography.bodyMediumR.copyWith(
-                            color: AppColors.textPrimary,
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w400,
-                            height: 19 / 14,
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: 300.h),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ...List.generate(branches.length, (index) {
+                      final branch = branches[index];
+                      return InkWell(
+                        onTap: () => onBranchTap(branch.id),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12.h),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  branch.name,
+                                  style: AppTypography.bodyMediumR.copyWith(
+                                    color: AppColors.textPrimary,
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.w400,
+                                    height: 19 / 14,
+                                  ),
+                                ),
+                              ),
+                              if ((branch.status ?? '').toLowerCase() == 'pending')
+                                Text(
+                                  '심사 중',
+                                  textAlign: TextAlign.center,
+                                  style: AppTypography.bodyMediumR.copyWith(
+                                    color: const Color(0xFFFF8E2B),
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.w400,
+                                    height: 19 / 14,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
+                      );
+                    }),
+                    if (isOwner) ...[
+                      SizedBox(height: 6.h),
+                      MintAddButton(
+                        label: '점포 추가하기',
+                        onPressed: onAddTap,
                       ),
-                      if ((branch.status ?? '').toLowerCase() == 'pending')
-                        Text(
-                          '심사 중',
-                          textAlign: TextAlign.center,
-                          style: AppTypography.bodyMediumR.copyWith(
-                            color: const Color(0xFFFF8E2B),
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w400,
-                            height: 19 / 14,
-                          ),
-                        ),
                     ],
-                  ),
+                  ],
                 ),
-              );
-            }),
-            if (isOwner) ...[
-              SizedBox(height: 6.h),
-              MintAddButton(
-                label: '점포 추가하기',
-                onPressed: onAddTap,
               ),
-            ],
+            ),
           ],
         ],
       ),

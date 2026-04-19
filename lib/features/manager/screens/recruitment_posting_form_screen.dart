@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/formatters/thousands_separator_input_formatter.dart';
 import '../../../data/models/recruitment/recruitment_models.dart';
 import '../../../data/repositories/manager_home_repository.dart';
 import '../../../theme/app_colors.dart';
@@ -365,7 +366,7 @@ class _RecruitmentPostingFormScreenState
                                   _payAmountCtrl,
                                   hint: '입력해주세요.',
                                   keyboardType: TextInputType.number,
-                                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                  inputFormatters: [ThousandsSeparatorInputFormatter()],
                                 ),
                               ],
                             ),

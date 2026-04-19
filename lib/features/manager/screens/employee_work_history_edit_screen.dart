@@ -43,9 +43,12 @@ class _EmployeeWorkHistoryEditScreenState
   bool get _hasChanges => _rows.any((row) => row.isDirty);
 
   Future<void> _selectStatus(_EditableWorkHistory row) async {
-    final selected = await showDialog<String>(
+    final selected = await showModalBottomSheet<String>(
       context: context,
-      barrierColor: Colors.black54,
+      backgroundColor: AppColors.grey0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+      ),
       builder: (dialogContext) {
         Widget statusButton(String status) {
           final isSelected = row.status == status;
@@ -76,16 +79,24 @@ class _EmployeeWorkHistoryEditScreenState
           );
         }
 
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24.r),
-          ),
+        return SafeArea(
           child: Padding(
-            padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 18.h),
+            padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 18.h),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Center(
+                  child: Container(
+                    width: 40.w,
+                    height: 4.h,
+                    decoration: BoxDecoration(
+                      color: AppColors.grey50,
+                      borderRadius: BorderRadius.circular(2.r),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 24.h),
                 Text(
                   '근무 상태를 선택해 주세요.',
                   textAlign: TextAlign.center,

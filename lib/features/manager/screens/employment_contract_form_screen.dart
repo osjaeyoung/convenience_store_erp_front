@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/formatters/thousands_separator_input_formatter.dart';
 import '../../../data/repositories/staff_management_repository.dart';
 import '../../../utils/modal_title_format.dart';
 import '../../../theme/app_colors.dart';
@@ -12,30 +13,6 @@ import '../../auth/widgets/auth_input_field.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 String _stripCommaNumber(String s) => s.replaceAll(',', '').trim();
-
-/// 금액(원) 입력: 숫자만 받고 3자리마다 `,` 표시.
-class _ThousandsSeparatorInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final digitsOnly = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
-    if (digitsOnly.isEmpty) {
-      return const TextEditingValue(
-        text: '',
-        selection: TextSelection.collapsed(offset: 0),
-      );
-    }
-    final n = int.tryParse(digitsOnly);
-    if (n == null) return oldValue;
-    final formatted = NumberFormat('#,###', 'ko_KR').format(n);
-    return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(offset: formatted.length),
-    );
-  }
-}
 
 /// 친권 동의서 칩: 색은 민트(사업장)·주황(후견인·연소)만. 빈 칩 문구만 「입력」「근로자」「후견인 입력」.
 enum _ContractChipTone { mint, worker, guardian }
@@ -1937,7 +1914,7 @@ class _EmploymentContractFormScreenState
                     _ => '월급을 입력해주세요.',
                   },
                   keyboardType: TextInputType.number,
-                  inputFormatters: [_ThousandsSeparatorInputFormatter()],
+                  inputFormatters: [ThousandsSeparatorInputFormatter()],
                   fillColor: AppColors.grey25,
                   focusedBorderColor: AppColors.primaryDark,
                   suffixText: '원',
@@ -2932,7 +2909,7 @@ class _EmploymentContractFormScreenState
       ];
       keyboardType = TextInputType.number;
     } else if (wonAmount) {
-      formatters = [_ThousandsSeparatorInputFormatter()];
+      formatters = [ThousandsSeparatorInputFormatter()];
       keyboardType = TextInputType.number;
     } else if (digitsOnly) {
       formatters = [FilteringTextInputFormatter.digitsOnly];

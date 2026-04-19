@@ -257,46 +257,82 @@ class _Selector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      constraints: BoxConstraints(minWidth: minWidth, maxWidth: maxWidth),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10.r),
-        border: Border.all(color: AppColors.grey50),
-        color: AppColors.grey0,
-      ),
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<int>(
-          value: value,
-          isExpanded: true,
-          isDense: true,
-          icon: const Icon(
-            Icons.keyboard_arrow_down_rounded,
-            size: 20,
-            color: AppColors.grey150,
+    return InkWell(
+      onTap: () async {
+        final selected = await showModalBottomSheet<int>(
+          context: context,
+          backgroundColor: AppColors.grey0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
           ),
-          style: AppTypography.bodyMediumR.copyWith(
-            color: AppColors.textPrimary,
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w400,
-            height: 19 / 14,
-          ),
-          items: options
-              .map(
-                (v) => DropdownMenuItem(
-                  value: v,
-                  child: Text(
-                    '$v',
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.visible,
+          builder: (ctx) {
+            return SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(height: 16.h),
+                  Container(
+                    width: 40.w,
+                    height: 4.h,
+                    decoration: BoxDecoration(
+                      color: AppColors.grey50,
+                      borderRadius: BorderRadius.circular(2.r),
+                    ),
                   ),
-                ),
-              )
-              .toList(),
-          onChanged: (v) {
-            if (v != null) onChanged(v);
+                  SizedBox(height: 16.h),
+                  Flexible(
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: [
+                        for (final option in options)
+                          ListTile(
+                            title: Text('$option', textAlign: TextAlign.center),
+                            onTap: () => Navigator.pop(ctx, option),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
           },
+        );
+        if (selected != null) {
+          onChanged(selected);
+        }
+      },
+      borderRadius: BorderRadius.circular(10.r),
+      child: Container(
+        constraints: BoxConstraints(minWidth: minWidth, maxWidth: maxWidth),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10.r),
+          border: Border.all(color: AppColors.grey50),
+          color: AppColors.grey0,
+        ),
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                '$value',
+                textAlign: TextAlign.center,
+                style: AppTypography.bodyMediumR.copyWith(
+                  color: AppColors.textPrimary,
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w400,
+                  height: 19 / 14,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.visible,
+              ),
+            ),
+            const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 20,
+              color: AppColors.grey150,
+            ),
+          ],
         ),
       ),
     );

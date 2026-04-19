@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 
+import '../../../core/formatters/thousands_separator_input_formatter.dart';
 import '../../../data/repositories/staff_management_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
@@ -99,7 +101,7 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
     final h = PayrollFormatters.parseDigits(_hoursCtrl.text) ?? 0;
     final w = PayrollFormatters.parseDigits(_hourlyCtrl.text) ?? 0;
     final base = h * w;
-    _basePayCtrl.text = base > 0 ? base.toString() : '';
+    _basePayCtrl.text = base > 0 ? NumberFormat('#,###', 'ko_KR').format(base) : '';
   }
 
   void _applyAutoFill(Map<String, dynamic> d) {
@@ -116,14 +118,14 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
       if (minutes != null && minutes > 0) {
         _hoursCtrl.text = (minutes / 60).round().toString();
       }
-      if (hourly != null) _hourlyCtrl.text = hourly.toString();
+      if (hourly != null) _hourlyCtrl.text = NumberFormat('#,###', 'ko_KR').format(hourly);
       if (base != null) {
-        _basePayCtrl.text = base.toString();
+        _basePayCtrl.text = NumberFormat('#,###', 'ko_KR').format(base);
       } else {
         _updateBasePayDisplay();
       }
-      if (weekly != null) _weeklyCtrl.text = weekly.toString();
-      _overtimeCtrl.text = overtime > 0 ? overtime.toString() : '0';
+      if (weekly != null) _weeklyCtrl.text = NumberFormat('#,###', 'ko_KR').format(weekly);
+      _overtimeCtrl.text = overtime > 0 ? NumberFormat('#,###', 'ko_KR').format(overtime) : '0';
       if (resident is String && resident.isNotEmpty) {
         _residentCtrl.text = resident;
       }
@@ -195,7 +197,7 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
 
   static String _amountToFieldText(dynamic v) {
     if (v == null) return '';
-    if (v is num) return v.toInt().toString();
+    if (v is num) return NumberFormat('#,###', 'ko_KR').format(v.toInt());
     return '';
   }
 
@@ -512,7 +514,7 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                       hintText: '',
                       keyboardType: TextInputType.number,
                       inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
+                        ThousandsSeparatorInputFormatter(),
                       ],
                       fillColor: AppColors.grey0,
                       contentPadding: _payrollInputPadding,
@@ -560,7 +562,7 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                       hintText: '',
                       keyboardType: TextInputType.number,
                       inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
+                        ThousandsSeparatorInputFormatter(),
                       ],
                       fillColor: AppColors.grey0,
                       contentPadding: _payrollInputPadding,
@@ -580,7 +582,7 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                       hintText: '0',
                       keyboardType: TextInputType.number,
                       inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
+                        ThousandsSeparatorInputFormatter(),
                       ],
                       fillColor: AppColors.grey0,
                       contentPadding: _payrollInputPadding,
@@ -668,7 +670,7 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                                       : '자동 입력 후 수정가능',
                                   keyboardType: TextInputType.number,
                                   inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly,
+                                    ThousandsSeparatorInputFormatter(),
                                   ],
                                   fillColor: AppColors.grey0,
                                   contentPadding: _payrollInputPadding,

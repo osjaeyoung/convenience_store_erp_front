@@ -8,6 +8,7 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../../widgets/recruitment_region_picker_sheet.dart';
 import '../../account/account_routes.dart';
+import '../../auth/widgets/auth_input_field.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/recruitment_bloc.dart';
 import '../bloc/selected_branch_cubit.dart';
@@ -189,68 +190,124 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
 
     final applied = await showDialog<bool>(
       context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.55),
       builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('연령 설정'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: minController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(2),
-                ],
-                decoration: const InputDecoration(
-                  labelText: '최소 연령',
-                  hintText: '14-99',
-                ),
-              ),
-              SizedBox(height: 12.h),
-              TextField(
-                controller: maxController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(2),
-                ],
-                decoration: const InputDecoration(
-                  labelText: '최대 연령',
-                  hintText: '14-99',
-                ),
-              ),
-            ],
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24.r),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('취소'),
+          backgroundColor: AppColors.grey0,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(24.w, 32.h, 24.w, 24.h),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  '연령 설정',
+                  style: AppTypography.heading3.copyWith(
+                    color: AppColors.textPrimary,
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: 24.h),
+                AuthInputField(
+                  controller: minController,
+                  hintText: '최소 연령',
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(2),
+                  ],
+                ),
+                SizedBox(height: 12.h),
+                AuthInputField(
+                  controller: maxController,
+                  hintText: '최대 연령',
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(2),
+                  ],
+                ),
+                SizedBox(height: 32.h),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(false),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: Size.fromHeight(48.h),
+                          backgroundColor: AppColors.grey0,
+                          foregroundColor: AppColors.textTertiary,
+                          side: const BorderSide(color: AppColors.grey50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                        ),
+                        child: Text(
+                          '취소',
+                          style: AppTypography.bodyMediumM.copyWith(fontSize: 14.sp),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          minController.clear();
+                          maxController.clear();
+                          Navigator.of(dialogContext).pop(true);
+                        },
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: Size.fromHeight(48.h),
+                          backgroundColor: AppColors.grey0,
+                          foregroundColor: AppColors.primary,
+                          side: const BorderSide(color: AppColors.primary),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                        ),
+                        child: Text(
+                          '초기화',
+                          style: AppTypography.bodyMediumM.copyWith(fontSize: 14.sp),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () {
+                          final min = _parseAgeValue(minController.text);
+                          final max = _parseAgeValue(maxController.text);
+                          final message = _ageValidationMessage(min, max);
+                          if (message != null) {
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(SnackBar(content: Text(message)));
+                            return;
+                          }
+                          Navigator.of(dialogContext).pop(true);
+                        },
+                        style: FilledButton.styleFrom(
+                          minimumSize: Size.fromHeight(48.h),
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.grey0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                        ),
+                        child: Text(
+                          '적용',
+                          style: AppTypography.bodyMediumB.copyWith(fontSize: 14.sp),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () {
-                minController.clear();
-                maxController.clear();
-                Navigator.of(dialogContext).pop(true);
-              },
-              child: const Text('초기화'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final min = _parseAgeValue(minController.text);
-                final max = _parseAgeValue(maxController.text);
-                final message = _ageValidationMessage(min, max);
-                if (message != null) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text(message)));
-                  return;
-                }
-                Navigator.of(dialogContext).pop(true);
-              },
-              child: const Text('적용'),
-            ),
-          ],
+          ),
         );
       },
     );

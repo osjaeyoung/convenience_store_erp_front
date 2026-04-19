@@ -181,16 +181,37 @@ class _StoreExpenseAddMonthScreenState extends State<StoreExpenseAddMonthScreen>
     final years = List<int>.generate(7, (i) => current - 3 + i);
     final selected = await showModalBottomSheet<int>(
       context: context,
+      backgroundColor: AppColors.grey0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+      ),
       builder: (ctx) {
         return SafeArea(
-          child: ListView(
-            shrinkWrap: true,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              for (final y in years)
-                ListTile(
-                  title: Text('$y년'),
-                  onTap: () => Navigator.pop(ctx, y),
+              SizedBox(height: 16.h),
+              Container(
+                width: 40.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: AppColors.grey50,
+                  borderRadius: BorderRadius.circular(2.r),
                 ),
+              ),
+              SizedBox(height: 16.h),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (final y in years)
+                      ListTile(
+                        title: Text('$y년', textAlign: TextAlign.center),
+                        onTap: () => Navigator.pop(ctx, y),
+                      ),
+                  ],
+                ),
+              ),
             ],
           ),
         );
@@ -204,16 +225,37 @@ class _StoreExpenseAddMonthScreenState extends State<StoreExpenseAddMonthScreen>
   Future<void> _pickMonth(BuildContext context) async {
     final selected = await showModalBottomSheet<int>(
       context: context,
+      backgroundColor: AppColors.grey0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+      ),
       builder: (ctx) {
         return SafeArea(
-          child: ListView(
-            shrinkWrap: true,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              for (var m = 1; m <= 12; m++)
-                ListTile(
-                  title: Text('$m월'),
-                  onTap: () => Navigator.pop(ctx, m),
+              SizedBox(height: 16.h),
+              Container(
+                width: 40.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: AppColors.grey50,
+                  borderRadius: BorderRadius.circular(2.r),
                 ),
+              ),
+              SizedBox(height: 16.h),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (var m = 1; m <= 12; m++)
+                      ListTile(
+                        title: Text('$m월', textAlign: TextAlign.center),
+                        onTap: () => Navigator.pop(ctx, m),
+                      ),
+                  ],
+                ),
+              ),
             ],
           ),
         );

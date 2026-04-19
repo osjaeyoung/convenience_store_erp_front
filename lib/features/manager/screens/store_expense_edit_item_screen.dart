@@ -1,7 +1,5 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/formatters/thousands_separator_input_formatter.dart';
@@ -12,40 +10,44 @@ import '../../../theme/app_typography.dart';
 import '../../auth/widgets/auth_input_field.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-class StoreExpenseAddItemScreen extends StatefulWidget {
-  const StoreExpenseAddItemScreen({
+class StoreExpenseEditItemScreen extends StatefulWidget {
+  const StoreExpenseEditItemScreen({
     super.key,
     required this.branchId,
-    required this.expenseMonthId,
     required this.periodLabel,
+    required this.item,
   });
 
   final int branchId;
-  final int expenseMonthId;
   final String periodLabel;
+  final StoreExpenseItem item;
 
   @override
-  State<StoreExpenseAddItemScreen> createState() => _StoreExpenseAddItemScreenState();
+  State<StoreExpenseEditItemScreen> createState() => _StoreExpenseEditItemScreenState();
 }
 
-class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
+class _StoreExpenseEditItemScreenState extends State<StoreExpenseEditItemScreen> {
   final TextEditingController _amountCtrl = TextEditingController();
+  final TextEditingController _memoCtrl = TextEditingController();
   DateTime? _expenseDate;
   StoreExpenseCategory? _selectedCategory;
   List<StoreExpenseCategory> _categories = const [];
-  final List<PlatformFile> _pickedFiles = <PlatformFile>[];
   bool _loadingCategories = true;
   bool _saving = false;
 
   @override
   void initState() {
     super.initState();
+    _expenseDate = DateTime.tryParse(widget.item.expenseDate);
+    _amountCtrl.text = NumberFormat('#,###', 'ko_KR').format(widget.item.amount);
+    _memoCtrl.text = widget.item.memo ?? '';
     _loadCategories();
   }
 
   @override
   void dispose() {
     _amountCtrl.dispose();
+    _memoCtrl.dispose();
     super.dispose();
   }
 
@@ -56,6 +58,7 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
       if (!mounted) return;
       setState(() {
         _categories = cats.where((e) => e.isActive).toList();
+        _selectedCategory = _categories.where((e) => e.categoryCode == widget.item.categoryCode).firstOrNull;
         _loadingCategories = false;
       });
     } catch (_) {
@@ -73,8 +76,19 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
         scrolledUnderElevation: 0,
         backgroundColor: AppColors.grey0,
         surfaceTintColor: AppColors.grey0,
-        title: Text('항목추가', style: AppTypography.appBarTitle),
+        title: Text('항목 정보 수정', style: AppTypography.appBarTitle),
         centerTitle: false,
+        actions: [
+          TextButton(
+            onPressed: _delete,
+            child: Text(
+              '삭제',
+              style: AppTypography.bodyMediumM.copyWith(
+                color: AppColors.textTertiary,
+              ),
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -87,7 +101,7 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${widget.periodLabel}월\n비용 지출 입력',
+                      '${widget.periodLabel}월\n비용 지출 수정',
                       style: AppTypography.heading1.copyWith(
                         fontSize: 44 / 2,
                         fontWeight: FontWeight.w400,
@@ -109,7 +123,7 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
                     _label('항목'),
                     SizedBox(height: 8.h),
                     _selectorTile(
-                      value: _selectedCategory?.categoryLabel,
+                      value: _selectedCategory?.categoryLabel ?? widget.item.categoryLabel,
                       hint: _loadingCategories ? '불러오는 중...' : '선택해주세요.',
                       onTap: _loadingCategories ? null : _pickCategory,
                     ),
@@ -121,7 +135,13 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
                       hint: '입력해주세요.',
                     ),
                     SizedBox(height: 20.h),
-                    _fileArea(),
+                    _label('메모 (선택)'),
+                    SizedBox(height: 8.h),
+                    AuthInputField(
+                      controller: _memoCtrl,
+                      hintText: '메모를 입력해주세요.',
+                      keyboardType: TextInputType.text,
+                    ),
                   ],
                 ),
               ),
@@ -150,7 +170,7 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
                           ),
                         )
                       : Text(
-                          '확인',
+                          '수정하기',
                           style: AppTypography.bodyLargeB.copyWith(
                             color: AppColors.grey0,
                             fontSize: 16.sp,
@@ -228,62 +248,6 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
     );
   }
 
-  Widget _fileArea() {
-    return InkWell(
-      onTap: _pickFiles,
-      borderRadius: BorderRadius.circular(12.r),
-      child: Container(
-        width: double.infinity,
-        constraints: const BoxConstraints(minHeight: 132),
-        padding: EdgeInsets.all(16.r),
-        decoration: BoxDecoration(
-          color: AppColors.primaryLight,
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: AppColors.primary),
-        ),
-        child: _pickedFiles.isEmpty
-            ? Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.add_circle, color: AppColors.primary, size: 28),
-                  SizedBox(height: 8.h),
-                  Text(
-                    '파일을 첨부해주세요.',
-                    style: AppTypography.bodyMediumB.copyWith(
-                      color: AppColors.primary,
-                      fontSize: 14.sp,
-                    ),
-                  ),
-                ],
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (final f in _pickedFiles)
-                    Padding(
-                      padding: EdgeInsets.only(bottom: 6.h),
-                      child: Text(
-                        '• ${f.name}',
-                        style: AppTypography.bodySmallM.copyWith(
-                          fontSize: 12.sp,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    '첨부 파일은 현재 메타데이터 저장만 지원합니다.',
-                    style: AppTypography.bodySmallR.copyWith(
-                      fontSize: 12.sp,
-                      color: AppColors.textTertiary,
-                    ),
-                  ),
-                ],
-              ),
-      ),
-    );
-  }
-
   Future<void> _pickDate() async {
     final now = DateTime.now();
     final picked = await showDatePicker(
@@ -342,24 +306,11 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
     }
   }
 
-  Future<void> _pickFiles() async {
-    final result = await FilePicker.platform.pickFiles(
-      allowMultiple: true,
-      withData: false,
-    );
-    if (result == null || !mounted) return;
-    setState(() {
-      _pickedFiles
-        ..clear()
-        ..addAll(result.files);
-    });
-  }
-
   Future<void> _save() async {
     final date = _expenseDate;
     final category = _selectedCategory;
     final amount = int.tryParse(_amountCtrl.text.replaceAll(',', '').trim());
-    if (date == null || category == null || amount == null || amount <= 0) {
+    if (date == null || amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('일자/항목/금액을 올바르게 입력해 주세요.')),
       );
@@ -369,32 +320,117 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
     setState(() => _saving = true);
     try {
       final repo = context.read<StoreExpenseRepository>();
-      final fileDrafts = _pickedFiles
-          .map(
-            (file) => StoreExpenseFileDraft(
-              fileKey: file.path ?? file.name,
-              fileUrl: file.path ?? file.name,
-              fileName: file.name,
-            ),
-          )
-          .toList();
-      await repo.createStep2(
+      await repo.patchItem(
         branchId: widget.branchId,
-        expenseMonthId: widget.expenseMonthId,
+        expenseItemId: widget.item.expenseItemId,
         expenseDate: DateFormat('yyyy-MM-dd').format(date),
-        categoryCode: category.categoryCode,
+        categoryCode: category?.categoryCode ?? widget.item.categoryCode,
         amount: amount,
-        files: fileDrafts,
+        memo: _memoCtrl.text.isNotEmpty ? _memoCtrl.text : null,
       );
       if (!mounted) return;
       Navigator.pop<bool>(context, true);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('항목 저장에 실패했습니다: $e')),
+        SnackBar(content: Text('항목 수정에 실패했습니다: $e')),
+      );
+      setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _delete() async {
+    final sure = await showDialog<bool>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.55),
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24.r),
+        ),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(24.w, 32.h, 24.w, 24.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                '이 지출 항목을 삭제할까요?',
+                style: AppTypography.heading3.copyWith(
+                  color: AppColors.textPrimary,
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w600,
+                  height: 24 / 18,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 32.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: Size.fromHeight(48.h),
+                        backgroundColor: AppColors.grey0,
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: AppColors.primary),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                      ),
+                      child: Text(
+                        '취소',
+                        style: AppTypography.bodyMediumM.copyWith(
+                          fontSize: 14.sp,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: FilledButton.styleFrom(
+                        minimumSize: Size.fromHeight(48.h),
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.grey0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                      ),
+                      child: Text(
+                        '삭제',
+                        style: AppTypography.bodyMediumB.copyWith(
+                          fontSize: 14.sp,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    ) ?? false;
+
+    if (!sure || !mounted) return;
+
+    setState(() => _saving = true);
+    try {
+      final repo = context.read<StoreExpenseRepository>();
+      await repo.deleteItem(
+        branchId: widget.branchId,
+        expenseItemId: widget.item.expenseItemId,
+      );
+      if (!mounted) return;
+      Navigator.pop<bool>(context, true);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('항목 삭제에 실패했습니다: $e')),
       );
       setState(() => _saving = false);
     }
   }
 }
-

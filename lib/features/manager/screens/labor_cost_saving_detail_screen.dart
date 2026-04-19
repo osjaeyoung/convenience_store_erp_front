@@ -469,7 +469,7 @@ class _OverlapTable extends StatelessWidget {
         for (final i in items)
           [
             _overlapWorkDateLabel(i.workDate),
-            i.employeeName,
+            i.employeeName.replaceAll(', ', '\n'),
             i.overlapTimeRange,
           ],
       ],
@@ -689,8 +689,6 @@ class _TableRow extends StatelessWidget {
                 child: Text(
                   cells[i],
                   textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                   style: textStyle,
                 ),
               ),

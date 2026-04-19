@@ -413,14 +413,16 @@
 ## 8) 항목 수정
 
 - `PATCH /store-expenses/branches/{branch_id}/items/{expense_item_id}`
+- 이미 등록된 개별 경비 내역의 내용을 수정합니다.
+- 예: 4월 23일에 등록된 4,000원짜리 '관리비(`management_fee`)' 내역을 '수리비(`repair`)' 카테고리로 변경하는 등 특정 필드만 선택적으로 수정(Partial Update) 가능합니다. 수정이 필요한 항목만 JSON에 포함하여 전송합니다.
 
 ### Request Body
 ```json
 {
-  "expense_date": "2025-09-12", // 변경 시 전달
-  "category_code": "repair", // 변경 시 전달
-  "amount": 120000, // 변경 시 전달
-  "memo": "냉장고 손잡이 수리" // 변경 시 전달
+  "expense_date": "2025-09-12", // 날짜를 변경할 때만 전달 (예: 2025-04-23)
+  "category_code": "repair", // 카테고리를 변경할 때만 전달 (예: management_fee -> repair)
+  "amount": 120000, // 금액을 변경할 때만 전달 (예: 4000)
+  "memo": "냉장고 손잡이 수리" // 메모를 변경할 때만 전달
 }
 ```
 
