@@ -52,6 +52,10 @@ class PushNotificationService {
     }
     _initialized = true;
 
+    // 앱 시작 시점에 푸시 권한을 요청하여 iOS에서 APNs 토큰이 생성되도록 유도 (Firebase Phone Auth silent verification 등에서 필요)
+    await requestFcmPermission();
+    await _requestPlatformLocalNotificationPermission();
+
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
     await _messaging.setForegroundNotificationPresentationOptions(
       alert: true,

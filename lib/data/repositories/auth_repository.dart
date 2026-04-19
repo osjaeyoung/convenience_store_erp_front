@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart' hide User;
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -377,6 +378,18 @@ class AuthRepository extends ChangeNotifier {
     Duration timeout = const Duration(seconds: 120),
     int? forceResendingToken,
   }) async {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      // iOS: Firebase Auth가 APNs 토큰 수신 전에 verifyPhoneNumber를 호출하면
+      // reCAPTCHA 도중 APNs 토큰이 도착하여 콜백이 무시되는 등 예측할 수 없는 동작이 발생할 수 있음.
+      // 따라서 APNs 토큰이 정상적으로 발급될 때까지 최대 5초 대기.
+      final deadline = DateTime.now().add(const Duration(seconds: 5));
+      while (DateTime.now().isBefore(deadline)) {
+        final apns = await FirebaseMessaging.instance.getAPNSToken();
+        if (apns != null && apns.isNotEmpty) break;
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+      }
+    }
+
     await FirebaseAuth.instance.verifyPhoneNumber(
       phoneNumber: phoneNumber,
       timeout: timeout,

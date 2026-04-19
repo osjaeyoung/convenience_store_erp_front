@@ -110,7 +110,14 @@ class _SignupScreenState extends State<SignupScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _logPhoneVerification('lifecycle=$state');
     if (state != AppLifecycleState.resumed) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+
+    // iOS Firebase Phone Auth 시 웹뷰가 닫히면서 resumed로 돌아올 때
+    // 프레임 렌더링이 없으면 addPostFrameCallback이 실행되지 않아
+    // 화면 이동이 지연되는(결과적으로 두 번 탭해야 하는) 문제를 방지하기 위해 프레임 예약
+    WidgetsBinding.instance.scheduleFrame();
+    
+    // UI 스레드가 재개된 후 팝업을 띄우기 위해 짧은 딜레이 추가
+    Future.delayed(const Duration(milliseconds: 100), () {
       if (!mounted) return;
       unawaited(_drainPendingPhoneVerificationRoute());
     });
@@ -402,6 +409,16 @@ class _SignupScreenState extends State<SignupScreen>
       _logPhoneVerification(
         'deferred screen lifecycle=$lifecycleState isCurrent=$isCurrentRoute',
       );
+      
+      // 안전장치: OS의 라이프사이클 이벤트가 정상적으로 전달되지 않거나 
+      // 프레임 렌더링이 지연될 경우를 대비해 500ms 후 다시 확인하여 화면을 염
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted && _pendingPhoneVerificationRoute != null && !_isOpeningPhoneVerificationScreen) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) unawaited(_drainPendingPhoneVerificationRoute());
+          });
+        }
+      });
       return;
     }
 
@@ -554,6 +571,7 @@ class _SignupScreenState extends State<SignupScreen>
           );
         },
         verificationCompleted: (credential) {
+          if (!mounted) return;
           didStartPhoneVerificationFlow = true;
           _logPhoneVerification('verificationCompleted phone=$phoneNumber');
           unawaited(() async {
