@@ -108,7 +108,9 @@ class JobSeekerSummary extends Equatable {
 
 class JobSeekerProfile extends Equatable {
   const JobSeekerProfile({
-    required this.employeeId,
+    this.employeeId,
+    this.applicantUserId,
+    this.sourceType,
     required this.employeeName,
     required this.age,
     this.gender,
@@ -119,9 +121,12 @@ class JobSeekerProfile extends Equatable {
     required this.reviewCount,
     this.workHistories = const [],
     this.contactActionLabel,
+    this.resumeTitle,
   });
 
-  final int employeeId;
+  final int? employeeId;
+  final int? applicantUserId;
+  final String? sourceType;
   final String employeeName;
   final int age;
   final String? gender;
@@ -132,14 +137,17 @@ class JobSeekerProfile extends Equatable {
   final int reviewCount;
   final List<JobSeekerWorkHistory> workHistories;
   final String? contactActionLabel;
+  final String? resumeTitle;
 
   factory JobSeekerProfile.fromJson(Map<String, dynamic> json) {
     return JobSeekerProfile(
-      employeeId: (json['employee_id'] as num?)?.toInt() ?? 0,
+      employeeId: (json['employee_id'] as num?)?.toInt(),
+      applicantUserId: (json['applicant_user_id'] as num?)?.toInt(),
+      sourceType: json['source_type'] as String?,
       employeeName: json['employee_name'] as String? ?? '',
       age: (json['age'] as num?)?.toInt() ?? 0,
       gender: json['gender'] as String?,
-      contactPhone: json['contact_phone'] as String?,
+      contactPhone: json['contact_phone'] as String? ?? json['phone_number'] as String?,
       careerLabel: json['career_label'] as String?,
       desiredLocations: (json['desired_locations'] as List<dynamic>?)
               ?.map((e) => e.toString())
@@ -152,12 +160,15 @@ class JobSeekerProfile extends Equatable {
               .toList() ??
           const [],
       contactActionLabel: json['contact_action_label'] as String?,
+      resumeTitle: json['resume_title'] as String?,
     );
   }
 
   @override
   List<Object?> get props => [
         employeeId,
+        applicantUserId,
+        sourceType,
         employeeName,
         age,
         gender,
@@ -168,6 +179,7 @@ class JobSeekerProfile extends Equatable {
         reviewCount,
         workHistories,
         contactActionLabel,
+        resumeTitle,
       ];
 }
 
@@ -752,30 +764,39 @@ class RecruitmentApplicationSummary extends Equatable {
   const RecruitmentApplicationSummary({
     required this.applicationId,
     this.appliedDateLabel,
-    required this.employeeId,
+    this.employeeId,
+    this.applicantUserId,
+    this.applicationSource,
     required this.employeeName,
     this.desiredLocation,
     required this.averageRating,
     required this.reviewCount,
+    this.resumeTitle,
   });
 
   final int applicationId;
   final String? appliedDateLabel;
-  final int employeeId;
+  final int? employeeId;
+  final int? applicantUserId;
+  final String? applicationSource;
   final String employeeName;
   final String? desiredLocation;
   final double averageRating;
   final int reviewCount;
+  final String? resumeTitle;
 
   factory RecruitmentApplicationSummary.fromJson(Map<String, dynamic> json) {
     return RecruitmentApplicationSummary(
       applicationId: (json['application_id'] as num?)?.toInt() ?? 0,
       appliedDateLabel: json['applied_date_label'] as String?,
-      employeeId: (json['employee_id'] as num?)?.toInt() ?? 0,
+      employeeId: (json['employee_id'] as num?)?.toInt(),
+      applicantUserId: (json['applicant_user_id'] as num?)?.toInt(),
+      applicationSource: json['application_source'] as String?,
       employeeName: json['employee_name'] as String? ?? '',
       desiredLocation: json['desired_location'] as String?,
       averageRating: (json['average_rating'] as num?)?.toDouble() ?? 0,
       reviewCount: (json['review_count'] as num?)?.toInt() ?? 0,
+      resumeTitle: json['resume_title'] as String?,
     );
   }
 
@@ -784,10 +805,13 @@ class RecruitmentApplicationSummary extends Equatable {
         applicationId,
         appliedDateLabel,
         employeeId,
+        applicantUserId,
+        applicationSource,
         employeeName,
         desiredLocation,
         averageRating,
         reviewCount,
+        resumeTitle,
       ];
 }
 

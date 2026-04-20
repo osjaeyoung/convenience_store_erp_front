@@ -31,6 +31,14 @@ GoRouter createAppRouter(
     navigatorKey: navigatorKey,
     initialLocation: _initialLocationFor(authRepository),
     refreshListenable: authRepository,
+    onException: (context, state, router) {
+      final uriStr = state.uri.toString();
+      if (uriStr.contains('firebaseauth/link') || uriStr.contains('com.googleusercontent.apps')) {
+        // Firebase Auth 딥링크는 firebase_auth 플러그인이 내부적으로 처리하므로 라우팅 무시
+        return;
+      }
+      debugPrint('GoRouter Exception: ${state.error}');
+    },
     redirect: (context, state) {
       final userRole = authRepository.role;
       final isLoggingIn = state.matchedLocation == AppRouter.login;

@@ -235,6 +235,7 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
             RepositoryProvider.value(value: widget.storeExpenseRepository),
             RepositoryProvider.value(value: widget.staffManagementRepository),
             RepositoryProvider.value(value: widget.workerRecruitmentRepository),
+            RepositoryProvider.value(value: widget.pushRepository),
           ],
           child: BlocProvider.value(
             value: _authBloc!,

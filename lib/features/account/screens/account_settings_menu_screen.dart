@@ -9,6 +9,7 @@ import '../../auth/bloc/auth_bloc.dart';
 import '../account_dio_message.dart';
 import '../widgets/account_confirm_dialogs.dart';
 import '../widgets/account_figma_styles.dart';
+import 'account_notification_settings_screen.dart';
 import 'account_my_info_settings_screen.dart';
 import 'account_notices_screen.dart';
 import 'account_policies_screen.dart';
@@ -108,6 +109,17 @@ class _AccountSettingsMenuScreenState extends State<AccountSettingsMenuScreen> {
                                 MaterialPageRoute<void>(
                                   builder: (_) =>
                                       const AccountMyInfoSettingsScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          _row(
+                            '알림 설정',
+                            onTap: () {
+                              Navigator.of(context).push<void>(
+                                MaterialPageRoute<void>(
+                                  builder: (_) =>
+                                      const AccountNotificationSettingsScreen(),
                                 ),
                               );
                             },

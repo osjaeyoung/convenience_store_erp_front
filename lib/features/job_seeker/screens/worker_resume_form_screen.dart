@@ -262,7 +262,8 @@ class _WorkerResumeFormScreenState extends State<WorkerResumeFormScreen> {
     setState(() => _submitting = true);
     try {
       final repo = context.read<WorkerRecruitmentRepository>();
-      if (widget.resumeId == null) {
+      final isEdit = widget.resumeId != null;
+      if (!isEdit) {
         await repo.createResume(
           educationLevel: _educationLevel,
           educationStatus: _educationStatus,
@@ -281,6 +282,11 @@ class _WorkerResumeFormScreenState extends State<WorkerResumeFormScreen> {
         );
       }
       if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isEdit ? '이력서가 성공적으로 수정되었습니다.' : '이력서가 성공적으로 등록되었습니다.'),
+        ),
+      );
       Navigator.of(context).pop(true);
     } catch (error) {
       if (!mounted) return;

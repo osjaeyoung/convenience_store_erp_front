@@ -676,15 +676,18 @@ class _RecruitmentHomeTab extends StatelessWidget {
       return const Center(child: Text('데이터가 없습니다.'));
     }
 
-    return ListView(
-      padding: EdgeInsets.zero,
-      children: [
-        if (state.status == RecruitmentBlocStatus.loading)
-          const LinearProgressIndicator(
-            minHeight: 1,
-            color: AppColors.primary,
-            backgroundColor: AppColors.grey25,
-          ),
+    return RefreshIndicator(
+      onRefresh: () async => onRetry(),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.zero,
+        children: [
+          if (state.status == RecruitmentBlocStatus.loading)
+            const LinearProgressIndicator(
+              minHeight: 1,
+              color: AppColors.primary,
+              backgroundColor: AppColors.grey25,
+            ),
         _RecentViewedSection(
           items: data.recentViewedJobSeekers,
           onTapProfile: onTapProfile,
@@ -744,7 +747,7 @@ class _RecruitmentHomeTab extends StatelessWidget {
           ),
         ),
       ],
-    );
+    ));
   }
 }
 

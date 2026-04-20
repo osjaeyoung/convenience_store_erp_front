@@ -153,16 +153,6 @@ class _WorkerApplyScreenState extends State<WorkerApplyScreen> {
                           },
                         ),
                 ),
-                if ((options?.blockedReason ?? '').isNotEmpty)
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 12.h),
-                    child: Text(
-                      options!.blockedReason!,
-                      style: AppTypography.bodySmallR.copyWith(
-                        color: AppColors.error,
-                      ),
-                    ),
-                  ),
                 SafeArea(
                   top: false,
                   child: Padding(

@@ -157,6 +157,8 @@ class AccountGreyActionField extends StatelessWidget {
     this.onChanged,
     this.readOnly = false,
     this.enabled = true,
+    this.actionLoading = false,
+    this.actionColor,
   });
 
   final TextEditingController controller;
@@ -168,6 +170,8 @@ class AccountGreyActionField extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final bool readOnly;
   final bool enabled;
+  final bool actionLoading;
+  final Color? actionColor;
 
   @override
   Widget build(BuildContext context) {
@@ -180,33 +184,57 @@ class AccountGreyActionField extends StatelessWidget {
       readOnly: readOnly,
       enabled: enabled,
       fillColor: AppColors.grey0Alt,
-      focusedBorderColor: AppColors.grey50,
+      focusedBorderColor: AppColors.primary,
       contentPadding: EdgeInsets.fromLTRB(16.w, 14.h, 12.w, 14.h),
+      textStyle: AppTypography.bodyMediumR.copyWith(
+        color: AppColors.textPrimary,
+        height: 19 / 14,
+      ),
       hintStyle: AppTypography.bodyMediumR.copyWith(
         color: AppColors.textDisabled,
       ),
-      suffixIconConstraints: BoxConstraints(minWidth: 63.w),
+      suffixIconConstraints: BoxConstraints(
+        minHeight: 0,
+        minWidth: 88.w,
+      ),
       suffix: Padding(
-        padding: EdgeInsets.only(right: 12.w),
+        padding: EdgeInsets.only(right: 6.w),
         child: SizedBox(
-          height: 24.h,
-          child: TextButton(
-            onPressed: enabled ? onActionTap : null,
-            style: TextButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.grey0,
-              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 0),
-              minimumSize: Size(43.w, 24.h),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4.r),
-              ),
-            ),
-            child: Text(
-              actionLabel,
-              style: AppTypography.bodySmallB.copyWith(
-                color: AppColors.grey0,
-                height: 16 / 12,
+          width: 76.w,
+          height: 28.h,
+          child: Center(
+            child: GestureDetector(
+              onTap: (!enabled || actionLoading) ? null : onActionTap,
+              child: Container(
+                width: 76.w,
+                height: 28.h,
+                decoration: BoxDecoration(
+                  color: actionColor ?? AppColors.primary,
+                  borderRadius: BorderRadius.circular(8.r),
+                  border: actionColor == AppColors.grey0
+                      ? Border.all(color: AppColors.primary)
+                      : null,
+                ),
+                alignment: Alignment.center,
+                child: actionLoading
+                    ? const SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.grey0,
+                        ),
+                      )
+                    : Text(
+                        actionLabel,
+                        style: AppTypography.bodyMediumB.copyWith(
+                          color: actionColor == AppColors.grey0
+                              ? AppColors.primary
+                              : AppColors.grey0,
+                          fontSize: 11.sp,
+                          height: 1,
+                        ),
+                      ),
               ),
             ),
           ),

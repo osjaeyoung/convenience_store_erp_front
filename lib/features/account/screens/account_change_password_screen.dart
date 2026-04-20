@@ -6,10 +6,10 @@ import 'package:provider/provider.dart';
 import '../../../core/router/app_router.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../theme/app_colors.dart';
-import '../../auth/bloc/auth_bloc.dart';
 import '../account_dio_message.dart';
 import '../widgets/account_figma_styles.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../auth/widgets/auth_input_field.dart';
 import 'account_password_verify_screen.dart';
 
 class AccountChangePasswordScreen extends StatefulWidget {
@@ -63,12 +63,12 @@ class _AccountChangePasswordScreenState
         context.go(AppRouter.login);
         return;
       }
-      final user = context.read<AuthBloc>().state.user;
-      context.go(
-        user?.role.isJobSeeker == true
-            ? AppRouter.jobSeekerMain
-            : AppRouter.managerMain,
-      );
+      
+      // 설정에서 진입한 경우: 비밀번호 확인 -> (대체됨) -> 새 비밀번호 입력창 스택이므로
+      // 2번 pop 하면 처음에 비밀번호 변경을 요청했던 설정(또는 내 정보) 페이지로 돌아감
+      Navigator.of(context)
+        ..pop()
+        ..pop();
     } catch (e) {
       if (mounted) {
         setState(() => _submitting = false);
@@ -90,36 +90,34 @@ class _AccountChangePasswordScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(caption, style: AccountFigmaStyles.fieldCaption),
-        SizedBox(height: 4.h),
-        Container(
-          padding: EdgeInsets.fromLTRB(16.w, 4.h, 8.w, 4.h),
-          decoration: BoxDecoration(
-            color: AppColors.grey25,
-            borderRadius: BorderRadius.circular(12.r),
+        Text(
+          caption,
+          style: AccountFigmaStyles.fieldCaption.copyWith(
+            color: AccountFigmaStyles.titleColor,
+            fontSize: 14.sp,
           ),
-          child: TextFormField(
-            controller: controller,
-            obscureText: obscure,
-            style: AccountFigmaStyles.fieldValue,
-            validator: validator,
-            decoration: InputDecoration(
-              isDense: true,
-              border: InputBorder.none,
-              hintText: hint,
-              hintStyle: AccountFigmaStyles.fieldValue.copyWith(
-                color: AppColors.textTertiary,
-              ),
-              suffixIcon: IconButton(
-                onPressed: toggleObscure,
-                icon: Icon(
-                  obscure
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
-                  color: AppColors.textTertiary,
-                  size: 20,
-                ),
-              ),
+        ),
+        SizedBox(height: 8.h),
+        AuthInputField(
+          controller: controller,
+          obscureText: obscure,
+          hintText: hint ?? '',
+          validator: validator,
+          fillColor: AppColors.grey0Alt,
+          focusedBorderColor: AppColors.primary,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          suffixIconConstraints: const BoxConstraints(
+            minHeight: 0,
+            minWidth: 48,
+          ),
+          suffix: IconButton(
+            onPressed: toggleObscure,
+            icon: Icon(
+              obscure
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined,
+              color: AppColors.textTertiary,
+              size: 20,
             ),
           ),
         ),

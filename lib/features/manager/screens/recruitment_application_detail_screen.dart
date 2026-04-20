@@ -66,7 +66,7 @@ class _RecruitmentApplicationDetailScreenState
       MaterialPageRoute<void>(
         builder: (_) => RecruitmentReviewScreen(
           branchId: widget.branchId,
-          employeeId: profile.employeeId,
+          employeeId: profile.employeeId ?? -1,
           initialEmployeeName: profile.employeeName,
           initialDesiredLocation:
               profile.desiredLocations.isNotEmpty ? profile.desiredLocations.first : null,
@@ -167,6 +167,7 @@ class _RecruitmentApplicationDetailScreenState
                         SafeArea(
                           top: false,
                           child: Container(
+                            width: double.infinity,
                             color: AppColors.grey0,
                             padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 36.h),
                             child: SizedBox(
@@ -262,6 +263,11 @@ class _ApplicationHeroCard extends StatelessWidget {
               ],
             ),
           ),
+          if (profile.resumeTitle != null && profile.resumeTitle!.isNotEmpty)
+            _ApplicationInfoRow(
+              label: '이력서',
+              value: _valueText(profile.resumeTitle!),
+            ),
           SizedBox(height: 8.h),
           _ApplicationInfoRow(
             label: '평점',
@@ -386,7 +392,30 @@ class _ApplicationWorkHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = histories.isEmpty ? const [JobSeekerWorkHistory()] : histories;
+    final validHistories = histories
+        .where((h) => h.companyName != '근로자_이력서' && h.roleLabel != '근로자 이력서')
+        .toList();
+
+    if (validHistories.isEmpty) {
+      return Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: AppColors.grey0,
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(color: AppColors.grey50),
+        ),
+        padding: EdgeInsets.symmetric(vertical: 32.h),
+        child: Text(
+          '등록된 근무 이력이 없습니다.',
+          style: AppTypography.bodyMediumR.copyWith(
+            color: AppColors.textTertiary,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+
+    final items = validHistories;
     return Container(
       decoration: BoxDecoration(
         color: AppColors.grey0,
@@ -402,15 +431,14 @@ class _ApplicationWorkHistoryCard extends StatelessWidget {
               padding: EdgeInsets.symmetric(vertical: 16.h),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: Text(
-                      items[i].periodLabel ?? '-',
-                      style: AppTypography.bodyMediumR.copyWith(
-                        fontSize: 14.sp,
-                        height: 19 / 14,
-                        color: AppColors.textSecondary,
-                      ),
+                  Text(
+                    items[i].periodLabel ?? '-',
+                    style: AppTypography.bodyMediumR.copyWith(
+                      fontSize: 14.sp,
+                      height: 19 / 14,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   SizedBox(width: 16.w),

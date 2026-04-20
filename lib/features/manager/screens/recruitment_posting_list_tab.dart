@@ -221,6 +221,7 @@ class _RecruitmentPostingListTabState extends State<RecruitmentPostingListTab> {
                           mineMode: widget.mine,
                           onTapItem: _openPosting,
                           onTapApplicants: _openApplicants,
+                          onRefresh: _load,
                         ),
             ),
           ],
@@ -261,6 +262,7 @@ class _PostingListView extends StatelessWidget {
     required this.mineMode,
     required this.onTapItem,
     required this.onTapApplicants,
+    required this.onRefresh,
   });
 
   final List<RecruitmentPostingSummary> items;
@@ -268,33 +270,47 @@ class _PostingListView extends StatelessWidget {
   final bool mineMode;
   final ValueChanged<RecruitmentPostingSummary> onTapItem;
   final ValueChanged<RecruitmentPostingSummary> onTapApplicants;
+  final Future<void> Function() onRefresh;
 
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return Center(
-        child: Text(
-          '등록된 채용 공고가 없습니다.',
-          style: AppTypography.bodyMediumR.copyWith(
-            color: AppColors.textSecondary,
-          ),
+      return RefreshIndicator(
+        onRefresh: onRefresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            SizedBox(height: MediaQuery.sizeOf(context).height * 0.3),
+            Center(
+              child: Text(
+                '등록된 채용 공고가 없습니다.',
+                style: AppTypography.bodyMediumR.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+          ],
         ),
       );
     }
 
-    return ListView.separated(
-      padding: EdgeInsets.fromLTRB(20, topPadding, 20, 96),
-      itemBuilder: (context, index) {
-        final item = items[index];
-        return _PostingListCard(
-          item: item,
-          mineMode: mineMode,
-          onTap: () => onTapItem(item),
-          onTapApplicants: () => onTapApplicants(item),
-        );
-      },
-      separatorBuilder: (_, __) => SizedBox(height: 0.h),
-      itemCount: items.length,
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(20, topPadding, 20, 96),
+        itemBuilder: (context, index) {
+          final item = items[index];
+          return _PostingListCard(
+            item: item,
+            mineMode: mineMode,
+            onTap: () => onTapItem(item),
+            onTapApplicants: () => onTapApplicants(item),
+          );
+        },
+        separatorBuilder: (_, __) => SizedBox(height: 0.h),
+        itemCount: items.length,
+      ),
     );
   }
 }

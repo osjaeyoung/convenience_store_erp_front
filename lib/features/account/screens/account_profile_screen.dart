@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,7 +7,10 @@ import 'package:provider/provider.dart';
 import '../../../data/models/account_profile.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../theme/app_colors.dart';
+import '../../../theme/app_typography.dart';
 import '../../auth/bloc/auth_bloc.dart';
+import '../../auth/screens/signup_phone_code_screen.dart';
+import '../../auth/widgets/auth_input_field.dart';
 import '../account_dio_message.dart';
 import '../widgets/account_confirm_dialogs.dart';
 import '../widgets/account_figma_styles.dart';
@@ -23,6 +27,10 @@ class AccountProfileScreen extends StatefulWidget {
 
 class _AccountProfileScreenState extends State<AccountProfileScreen> {
   final _nameCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _usageTypeCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController(text: '**********');
   AccountProfile? _profile;
   bool _loading = true;
   bool _saving = false;
@@ -32,6 +40,10 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _emailCtrl.dispose();
+    _usageTypeCtrl.dispose();
+    _phoneCtrl.dispose();
+    _passwordCtrl.dispose();
     super.dispose();
   }
 
@@ -50,6 +62,9 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
       final p = await context.read<AuthRepository>().getAccountProfile();
       if (mounted) {
         _nameCtrl.text = p.fullName;
+        _emailCtrl.text = p.email;
+        _usageTypeCtrl.text = p.usageTypeLabelKo;
+        _phoneCtrl.text = p.phoneNumber ?? '';
         setState(() {
           _profile = p;
           _loading = false;
@@ -98,97 +113,109 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
     }
   }
 
-  Future<void> _showPhoneDialog() async {
-    final repo = context.read<AuthRepository>();
-    final initial = _profile?.phoneNumber ?? '';
-    final ctrl = TextEditingController(text: initial);
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-        title: Text(
-          '전화번호',
-          style: AccountFigmaStyles.appBarTitle.copyWith(fontSize: 18.sp),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Firebase 전화 인증 후 서버에 반영하는 흐름에 맞춰, 인증된 번호를 입력해 주세요.',
-              style: AccountFigmaStyles.fieldValue.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-            SizedBox(height: 12.h),
-            TextField(
-              controller: ctrl,
-              keyboardType: TextInputType.phone,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(11),
-              ],
-              style: AccountFigmaStyles.fieldValue,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: AppColors.grey25,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                  borderSide: BorderSide.none,
-                ),
-                hintText: '01012345678',
-                hintStyle: AccountFigmaStyles.fieldValue.copyWith(
-                  color: AppColors.textTertiary,
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(
-              '취소',
-              style: AccountFigmaStyles.rowTitle.copyWith(
-                color: AppColors.textTertiary,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(
-              '저장',
-              style: AccountFigmaStyles.rowTitle.copyWith(
-                color: AppColors.primaryDark,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-    if (ok != true || !mounted) return;
-    final digits = ctrl.text.trim();
-    if (digits.length < 10) {
+  String _toE164(String phone) {
+    final digits = phone.replaceAll(RegExp(r'[^\d]'), '');
+    if (digits.startsWith('82') && digits.length >= 11) return '+$digits';
+    if (digits.startsWith('0') && digits.length >= 10) return '+82${digits.substring(1)}';
+    return '+$digits';
+  }
+
+  Future<void> _requestPhoneVerification() async {
+    final phoneNumber = _phoneCtrl.text.trim();
+    if (phoneNumber.isEmpty || phoneNumber.length < 10) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('전화번호 형식을 확인해주세요.')),
+        const SnackBar(content: Text('올바른 휴대폰 번호를 입력해주세요.')),
       );
       return;
     }
+    
+    final currentPhone = _profile?.phoneNumber ?? '';
+    if (phoneNumber == currentPhone) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('기존 번호와 동일합니다.')),
+      );
+      return;
+    }
+
+    setState(() => _saving = true);
+    final repo = context.read<AuthRepository>();
+    
+    try {
+      final result = await repo.checkPhoneNumberExists(phoneNumber: phoneNumber);
+      if (!mounted) return;
+      if (result.exists) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('이미 가입된 전화번호입니다.')),
+        );
+        return;
+      }
+      
+      await repo.verifyPhoneNumber(
+        phoneNumber: _toE164(phoneNumber),
+        codeSent: (verificationId, resendToken) async {
+          if (!mounted) return;
+          setState(() => _saving = false);
+          final expiresAt = DateTime.now().add(const Duration(minutes: 3));
+          
+          final verified = await Navigator.of(context).push<bool>(
+            MaterialPageRoute(
+              builder: (_) => SignupPhoneCodeScreen(
+                phoneNumber: phoneNumber,
+                verificationId: verificationId,
+                resendToken: resendToken,
+                expiresAt: expiresAt,
+              ),
+            ),
+          );
+          
+          if (verified == true && mounted) {
+            _updatePhoneNumberOnServer(phoneNumber);
+          }
+        },
+        verificationCompleted: (credential) async {
+          if (!mounted) return;
+          try {
+            await FirebaseAuth.instance.signInWithCredential(credential);
+            await FirebaseAuth.instance.signOut();
+            _updatePhoneNumberOnServer(phoneNumber);
+          } catch (_) {
+            setState(() => _saving = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('자동 인증 처리 중 오류가 발생했습니다.')),
+            );
+          }
+        },
+        verificationFailed: (error) {
+          if (!mounted) return;
+          setState(() => _saving = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error.message ?? '인증번호 요청에 실패했습니다.')),
+          );
+        },
+        codeAutoRetrievalTimeout: (_) {},
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(accountDioMessage(e))),
+        );
+      }
+    }
+  }
+
+  Future<void> _updatePhoneNumberOnServer(String phoneNumber) async {
     setState(() => _saving = true);
     try {
-      final p = await repo.patchAccount(phoneNumber: digits);
+      final p = await context.read<AuthRepository>().patchAccount(phoneNumber: phoneNumber);
       if (mounted) {
         setState(() {
           _profile = p;
           _saving = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('전화번호가 저장되었습니다.')),
+          const SnackBar(content: Text('전화번호가 성공적으로 변경되었습니다.')),
         );
       }
     } catch (e) {
@@ -273,119 +300,120 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                       children: [
                         _fieldBlock(
                           caption: '이름',
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.grey25,
-                              borderRadius: BorderRadius.circular(12.r),
-                            ),
-                            child: TextField(
-                              controller: _nameCtrl,
-                              onEditingComplete: _saveNameIfChanged,
-                              style: AccountFigmaStyles.fieldValue,
-                              decoration: InputDecoration(
-                                isDense: true,
-                                border: InputBorder.none,
-                                hintText: '이름을 입력해주세요.',
-                                hintStyle: TextStyle(
-                                  fontFamily: 'Pretendard',
-                                  fontSize: 14.sp,
-                                  color: AppColors.textTertiary,
-                                ),
-                              ),
-                            ),
+                          child: AuthInputField(
+                            controller: _nameCtrl,
+                            hintText: '이름을 입력해주세요.',
+                            onEditingComplete: _saveNameIfChanged,
+                            fillColor: AppColors.grey0Alt,
+                            focusedBorderColor: AppColors.grey50,
+                            contentPadding: EdgeInsets.fromLTRB(16.w, 14.h, 12.w, 14.h),
+                            textStyle: AccountFigmaStyles.fieldValue,
+                          ),
+                        ),
+                        SizedBox(height: 20.h),
+                        _fieldBlock(
+                          caption: '이메일',
+                          child: AuthInputField(
+                            controller: _emailCtrl,
+                            hintText: '',
+                            readOnly: true,
+                            fillColor: AppColors.grey0Alt,
+                            focusedBorderColor: AppColors.grey50,
+                            contentPadding: EdgeInsets.fromLTRB(16.w, 14.h, 12.w, 14.h),
+                            textStyle: AccountFigmaStyles.fieldValueMuted,
                           ),
                         ),
                         SizedBox(height: 20.h),
                         _fieldBlock(
                           caption: '사용 유형',
-                          child: Container(
-                            width: double.infinity,
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 16.w,
-                              vertical: 12.h,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.grey25,
-                              borderRadius: BorderRadius.circular(12.r),
-                            ),
-                            child: Text(
-                              p?.usageTypeLabelKo ?? '—',
-                              style: AccountFigmaStyles.fieldValue,
-                            ),
+                          child: AuthInputField(
+                            controller: _usageTypeCtrl,
+                            hintText: '',
+                            readOnly: true,
+                            fillColor: AppColors.grey0Alt,
+                            focusedBorderColor: AppColors.grey50,
+                            contentPadding: EdgeInsets.fromLTRB(16.w, 14.h, 12.w, 14.h),
+                            textStyle: AccountFigmaStyles.fieldValue,
                           ),
                         ),
                         SizedBox(height: 20.h),
                         _fieldBlock(
                           caption: '전화번호',
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 16.w,
-                                    vertical: 12.h,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.grey25,
-                                    borderRadius: BorderRadius.circular(12.r),
-                                  ),
-                                  child: Text(
-                                    (p?.phoneNumberMasked ?? p?.phoneNumber)
-                                                ?.isNotEmpty ==
-                                            true
-                                        ? (p!.phoneNumberMasked ??
-                                            p.phoneNumber!)
-                                        : '등록된 번호 없음',
-                                    style:
-                                        (p?.phoneNumberMasked != null &&
-                                                (p?.phoneNumberMasked ?? '')
-                                                    .isNotEmpty)
-                                            ? AccountFigmaStyles.fieldValueMuted
-                                            : AccountFigmaStyles.fieldValue,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 8.w),
-                              TextButton(
-                                onPressed: _saving ? null : _showPhoneDialog,
-                                style: AccountFigmaStyles.mintSmallActionStyle,
-                                child: Text(
-                                  '변경',
-                                  style:
-                                      AccountFigmaStyles.mintSmallActionLabel,
-                                ),
-                              ),
+                          child: AuthInputField(
+                            controller: _phoneCtrl,
+                            hintText: '휴대폰 번호 (- 제외)',
+                            keyboardType: TextInputType.phone,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(11),
                             ],
+                            fillColor: AppColors.grey0Alt,
+                            focusedBorderColor: AppColors.grey50,
+                            contentPadding: EdgeInsets.fromLTRB(16.w, 14.h, 12.w, 14.h),
+                            textStyle: AccountFigmaStyles.fieldValue,
+                    suffixIconConstraints: BoxConstraints(
+                      minHeight: 0,
+                      minWidth: 88.w,
+                    ),
+                    suffix: Padding(
+                      padding: EdgeInsets.only(right: 6.w),
+                      child: SizedBox(
+                        width: 76.w,
+                        height: 28.h,
+                        child: Center(
+                          child: GestureDetector(
+                            onTap: _saving ? null : _requestPhoneVerification,
+                            child: Container(
+                              width: 76.w,
+                              height: 28.h,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
+                              alignment: Alignment.center,
+                              child: _saving
+                                  ? const SizedBox(
+                                      width: 12,
+                                      height: 12,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: AppColors.grey0,
+                                      ),
+                                    )
+                                  : Text(
+                                      '요청',
+                                      style: AppTypography.bodyMediumB.copyWith(
+                                        color: AppColors.grey0,
+                                        fontSize: 11.sp,
+                                        height: 1,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                           ),
                         ),
                         if (p?.hasPasswordLogin == true) ...[
                           SizedBox(height: 20.h),
                           _fieldBlock(
                             caption: '비밀번호',
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 16.w,
-                                vertical: 12.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.grey25,
-                                borderRadius: BorderRadius.circular(12.r),
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      '**********',
-                                      style:
-                                          AccountFigmaStyles.fieldValueMuted,
-                                    ),
-                                  ),
-                                  TextButton(
+                            child: AuthInputField(
+                              controller: _passwordCtrl,
+                              hintText: '',
+                              readOnly: true,
+                              obscureText: true,
+                              fillColor: AppColors.grey0Alt,
+                              focusedBorderColor: AppColors.grey50,
+                              contentPadding: EdgeInsets.fromLTRB(16.w, 14.h, 12.w, 14.h),
+                              textStyle: AccountFigmaStyles.fieldValueMuted,
+                              suffixIconConstraints: BoxConstraints(minWidth: 63.w),
+                              suffix: Padding(
+                                padding: EdgeInsets.only(right: 12.w),
+                                child: SizedBox(
+                                  height: 24.h,
+                                  child: TextButton(
                                     onPressed: _saving
                                         ? null
                                         : () {
@@ -396,15 +424,24 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                                               ),
                                             );
                                           },
-                                    style:
-                                        AccountFigmaStyles.mintSmallActionStyle,
+                                    style: TextButton.styleFrom(
+                                      backgroundColor: AppColors.primary,
+                                      foregroundColor: AppColors.grey0,
+                                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 0),
+                                      minimumSize: Size(43.w, 24.h),
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(4.r),
+                                      ),
+                                    ),
                                     child: Text(
                                       '변경',
-                                      style: AccountFigmaStyles
-                                          .mintSmallActionLabel,
+                                      style: AppTypography.bodySmallB.copyWith(
+                                        color: AppColors.grey0,
+                                      ),
                                     ),
                                   ),
-                                ],
+                                ),
                               ),
                             ),
                           ),

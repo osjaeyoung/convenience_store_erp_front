@@ -8,9 +8,9 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../account/account_dio_message.dart';
 import '../../account/screens/account_notices_screen.dart';
+import '../../account/screens/account_notification_settings_screen.dart';
 import '../../account/screens/account_password_verify_screen.dart';
 import '../../account/screens/account_policies_screen.dart';
-import '../../account/screens/account_settings_menu_screen.dart';
 import '../../account/screens/account_support_center_screen.dart';
 import '../../account/widgets/account_confirm_dialogs.dart';
 import '../../auth/bloc/auth_bloc.dart';
@@ -113,14 +113,14 @@ class _WorkerMyPageScreenState extends State<WorkerMyPageScreen> {
                     child: Column(
                       children: [
                         _MenuRow(
-                          icon: Icons.settings_outlined,
+                          icon: Icons.notifications_none_rounded,
                           iconColor: AppColors.primary,
-                          title: '설정',
+                          title: '알림 설정',
                           onTap: () {
                             Navigator.of(context).push<void>(
                               MaterialPageRoute<void>(
                                 builder: (_) =>
-                                    const AccountSettingsMenuScreen(),
+                                    const AccountNotificationSettingsScreen(),
                               ),
                             );
                           },

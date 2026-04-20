@@ -597,7 +597,7 @@ class _WorkerAccountEditScreenState extends State<WorkerAccountEditScreen> {
           : Stack(
               children: [
                 SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 112.h),
+                  padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 160.h),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -607,6 +607,7 @@ class _WorkerAccountEditScreenState extends State<WorkerAccountEditScreen> {
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
                           hintText: '등록된 이메일을 입력해주세요.',
+                          enabled: false,
                         ),
                       ),
                       SizedBox(height: 20.h),
@@ -675,6 +676,10 @@ class _WorkerAccountEditScreenState extends State<WorkerAccountEditScreen> {
                           onActionTap: _verifyPhoneNumberChange,
                           onChanged: (_) => setState(() {}),
                           enabled: !_checkingPhone && !_saving,
+                          actionLoading: _checkingPhone,
+                          actionColor: _phoneActionLabel == '인증완료'
+                              ? AppColors.grey0
+                              : AppColors.primary,
                         ),
                       ),
                       if (_didPhoneChange && !_isCurrentPhoneVerified) ...[

@@ -17,6 +17,7 @@
 | `2634:16243` | 비밀번호 변경 | `POST /me/account/password` |
 | `2634:16384` | 회원 탈퇴 확인 | `POST /me/account/withdraw` |
 | `2634:16422` | 알림 내역 | `GET /me/notifications` |
+| 앱 설정 신규 화면 | 알림 설정 | `GET /me/push-settings`, `PATCH /me/push-settings` |
 
 ### 지원 콘텐츠
 
@@ -193,6 +194,61 @@
 - 정렬: `created_at DESC`, 동순위는 `notification_id DESC`
 - `unread_count`는 `only_unread` 필터와 무관하게 전체 미읽음 개수입니다.
 - 알림 상세 액션은 `target_route`, `tab`, `entity_type`, `entity_id`를 사용해 화면 전환합니다.
+
+---
+
+## 2-2) 내 푸시 알림 설정 조회
+
+- `GET /me/push-settings`
+
+### Response (200)
+
+```json
+{
+  "push_enabled": true,
+  "updated_at": "2026-04-20T12:34:56Z"
+}
+```
+
+### 주요 필드
+
+- `push_enabled`: 현재 로그인한 유저의 푸시 알림 수신 허용 여부
+- `updated_at`: 마지막 설정 변경 시각, 아직 변경 이력이 없으면 `null` 가능
+
+### 비고
+
+- 이 값은 "유저 단위" 설정입니다.
+- 서버는 실제 푸시 발송 대상자를 계산할 때 `push_enabled=true` 인 유저만 포함해야 합니다.
+- 디바이스 토큰 존재 여부와는 별도로 관리합니다. 즉, 토큰이 등록되어 있어도 `push_enabled=false` 이면 발송하지 않습니다.
+
+---
+
+## 2-3) 내 푸시 알림 설정 변경
+
+- `PATCH /me/push-settings`
+
+### Request Body
+
+```json
+{
+  "push_enabled": false
+}
+```
+
+### Response (200)
+
+```json
+{
+  "push_enabled": false,
+  "updated_at": "2026-04-20T12:40:00Z"
+}
+```
+
+### 비고
+
+- 보낸 필드만 반영하는 단순 부분 수정으로 처리해도 되지만, 현재 클라이언트는 `push_enabled`만 전송합니다.
+- `push_enabled=true` 로 바뀐 뒤에는 클라이언트가 FCM 토큰을 재등록할 수 있습니다. 서버는 기존 `/push/device-tokens` upsert 흐름과 함께 사용하면 됩니다.
+- `push_enabled=false` 로 바뀌면 이후 신규 푸시 발송에서 해당 유저를 제외해야 합니다.
 
 ---
 

@@ -135,21 +135,32 @@ class _WorkerResumeManagementTabState extends State<WorkerResumeManagementTab> {
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView.separated(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 24.h),
-        itemCount: page.items.length,
-        separatorBuilder: (_, __) => SizedBox(height: 16.h),
-        itemBuilder: (context, index) {
-          final item = page.items[index];
-          return _ResumeListCard(
-            item: item,
-            onEdit: () => _openResumeForm(resumeId: item.resumeId),
-            onDelete: () => _confirmDelete(item),
-          );
-        },
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: RefreshIndicator(
+        onRefresh: _load,
+        child: ListView.separated(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 88.h),
+          itemCount: page.items.length,
+          separatorBuilder: (_, __) => SizedBox(height: 16.h),
+          itemBuilder: (context, index) {
+            final item = page.items[index];
+            return _ResumeListCard(
+              item: item,
+              onEdit: () => _openResumeForm(resumeId: item.resumeId),
+              onDelete: () => _confirmDelete(item),
+            );
+          },
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _openResumeForm(),
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.grey0,
+        shape: const CircleBorder(),
+        elevation: 4,
+        child: const Icon(Icons.add_rounded, size: 28),
       ),
     );
   }

@@ -124,6 +124,7 @@
   "employee_name": "이사라",
   "age": 24,
   "gender": "female",
+  "phone_number": "010-1234-5678",
   "career_label": "4년 6개월",
   "desired_locations": ["서울 강남구 개포 2동", "서울 강남구 역삼 1동"],
   "average_rating": 2.7,
@@ -207,6 +208,10 @@
   "page_size": 20
 }
 ```
+
+### 비고
+
+- `employee_id`가 음수일 경우(근로자 앱을 통한 외부 지원자) 리뷰 내역이 없으므로 `404` 에러 대신 빈 리뷰 목록(`items: []`, `total_count: 0`)과 평점 0점 형태로 정상 응답(`200`)을 반환합니다.
 
 ---
 
@@ -450,15 +455,16 @@
   "employee_name": "김현수",
   "age": 26,
   "gender": "male",
-  "career_label": "이력서 기반 프로필",
+  "phone_number": "010-1234-5678",
+  "career_label": "경력",
   "desired_locations": ["부산 해운대구 반송동"],
   "average_rating": 0,
   "review_count": 0,
   "work_histories": [
     {
-      "period_label": "2026.03.30",
-      "company_name": "김현수_이력서",
-      "role_label": "근로자 이력서"
+      "period_label": "2024.01 ~ 2025.12",
+      "company_name": "(주)유통업체",
+      "role_label": "재고관리 및 고객응대"
     }
   ],
   "contact_action_label": "삭제",

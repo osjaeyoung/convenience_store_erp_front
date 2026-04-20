@@ -1,3 +1,4 @@
+import '../models/push_notification_settings.dart';
 import '../network/api_client.dart';
 
 /// 푸시 디바이스 토큰 등록/갱신 API
@@ -18,5 +19,22 @@ class PushRepository {
         'platform': platform,
       },
     );
+  }
+
+  Future<PushNotificationSettings> getNotificationSettings() async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/me/push-settings',
+    );
+    return PushNotificationSettings.fromJson(res.data!);
+  }
+
+  Future<PushNotificationSettings> updateNotificationSettings({
+    required bool pushEnabled,
+  }) async {
+    final res = await _apiClient.dio.patch<Map<String, dynamic>>(
+      '/me/push-settings',
+      data: {'push_enabled': pushEnabled},
+    );
+    return PushNotificationSettings.fromJson(res.data!);
   }
 }

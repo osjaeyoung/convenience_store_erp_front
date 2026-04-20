@@ -10,6 +10,7 @@ import '../../../theme/app_typography.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../account_dio_message.dart';
 import '../widgets/account_figma_styles.dart';
+import '../../auth/widgets/auth_input_field.dart';
 import 'account_password_code_screen.dart';
 
 enum AccountPasswordEntryPoint { login, settings }
@@ -141,6 +142,7 @@ class _AccountPasswordVerifyScreenState
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('인증번호가 발송되었습니다.')),
               );
+              _goNext();
             },
             verificationFailed: (error) {
               if (!mounted) return;
@@ -195,20 +197,22 @@ class _AccountPasswordVerifyScreenState
                 children: [
                   Text.rich(
                     TextSpan(
-                      style: AppTypography.heading1.copyWith(
-                        color: AppColors.textPrimary,
+                      style: TextStyle(
+                        fontFamily: 'Pretendard',
+                        fontSize: 24.sp,
                         fontWeight: FontWeight.w400,
                         height: 32 / 24,
+                        color: AppColors.textPrimary,
                       ),
                       children: [
-                        const TextSpan(text: '비밀번호를 찾기 위해\n아래 '),
                         TextSpan(
+                          text: widget.entryPoint == AccountPasswordEntryPoint.login
+                              ? '비밀번호를 찾기 위해\n아래 '
+                              : '비밀번호를 변경하기 위해\n아래 ',
+                        ),
+                        const TextSpan(
                           text: '정보',
-                          style: AppTypography.heading1.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w400,
-                            height: 32 / 24,
-                          ),
+                          style: TextStyle(color: AppColors.primary),
                         ),
                         const TextSpan(text: '를 입력해주세요.'),
                       ],
@@ -223,26 +227,12 @@ class _AccountPasswordVerifyScreenState
                     ),
                   ),
                   SizedBox(height: 8.h),
-                  TextField(
+                  AuthInputField(
                     controller: _nameCtrl,
                     enabled: !_loadingProfile && !_requestingCode,
-                    style: AppTypography.bodyMediumR.copyWith(
-                      color: AppColors.textPrimary,
-                      height: 19 / 14,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: '이름을 입력해주세요.',
-                      filled: true,
-                      fillColor: AppColors.grey25,
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                        borderSide: const BorderSide(color: AppColors.border),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                        borderSide: const BorderSide(color: AppColors.border),
-                      ),
-                    ),
+                    hintText: '이름을 입력해주세요.',
+                    fillColor: AppColors.grey0Alt,
+                    focusedBorderColor: AppColors.primary,
                   ),
                   SizedBox(height: 20.h),
                   Text(
@@ -253,71 +243,65 @@ class _AccountPasswordVerifyScreenState
                     ),
                   ),
                   SizedBox(height: 8.h),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.grey25,
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(color: AppColors.border),
+                  AuthInputField(
+                    controller: _phoneCtrl,
+                    enabled: !_loadingProfile && !_requestingCode,
+                    keyboardType: TextInputType.phone,
+                    hintText: '번호를 입력해주세요.',
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(11),
+                    ],
+                    fillColor: AppColors.grey0Alt,
+                    focusedBorderColor: AppColors.primary,
+                    suffixIconConstraints: const BoxConstraints(
+                      minHeight: 0,
+                      minWidth: 88,
                     ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _phoneCtrl,
-                            enabled: !_loadingProfile && !_requestingCode,
-                            keyboardType: TextInputType.phone,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                              LengthLimitingTextInputFormatter(11),
-                            ],
-                            style: AppTypography.bodyMediumR.copyWith(
-                              color: AppColors.textPrimary,
-                              height: 19 / 14,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: '번호를 입력해주세요.',
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.fromLTRB(
-                                16.w,
-                                16.h,
-                                12.w,
-                                16.h,
+                    suffix: Padding(
+                      padding: EdgeInsets.only(right: 6.w),
+                      child: SizedBox(
+                        width: 76.w,
+                        height: 28.h,
+                        child: Center(
+                          child: GestureDetector(
+                            onTap: _requestingCode ? null : _requestCode,
+                            child: Container(
+                              width: 76.w,
+                              height: 28.h,
+                              decoration: BoxDecoration(
+                                color: _verificationId != null
+                                    ? AppColors.grey0
+                                    : AppColors.primary,
+                                borderRadius: BorderRadius.circular(8.r),
+                                border: _verificationId != null
+                                    ? Border.all(color: AppColors.primary)
+                                    : null,
                               ),
+                              alignment: Alignment.center,
+                              child: _requestingCode
+                                  ? const SizedBox(
+                                      width: 12,
+                                      height: 12,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: AppColors.grey0,
+                                      ),
+                                    )
+                                  : Text(
+                                      _verificationId != null ? '재요청' : '요청',
+                                      style: AppTypography.bodyMediumB.copyWith(
+                                        color: _verificationId != null
+                                            ? AppColors.primary
+                                            : AppColors.grey0,
+                                        fontSize: 11.sp,
+                                        height: 1,
+                                      ),
+                                    ),
                             ),
                           ),
                         ),
-                        Padding(
-                          padding: EdgeInsets.only(right: 14.w),
-                          child: TextButton(
-                            onPressed: _requestingCode ? null : _requestCode,
-                            style: TextButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: AppColors.grey0,
-                              minimumSize: Size(44.w, 24.h),
-                              padding: EdgeInsets.symmetric(horizontal: 8.w),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(4.r),
-                              ),
-                            ),
-                            child: _requestingCode
-                                ? SizedBox(
-                                    width: 12.r,
-                                    height: 12.r,
-                                    child: const CircularProgressIndicator(
-                                      strokeWidth: 1.8,
-                                      color: AppColors.grey0,
-                                    ),
-                                  )
-                                : Text(
-                                    '요청',
-                                    style: AppTypography.bodySmallB.copyWith(
-                                      color: AppColors.grey0,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ],

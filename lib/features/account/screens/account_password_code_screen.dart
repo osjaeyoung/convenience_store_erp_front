@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import '../../auth/widgets/auth_input_field.dart';
 import '../widgets/account_figma_styles.dart';
 import 'account_change_password_screen.dart';
 import 'account_password_verify_screen.dart';
@@ -198,34 +199,25 @@ class _AccountPasswordCodeScreenState extends State<AccountPasswordCodeScreen> {
                     ),
                   ),
                   SizedBox(height: 28.h),
-                  TextField(
+                  Text(
+                    '인증번호',
+                    style: AccountFigmaStyles.fieldCaption.copyWith(
+                      color: AccountFigmaStyles.titleColor,
+                      fontSize: 14.sp,
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  AuthInputField(
                     controller: _codeController,
                     enabled: !_submitting,
                     keyboardType: TextInputType.number,
+                    hintText: '인증번호를 입력해주세요.',
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
                       LengthLimitingTextInputFormatter(6),
                     ],
-                    style: AppTypography.bodyMediumR.copyWith(
-                      color: AppColors.textPrimary,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: '인증번호를 입력해주세요.',
-                      filled: true,
-                      fillColor: AppColors.grey0,
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: const BorderSide(color: AppColors.border),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: const BorderSide(color: AppColors.border),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12.w,
-                        vertical: 16.h,
-                      ),
-                    ),
+                    fillColor: AppColors.grey0Alt,
+                    focusedBorderColor: AppColors.primary,
                   ),
                   SizedBox(height: 8.h),
                   Text(
