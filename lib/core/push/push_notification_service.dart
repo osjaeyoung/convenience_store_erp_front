@@ -8,6 +8,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/account/screens/account_inquiry_detail_screen.dart';
+import '../../features/job_seeker/screens/worker_contract_chat_detail_screen.dart';
+import '../../features/manager/screens/recruitment_application_detail_screen.dart';
 import '../../firebase_options.dart';
 
 @pragma('vm:entry-point')
@@ -37,6 +40,7 @@ class PushNotificationService {
   StreamSubscription<RemoteMessage>? _onOpenedSub;
   StreamSubscription<String>? _onTokenRefreshSub;
   String? _pendingRoute;
+  Map<String, dynamic>? _pendingData;
   bool _initialized = false;
 
   Future<void> initialize({
@@ -159,8 +163,10 @@ class PushNotificationService {
   void flushPendingNavigation() {
     if (_pendingRoute == null) return;
     final route = _pendingRoute!;
+    final data = _pendingData ?? {};
     _pendingRoute = null;
-    _navigate(route);
+    _pendingData = null;
+    _navigate(route, data);
   }
 
   Future<void> _requestPlatformLocalNotificationPermission() async {
@@ -249,20 +255,72 @@ class PushNotificationService {
   void _handleTapData(Map<String, dynamic> data) {
     final route = resolveRoute(data);
     if (route == null) return;
-    _navigate(route);
+    _navigate(route, data);
   }
 
-  void _navigate(String route) {
+  void _navigate(String route, Map<String, dynamic> data) {
     final context = _navigatorKey?.currentContext;
     if (context == null) {
       _pendingRoute = route;
+      _pendingData = data;
       return;
     }
 
     try {
       GoRouter.of(context).go(route);
+
+      // 상세 화면 진입은 라우팅 직후 (다음 프레임) 시도
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _tryPushDetailScreen(context, data);
+      });
     } catch (_) {
       _pendingRoute = route;
+      _pendingData = data;
+    }
+  }
+
+  void _tryPushDetailScreen(BuildContext context, Map<String, dynamic> data) {
+    final entityType = data['entity_type']?.toString();
+    final entityIdStr = data['entity_id']?.toString();
+    final branchIdStr = data['branch_id']?.toString();
+
+    if (entityType == null || entityType.isEmpty) return;
+    if (entityIdStr == null || entityIdStr.isEmpty) return;
+
+    final entityId = int.tryParse(entityIdStr);
+    if (entityId == null) return;
+    final branchId = branchIdStr != null ? int.tryParse(branchIdStr) : null;
+
+    final targetRole = data['target_role']?.toString().toLowerCase() ?? '';
+    final isManagerOrOwner = targetRole == 'manager' || targetRole == 'owner';
+    final isJobSeeker = targetRole == 'job_seeker' || targetRole == 'worker';
+
+    if (entityType == 'contract_chat') {
+      if (isJobSeeker) {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => WorkerContractChatDetailScreen(contractId: entityId),
+          ),
+        );
+      }
+    } else if (entityType == 'recruitment_application') {
+      if (isManagerOrOwner) {
+        if (branchId == null) return; // branch_id 필수
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => RecruitmentApplicationDetailScreen(
+              branchId: branchId,
+              applicationId: entityId,
+            ),
+          ),
+        );
+      }
+    } else if (entityType == 'inquiry') {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => AccountInquiryDetailScreen(inquiryId: entityId),
+        ),
+      );
     }
   }
 

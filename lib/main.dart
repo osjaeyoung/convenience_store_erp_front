@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -158,33 +160,56 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
     );
     _authBloc = AuthBloc(widget.authRepository)
       ..add(const AuthCheckRequested());
-    await PushNotificationService.instance.initialize(
-      navigatorKey: _rootNavigatorKey,
-      onTokenReceived: (token) async {
-        if (!widget.authRepository.isLoggedIn) return;
-        await widget.pushRepository.upsertDeviceToken(
-          token: token,
-          platform: PushNotificationService.platformName,
-        );
-      },
-    );
-
-    if (widget.authRepository.isLoggedIn) {
-      await PushNotificationService.instance.onUserAuthenticated();
-      if (!widget.authRepository.hasLoadedNotificationUnreadCount) {
-        try {
-          await widget.authRepository.refreshNotificationUnreadCount();
-        } catch (_) {}
-      }
-    }
 
     if (!mounted) return;
     setState(() {
       _isBootstrapped = true;
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      PushNotificationService.instance.flushPendingNavigation();
-    });
+    unawaited(_initializePushServices());
+  }
+
+  Future<void> _initializePushServices() async {
+    try {
+      await PushNotificationService.instance
+          .initialize(
+            navigatorKey: _rootNavigatorKey,
+            onTokenReceived: (token) async {
+              if (!widget.authRepository.isLoggedIn) return;
+              await widget.pushRepository.upsertDeviceToken(
+                token: token,
+                platform: PushNotificationService.platformName,
+              );
+            },
+          )
+          .timeout(const Duration(seconds: 8));
+
+      if (widget.authRepository.isLoggedIn) {
+        await _syncAuthenticatedPushState();
+      }
+    } catch (error) {
+      debugPrint('Push initialization skipped: $error');
+    } finally {
+      if (!mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        PushNotificationService.instance.flushPendingNavigation();
+      });
+    }
+  }
+
+  Future<void> _syncAuthenticatedPushState() async {
+    try {
+      await PushNotificationService.instance
+          .onUserAuthenticated()
+          .timeout(const Duration(seconds: 8));
+    } catch (error) {
+      debugPrint('Push auth sync skipped: $error');
+    }
+
+    if (!widget.authRepository.hasLoadedNotificationUnreadCount) {
+      try {
+        await widget.authRepository.refreshNotificationUnreadCount();
+      } catch (_) {}
+    }
   }
 
   @override
@@ -242,15 +267,9 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
             child: BlocListener<AuthBloc, AuthState>(
               listenWhen: (previous, current) =>
                   previous.status != current.status,
-              listener: (_, state) async {
+              listener: (_, state) {
                 if (state.status == AuthStatus.authenticated) {
-                  await PushNotificationService.instance.onUserAuthenticated();
-                  if (!widget.authRepository.hasLoadedNotificationUnreadCount) {
-                    try {
-                      await widget.authRepository
-                          .refreshNotificationUnreadCount();
-                    } catch (_) {}
-                  }
+                  unawaited(_syncAuthenticatedPushState());
                   PushNotificationService.instance.flushPendingNavigation();
                 }
               },

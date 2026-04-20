@@ -21,6 +21,7 @@
 
 - 상세 진입에는 최소 `entity_type`, `entity_id`가 필요
 - 경영/점장 상세는 대부분 `branch_id`도 필요
+- 단, `inquiry`, `owner_certification_result`처럼 **사용자 계정 기준 이벤트**는 `branch_id` 없이도 라우팅 가능하다.
 - 상세 조회 실패 시 앱은 크래시 없이 목록 화면 유지
 
 ---
@@ -187,6 +188,12 @@
 - `entity_id` (string/int, strongly recommended): 상세 리소스 ID
 - `notification_id` (string/int, optional): 앱 알림함 row 식별자
 
+예시 `entity_type`:
+- `contract_chat`
+- `recruitment_application`
+- `inquiry`
+- `owner_certification`
+
 ### 3-2) 최소 권장 payload
 
 ```json
@@ -208,11 +215,14 @@
 
 - `/manager?tab=4&recruitmentTab=1`
 - `/job-seeker?tab=3`
+- `/job-seeker`
 
 ### 4-2) fallback 매핑(type 기반)
 
 - `manager_alert`, `manager_contract`, `manager_notice` -> `/manager?tab=0`
 - `manager_recruitment`, `recruitment_application` -> `/manager?tab=4&recruitmentTab=1`
+- `owner_certification_result` -> `/manager?tab=0`
+- `user_inquiry_answer` -> `target_role=owner|manager`면 `/manager?tab=0`, `target_role=job_seeker`면 `/job-seeker`
 - `job_seeker_recruitment` -> `/job-seeker?tab=0`
 - `job_seeker_application` -> `/job-seeker?tab=1`
 - `job_seeker_contract` -> `/job-seeker?tab=3`
@@ -300,6 +310,67 @@
 - entity_id: `{application_id}`
 - branch_id: `{branch_id}`
 
+### 6-4) 관리자 문의 답변 등록/수정 시 (어드민 -> 문의 작성자)
+
+- 트리거:
+  - `POST /admin/inquiries/{inquiry_id}/answer`
+  - `PATCH /admin/inquiries/{inquiry_id}/answer`
+- 수신자: `user_inquiries.user_id`
+- title: `문의하신 내용에 답변이 등록되었습니다.`
+- body: `{inquiry_title}` 또는 `고객센터 답변을 확인해주세요.`
+- type: `user_inquiry_answer`
+- target_role:
+  - 문의 작성자가 `owner` 또는 `manager`면 해당 role
+  - 근로자/일반 유저면 `job_seeker`
+- target_route:
+  - `owner`, `manager` -> `/manager?tab=0`
+  - `job_seeker` -> `/job-seeker`
+- entity_type: `inquiry`
+- entity_id: `{inquiry_id}`
+- branch_id: 없음(선택)
+
+권장 payload 예시:
+
+```json
+{
+  "type": "user_inquiry_answer",
+  "target_role": "job_seeker",
+  "target_route": "/job-seeker",
+  "entity_type": "inquiry",
+  "entity_id": "501"
+}
+```
+
+### 6-5) 사업주 인증 승인/반려 시 (어드민 -> 경영주)
+
+- 트리거: `PATCH /admin/owner-certifications/{branch_id}`
+- 수신자: 해당 `branches.owner_user_id`
+- title:
+  - 승인 시: `[점포명] 사업주 인증이 승인되었습니다.`
+  - 반려 시: `[점포명] 사업주 인증이 반려되었습니다.`
+- body:
+  - 승인 시: `이제 점포 기능을 정상적으로 이용할 수 있습니다.`
+  - 반려 시: `반려 사유를 확인 후 다시 신청해주세요.`
+- type: `owner_certification_result`
+- target_role: `owner`
+- target_route: `/manager?tab=0`
+- entity_type: `owner_certification`
+- entity_id: `{branch_id}`
+- branch_id: `{branch_id}`
+
+권장 payload 예시:
+
+```json
+{
+  "type": "owner_certification_result",
+  "target_role": "owner",
+  "target_route": "/manager?tab=0",
+  "branch_id": "12",
+  "entity_type": "owner_certification",
+  "entity_id": "12"
+}
+```
+
 ---
 
 ## 7) 서버 구현 체크리스트
@@ -309,6 +380,9 @@
 - 알림 저장 시 `type`, `target_route`, `branch_id`, `entity_type`, `entity_id` 저장
 - 푸시 발송 실패와 앱 내 알림 저장 실패를 분리 로깅
 - 상세 진입 필요한 이벤트는 `branch_id + entity_type + entity_id`를 필수화
+- 관리자 액션 기반 푸시 추가:
+  - 문의 답변 등록/수정 시 문의 작성자에게 `user_inquiry_answer`
+  - 사업주 인증 승인/반려 시 경영주에게 `owner_certification_result`
 - 앱 알림함 API 운영:
   - `GET /push/notifications`
   - `PATCH /push/notifications/{notification_id}/read`
