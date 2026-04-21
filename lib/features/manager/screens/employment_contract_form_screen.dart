@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -508,7 +509,11 @@ class _EmploymentContractFormScreenState
     return m;
   }
 
-  void _showStandardCompletionMissingDialog(List<String> missing) {
+  void _showStandardCompletionMissingDialog(
+    List<String> missing, {
+    String? title,
+    String? subtitle,
+  }) {
     if (!mounted || missing.isEmpty) return;
     
     final barrierLabel = MaterialLocalizations.of(context).modalBarrierDismissLabel;
@@ -552,7 +557,7 @@ class _EmploymentContractFormScreenState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '입력이 필요합니다',
+                            title ?? '입력이 필요합니다',
                             style: AppTypography.heading3.copyWith(
                               fontSize: 18.sp,
                               color: AppColors.textPrimary,
@@ -561,7 +566,7 @@ class _EmploymentContractFormScreenState
                           ),
                           SizedBox(height: 16.h),
                           Text(
-                            '완료 저장 전 아래 항목을 채워 주세요. (직원관리 API 근로계약서 완료 필수 항목 기준)',
+                            subtitle ?? '완료 저장 전 아래 항목을 채워 주세요. (직원관리 API 근로계약서 완료 필수 항목 기준)',
                             style: AppTypography.bodyMediumR.copyWith(
                               fontSize: 14.sp,
                               color: AppColors.textSecondary,
@@ -713,9 +718,39 @@ class _EmploymentContractFormScreenState
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('저장 실패: $e')));
+        String errMsg = '저장 실패';
+        if (e is DioException && e.response?.statusCode == 400) {
+          final data = e.response?.data;
+          if (data != null && data is Map<String, dynamic> && data['detail'] != null) {
+            final detail = data['detail'];
+            if (detail is Map<String, dynamic>) {
+              if (detail['missing_fields_labels'] != null) {
+                final labelsMap = detail['missing_fields_labels'] as Map<String, dynamic>;
+                final labels = labelsMap.values.map((e) => e.toString()).toList();
+                if (labels.isNotEmpty) {
+                  _showStandardCompletionMissingDialog(
+                    labels,
+                    title: '알림',
+                    subtitle: detail['message']?.toString(),
+                  );
+                  setState(() => _loading = false);
+                  return;
+                }
+              }
+              if (detail['message'] != null) {
+                errMsg = detail['message'].toString();
+              }
+            } else if (detail is String) {
+              errMsg = detail;
+            }
+          }
+        } else {
+          errMsg = '$errMsg: $e';
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errMsg)),
+        );
       }
     } finally {
       if (mounted) setState(() => _loading = false);

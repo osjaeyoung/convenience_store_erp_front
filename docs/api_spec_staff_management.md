@@ -1083,6 +1083,79 @@ curl -X POST "${BASE}/api/v1/staff-management/branches/${BRANCH_ID}/employees/${
 - `missing_fields`: 누락된 form_values 키 목록
 - `missing_fields_labels`: 클라이언트 표시용 한글 라벨 맵
 
+### `400 Bad Request` 상세 가이드
+
+근로계약서 작성 화면에서 자주 만나는 `400`은 아래 네 가지 유형입니다.
+
+1. **완료 처리 필수값 누락**
+   - 조건: `status=completed`
+   - 원인: 템플릿별 필수 `form_values` 중 하나 이상이 비어 있음
+   - 응답 형식:
+```json
+{
+  "detail": {
+    "message": "완료 처리할 수 없습니다. 필수 입력 항목이 누락되었습니다.",
+    "missing_fields": ["contract_start_date", "job_description", "work_place"],
+    "missing_fields_labels": {
+      "contract_start_date": "근로개시일",
+      "job_description": "업무 내용",
+      "work_place": "근무 장소"
+    }
+  }
+}
+```
+
+2. **앱 연결 근로자에게 전달 가능한 상태가 아님**
+   - 조건: `standard_v1`, 직원이 앱 계정에 연결됨(`linked_user_id` 존재), `status=completed`
+   - 원인: 근로자 필드(`worker_address`, `worker_phone`, `worker_signature_text`)는 비어 있어도 채팅 전송으로 우회 가능하지만, 그 전에 사업장 필수 입력(연락처/주소/서명 등)이 부족하면 `400`
+   - 대표 응답:
+```json
+{
+  "detail": {
+    "message": "근로자에게 전달하려면 사업장 입력 항목(연락처·주소·서명 등)을 모두 채워주세요.",
+    "missing_fields": ["employer_phone", "employer_address", "employer_signature_text"],
+    "missing_fields_labels": {
+      "employer_phone": "사업주 전화",
+      "employer_address": "사업주 주소",
+      "employer_signature_text": "사업주 서명값"
+    }
+  }
+}
+```
+
+3. **이미 진행 중인 계약 채팅 존재**
+   - 조건: `standard_v1`, 앱 연결 근로자에게 `completed`로 보내려는 시점
+   - 원인: 같은 직원에 대해 `business_draft` 또는 `waiting_worker` 상태 계약이 이미 있음
+   - 대표 응답:
+```json
+{
+  "detail": {
+    "message": "이미 진행 중인 계약 채팅이 있습니다.",
+    "contract_id": 301
+  }
+}
+```
+
+4. **잘못된 상태값/템플릿값**
+   - `status`가 `draft|completed`가 아니면:
+```json
+{
+  "detail": "status는 draft 또는 completed여야 합니다."
+}
+```
+   - `template_version`이 `standard_v1|minor_standard_v1|guardian_consent_v1`가 아니면:
+```json
+{
+  "detail": "template_version은 standard_v1, minor_standard_v1, guardian_consent_v1 중 하나여야 합니다."
+}
+```
+
+### 프론트 처리 권장
+
+- `detail`이 **문자열**일 수도 있고, **객체**일 수도 있습니다.
+- 객체인 경우 `detail.message`, `detail.missing_fields`, `detail.missing_fields_labels`를 우선 사용하세요.
+- 표준 근로계약서에서 앱 연결 근로자이고 근로자 필드만 비어 있으면 항상 `400`이 나는 것은 아닙니다. 이 경우 서버가 `draft + waiting_worker`로 저장할 수 있습니다.
+
 #### standard_v1 (표준 근로계약서)
 
 **폼 UI ↔ API 필드 매핑 (계약서 화면 기준)**
@@ -1303,6 +1376,47 @@ files=@guardian-family-certificate.jpg
 
 ### Response Body (200)
 `22) 근로계약서 생성`의 Response와 동일
+
+### `400 Bad Request` 상세 가이드
+
+수정 API도 생성 API와 동일한 검증을 사용합니다. 차이점은 `merge_form_values` 때문에 **이번 요청에 안 보낸 값도 최종 병합 결과에 포함**된다는 점입니다.
+
+1. **`merge_form_values=true` (기본값)**
+   - 기존 저장값 + 이번 요청 `form_values`를 병합한 뒤 완료 검증
+   - 기존 계약에 값이 이미 들어 있으면 이번 요청에 생략해도 `400`이 아닐 수 있음
+
+2. **`merge_form_values=false`**
+   - 이번 요청 `form_values`만으로 전체 교체 후 완료 검증
+   - 따라서 기존에 채워져 있던 필수값도 이번 요청에 다시 안 보내면 `400`
+
+3. **대표적인 수정 시 400 예시**
+   - 완료 처리 필수값 누락:
+```json
+{
+  "detail": {
+    "message": "완료 처리할 수 없습니다. 필수 입력 항목이 누락되었습니다.",
+    "missing_fields": ["payment_method", "work_place"]
+  }
+}
+```
+   - 진행 중 계약 채팅 중복:
+```json
+{
+  "detail": {
+    "message": "이미 진행 중인 계약 채팅이 있습니다.",
+    "contract_id": 301
+  }
+}
+```
+   - 앱 연결 근로자 필수값 부족(연소 계약 포함):
+```json
+{
+  "detail": {
+    "message": "앱에 연결된 근로자입니다. 완료하려면 근로자 주소·연락처·서명이 필요합니다. 점장만 입력한 단계라면 status=draft로 저장하거나, 계약 채팅(contract-chat) API로 전송 후 근로자가 마무리하세요.",
+    "missing_fields": ["worker_address", "worker_phone", "worker_signature_text"]
+  }
+}
+```
 
 ---
 

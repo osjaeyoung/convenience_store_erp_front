@@ -460,56 +460,79 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     );
   }
 
+  Future<void> _showDailyWeeklySheet() async {
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: AppColors.grey0,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(height: 8.h),
+              Container(
+                width: 36.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: AppColors.grey100,
+                  borderRadius: BorderRadius.circular(999.r),
+                ),
+              ),
+              SizedBox(height: 12.h),
+              ListTile(
+                title: Text(
+                  '일별',
+                  style: AppTypography.bodyMediumR.copyWith(
+                    color: _isDailyView ? AppColors.primaryDark : AppColors.textPrimary,
+                  ),
+                ),
+                trailing: _isDailyView
+                    ? const Icon(Icons.check_rounded, color: AppColors.primaryDark)
+                    : null,
+                onTap: () => Navigator.of(context).pop(true),
+              ),
+              ListTile(
+                title: Text(
+                  '주별',
+                  style: AppTypography.bodyMediumR.copyWith(
+                    color: !_isDailyView ? AppColors.primaryDark : AppColors.textPrimary,
+                  ),
+                ),
+                trailing: !_isDailyView
+                    ? const Icon(Icons.check_rounded, color: AppColors.primaryDark)
+                    : null,
+                onTap: () => Navigator.of(context).pop(false),
+              ),
+              SizedBox(height: 8.h),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (result != null && result != _isDailyView && mounted) {
+      setState(() {
+        _isDailyView = result;
+        if (!_isDailyView) {
+          _weekSelectedDate = widget.today;
+          widget.onRefreshWeek(
+            _toIsoDate(_getWeekStart(_weekSelectedDate)),
+          );
+        }
+      });
+    }
+  }
+
   Widget _buildSelectorRow() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        PopupMenuButton<bool>(
-          initialValue: _isDailyView,
-          color: AppColors.grey0,
-          surfaceTintColor: AppColors.grey0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-          offset: const Offset(0, 40),
-          onSelected: (isDaily) {
-            if (_isDailyView == isDaily) return;
-            setState(() {
-              _isDailyView = isDaily;
-              if (!_isDailyView) {
-                _weekSelectedDate = widget.today;
-                widget.onRefreshWeek(
-                  _toIsoDate(_getWeekStart(_weekSelectedDate)),
-                );
-              }
-            });
-          },
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              value: true,
-              child: Text(
-                '일별',
-                style: AppTypography.bodyMediumR.copyWith(
-                  color: _isDailyView ? AppColors.primaryDark : AppColors.textPrimary,
-                ),
-              ),
-            ),
-            PopupMenuItem(
-              value: false,
-              child: Text(
-                '주별',
-                style: AppTypography.bodyMediumR.copyWith(
-                  color: !_isDailyView ? AppColors.primaryDark : AppColors.textPrimary,
-                ),
-              ),
-            ),
-          ],
-          child: IgnorePointer(
-            child: _SelectorChip(
-              label: _isDailyView ? '일별' : '주별',
-              onTap: () {},
-            ),
-          ),
+        _SelectorChip(
+          label: _isDailyView ? '일별' : '주별',
+          onTap: _showDailyWeeklySheet,
         ),
         _SelectorChip(
           label: _dragFilterEmployee?.name ?? '직원 미지정',

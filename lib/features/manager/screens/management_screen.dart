@@ -1064,21 +1064,69 @@ class _ManagementScreenState extends State<ManagementScreen>
     );
   }
 
+  Future<void> _showEmployeeInfoStatusSheet() async {
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: AppColors.grey0,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(height: 8.h),
+              Container(
+                width: 36.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: AppColors.grey100,
+                  borderRadius: BorderRadius.circular(999.r),
+                ),
+              ),
+              SizedBox(height: 12.h),
+              ListTile(
+                title: Text(
+                  '현직자',
+                  style: AppTypography.bodyMediumR.copyWith(
+                    color: _employeeInfoShowActive ? AppColors.primaryDark : AppColors.textPrimary,
+                  ),
+                ),
+                trailing: _employeeInfoShowActive
+                    ? const Icon(Icons.check_rounded, color: AppColors.primaryDark)
+                    : null,
+                onTap: () => Navigator.of(context).pop(true),
+              ),
+              ListTile(
+                title: Text(
+                  '퇴직자',
+                  style: AppTypography.bodyMediumR.copyWith(
+                    color: !_employeeInfoShowActive ? AppColors.primaryDark : AppColors.textPrimary,
+                  ),
+                ),
+                trailing: !_employeeInfoShowActive
+                    ? const Icon(Icons.check_rounded, color: AppColors.primaryDark)
+                    : null,
+                onTap: () => Navigator.of(context).pop(false),
+              ),
+              SizedBox(height: 8.h),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (result != null && result != _employeeInfoShowActive && mounted) {
+      setState(() => _employeeInfoShowActive = result);
+    }
+  }
+
   Widget _buildEmployeeInfoSelector() {
     return Align(
       alignment: Alignment.centerLeft,
-      child: PopupMenuButton<bool>(
-        offset: const Offset(0, 40),
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(minWidth: 0),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10.r),
-        ),
-        itemBuilder: (context) => [
-          const PopupMenuItem<bool>(value: true, child: Text('현직자')),
-          const PopupMenuItem<bool>(value: false, child: Text('퇴직자')),
-        ],
-        onSelected: (value) => setState(() => _employeeInfoShowActive = value),
+      child: GestureDetector(
+        onTap: _showEmployeeInfoStatusSheet,
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
           decoration: BoxDecoration(

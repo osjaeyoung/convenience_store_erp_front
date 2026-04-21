@@ -125,7 +125,7 @@ class HomeTodayWorkersSection extends StatelessWidget {
           child: Row(
             children: const [
               _HeaderCell('시간'),
-              _HeaderCell('근무자', textAlign: TextAlign.start),
+              _HeaderCell('근무자'),
               _HeaderCell('메모'),
               _HeaderCell('상태'),
             ],
@@ -391,17 +391,16 @@ class _LearnMoreButton extends StatelessWidget {
 }
 
 class _HeaderCell extends StatelessWidget {
-  const _HeaderCell(this.text, {this.textAlign = TextAlign.center});
+  const _HeaderCell(this.text);
 
   final String text;
-  final TextAlign textAlign;
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: Text(
         text,
-        textAlign: textAlign,
+        textAlign: TextAlign.center,
         style: AppTypography.bodySmallB.copyWith(
           color: AppColors.textSecondary,
           fontSize: 12.sp,
@@ -508,7 +507,7 @@ class _WorkerNameCell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SvgPicture.asset(

@@ -50,11 +50,13 @@ class RecruitmentScreen extends StatefulWidget {
   State<RecruitmentScreen> createState() => _RecruitmentScreenState();
 }
 
-class _RecruitmentScreenState extends State<RecruitmentScreen> {
+class _RecruitmentScreenState extends State<RecruitmentScreen>
+    with SingleTickerProviderStateMixin {
   static const int _minimumRecruitmentAge = 14;
   static const int _maximumRecruitmentAge = 99;
 
   final TextEditingController _searchController = TextEditingController();
+  late final TabController _tabController;
 
   int _selectedTabIndex = 0;
   int? _lastRequestedBranchId;
@@ -68,10 +70,26 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
   void initState() {
     super.initState();
     _selectedTabIndex = widget.initialTabIndex.clamp(0, 2);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: _selectedTabIndex,
+    );
+    _tabController.addListener(_onTabChanged);
+  }
+
+  void _onTabChanged() {
+    if (!_tabController.indexIsChanging) {
+      if (_selectedTabIndex != _tabController.index) {
+        setState(() => _selectedTabIndex = _tabController.index);
+      }
+    }
   }
 
   @override
   void dispose() {
+    _tabController.removeListener(_onTabChanged);
+    _tabController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -84,6 +102,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
       final nextIndex = widget.initialTabIndex.clamp(0, 2);
       if (_selectedTabIndex != nextIndex) {
         setState(() => _selectedTabIndex = nextIndex);
+        _tabController.animateTo(nextIndex);
       }
     }
   }
@@ -401,77 +420,112 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
       ),
       body: Column(
         children: [
-          _RecruitmentTopTabs(
-            selectedIndex: _selectedTabIndex,
-            onSelected: (index) => setState(() => _selectedTabIndex = index),
+          TabBar(
+            controller: _tabController,
+            padding: EdgeInsets.zero,
+            labelPadding: EdgeInsets.symmetric(horizontal: 16.w),
+            tabAlignment: TabAlignment.start,
+            dividerColor: AppColors.grey25,
+            dividerHeight: 1,
+            labelColor: AppColors.textPrimary,
+            unselectedLabelColor: AppColors.textTertiary,
+            labelStyle: AppTypography.bodyLargeB,
+            unselectedLabelStyle: AppTypography.bodyLargeB,
+            indicatorColor: AppColors.textPrimary,
+            indicatorSize: TabBarIndicatorSize.tab,
+            indicatorWeight: 1,
+            isScrollable: true,
+            tabs: const [
+              Tab(text: '채용 홈'),
+              Tab(text: '채용 게시판'),
+              Tab(text: '내 채용 게시글'),
+            ],
           ),
           Expanded(
-            child: _selectedTabIndex == 0
-                ? BlocConsumer<SelectedBranchCubit, int?>(
-                    listener: (context, branchId) {
-                      if (branchId != null) {
-                        _requestHome(branchId);
-                      }
-                    },
-                    builder: (context, branchId) {
-                      if (branchId == null) {
-                        return Center(
-                          child: Text(
-                            '지점을 선택해주세요.\n홈 탭에서 지점을 먼저 선택해주세요.',
-                            style: AppTypography.bodyMediumR.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                            textAlign: TextAlign.center,
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                BlocConsumer<SelectedBranchCubit, int?>(
+                  listener: (context, branchId) {
+                    if (branchId != null) {
+                      _requestHome(branchId);
+                    }
+                  },
+                  builder: (context, branchId) {
+                    if (branchId == null) {
+                      return Center(
+                        child: Text(
+                          '지점을 선택해주세요.\n홈 탭에서 지점을 먼저 선택해주세요.',
+                          style: AppTypography.bodyMediumR.copyWith(
+                            color: AppColors.textSecondary,
                           ),
+                          textAlign: TextAlign.center,
+                        ),
+                      );
+                    }
+
+                    return BlocBuilder<RecruitmentBloc, RecruitmentBlocState>(
+                      builder: (context, state) {
+                        if (state.branchId != branchId &&
+                            state.status != RecruitmentBlocStatus.loading &&
+                            _lastRequestedBranchId != branchId) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted) {
+                              _requestHome(branchId);
+                            }
+                          });
+                        }
+
+                        return _RecruitmentHomeTab(
+                          state: state,
+                          searchController: _searchController,
+                          genderLabel: _genderLabel,
+                          ageLabel: _ageLabel,
+                          regionLabel: _regionLabel,
+                          ratingLabel: _ratingLabel,
+                          onSubmittedSearch: _refreshCurrentBranch,
+                          onTapGender: _showGenderSheet,
+                          onTapAge: _showAgeDialog,
+                          onTapRegion: _showRegionSheet,
+                          onTapRating: _showRatingSheet,
+                          onRetry: () => _requestHome(branchId),
+                          onTapProfile: (employeeId) =>
+                              _openProfile(branchId, employeeId),
                         );
-                      }
-
-                      return BlocBuilder<RecruitmentBloc, RecruitmentBlocState>(
-                        builder: (context, state) {
-                          if (state.branchId != branchId &&
-                              state.status != RecruitmentBlocStatus.loading &&
-                              _lastRequestedBranchId != branchId) {
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              if (mounted) {
-                                _requestHome(branchId);
-                              }
-                            });
-                          }
-
-                          return _RecruitmentHomeTab(
-                            state: state,
-                            searchController: _searchController,
-                            genderLabel: _genderLabel,
-                            ageLabel: _ageLabel,
-                            regionLabel: _regionLabel,
-                            ratingLabel: _ratingLabel,
-                            onSubmittedSearch: _refreshCurrentBranch,
-                            onTapGender: _showGenderSheet,
-                            onTapAge: _showAgeDialog,
-                            onTapRegion: _showRegionSheet,
-                            onTapRating: _showRatingSheet,
-                            onRetry: () => _requestHome(branchId),
-                            onTapProfile: (employeeId) =>
-                                _openProfile(branchId, employeeId),
-                          );
-                        },
-                      );
-                    },
-                  )
-                : BlocBuilder<SelectedBranchCubit, int?>(
-                    builder: (context, branchId) {
-                      if (branchId == null) {
-                        return const _TabPlaceholderView(title: '지점을 선택해주세요.');
-                      }
-                      final branchName = _selectedBranchName(context, branchId);
-                      return RecruitmentPostingListTab(
-                        branchId: branchId,
-                        branchName: branchName,
-                        mine: _selectedTabIndex == 2,
-                        refreshTick: 0,
-                      );
-                    },
-                  ),
+                      },
+                    );
+                  },
+                ),
+                BlocBuilder<SelectedBranchCubit, int?>(
+                  builder: (context, branchId) {
+                    if (branchId == null) {
+                      return const _TabPlaceholderView(title: '지점을 선택해주세요.');
+                    }
+                    final branchName = _selectedBranchName(context, branchId);
+                    return RecruitmentPostingListTab(
+                      branchId: branchId,
+                      branchName: branchName,
+                      mine: false,
+                      refreshTick: 0,
+                    );
+                  },
+                ),
+                BlocBuilder<SelectedBranchCubit, int?>(
+                  builder: (context, branchId) {
+                    if (branchId == null) {
+                      return const _TabPlaceholderView(title: '지점을 선택해주세요.');
+                    }
+                    final branchName = _selectedBranchName(context, branchId);
+                    return RecruitmentPostingListTab(
+                      branchId: branchId,
+                      branchName: branchName,
+                      mine: true,
+                      refreshTick: 0,
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -548,84 +602,6 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
   }
 }
 
-class _RecruitmentTopTabs extends StatelessWidget {
-  const _RecruitmentTopTabs({
-    required this.selectedIndex,
-    required this.onSelected,
-  });
-
-  final int selectedIndex;
-  final ValueChanged<int> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    const tabs = ['채용 홈', '채용 게시판', '내 채용 게시글'];
-
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.grey0,
-        border: Border(bottom: BorderSide(color: AppColors.grey25)),
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minWidth: MediaQuery.sizeOf(context).width,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              for (var i = 0; i < tabs.length; i++)
-                _RecruitmentTopTabItem(
-                  label: tabs[i],
-                  selected: selectedIndex == i,
-                  onTap: () => onSelected(i),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RecruitmentTopTabItem extends StatelessWidget {
-  const _RecruitmentTopTabItem({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        height: 52,
-        padding: EdgeInsets.symmetric(horizontal: 16.w),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: selected ? AppColors.textPrimary : Colors.transparent,
-            ),
-          ),
-        ),
-        child: Text(
-          label,
-          style: AppTypography.bodyLargeB.copyWith(
-            color: selected ? AppColors.textPrimary : AppColors.textTertiary,
-            height: 24 / 16,
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _RecruitmentHomeTab extends StatelessWidget {
   const _RecruitmentHomeTab({
