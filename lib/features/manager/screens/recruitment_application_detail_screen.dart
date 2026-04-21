@@ -267,7 +267,7 @@ class _ApplicationHeroCard extends StatelessWidget {
             _ApplicationInfoRow(
               label: '이력서',
               value: _valueText(profile.resumeTitle!),
-            ),
+          ),
           SizedBox(height: 8.h),
           _ApplicationInfoRow(
             label: '평점',
@@ -434,11 +434,11 @@ class _ApplicationWorkHistoryCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    items[i].periodLabel ?? '-',
-                    style: AppTypography.bodyMediumR.copyWith(
-                      fontSize: 14.sp,
-                      height: 19 / 14,
-                      color: AppColors.textSecondary,
+                      items[i].periodLabel ?? '-',
+                      style: AppTypography.bodyMediumR.copyWith(
+                        fontSize: 14.sp,
+                        height: 19 / 14,
+                        color: AppColors.textSecondary,
                     ),
                   ),
                   SizedBox(width: 16.w),

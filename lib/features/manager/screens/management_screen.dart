@@ -200,29 +200,38 @@ class _ManagementScreenState extends State<ManagementScreen>
                                   textAlign: TextAlign.center,
                                 ),
                               )
-                            : state.isLoading
-                                ? const Center(child: CircularProgressIndicator())
-                                : TabBarView(
+                            : Stack(
+                                children: [
+                                  TabBarView(
                                     controller: _tabController,
                                     physics: _isWorkAssignmentDragMode
                                         ? const NeverScrollableScrollPhysics()
                                         : null,
                                     children: [
                                       _buildDayScheduleTab(
-                                    context,
-                                    branchId,
-                                    state,
+                                        context,
+                                        branchId,
+                                        state,
+                                      ),
+                                      _buildWeekScheduleTab(
+                                        context,
+                                        branchId,
+                                        state,
+                                      ),
+                                      _buildEmployeeInfoTab(
+                                        context,
+                                        branchId,
+                                        state,
+                                      ),
+                                    ],
                                   ),
-                                  _buildWeekScheduleTab(
-                                    context,
-                                    branchId,
-                                    state,
-                                  ),
-                                  _buildEmployeeInfoTab(
-                                    context,
-                                    branchId,
-                                    state,
-                                  ),
+                                  if (state.isLoading)
+                                    Container(
+                                      color: AppColors.grey0.withValues(alpha: 0.5),
+                                      child: const Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                    ),
                                 ],
                               ),
                       ),
