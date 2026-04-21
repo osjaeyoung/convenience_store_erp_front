@@ -32,7 +32,8 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _hireDateController = TextEditingController();
   bool _isSearching = false;
-  Map<String, dynamic>? _searchResult; // 검색 결과 (있으면 버튼이 '등록'으로 변경)
+  List<Map<String, dynamic>> _searchResults = [];
+  Map<String, dynamic>? _selectedUser; // 선택된 검색 결과 (있으면 버튼이 '등록'으로 변경)
   Map<String, dynamic>? _registeredEmployee;
   String? _errorMessage;
   String? _editableHireDate; // 등록 후 수정 가능한 입사일
@@ -41,7 +42,24 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
   bool _isProcessingRetirement = false;
 
   @override
+  void initState() {
+    super.initState();
+    _phoneController.addListener(_onPhoneChanged);
+  }
+
+  void _onPhoneChanged() {
+    if (_selectedUser != null || _searchResults.isNotEmpty) {
+      setState(() {
+        _selectedUser = null;
+        _searchResults = [];
+        _errorMessage = null;
+      });
+    }
+  }
+
+  @override
   void dispose() {
+    _phoneController.removeListener(_onPhoneChanged);
     _phoneController.dispose();
     _hireDateController.dispose();
     super.dispose();
@@ -60,7 +78,8 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
     setState(() {
       _isSearching = true;
       _errorMessage = null;
-      _searchResult = null;
+      _searchResults = [];
+      _selectedUser = null;
     });
 
     try {
@@ -72,19 +91,19 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
       final users = (data['users'] as List?)?.cast<Map<String, dynamic>>() ?? [];
       if (users.isEmpty) {
         setState(() {
-          _searchResult = null;
+          _searchResults = [];
           _errorMessage = '검색 결과가 없습니다.';
         });
       } else {
         setState(() {
-          _searchResult = users.first;
+          _searchResults = users;
           _errorMessage = null;
         });
       }
     } catch (e) {
       setState(() {
-        _searchResult = null;
-        _errorMessage = '검색 중 오류가 발생했습니다. (API 미구현 시 발생)';
+        _searchResults = [];
+        _errorMessage = '검색 중 오류가 발생했습니다.';
       });
     } finally {
       if (mounted) {
@@ -94,8 +113,8 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
   }
 
   void _onRegister() {
-    if (_searchResult == null) return;
-    _showConfirmModal(_searchResult!);
+    if (_selectedUser == null) return;
+    _showConfirmModal(_selectedUser!);
   }
 
   void _showConfirmModal(Map<String, dynamic> user) {
@@ -349,12 +368,43 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
               contentPadding:
                   EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
             ),
-            onSubmitted: (_) => _searchResult == null ? _onSearch() : _onRegister(),
+            onSubmitted: (_) => _selectedUser == null ? _onSearch() : _onRegister(),
           ),
-          if (_searchResult != null) ...[
+          if (_searchResults.isNotEmpty && _selectedUser == null) ...[
+            SizedBox(height: 8.h),
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.grey0,
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(color: AppColors.grey50),
+              ),
+              child: ListView.separated(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _searchResults.length,
+                separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.grey50),
+                itemBuilder: (context, index) {
+                  final user = _searchResults[index];
+                  final name = user['name'] as String? ?? '-';
+                  final phone = user['phone_number'] as String? ?? '-';
+                  return ListTile(
+                    title: Text(name, style: AppTypography.bodyMediumM),
+                    subtitle: Text(phone, style: AppTypography.bodySmall),
+                    onTap: () {
+                      setState(() {
+                        _selectedUser = user;
+                      });
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+          if (_selectedUser != null) ...[
             SizedBox(height: 8.h),
             Text(
-              _searchResult!['name'] as String? ?? '-',
+              _selectedUser!['name'] as String? ?? '-',
               style: AppTypography.bodyMediumM.copyWith(
                 color: AppColors.textPrimary,
                 fontSize: 14.sp,
@@ -376,7 +426,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
             child: FilledButton(
               onPressed: _isSearching
                   ? null
-                  : () => _searchResult != null ? _onRegister() : _onSearch(),
+                  : () => _selectedUser != null ? _onRegister() : _onSearch(),
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.primaryDark,
                 foregroundColor: AppColors.grey0,
@@ -385,7 +435,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                 ),
               ),
               child: Text(
-                _searchResult != null ? '등록' : '검색',
+                _selectedUser != null ? '등록' : '검색',
                 style: AppTypography.bodyLargeB.copyWith(
                   color: AppColors.grey0,
                   fontSize: 16.sp,

@@ -346,8 +346,8 @@
 
 ## 8-1) 앱 가입 사용자 연락처 검색 (근무자 등록용)
 
-- `GET /staff-management/branches/{branch_id}/employees/search-users?phone=01012341234`
-- 앱에 가입된 사용자 중 연락처로 검색. 해당 점포에 아직 등록되지 않은 사용자만 반환.
+- `GET /staff-management/branches/{branch_id}/employees/search-users?phone=0101`
+- 앱에 가입된 사용자 중 연락처로 부분 일치 검색 (예: 번호 일부만 입력해도 일치하는 사용자 목록 반환). 해당 점포에 아직 등록되지 않은 사용자만 반환.
 - **점장/경영주 자기 등록**: 자기 번호를 입력하면 본인도 결과에 포함됨 (연락처 형식 차이 `010-1234-5678` vs `01012345678` 등 대응).
 
 ### Request Body
