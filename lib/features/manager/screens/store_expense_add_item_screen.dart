@@ -9,7 +9,10 @@ import '../../../data/models/store_expense/store_expense_month.dart';
 import '../../../data/repositories/store_expense_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import '../../../widgets/file_or_gallery_picker.dart';
 import '../../auth/widgets/auth_input_field.dart';
+import 'picked_file_inline_preview.dart';
+import 'employee_etc_record_inline_preview.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class StoreExpenseAddItemScreen extends StatefulWidget {
@@ -261,26 +264,66 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
                 children: [
                   for (final f in _pickedFiles)
                     Padding(
-                      padding: EdgeInsets.only(bottom: 6.h),
-                      child: Text(
-                        '• ${f.name}',
-                        style: AppTypography.bodySmallM.copyWith(
-                          fontSize: 12.sp,
-                          color: AppColors.textSecondary,
-                        ),
+                      padding: EdgeInsets.only(bottom: 12.h),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12.r),
+                              border: Border.all(color: AppColors.grey50),
+                            ),
+                            clipBehavior: Clip.hardEdge,
+                            child: _buildInlinePreview(f),
+                          ),
+                          Positioned(
+                            top: -8,
+                            right: -8,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _pickedFiles.remove(f);
+                                });
+                              },
+                              child: Container(
+                                padding: EdgeInsets.all(4.r),
+                                decoration: const BoxDecoration(
+                                  color: AppColors.grey200,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.close,
+                                  size: 16,
+                                  color: AppColors.grey0,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    '첨부 파일은 현재 메타데이터 저장만 지원합니다.',
-                    style: AppTypography.bodySmallR.copyWith(
-                      fontSize: 12.sp,
-                      color: AppColors.textTertiary,
-                    ),
-                  ),
                 ],
               ),
       ),
+    );
+  }
+
+  Widget _buildInlinePreview(PlatformFile f) {
+    final path = f.path;
+    final isRemoteOrS3 = path != null && (path.startsWith('http') || path.contains('amazonaws.com') || path.startsWith('expenses/'));
+    
+    if (isRemoteOrS3) {
+      return EtcRecordInlineFilePreview(
+        fileUrl: path,
+        height: 280,
+        displayFileName: f.name,
+      );
+    }
+    
+    return PickedFileInlinePreview(
+      key: ValueKey<String>('${f.name}_${f.size}'),
+      file: f,
+      height: 280,
     );
   }
 
@@ -343,15 +386,15 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
   }
 
   Future<void> _pickFiles() async {
-    final result = await FilePicker.platform.pickFiles(
-      allowMultiple: true,
-      withData: false,
+    final result = await pickMultipleFilesOrGallery(
+      context: context,
+      allowedExtensions: const ['pdf', 'png', 'jpg', 'jpeg', 'webp'],
     );
     if (result == null || !mounted) return;
     setState(() {
       _pickedFiles
         ..clear()
-        ..addAll(result.files);
+        ..addAll(result);
     });
   }
 
@@ -369,23 +412,23 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
     setState(() => _saving = true);
     try {
       final repo = context.read<StoreExpenseRepository>();
-      final fileDrafts = _pickedFiles
-          .map(
-            (file) => StoreExpenseFileDraft(
-              fileKey: file.path ?? file.name,
-              fileUrl: file.path ?? file.name,
-              fileName: file.name,
-            ),
-          )
-          .toList();
-      await repo.createStep2(
+      final createdItem = await repo.createStep2(
         branchId: widget.branchId,
         expenseMonthId: widget.expenseMonthId,
         expenseDate: DateFormat('yyyy-MM-dd').format(date),
         categoryCode: category.categoryCode,
         amount: amount,
-        files: fileDrafts,
+        files: [], // 메타데이터 저장 (파일 없음)
       );
+
+      if (_pickedFiles.isNotEmpty) {
+        await repo.appendItemFiles(
+          branchId: widget.branchId,
+          expenseItemId: createdItem.expenseItemId,
+          files: _pickedFiles,
+        );
+      }
+
       if (!mounted) return;
       Navigator.pop<bool>(context, true);
     } catch (e) {

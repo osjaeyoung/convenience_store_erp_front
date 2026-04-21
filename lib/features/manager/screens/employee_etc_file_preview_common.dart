@@ -22,6 +22,10 @@ class EtcFilePreviewCommon {
     final t = raw.trim();
     if (t.isEmpty) return t;
     if (t.startsWith('http://') || t.startsWith('https://')) return t;
+    if (t.startsWith('expenses/')) {
+      // S3 Key로 전달되는 경우 대응 (하드코딩된 예시 버킷 구조, 혹은 환경변수 사용 권장)
+      return 'https://convenience-store-erp.s3.ap-northeast-2.amazonaws.com/$t';
+    }
     try {
       final base = Uri.parse(ApiConfig.baseUrl.trim());
       final origin = base.origin;
@@ -89,6 +93,15 @@ class EtcFilePreviewCommon {
 
   static bool isImageUrl(String url) {
     final path = Uri.tryParse(url)?.path.toLowerCase() ?? '';
+    if (path.isEmpty && url.isNotEmpty) {
+      // url_launcher나 Uri.tryParse가 실패할 경우 단순히 문자열 검색으로 fallback
+      final lowerUrl = url.toLowerCase();
+      return lowerUrl.endsWith('.png') ||
+          lowerUrl.endsWith('.jpg') ||
+          lowerUrl.endsWith('.jpeg') ||
+          lowerUrl.endsWith('.webp') ||
+          lowerUrl.endsWith('.gif');
+    }
     return path.endsWith('.png') ||
         path.endsWith('.jpg') ||
         path.endsWith('.jpeg') ||

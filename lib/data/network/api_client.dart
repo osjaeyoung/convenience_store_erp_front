@@ -218,6 +218,9 @@ class ApiClient {
       return out;
     }
     if (value is List) {
+      if (value.isNotEmpty && value.first is int) {
+        return '«byte array (${value.length} bytes)»';
+      }
       return value.map(_redactForLog).toList();
     }
     if (value is String) {

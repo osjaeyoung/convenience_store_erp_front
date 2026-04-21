@@ -81,18 +81,13 @@ class _EmploymentContractFileAttachScreenState
 
     setState(() => _submitting = true);
     try {
-      final uploaded = PayrollFileStorageService().buildContractsAttachmentMetadata(
-        branchId: widget.branchId,
-        employeeId: widget.employeeId,
-        file: picked,
-      );
       final repo = context.read<StaffManagementRepository>();
       await repo.createEmploymentContractFileOnly(
         branchId: widget.branchId,
         employeeId: widget.employeeId,
         templateVersion: widget.templateVersion,
         title: _titleCtrl.text.trim(),
-        files: [uploaded.toApiMap()],
+        files: [picked],
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

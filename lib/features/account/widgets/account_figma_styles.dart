@@ -20,9 +20,9 @@ class AccountFigmaStyles {
 
   static TextStyle get rowTitle => TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 14.sp,
+    fontSize: 16.sp,
     fontWeight: FontWeight.w500,
-    height: 20 / 14,
+    height: 24 / 16,
     color: rowLabelColor,
   );
 

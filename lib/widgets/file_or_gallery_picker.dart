@@ -67,6 +67,68 @@ Future<PlatformFile?> pickSingleFileOrGallery({
   }
 }
 
+Future<List<PlatformFile>?> pickMultipleFilesOrGallery({
+  required BuildContext context,
+  required List<String> allowedExtensions,
+  bool readBytesFromFilePicker = false,
+}) async {
+  final source = await _showUploadSourceSheet(context);
+  if (source == null || !context.mounted) return null;
+
+  try {
+    switch (source) {
+      case UploadSourceType.file:
+        FilePickerResult? result;
+        try {
+          result = await FilePicker.platform.pickFiles(
+            type: allowedExtensions.isEmpty ? FileType.any : FileType.custom,
+            allowedExtensions: allowedExtensions.isEmpty ? null : allowedExtensions,
+            allowMultiple: true,
+            withData: kIsWeb || readBytesFromFilePicker,
+          );
+        } on MissingPluginException {
+          result = await FilePicker.platform.pickFiles(
+            type: FileType.any,
+            allowMultiple: true,
+            withData: kIsWeb || readBytesFromFilePicker,
+          );
+        }
+        if (result == null || result.files.isEmpty) return null;
+        return result.files;
+      case UploadSourceType.gallery:
+        final picker = ImagePicker();
+        final pickedFiles = await picker.pickMultiImage();
+        if (pickedFiles.isEmpty) return null;
+        
+        List<PlatformFile> result = [];
+        for (final picked in pickedFiles) {
+          final bytes = await picked.readAsBytes();
+          result.add(PlatformFile(
+            name: picked.name.trim().isEmpty ? 'image.jpg' : picked.name.trim(),
+            size: bytes.length,
+            bytes: bytes,
+            path: picked.path.isEmpty ? null : picked.path,
+          ));
+        }
+        return result;
+    }
+  } on MissingPluginException {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('현재 실행 환경에서 이 기능을 사용할 수 없습니다.')),
+      );
+    }
+    return null;
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('파일 선택 실패: $e')),
+      );
+    }
+    return null;
+  }
+}
+
 Future<UploadSourceType?> _showUploadSourceSheet(BuildContext context) {
   return showModalBottomSheet<UploadSourceType>(
     context: context,

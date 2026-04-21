@@ -349,6 +349,12 @@
 {
   "items": [
     {
+      "policy_type": "age",
+      "title": "만 N세 이상",
+      "updated_at": "2026-04-07T12:04:00Z",
+      "is_configured": true
+    },
+    {
       "policy_type": "terms",
       "title": "이용약관",
       "updated_at": "2026-04-07T12:05:00Z",
@@ -359,6 +365,18 @@
       "title": "개인정보처리방침",
       "updated_at": "2026-04-07T12:06:00Z",
       "is_configured": true
+    },
+    {
+      "policy_type": "third_party",
+      "title": "개인정보 제3자 제공 동의",
+      "updated_at": "2026-04-07T12:07:00Z",
+      "is_configured": true
+    },
+    {
+      "policy_type": "marketing",
+      "title": "마케팅 정보 수신 동의",
+      "updated_at": "2026-04-07T12:08:00Z",
+      "is_configured": true
     }
   ]
 }
@@ -366,7 +384,7 @@
 
 ### 비고
 
-- 고정 정책 타입은 `terms`, `privacy`
+- 고정 정책 타입은 `age`, `terms`, `privacy`, `third_party`, `marketing`
 - 아직 문서가 저장되지 않은 경우 `is_configured=false`, `updated_at=null`
 
 ---
@@ -377,7 +395,7 @@
 
 ### Path
 
-- `policy_type`: `terms` | `privacy`
+- `policy_type`: `age` | `terms` | `privacy` | `third_party` | `marketing`
 
 ### Response (200)
 

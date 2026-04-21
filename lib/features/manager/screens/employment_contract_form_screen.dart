@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -508,66 +510,147 @@ class _EmploymentContractFormScreenState
 
   void _showStandardCompletionMissingDialog(List<String> missing) {
     if (!mounted || missing.isEmpty) return;
-    showDialog<void>(
+    
+    final barrierLabel = MaterialLocalizations.of(context).modalBarrierDismissLabel;
+    showGeneralDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(
-          '입력이 필요합니다',
-          style: AppTypography.heading3.copyWith(fontSize: 18.sp),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '완료 저장 전 아래 항목을 채워 주세요. (직원관리 API 근로계약서 완료 필수 항목 기준)',
-                style: AppTypography.bodyMediumR.copyWith(
-                  fontSize: 13.sp,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              SizedBox(height: 14.h),
-              ...missing.map(
-                (e) => Padding(
-                  padding: EdgeInsets.only(bottom: 8.h),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '• ',
-                        style: AppTypography.bodyMediumM.copyWith(
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          e,
-                          style: AppTypography.bodyMediumR.copyWith(
-                            fontSize: 14.sp,
-                            height: 1.35,
-                          ),
-                        ),
-                      ),
-                    ],
+      barrierDismissible: true,
+      barrierLabel: barrierLabel,
+      barrierColor: Colors.transparent,
+      transitionDuration: const Duration(milliseconds: 220),
+      pageBuilder: (dialogContext, animation, secondaryAnimation) {
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => Navigator.pop(dialogContext),
+                child: ClipRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.48),
+                    ),
                   ),
                 ),
               ),
-            ],
-          ),
-        ),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.grey0,
-              shape: _modalActionButtonShape,
             ),
-            child: const Text('확인'),
+            Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 32.w),
+                child: Material(
+                  color: AppColors.grey0,
+                  borderRadius: BorderRadius.circular(22.r),
+                  clipBehavior: Clip.antiAlias,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 360),
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(24.w, 30.h, 24.w, 20.h),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '입력이 필요합니다',
+                            style: AppTypography.heading3.copyWith(
+                              fontSize: 18.sp,
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          SizedBox(height: 16.h),
+                          Text(
+                            '완료 저장 전 아래 항목을 채워 주세요. (직원관리 API 근로계약서 완료 필수 항목 기준)',
+                            style: AppTypography.bodyMediumR.copyWith(
+                              fontSize: 14.sp,
+                              color: AppColors.textSecondary,
+                              height: 1.4,
+                            ),
+                          ),
+                          SizedBox(height: 16.h),
+                          Flexible(
+                            child: SingleChildScrollView(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: missing.map((e) => Padding(
+                                  padding: EdgeInsets.only(bottom: 8.h),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Padding(
+                                        padding: EdgeInsets.only(top: 8.h, right: 6.w),
+                                        child: Container(
+                                          width: 4.w,
+                                          height: 4.w,
+                                          decoration: const BoxDecoration(
+                                            color: AppColors.primary,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: Text(
+                                          e,
+                                          style: AppTypography.bodyMediumR.copyWith(
+                                            fontSize: 14.sp,
+                                            color: AppColors.textPrimary,
+                                            height: 1.4,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )).toList(),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 24.h),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: SizedBox(
+                              height: 40.h,
+                              child: FilledButton(
+                                onPressed: () => Navigator.pop(dialogContext),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: AppColors.grey0,
+                                  padding: EdgeInsets.symmetric(horizontal: 24.w),
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8.r),
+                                  ),
+                                ),
+                                child: Text(
+                                  '확인',
+                                  style: AppTypography.bodyMediumB.copyWith(
+                                    color: AppColors.grey0,
+                                    fontSize: 14.sp,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(
+          opacity: CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
           ),
-        ],
-      ),
+          child: child,
+        );
+      },
     );
   }
 

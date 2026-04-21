@@ -108,6 +108,29 @@
 
 ---
 
+## 2-1) 구직자 프로필 열람 기록 삭제
+
+- `DELETE /recruitment/branches/{branch_id}/job-seekers/{employee_id}/open`
+- `최근 열람 구직자` 목록에서 특정 근로자를 제거할 때 사용
+
+### Request Body
+없음
+
+### Response Body (200)
+
+```json
+{
+  "deleted": true,
+  "employee_id": 602
+}
+```
+
+### 실패 케이스
+
+- 해당 사용자/지점 조합에 저장된 최근 열람 기록이 없으면 `404`
+
+---
+
 ## 3) 구직자 프로필 조회
 
 - `GET /recruitment/branches/{branch_id}/job-seekers/{employee_id}`
@@ -432,6 +455,7 @@
 - 기존 `BranchEmployee` 지원자는 `application_source="employee"`
 - 근로자 앱에서 직접 지원한 경우 `application_source="worker"`
 - 근로자 앱 지원건은 단일 상세/삭제 라우트를 유지하기 위해 `application_id`가 **음수**로 내려갑니다
+- 근로자 앱 지원건 카드의 `employee_name`은 회원가입 이름 우선, `desired_location`은 이력서 기준 주소 우선으로 내려갑니다
 
 ---
 
@@ -441,6 +465,10 @@
 - Figma `지원현황 상세` 화면
 - 응답은 구직자 프로필과 동일 포맷이며 `contact_action_label`이 `삭제`
 - 근로자 앱 지원건은 `source_type="worker"`, `applicant_user_id`, `resume_title`이 함께 내려갈 수 있음
+- 근로자 앱 지원건 데이터 우선순위
+  - `phone_number`: 회원가입 프로필(`user_profiles.phone_number`) 기준
+  - `employee_name`: 회원가입 이름(`users.full_name`) 우선, 없으면 지원 당시 snapshot 이름 fallback
+  - `desired_locations`, `career_label`, `work_histories`: 이력서 기준 우선, 없으면 지원 당시 snapshot / 기본값 fallback
 
 ### Response Body (200)
 `3) 구직자 프로필 조회`와 동일 (단, `contact_action_label="삭제"`)
@@ -471,6 +499,11 @@
   "resume_title": "김현수_이력서"
 }
 ```
+
+### 비고
+
+- 근로자 앱 지원건의 `희망 근무지`는 이력서 작성 시 입력한 값 기준으로 내려갑니다. 현재 서버 저장 구조상 이 값은 회원가입 프로필 주소(`user_profiles.address`)에 동기화되어 관리됩니다.
+- 근로자 앱 지원건의 `전화번호`는 항상 회원가입 프로필 전화번호 기준으로 내려갑니다.
 
 ---
 

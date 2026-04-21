@@ -13,8 +13,9 @@
 
 ### S3 첨부 `file_url` (서버 env만, 프론트 env 불필요)
 
-- **앱·웹 프론트**에는 `S3_PUBLIC_BASE_URL` 같은 공개 URL용 설정을 **둘 필요 없음**. 업로드 후 API에는 **`file_key`**(와 `file_name`)만 넘기고 **`file_url`은 생략**해도 됨.
-- **백엔드** `.env`의 `S3_BUCKET_NAME` / `S3_REGION`(및 선택 `S3_PUBLIC_BASE_URL`, `S3_ENDPOINT_URL`)으로 서버가 URL을 합성해 저장하고, 응답 JSON의 `file_url`·`s3_file_url` 등에 채움. (급여명세·근로계약·점포경비 첨부 등 동일 동작 — 구현: `app/core/s3_public_url.py`)
+- **권장 업로드 방식**: 앱/웹은 파일 바이너리를 `multipart/form-data` 로 백엔드에 보내고, **백엔드가 S3에 직접 업로드**합니다. Flutter/웹이 S3 object key를 직접 만들거나 PUT 업로드를 먼저 수행할 필요가 없습니다.
+- **백엔드**는 `.env`의 `S3_BUCKET_NAME` / `S3_REGION`(및 선택 `S3_PUBLIC_BASE_URL`, `S3_ENDPOINT_URL`)을 사용해 업로드 및 URL 합성을 처리하고, 응답 JSON의 `file_url`·`s3_file_url` 등에 채웁니다. (급여명세·근로계약·점포경비 첨부 등 동일 동작 — 구현: `app/core/s3_public_url.py`)
+- 기존 **JSON `file_key` 저장 방식도 하위 호환으로 유지**되지만, 신규 클라이언트는 아래 명세의 multipart 요청을 사용하세요.
 - **비공개 S3 버킷**이면 공개 객체 URL로 GET 시 403이 납니다. 이때는 `.env`에 `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`(및 동일 버킷용 IAM에 `s3:GetObject`)를 두면, 응답의 `file_url` 등이 **짧은 수명의 presigned GET URL** 로 내려가므로 앱은 그 URL로 PDF 미리보기·다운로드하면 됩니다. (구현: `app/core/s3_presign.py`, `S3_PRESIGNED_GET_EXPIRE_SECONDS` 선택.)
 
 ## 목표 범위
@@ -719,22 +720,20 @@
 ## 16-1) 급여명세 파일 전용 등록
 
 - `POST /staff-management/branches/{branch_id}/employees/{employee_id}/payroll-statements/file-only`
-- **글 데이터 없이 파일만으로 등록**: 연/월만 지정하고 수치 데이터는 0으로 저장. `files` 필수(최소 1개).
+- **글 데이터 없이 파일만으로 등록**: 연/월만 지정하고 수치 데이터는 0으로 저장.
+- **권장 요청 형식**: `multipart/form-data`
 
-### Request Body
-```json
-{
-  "year": 2025,
-  "month": 12,
-  "files": [
-    {
-      "file_key": "payroll/branch-1/employee-501/2025-12.pdf",
-      "file_url": "https://your-bucket.s3.../2025-12.pdf",
-      "file_name": "2025-12-급여명세.pdf"
-    }
-  ]
-}
+### Request (`multipart/form-data`)
+```text
+year=2025
+month=12
+files=@2025-12-급여명세.pdf
+files=@2025-12-부속자료.pdf
 ```
+
+### 비고
+- 서버가 업로드된 파일을 S3에 저장하고, 응답의 `s3_file_key` / `s3_file_url` / `files[]` 를 채웁니다.
+- 레거시 호환을 위해 기존 JSON `files[].file_key` 방식도 계속 허용합니다.
 
 ### Response Body (200)
 `16) 급여명세 저장`의 Response와 동일 (수치 필드 0, files에 첨부파일 반영)
@@ -826,23 +825,15 @@
 - 한번 요청에 여러 파일 저장 가능(append)
 - 응답의 `s3_file_url`, `files[].file_url`로 **미리보기** 가능 (웹뷰/이미지뷰에 URL 사용)
 
-### Request Body
-```json
-{
-  "files": [
-    {
-      "file_key": "payroll/branch-1/employee-501/2025-12.pdf", // S3 object key
-      "file_url": "https://your-bucket.s3.ap-northeast-2.amazonaws.com/payroll/branch-1/employee-501/2025-12.pdf", // S3 URL
-      "file_name": "2025-12-급여명세.pdf" // 표시용 파일명
-    },
-    {
-      "file_key": "payroll/branch-1/employee-501/2025-12-부속.pdf", // S3 object key
-      "file_url": "https://your-bucket.s3.ap-northeast-2.amazonaws.com/payroll/branch-1/employee-501/2025-12-appendix.pdf", // S3 URL
-      "file_name": "2025-12-부속자료.pdf" // 표시용 파일명
-    }
-  ]
-}
+### Request (`multipart/form-data`)
+```text
+files=@2025-12-급여명세.pdf
+files=@2025-12-부속자료.pdf
 ```
+
+### 비고
+- 서버가 업로드와 S3 key 생성을 담당합니다.
+- 레거시 JSON `files[].file_key` append 방식도 하위 호환으로 허용합니다.
 
 ### Response Body (200)
 `16) 급여명세 저장`의 Response와 동일
@@ -1264,34 +1255,25 @@ curl -X POST "${BASE}/api/v1/staff-management/branches/${BRANCH_ID}/employees/${
 ## 23-1) 근로계약서/부모님동의서 파일 전용 등록
 
 - `POST /staff-management/branches/{branch_id}/employees/{employee_id}/employment-contracts/file-only`
-- **글 데이터 없이 파일만으로 등록**: `form_values` 없이 `template_version`과 `files`(최소 1개)만으로 등록. `status=draft`, `completion_rate=0`.
+- **글 데이터 없이 파일만으로 등록**: `form_values` 없이 `template_version`과 파일만으로 등록. `status=draft`, `completion_rate=0`.
 - **`template_version` 세 가지 모두 허용 (구현·검증 동일)**  
   - `standard_v1` — 일반 표준 근로계약서 PDF 등  
   - `minor_standard_v1` — 연소근로자 표준 근로계약서  
   - `guardian_consent_v1` — 친권자(부모님·후견인) 동의서  
   제목 `title`은 선택. 없으면 순서대로 `"{근무자명} 표준 근로계약서"`, `"{근무자명} 연소근로자 표준 근로계약서"`, `"{근무자명} 친권자(후견인) 동의서"`로 자동 생성.
 
-### Request Body
-```json
-{
-  "template_version": "guardian_consent_v1", // standard_v1 | minor_standard_v1 | guardian_consent_v1 (위 세 가지 모두 동일 API)
-  "title": null, // 선택. 생략 시 template_version에 따른 기본 제목(위 참고)
-  "files": [
-    {
-      "file_key": "contracts/branch-1/employee-501/consent.pdf",
-      "file_url": "https://your-bucket.s3.../consent.pdf",
-      "file_name": "친권자동의서.pdf"
-    }
-  ]
-}
+### Request (`multipart/form-data`)
+```text
+template_version=guardian_consent_v1
+title=친권자동의서 스캔본
+files=@guardian-consent.pdf
+files=@guardian-family-certificate.jpg
 ```
 
-### 서버·클라이언트·스토리지 (운영 시)
-
-- 이 API는 **파일 바이너리를 받지 않습니다.** `files[].file_key`(및 선택 `file_url`, `file_name`)만 저장합니다. 스토리지 객체는 **업로드 단계**에서 이미 `file_key` 위치에 있어야 합니다.
-- **A)** 백엔드가 presigned PUT/POST URL을 발급하고, 앱이 업로드 후 여기로 `file_key`·`file_url`을 보내거나  
-- **B)** 버킷/CloudFront를 공개(또는 서명 URL)로 두고, 앱이 조합한 `file_url`이 실제 객체와 일치하게 맞출 것.
-- **`file_url` 생략**: 서버가 **`.env`의 `S3_PUBLIC_BASE_URL`**(선택) 또는 **`S3_BUCKET_NAME` + `S3_REGION`**(표준 AWS, `S3_ENDPOINT_URL` 비어 있을 때 virtual-hosted URL)으로 `file_key`에서 공개 URL을 합성해 저장·응답에 채울 수 있습니다. 이 경우 **Flutter 앱에 `S3_PUBLIC_BASE_URL`을 두지 않아도** 요청 본문에는 `file_key`(와 `file_name`)만 넘겨도 됩니다. CloudFront 등 커스텀 베이스만 쓰는 경우에는 서버에 `S3_PUBLIC_BASE_URL`을 설정하는 편이 안전합니다. (급여명세·경비 첨부 등 동일 규칙)
+### 비고
+- 서버가 업로드된 파일을 S3에 직접 저장합니다.
+- 응답의 `contract_file_key` / `contract_file_url` / `files[]` 에 업로드 결과가 반영됩니다.
+- 레거시 JSON `files[].file_key` 방식도 하위 호환으로 허용합니다.
 
 ### Response Body (200)
 `23) 근로계약서 생성`의 Response와 동일
@@ -1329,23 +1311,15 @@ curl -X POST "${BASE}/api/v1/staff-management/branches/${BRANCH_ID}/employees/${
 - `PATCH /staff-management/branches/{branch_id}/employees/{employee_id}/employment-contracts/{contract_id}/file`
 - 한번 요청에 여러 파일 저장 가능(append)
 
-### Request Body
-```json
-{
-  "files": [
-    {
-      "file_key": "contracts/branch-1/employee-501/contract-2026-03-final.pdf", // S3 key
-      "file_url": "https://your-bucket.s3.ap-northeast-2.amazonaws.com/contracts/branch-1/employee-501/contract-2026-03-final.pdf", // S3 URL
-      "file_name": "연소근로자-표준근로계약서.pdf" // 표시용 파일명
-    },
-    {
-      "file_key": "contracts/branch-1/employee-501/consent-guardian.pdf", // S3 key
-      "file_url": "https://your-bucket.s3.ap-northeast-2.amazonaws.com/contracts/branch-1/employee-501/consent-guardian.pdf", // S3 URL
-      "file_name": "친권자동의서.pdf" // 표시용 파일명
-    }
-  ]
-}
+### Request (`multipart/form-data`)
+```text
+files=@contract-final.pdf
+files=@guardian-consent.pdf
 ```
+
+### 비고
+- 서버가 업로드와 S3 key 생성을 담당합니다.
+- 레거시 JSON `files[].file_key` append 방식도 하위 호환으로 허용합니다.
 
 ### Response Body (200)
 `22) 근로계약서 생성`의 Response와 동일

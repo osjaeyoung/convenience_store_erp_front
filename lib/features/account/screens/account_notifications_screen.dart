@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/push/push_notification_service.dart';
@@ -213,6 +214,9 @@ class _NotificationRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dateFormat = DateFormat('yy.MM.dd. a hh:mm', 'ko_KR');
+    final dateStr = item.createdAt != null ? dateFormat.format(item.createdAt!) : '';
+    
     return InkWell(
       onTap: onTap,
       child: ConstrainedBox(
@@ -220,33 +224,54 @@ class _NotificationRow extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Text(
-                  item.summaryText,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.bodyMediumM.copyWith(
-                    color: item.isRead
-                        ? AppColors.textSecondary
-                        : AppColors.textPrimary,
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w500,
-                    height: 20 / 14,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      item.summaryText,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.bodyMediumM.copyWith(
+                        color: item.isRead
+                            ? AppColors.textSecondary
+                            : AppColors.textPrimary,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w500,
+                        height: 20 / 14,
+                      ),
+                    ),
+                    if (dateStr.isNotEmpty) ...[
+                      SizedBox(height: 4.h),
+                      Text(
+                        dateStr,
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppColors.textTertiary,
+                          fontSize: 12.sp,
+                          height: 16 / 12,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               SizedBox(width: 12.w),
               InkWell(
                 borderRadius: BorderRadius.circular(11.r),
                 onTap: onDeleteTap,
-                child: SizedBox(
-                  width: 22.w,
-                  height: 22.w,
-                  child: SvgPicture.asset(
-                    deleteIconAsset,
+                child: Padding(
+                  padding: EdgeInsets.only(top: 2.h),
+                  child: SizedBox(
                     width: 22.w,
                     height: 22.w,
+                    child: SvgPicture.asset(
+                      deleteIconAsset,
+                      width: 22.w,
+                      height: 22.w,
+                    ),
                   ),
                 ),
               ),

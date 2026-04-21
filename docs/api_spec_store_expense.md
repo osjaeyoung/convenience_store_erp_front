@@ -7,6 +7,7 @@
 - 모든 API는 `Authorization: Bearer {access_token}` 필요
 - 경영주(owner): 본인 소유 점포만 접근 가능
 - 점장(manager): 본인이 배정된 점포만 접근 가능
+- 파일 첨부는 **`multipart/form-data` 로 파일 바이너리를 백엔드에 전송**하면, 서버가 S3에 직접 업로드합니다.
 
 ---
 
@@ -41,15 +42,15 @@
       "category_code": "rent", // 카테고리 코드
       "category_label": "임대료", // 카테고리명
       "month_amount": 3300000, // 당월 카테고리 누적 금액
-      "transaction_count": 1, // 건수
-      "summary_label": "31일 예정" // 디자인의 "31일 예정", "4회" 등 표시용 라벨
+      "transaction_count": 2, // 건수
+      "summary_label": "29일 지출" // 지출된 내역이 있을 경우, 가장 늦은 날짜를 기준으로 지출 표기
     },
     {
       "category_code": "management_fee",
       "category_label": "관리비",
-      "month_amount": 1120000,
-      "transaction_count": 1,
-      "summary_label": "31일 예정"
+      "month_amount": 0, // 지출이 없을 경우 0
+      "transaction_count": 0,
+      "summary_label": "30일 예정" // 지출 전인 경우, 해당 월(9월)의 마지막 일자 표기
     },
     {
       "category_code": "supplies",
@@ -344,23 +345,15 @@
 - `PATCH /store-expenses/branches/{branch_id}/items/{expense_item_id}/file`
 - 영수증/증빙 파일 다중 첨부 가능(append)
 
-### Request Body
-```json
-{
-  "files": [
-    {
-      "file_key": "expenses/branch-1/2025-09/item-501-receipt.jpg", // S3 key
-      "file_url": "https://your-bucket.s3.ap-northeast-2.amazonaws.com/expenses/branch-1/2025-09/item-501-receipt.jpg", // S3 URL
-      "file_name": "영수증-1.jpg" // 표시용 파일명
-    },
-    {
-      "file_key": "expenses/branch-1/2025-09/item-501-slip.pdf",
-      "file_url": "https://your-bucket.s3.ap-northeast-2.amazonaws.com/expenses/branch-1/2025-09/item-501-slip.pdf",
-      "file_name": "이체내역.pdf"
-    }
-  ]
-}
+### Request (`multipart/form-data`)
+```text
+files=@receipt-1.jpg
+files=@transfer-slip.pdf
 ```
+
+### 비고
+- 서버가 업로드된 파일을 S3에 직접 저장하고, 응답의 `files[].file_key` / `files[].file_url` 에 반영합니다.
+- 레거시 JSON `files[].file_key` 방식도 하위 호환으로 허용합니다.
 
 ### Response Body (200)
 `5) 항목 추가`의 Response와 동일

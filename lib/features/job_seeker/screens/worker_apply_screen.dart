@@ -8,6 +8,7 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../account/account_dio_message.dart';
 import '../widgets/worker_common.dart';
+import 'worker_resume_form_screen.dart';
 
 class WorkerApplyScreen extends StatefulWidget {
   const WorkerApplyScreen({super.key, required this.postingId});
@@ -255,10 +256,22 @@ class _ResumeTile extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 20.r,
-                color: AppColors.textDisabled,
+              IconButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          WorkerResumeFormScreen(resumeId: resume.resumeId),
+                    ),
+                  );
+                },
+                padding: EdgeInsets.all(8.r),
+                constraints: const BoxConstraints(),
+                icon: Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20.r,
+                  color: AppColors.textDisabled,
+                ),
               ),
             ],
           ),

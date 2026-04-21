@@ -611,7 +611,7 @@ class AuthRepository extends ChangeNotifier {
   }
 
   Future<AccountPolicyList> getPolicies() async {
-    final res = await _apiClient.dio.get<Map<String, dynamic>>('/me/policies');
+    final res = await _apiClient.dio.get<Map<String, dynamic>>('/policies');
     return AccountPolicyList.fromJson(res.data!);
   }
 
@@ -619,7 +619,7 @@ class AuthRepository extends ChangeNotifier {
     required String policyType,
   }) async {
     final res = await _apiClient.dio.get<Map<String, dynamic>>(
-      '/me/policies/${policyType.trim()}',
+      '/policies/${policyType.trim()}',
     );
     return AccountPolicyDetail.fromJson(res.data!);
   }

@@ -464,17 +464,52 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _SelectorChip(
-          label: _isDailyView ? '일별' : '주별',
-          onTap: () => setState(() {
-            _isDailyView = !_isDailyView;
-            if (!_isDailyView) {
-              _weekSelectedDate = widget.today;
-              widget.onRefreshWeek(
-                _toIsoDate(_getWeekStart(_weekSelectedDate)),
-              );
-            }
-          }),
+        PopupMenuButton<bool>(
+          initialValue: _isDailyView,
+          color: AppColors.grey0,
+          surfaceTintColor: AppColors.grey0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          offset: const Offset(0, 40),
+          onSelected: (isDaily) {
+            if (_isDailyView == isDaily) return;
+            setState(() {
+              _isDailyView = isDaily;
+              if (!_isDailyView) {
+                _weekSelectedDate = widget.today;
+                widget.onRefreshWeek(
+                  _toIsoDate(_getWeekStart(_weekSelectedDate)),
+                );
+              }
+            });
+          },
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              value: true,
+              child: Text(
+                '일별',
+                style: AppTypography.bodyMediumR.copyWith(
+                  color: _isDailyView ? AppColors.primaryDark : AppColors.textPrimary,
+                ),
+              ),
+            ),
+            PopupMenuItem(
+              value: false,
+              child: Text(
+                '주별',
+                style: AppTypography.bodyMediumR.copyWith(
+                  color: !_isDailyView ? AppColors.primaryDark : AppColors.textPrimary,
+                ),
+              ),
+            ),
+          ],
+          child: IgnorePointer(
+            child: _SelectorChip(
+              label: _isDailyView ? '일별' : '주별',
+              onTap: () {},
+            ),
+          ),
         ),
         _SelectorChip(
           label: _dragFilterEmployee?.name ?? '직원 미지정',
@@ -941,24 +976,61 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
 
   void _onConfirmSchedule() {
     final bloc = context.read<StaffManagementBloc>();
-    final slots = _slotTimes.map((time) {
-      final list = _assignments[time] ?? [];
-      return {
-        'time': time,
-        'assignments': list
-            .map(
-              (a) => {'employee_id': a.id, 'status': 'scheduled', 'memo': null},
-            )
-            .toList(),
-      };
-    }).toList();
-    bloc.add(
-      StaffManagementDaySchedulePutRequested(
-        branchId: widget.branchId,
-        workDate: _toIsoDate(widget.today),
-        slots: slots,
-      ),
-    );
+    
+    if (_isDailyView) {
+      final slots = _slotTimes.map((time) {
+        final list = _assignments[time] ?? [];
+        return {
+          'time': time,
+          'assignments': list
+              .map(
+                (a) => {'employee_id': a.id, 'status': 'scheduled', 'memo': null},
+              )
+              .toList(),
+        };
+      }).toList();
+      bloc.add(
+        StaffManagementDaySchedulePutRequested(
+          branchId: widget.branchId,
+          workDate: _toIsoDate(widget.today),
+          slots: slots,
+        ),
+      );
+    } else {
+      final weekStart = _getWeekStart(_weekSelectedDate);
+      final weekDays = _getWeekDays(weekStart);
+      
+      final days = weekDays.map((d) {
+        final dateStr = _toIsoDate(d);
+        final dayMap = _weekAssignments[dateStr] ?? {};
+        
+        final slots = _slotTimes.map((time) {
+          final list = dayMap[time] ?? [];
+          return {
+            'time': time,
+            'assignments': list
+                .map(
+                  (a) => {'employee_id': a.id, 'status': 'scheduled', 'memo': null},
+                )
+                .toList(),
+          };
+        }).toList();
+        
+        return {
+          'weekday': d.weekday - 1, // 0=Monday, 6=Sunday
+          'slots': slots,
+        };
+      }).toList();
+      
+      bloc.add(
+        StaffManagementWeekSchedulePutRequested(
+          branchId: widget.branchId,
+          weekStartDate: _toIsoDate(weekStart),
+          days: days,
+        ),
+      );
+    }
+    
     if (mounted) {
       ScaffoldMessenger.of(
         context,

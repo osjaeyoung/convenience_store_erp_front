@@ -415,15 +415,26 @@ class StaffManagementRepository {
     required int employeeId,
     required String templateVersion,
     String? title,
-    required List<Map<String, dynamic>> files,
+    required List<PlatformFile> files,
   }) async {
+    final formData = FormData.fromMap({
+      'template_version': templateVersion,
+      if (title != null && title.isNotEmpty) 'title': title,
+    });
+    for (final file in files) {
+      formData.files.add(MapEntry(
+        'files',
+        await _etcRecordMultipartFile(file),
+      ));
+    }
     final res = await _apiClient.dio.post<Map<String, dynamic>>(
       '/staff-management/branches/$branchId/employees/$employeeId/employment-contracts/file-only',
-      data: {
-        'template_version': templateVersion,
-        if (title != null && title.isNotEmpty) 'title': title,
-        'files': files,
-      },
+      data: formData,
+      options: Options(
+        connectTimeout: const Duration(seconds: 60),
+        sendTimeout: const Duration(minutes: 5),
+        receiveTimeout: const Duration(minutes: 5),
+      ),
     );
     return res.data!;
   }
@@ -447,11 +458,23 @@ class StaffManagementRepository {
     required int branchId,
     required int employeeId,
     required int contractId,
-    required List<Map<String, dynamic>> files,
+    required List<PlatformFile> files,
   }) async {
+    final formData = FormData();
+    for (final file in files) {
+      formData.files.add(MapEntry(
+        'files',
+        await _etcRecordMultipartFile(file),
+      ));
+    }
     final res = await _apiClient.dio.patch<Map<String, dynamic>>(
       '/staff-management/branches/$branchId/employees/$employeeId/employment-contracts/$contractId/file',
-      data: {'files': files},
+      data: formData,
+      options: Options(
+        connectTimeout: const Duration(seconds: 60),
+        sendTimeout: const Duration(minutes: 5),
+        receiveTimeout: const Duration(minutes: 5),
+      ),
     );
     return res.data!;
   }

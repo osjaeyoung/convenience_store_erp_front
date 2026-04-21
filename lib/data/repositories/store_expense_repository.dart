@@ -62,13 +62,23 @@ class StoreExpenseRepository {
   Future<StoreExpenseItem> appendItemFiles({
     required int branchId,
     required int expenseItemId,
-    required List<StoreExpenseFileDraft> files,
+    required List<PlatformFile> files,
   }) async {
+    final formData = FormData();
+    for (final file in files) {
+      formData.files.add(MapEntry(
+        'files',
+        await _expenseOcrMultipartFile(file),
+      ));
+    }
     final res = await _apiClient.dio.patch<Map<String, dynamic>>(
       '/store-expenses/branches/$branchId/items/$expenseItemId/file',
-      data: {
-        'files': files.map((f) => f.toJson()).toList(),
-      },
+      data: formData,
+      options: Options(
+        connectTimeout: const Duration(seconds: 60),
+        sendTimeout: const Duration(minutes: 5),
+        receiveTimeout: const Duration(minutes: 5),
+      ),
     );
     return StoreExpenseItem.fromJson(res.data!);
   }

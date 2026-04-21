@@ -47,6 +47,77 @@
 
 ---
 
+## 0-1) 회원가입용 이용정책 조회 (인증 불필요)
+
+- `GET /policies`
+- `GET /policies/{policy_type}`
+- **JWT 없이 호출 가능**
+- 회원가입 화면에서 동의 상세 보기 용도로 사용합니다.
+
+### 정책 타입
+
+- `age`
+- `terms`
+- `privacy`
+- `third_party`
+- `marketing`
+
+### 목록 응답 예시
+
+```json
+{
+  "items": [
+    {
+      "policy_type": "age",
+      "title": "만 N세 이상",
+      "updated_at": "2026-04-07T12:04:00Z",
+      "is_configured": true
+    },
+    {
+      "policy_type": "terms",
+      "title": "이용약관",
+      "updated_at": "2026-04-07T12:05:00Z",
+      "is_configured": true
+    },
+    {
+      "policy_type": "privacy",
+      "title": "개인정보처리방침",
+      "updated_at": "2026-04-07T12:06:00Z",
+      "is_configured": true
+    },
+    {
+      "policy_type": "third_party",
+      "title": "개인정보 제3자 제공 동의",
+      "updated_at": "2026-04-07T12:07:00Z",
+      "is_configured": true
+    },
+    {
+      "policy_type": "marketing",
+      "title": "마케팅 정보 수신 동의",
+      "updated_at": "2026-04-07T12:08:00Z",
+      "is_configured": true
+    }
+  ]
+}
+```
+
+### 상세 응답 예시
+
+```json
+{
+  "policy_type": "third_party",
+  "title": "개인정보 제3자 제공 동의",
+  "content": "제3자 제공 동의 본문입니다.",
+  "updated_at": "2026-04-07T12:07:00Z"
+}
+```
+
+### 실패 케이스
+
+- 해당 문서가 아직 설정되지 않았으면 `404`
+
+---
+
 ## 1) 이메일 회원가입 1차
 
 - `POST /auth/signup` (또는 `/auth/signup/email`)

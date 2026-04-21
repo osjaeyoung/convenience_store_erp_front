@@ -177,6 +177,16 @@ class ManagerHomeRepository {
     return RecruitmentContactResult.fromJson(res.data!);
   }
 
+  /// 구직자 프로필 열람 기록 삭제
+  Future<void> deleteJobSeekerProfileOpenRecord({
+    required int branchId,
+    required int employeeId,
+  }) async {
+    await _apiClient.dio.delete<void>(
+      '/recruitment/branches/$branchId/job-seekers/$employeeId/open',
+    );
+  }
+
   /// 구직자 리뷰 상세 조회
   Future<JobSeekerReviewPage> getJobSeekerReviews({
     required int branchId,

@@ -56,10 +56,27 @@ class _ManagementScreenState extends State<ManagementScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(_onTabChanged);
+  }
+
+  void _onTabChanged() {
+    if (_tabController.indexIsChanging) return;
+    if (!mounted) return;
+    final branchId = context.read<SelectedBranchCubit>().state;
+    if (branchId == null) return;
+
+    if (_tabController.index == 0) {
+      final state = context.read<StaffManagementBloc>().state;
+      final currentDataDate = state.daySchedule?['work_date']?.toString();
+      if (currentDataDate != _toIsoDate(_selectedDate)) {
+        _requestDaySchedule(context, branchId, _selectedDate);
+      }
+    }
   }
 
   @override
   void dispose() {
+    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     _searchController.dispose();
     super.dispose();
@@ -110,11 +127,6 @@ class _ManagementScreenState extends State<ManagementScreen>
                 builder: (context, state) {
                   return Column(
                     children: [
-                      if (state.isLoading)
-                        Padding(
-                          padding: EdgeInsets.only(top: 8.h),
-                          child: LinearProgressIndicator(minHeight: 2),
-                        ),
                       if (state.status == StaffManagementBlocStatus.failure)
                         Container(
                           width: double.infinity,
@@ -188,13 +200,15 @@ class _ManagementScreenState extends State<ManagementScreen>
                                   textAlign: TextAlign.center,
                                 ),
                               )
-                            : TabBarView(
-                                controller: _tabController,
-                                physics: _isWorkAssignmentDragMode
-                                    ? const NeverScrollableScrollPhysics()
-                                    : null,
-                                children: [
-                                  _buildDayScheduleTab(
+                            : state.isLoading
+                                ? const Center(child: CircularProgressIndicator())
+                                : TabBarView(
+                                    controller: _tabController,
+                                    physics: _isWorkAssignmentDragMode
+                                        ? const NeverScrollableScrollPhysics()
+                                        : null,
+                                    children: [
+                                      _buildDayScheduleTab(
                                     context,
                                     branchId,
                                     state,
@@ -315,9 +329,7 @@ class _ManagementScreenState extends State<ManagementScreen>
           ),
         )
         .toList();
-    final workDate =
-        state.daySchedule?['work_date']?.toString() ??
-        _toIsoDate(_selectedDate);
+    final workDate = _toIsoDate(_selectedDate);
 
     return RefreshIndicator(
       onRefresh: () => _refreshDayScheduleTab(context, branchId),

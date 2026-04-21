@@ -17,6 +17,7 @@ import '../bloc/auth_bloc.dart';
 import '../widgets/auth_input_field.dart';
 import 'signup_phone_code_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../account/screens/account_policy_detail_screen.dart';
 
 enum _SignupStep { terms, basicInfo, role }
 
@@ -945,6 +946,7 @@ class _SignupScreenState extends State<SignupScreen>
                 setState(() => _agreeAge = v);
                 _scheduleSignupDraftPersist();
               },
+              onDetailTap: () => _openPolicyDetail('age', '만 N세 이상'),
             ),
             SizedBox(height: 10.h),
             _buildTermsRow(
@@ -955,6 +957,7 @@ class _SignupScreenState extends State<SignupScreen>
                 setState(() => _agreeTerms = v);
                 _scheduleSignupDraftPersist();
               },
+              onDetailTap: () => _openPolicyDetail('terms', '서비스 이용 약관'),
             ),
             SizedBox(height: 10.h),
             _buildTermsRow(
@@ -965,6 +968,7 @@ class _SignupScreenState extends State<SignupScreen>
                 setState(() => _agreePrivacy = v);
                 _scheduleSignupDraftPersist();
               },
+              onDetailTap: () => _openPolicyDetail('privacy', '개인정보 수집 및 처리 방침'),
             ),
             SizedBox(height: 10.h),
             _buildTermsRow(
@@ -975,6 +979,7 @@ class _SignupScreenState extends State<SignupScreen>
                 setState(() => _agreeThirdParty = v);
                 _scheduleSignupDraftPersist();
               },
+              onDetailTap: () => _openPolicyDetail('third_party', '개인정보 제3자 제공 동의'),
             ),
             SizedBox(height: 10.h),
             _buildTermsRow(
@@ -985,6 +990,7 @@ class _SignupScreenState extends State<SignupScreen>
                 setState(() => _agreeMarketing = v);
                 _scheduleSignupDraftPersist();
               },
+              onDetailTap: () => _openPolicyDetail('marketing', '마케팅 정보 수신 동의'),
             ),
           ],
         );
@@ -1383,52 +1389,79 @@ class _SignupScreenState extends State<SignupScreen>
     }
   }
 
+  void _openPolicyDetail(String policyType, String title) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AccountPolicyDetailScreen(
+          policyType: policyType,
+          fallbackTitle: title,
+        ),
+      ),
+    );
+  }
+
   Widget _buildTermsRow({
     required String tag,
     required String title,
     required bool value,
     required ValueChanged<bool> onChanged,
+    VoidCallback? onDetailTap,
   }) {
     return SizedBox(
       width: double.infinity,
-      child: InkWell(
-        onTap: () => onChanged(!value),
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 16.h),
-          child: Row(
-            children: [
-              Image.asset(
-                value ? _checkActiveIcon : _checkInactiveIcon,
-                width: 20,
-                height: 20,
-              ),
-              SizedBox(width: 10.w),
-              Text(
-                tag,
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w500,
-                  height: 16 / 14,
-                  color: AppColors.primary,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 16.h),
+        child: Row(
+          children: [
+            InkWell(
+              onTap: () => onChanged(!value),
+              borderRadius: BorderRadius.circular(4.r),
+              child: Padding(
+                padding: EdgeInsets.all(4.r),
+                child: Image.asset(
+                  value ? _checkActiveIcon : _checkInactiveIcon,
+                  width: 20,
+                  height: 20,
                 ),
               ),
-              SizedBox(width: 6.w),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w500,
-                    height: 16 / 14,
-                    color: AppColors.textPrimary,
-                  ),
+            ),
+            SizedBox(width: 6.w),
+            Expanded(
+              child: GestureDetector(
+                onTap: onDetailTap ?? () => onChanged(!value),
+                behavior: HitTestBehavior.opaque,
+                child: Row(
+                  children: [
+                    Text(
+                      tag,
+                      style: TextStyle(
+                        fontFamily: 'Pretendard',
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w500,
+                        height: 16 / 14,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    SizedBox(width: 6.w),
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: TextStyle(
+                          fontFamily: 'Pretendard',
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w500,
+                          height: 16 / 14,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    if (onDetailTap != null)
+                      const Icon(Icons.chevron_right, color: AppColors.grey100),
+                  ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.grey100),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,7 @@ import '../../../core/navigation/logo_navigation_bridge.dart';
 import '../../../core/router/app_router.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import '../../../widgets/app_styled_confirm_dialog.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../manager/widgets/home_common_app_bar.dart';
 import '../widgets/worker_applications_tab.dart';
@@ -123,44 +125,60 @@ class _JobSeekerMainScreenState extends State<JobSeekerMainScreen>
       );
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.grey0,
-      appBar: HomeCommonAppBar(
-        alarmActive: false,
-        onAlarmTap: _showAlarmPlaceholder,
-        onMenuTap: _openMyPage,
-      ),
-      body: Column(
-        children: [
-          _WorkerTopTabs(
-            selectedIndex: _currentTabIndex,
-            onSelected: (index) {
-              if (_currentTabIndex == index) return;
-              _tabController.animateTo(index);
-              setState(() => _currentTabIndex = index);
-            },
-          ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                WorkerRecruitmentPostingsTab(
-                  refreshToken: _postingsRefreshToken,
-                  onApplicationCreated: _handleApplicationCreated,
-                ),
-                WorkerApplicationsTab(
-                  refreshToken: _applicationsRefreshToken,
-                  onApplicationCreated: _handleApplicationCreated,
-                ),
-                WorkerResumeManagementTab(
-                  refreshToken: _resumeRefreshToken,
-                  onResumeChanged: _handleResumeChanged,
-                ),
-                const WorkerContractChatTab(),
-              ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final shouldPop = await showAppStyledConfirmDialog(
+          context,
+          message: '앱을 종료하시겠습니까?',
+          confirmLabel: '종료',
+          cancelLabel: '취소',
+          confirmBackgroundColor: AppColors.primaryDark,
+        );
+        if (shouldPop == true && context.mounted) {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.grey0,
+        appBar: HomeCommonAppBar(
+          alarmActive: false,
+          onAlarmTap: _showAlarmPlaceholder,
+          onMenuTap: _openMyPage,
+        ),
+        body: Column(
+          children: [
+            _WorkerTopTabs(
+              selectedIndex: _currentTabIndex,
+              onSelected: (index) {
+                if (_currentTabIndex == index) return;
+                _tabController.animateTo(index);
+                setState(() => _currentTabIndex = index);
+              },
             ),
-          ),
-        ],
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  WorkerRecruitmentPostingsTab(
+                    refreshToken: _postingsRefreshToken,
+                    onApplicationCreated: _handleApplicationCreated,
+                  ),
+                  WorkerApplicationsTab(
+                    refreshToken: _applicationsRefreshToken,
+                    onApplicationCreated: _handleApplicationCreated,
+                  ),
+                  WorkerResumeManagementTab(
+                    refreshToken: _resumeRefreshToken,
+                    onResumeChanged: _handleResumeChanged,
+                  ),
+                  const WorkerContractChatTab(),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

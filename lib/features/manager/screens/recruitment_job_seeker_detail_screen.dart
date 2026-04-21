@@ -5,6 +5,7 @@ import '../../../data/models/recruitment/recruitment_models.dart';
 import '../../../data/repositories/manager_home_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import '../../../widgets/app_styled_confirm_dialog.dart';
 import 'recruitment_review_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -85,56 +86,28 @@ class _RecruitmentJobSeekerDetailScreenState
     );
   }
 
-  Future<void> _onContactTap() async {
-    final messageCtrl = TextEditingController();
-    final send = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(
-            '채용 문의',
-            style: AppTypography.heading3.copyWith(fontSize: 18.sp),
-          ),
-          content: TextField(
-            controller: messageCtrl,
-            minLines: 3,
-            maxLines: 6,
-            decoration: const InputDecoration(
-              hintText: '문의 내용을 입력해 주세요. (비워두면 기본 문구로 전송됩니다)',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('취소'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('보내기'),
-            ),
-          ],
-        );
-      },
+  Future<void> _onDeleteTap() async {
+    final confirmed = await showAppStyledDeleteDialog(
+      context,
+      message: '최근 열람 기록에서\n삭제하시겠습니까?',
     );
-    final trimmed = messageCtrl.text.trim();
-    messageCtrl.dispose();
-    if (send != true || !mounted) return;
+
+    if (confirmed != true || !mounted) return;
 
     try {
-      await context.read<ManagerHomeRepository>().postJobSeekerContact(
+      await context.read<ManagerHomeRepository>().deleteJobSeekerProfileOpenRecord(
             branchId: widget.branchId,
             employeeId: widget.employeeId,
-            message: trimmed.isEmpty ? null : trimmed,
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('채용 문의가 전송되었습니다.')),
+        const SnackBar(content: Text('열람 기록이 삭제되었습니다.')),
       );
+      Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('전송에 실패했습니다: $e')),
+        SnackBar(content: Text('삭제에 실패했습니다: $e')),
       );
     }
   }
@@ -202,17 +175,18 @@ class _RecruitmentJobSeekerDetailScreenState
                             padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 36.h),
                             child: SizedBox(
                               height: 56,
+                              width: double.infinity,
                               child: FilledButton(
-                                onPressed: _onContactTap,
+                                onPressed: _onDeleteTap,
                                 style: FilledButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
+                                  backgroundColor: const Color(0xFFC0C2CC),
                                   foregroundColor: AppColors.grey0,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8.r),
                                   ),
                                 ),
                                 child: Text(
-                                  _profile!.contactActionLabel ?? '채용 문의하기',
+                                  '삭제',
                                   style: AppTypography.bodyLargeB.copyWith(
                                     color: AppColors.grey0,
                                     height: 24 / 16,

@@ -152,6 +152,10 @@ class _StoreCostScreenState extends State<StoreCostScreen>
     if (ok == true && mounted) {
       await _loadMonths(branchId);
       _loadDashboard(branchId);
+      // 추가 후 월별 점내 비용 내역 탭으로 이동 (index 1)
+      if (_tabController.index != 1) {
+        _tabController.animateTo(1);
+      }
     }
   }
 
@@ -282,6 +286,10 @@ class _StoreCostScreenState extends State<StoreCostScreen>
     if (ok == true && mounted) {
       await _loadMonths(branchId);
       _loadDashboard(branchId);
+      // 수정 후 월별 점내 비용 내역 탭으로 이동 (index 1)
+      if (_tabController.index != 1) {
+        _tabController.animateTo(1);
+      }
     }
   }
 

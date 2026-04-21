@@ -46,21 +46,15 @@ class _AccountMyInfoSettingsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.grey0Alt,
+      backgroundColor: AppColors.grey0,
       appBar: accountFigmaAppBar(context: context, title: '내 정보 설정'),
-      body: ListView(
-        padding: EdgeInsets.fromLTRB(20.w, 0.h, 20.w, 16.h),
+      body: Column(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.grey0,
-              borderRadius: BorderRadius.circular(16.r),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Column(
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.only(top: 8.h),
               children: [
                 _row(
-                  context,
                   '내 정보 변경',
                   onTap: () {
                     Navigator.of(context).push<void>(
@@ -71,7 +65,6 @@ class _AccountMyInfoSettingsScreenState
                   },
                 ),
                 _row(
-                  context,
                   '탈퇴하기',
                   onTap: () {
                     if (_busy) return;
@@ -87,7 +80,6 @@ class _AccountMyInfoSettingsScreenState
   }
 
   Widget _row(
-    BuildContext context,
     String title, {
     required VoidCallback onTap,
   }) {
@@ -96,7 +88,7 @@ class _AccountMyInfoSettingsScreenState
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 20.h),
+          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
           child: Row(
             children: [
               Expanded(
