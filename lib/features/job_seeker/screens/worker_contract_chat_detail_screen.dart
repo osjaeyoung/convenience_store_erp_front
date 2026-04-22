@@ -64,7 +64,13 @@ class _WorkerContractChatDetailScreenState
 
   String _formatTime(String? raw) {
     if (raw == null || raw.isEmpty) return '';
-    final dt = DateTime.tryParse(raw);
+    var timeStr = raw.trim();
+    if (!timeStr.endsWith('Z') &&
+        !timeStr.contains('+') &&
+        !timeStr.contains(RegExp(r'-[0-9]{2}:[0-9]{2}$'))) {
+      timeStr = '${timeStr}Z';
+    }
+    final dt = DateTime.tryParse(timeStr) ?? DateTime.tryParse(raw);
     if (dt == null) return '';
     return _timeFormat.format(dt.toLocal());
   }
@@ -96,29 +102,29 @@ class _WorkerContractChatDetailScreenState
     setState(() => _deleting = true);
     try {
       await context.read<WorkerRecruitmentRepository>().deleteContractChat(
-            contractId: widget.contractId,
-          );
+        contractId: widget.contractId,
+      );
       if (!mounted) return;
       _changed = true;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('계약 채팅이 삭제되었습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('계약 채팅이 삭제되었습니다.')));
       Navigator.of(context).pop(true);
     } catch (error) {
       if (!mounted) return;
       setState(() => _deleting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(accountDioMessage(error))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(accountDioMessage(error))));
     }
   }
 
   static TextStyle get _appBarTitleStyle => AppTypography.appBarTitle;
 
   static TextStyle get _timeStyle => AppTypography.bodyXSmallM.copyWith(
-        color: const Color(0xFFC7C9D7),
-        height: 16 / 10,
-      );
+    color: const Color(0xFFC7C9D7),
+    height: 16 / 10,
+  );
 
   /// 말풍선이 화면을 넘지 않도록 상한만 둔다. 너비는 글자 길이(본질적 폭)에 맞춘다.
   double _maxBubbleWidth(BuildContext context, {required bool incoming}) {
@@ -173,10 +179,7 @@ class _WorkerContractChatDetailScreenState
           if (_loading)
             const Center(child: CircularProgressIndicator())
           else if (_error != null)
-            workerErrorView(
-              message: accountDioMessage(_error!),
-              onRetry: _load,
-            )
+            workerErrorView(message: accountDioMessage(_error!), onRetry: _load)
           else
             _buildContent(detail!),
           if (_deleting)
@@ -212,8 +215,7 @@ class _WorkerContractChatDetailScreenState
         final time = _formatTime(message.createdAt);
         final isDocument = message.messageType == 'document';
         final canOpenDocument =
-            isDocument &&
-            (message.canOpenDocument || detail.canOpenDocument);
+            isDocument && (message.canOpenDocument || detail.canOpenDocument);
 
         if (workerMessage) {
           return Padding(
@@ -252,8 +254,10 @@ class _WorkerContractChatDetailScreenState
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       _WorkerIncomingBubble(
-                        maxBubbleWidth:
-                            _maxBubbleWidth(context, incoming: true),
+                        maxBubbleWidth: _maxBubbleWidth(
+                          context,
+                          incoming: true,
+                        ),
                         text: message.text,
                         isDocument: isDocument,
                         onTapDocument: canOpenDocument ? _openDocument : null,
