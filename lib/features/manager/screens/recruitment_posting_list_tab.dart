@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -37,7 +38,7 @@ class _RecruitmentPostingListTabState extends State<RecruitmentPostingListTab> {
 
   bool _loading = true;
   String? _error;
-  String? _region;
+  List<String> _regions = const [];
   List<RecruitmentPostingSummary> _visibleItems = const [];
 
   @override
@@ -74,7 +75,7 @@ class _RecruitmentPostingListTabState extends State<RecruitmentPostingListTab> {
           : await repo.getRecruitmentPostings(
               branchId: widget.branchId, // 점포와 무관하게 전역 공고를 불러오지만 API 시그니처 유지
               keyword: _searchController.text.trim(),
-              region: _region,
+              regions: _regions.isEmpty ? null : _regions,
             );
 
       if (!mounted) return;
@@ -108,12 +109,11 @@ class _RecruitmentPostingListTabState extends State<RecruitmentPostingListTab> {
   Future<void> _showRegionSheet() async {
     final next = await showRecruitmentRegionPickerSheet(
       context,
-      selectedRegion: _region,
+      selectedRegions: _regions,
     );
     if (!mounted || next == null) return;
-    setState(() {
-      _region = next.trim().isEmpty ? null : next.trim();
-    });
+    if (listEquals(next, _regions)) return;
+    setState(() => _regions = List<String>.from(next));
     _load();
   }
 
@@ -201,8 +201,8 @@ class _RecruitmentPostingListTabState extends State<RecruitmentPostingListTab> {
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 0.h),
                   child: RecruitmentFilterPill(
-                    label: _region?.trim().isNotEmpty == true ? _region! : '전체',
-                    active: _region?.trim().isNotEmpty == true,
+                    label: recruitmentRegionsChipLabel(_regions),
+                    active: normalizeRecruitmentRegions(_regions).isNotEmpty,
                     onTap: _showRegionSheet,
                   ),
                 ),

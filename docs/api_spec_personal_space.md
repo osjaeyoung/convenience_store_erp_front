@@ -1,5 +1,6 @@
-
 # 근로자 개인 공간 API
+
+> **참고:** 엔드포인트가 `/worker/...` 로 시작하지만, 경영주 및 점장도 접근 권한이 열려 있어 본인의 이력서를 작성하고 다른 지점의 채용 공고에 지원할 수 있습니다.
 
 기본 prefix: `/api/v1`
 
@@ -32,9 +33,9 @@ Figma 파일 `개인 공간`에서 현재 반영된 근로자 화면은 아래 1
 ### Query
 
 - `keyword`: 공고 제목/업체명 검색
-- `region`: 지역 필터
-  - `서울`, `경기`, `부산` 같은 상위 지역값 기준
-  - 서버는 `region_summary`, `address`, `company_name`, `title`를 함께 보고 매칭
+- `region` (다중 선택): 지역 필터
+  - `region=서울&region=경기` 또는 `region=서울,경기` — **OR 조건**
+  - `서울`, `경기`, `부산` 등 상위 지역 기준으로 `region_summary`와 `address`에서 추출해 매칭
 - `page`, `page_size`
 
 ### Response (200)
@@ -512,9 +513,9 @@ Figma 파일 `개인 공간`에서 이번 구현 범위는 아래 7개 노드입
 ### Query
 
 - `keyword`: 공고 제목/업체명 검색
-- `region`: 지역 필터
-  - `서울`, `경기`, `부산` 같은 상위 지역값 기준
-  - 서버는 `region_summary`, `address`, `company_name`, `title`를 함께 보고 매칭
+- `region` (다중 선택): 지역 필터
+  - `region=서울&region=경기` 또는 `region=서울,경기` — **OR 조건**
+  - `서울`, `경기`, `부산` 등 상위 지역 기준으로 `region_summary`와 `address`에서 추출해 매칭
 - `page`, `page_size`
 
 ### Response (200)

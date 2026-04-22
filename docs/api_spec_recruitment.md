@@ -52,7 +52,7 @@
 - `keyword` (optional): 이름/지역/편의점명 검색
 - `gender` (optional): `male` | `female` | `all`
 - `age_min`, `age_max` (optional)
-- `region` (optional): `서울`, `경기`, `부산` 같은 상위 지역 필터. 서버는 지점의 채용공고 `region_summary`, `address`에서 상위 지역을 추출해 매칭
+- `region` (optional, **다중 선택**): 상위 지역 필터. `region=서울&region=경기` 또는 `region=서울,경기` — **OR 조건**. 서버는 구직자 희망 지역 등에서 상위 지역을 추출해 매칭
 - `min_rating` (optional, 0~3)
 - `page` (default=1), `page_size` (default=20)
 
@@ -248,7 +248,7 @@
 ### Query Params
 
 - `keyword` (optional): 제목/업체명 검색
-- `region` (optional): 지역 필터. 서버는 `region_summary`, `address`에서 상위 지역을 추출해 매칭
+- `region` (optional, **다중 선택**): 지역 필터. `region=서울&region=경기`처럼 같은 키를 반복하거나 `region=서울,경기`처럼 쉼표로 한 번에 전달 가능. **여러 값이면 OR**(선택한 지역 중 하나라도 공고와 일치하면 포함). 서버는 `region_summary`, `address`에서 상위 지역을 추출해 매칭
 - `include_draft` (optional, default=false): `true`면 draft 포함
 - `page`, `page_size`
 

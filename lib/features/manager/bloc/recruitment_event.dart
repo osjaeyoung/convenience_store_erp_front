@@ -14,7 +14,7 @@ class RecruitmentHomeRequested extends RecruitmentBlocEvent {
     this.gender,
     this.ageMin,
     this.ageMax,
-    this.region,
+    this.regions,
     this.minRating,
     this.page = 1,
     this.pageSize = 20,
@@ -25,7 +25,7 @@ class RecruitmentHomeRequested extends RecruitmentBlocEvent {
   final String? gender;
   final int? ageMin;
   final int? ageMax;
-  final String? region;
+  final List<String>? regions;
   final double? minRating;
   final int page;
   final int pageSize;
@@ -37,7 +37,7 @@ class RecruitmentHomeRequested extends RecruitmentBlocEvent {
         gender,
         ageMin,
         ageMax,
-        region,
+        regions,
         minRating,
         page,
         pageSize,

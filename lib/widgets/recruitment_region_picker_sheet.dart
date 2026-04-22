@@ -24,19 +24,36 @@ const List<String> kRecruitmentRegionCatalog = <String>[
   '제주',
 ];
 
-/// 상위 지역 선택 바텀시트.
-/// - 바깥에서 `null`이면 시트를 닫기만 한 경우(변경 없음).
-/// - `''`이면 전체(필터 해제).
-Future<String?> showRecruitmentRegionPickerSheet(
-  BuildContext context, {
-  String? selectedRegion,
-}) {
-  final normalized = selectedRegion?.trim();
-  String? draft = normalized == null || normalized.isEmpty
-      ? null
-      : (kRecruitmentRegionCatalog.contains(normalized) ? normalized : null);
+/// 카탈로그에 있는 값만 남기고, [kRecruitmentRegionCatalog] 순서로 정렬합니다.
+List<String> normalizeRecruitmentRegions(Iterable<String>? selected) {
+  final want = <String>{};
+  for (final r in selected ?? const <String>[]) {
+    final t = r.trim();
+    if (t.isEmpty || !kRecruitmentRegionCatalog.contains(t)) continue;
+    want.add(t);
+  }
+  return kRecruitmentRegionCatalog.where(want.contains).toList();
+}
 
-  return showModalBottomSheet<String?>(
+/// 채용 게시판·구직자 홈 필터 칩 라벨 (다중 선택은 `·`로 이어 붙임).
+String recruitmentRegionsChipLabel(List<String> regions) {
+  final n = normalizeRecruitmentRegions(regions);
+  if (n.isEmpty) return '전체';
+  return n.join('·');
+}
+
+/// 상위 지역 다중 선택 바텀시트.
+/// - 바깥에서 `null`이면 시트를 닫기만 한 경우(변경 없음).
+/// - 빈 리스트면 전체(필터 해제).
+Future<List<String>?> showRecruitmentRegionPickerSheet(
+  BuildContext context, {
+  List<String>? selectedRegions,
+}) {
+  final draft = <String>{
+    ...normalizeRecruitmentRegions(selectedRegions),
+  };
+
+  return showModalBottomSheet<List<String>?>(
     context: context,
     backgroundColor: AppColors.grey0,
     isScrollControlled: true,
@@ -47,6 +64,9 @@ Future<String?> showRecruitmentRegionPickerSheet(
       final height = MediaQuery.sizeOf(sheetContext).height * 0.72;
       return StatefulBuilder(
         builder: (context, setModalState) {
+          List<String> orderedDraft() =>
+              kRecruitmentRegionCatalog.where(draft.contains).toList();
+
           return SizedBox(
             height: height,
             child: Column(
@@ -75,7 +95,7 @@ Future<String?> showRecruitmentRegionPickerSheet(
                       ),
                       const Spacer(),
                       TextButton(
-                        onPressed: () => setModalState(() => draft = null),
+                        onPressed: () => setModalState(() => draft.clear()),
                         child: Text(
                           '전체',
                           style: AppTypography.bodyMediumM.copyWith(
@@ -98,13 +118,17 @@ Future<String?> showRecruitmentRegionPickerSheet(
                     itemCount: kRecruitmentRegionCatalog.length,
                     itemBuilder: (context, index) {
                       final region = kRecruitmentRegionCatalog[index];
-                      final selected = draft == region;
+                      final selected = draft.contains(region);
                       return _RegionCheckboxTile(
                         label: region,
                         selected: selected,
                         onTap: () {
                           setModalState(() {
-                            draft = selected ? null : region;
+                            if (selected) {
+                              draft.remove(region);
+                            } else {
+                              draft.add(region);
+                            }
                           });
                         },
                       );
@@ -116,8 +140,8 @@ Future<String?> showRecruitmentRegionPickerSheet(
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 16.h),
                     child: FilledButton(
-                      onPressed: () => Navigator.of(sheetContext).pop<String?>(
-                        draft ?? '',
+                      onPressed: () => Navigator.of(sheetContext).pop<List<String>?>(
+                        orderedDraft(),
                       ),
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.primary,

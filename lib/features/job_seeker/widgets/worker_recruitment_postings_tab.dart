@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -33,7 +34,7 @@ class _WorkerRecruitmentPostingsTabState
 
   List<WorkerRecruitmentPostingSummary> _items =
       const <WorkerRecruitmentPostingSummary>[];
-  String? _selectedRegion;
+  List<String> _selectedRegions = const [];
   bool _loading = true;
   Object? _error;
 
@@ -67,7 +68,7 @@ class _WorkerRecruitmentPostingsTabState
           .read<WorkerRecruitmentRepository>()
           .getPostings(
             keyword: _searchController.text,
-            region: _selectedRegion,
+            regions: _selectedRegions.isEmpty ? null : _selectedRegions,
           );
       if (!mounted) return;
       setState(() {
@@ -86,12 +87,11 @@ class _WorkerRecruitmentPostingsTabState
   Future<void> _selectRegion() async {
     final next = await showRecruitmentRegionPickerSheet(
       context,
-      selectedRegion: _selectedRegion,
+      selectedRegions: _selectedRegions,
     );
     if (!mounted || next == null) return;
-    final region = next.trim().isEmpty ? null : next.trim();
-    if (region == _selectedRegion) return;
-    setState(() => _selectedRegion = region);
+    if (listEquals(next, _selectedRegions)) return;
+    setState(() => _selectedRegions = List<String>.from(next));
     await _load();
   }
 
@@ -157,9 +157,8 @@ class _WorkerRecruitmentPostingsTabState
               ),
               SizedBox(height: 12.h),
               RecruitmentFilterPill(
-                label: _selectedRegion ?? '전체',
-                active: _selectedRegion != null &&
-                    _selectedRegion!.trim().isNotEmpty,
+                label: recruitmentRegionsChipLabel(_selectedRegions),
+                active: normalizeRecruitmentRegions(_selectedRegions).isNotEmpty,
                 onTap: _selectRegion,
               ),
             ],

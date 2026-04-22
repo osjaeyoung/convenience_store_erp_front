@@ -119,11 +119,12 @@ class ManagerHomeRepository {
     String? gender,
     int? ageMin,
     int? ageMax,
-    String? region,
+    List<String>? regions,
     double? minRating,
     int page = 1,
     int pageSize = 20,
   }) async {
+    final regionParam = _regionQueryParam(regions);
     final res = await _apiClient.dio.get<Map<String, dynamic>>(
       '/recruitment/branches/$branchId/home',
       queryParameters: {
@@ -131,7 +132,7 @@ class ManagerHomeRepository {
         if (gender != null && gender.trim().isNotEmpty) 'gender': gender,
         if (ageMin != null) 'age_min': ageMin,
         if (ageMax != null) 'age_max': ageMax,
-        if (region != null && region.trim().isNotEmpty) 'region': region.trim(),
+        if (regionParam != null) 'region': regionParam,
         if (minRating != null) 'min_rating': minRating,
         'page': page,
         'page_size': pageSize,
@@ -208,16 +209,17 @@ class ManagerHomeRepository {
   Future<RecruitmentPostingPage> getRecruitmentPostings({
     required int branchId,
     String? keyword,
-    String? region,
+    List<String>? regions,
     bool includeDraft = false,
     int page = 1,
     int pageSize = 20,
   }) async {
+    final regionParam = _regionQueryParam(regions);
     final res = await _apiClient.dio.get<Map<String, dynamic>>(
       '/recruitment/branches/$branchId/postings',
       queryParameters: {
         if (keyword != null && keyword.trim().isNotEmpty) 'keyword': keyword.trim(),
-        if (region != null && region.trim().isNotEmpty) 'region': region.trim(),
+        if (regionParam != null) 'region': regionParam,
         if (includeDraft) 'include_draft': true,
         'page': page,
         'page_size': pageSize,
@@ -446,5 +448,16 @@ class ManagerHomeRepository {
     }
     if (lower.endsWith('.webp')) return DioMediaType('image', 'webp');
     return null;
+  }
+
+  /// `region=서울,경기` 형식 (다중 지역 OR 필터, API 스펙과 동일).
+  static String? _regionQueryParam(List<String>? regions) {
+    if (regions == null || regions.isEmpty) return null;
+    final parts = regions
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return null;
+    return parts.join(',');
   }
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
@@ -63,7 +64,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen>
   String? _gender;
   int? _ageMin;
   int? _ageMax;
-  String? _region;
+  List<String> _regions = const [];
   double? _minRating;
 
   @override
@@ -117,7 +118,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen>
         gender: _gender,
         ageMin: ageMin,
         ageMax: ageMax,
-        region: _region,
+        regions: _regions.isEmpty ? null : _regions,
         minRating: _minRating,
       ),
     );
@@ -342,12 +343,11 @@ class _RecruitmentScreenState extends State<RecruitmentScreen>
   Future<void> _showRegionSheet() async {
     final next = await showRecruitmentRegionPickerSheet(
       context,
-      selectedRegion: _region,
+      selectedRegions: _regions,
     );
     if (!mounted || next == null) return;
-    final region = next.trim().isEmpty ? null : next.trim();
-    if (region == _region) return;
-    setState(() => _region = region);
+    if (listEquals(next, _regions)) return;
+    setState(() => _regions = List<String>.from(next));
     _refreshCurrentBranch();
   }
 
@@ -550,8 +550,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen>
     return '${_ageMax!}세 이하';
   }
 
-  String get _regionLabel =>
-      (_region ?? '').trim().isEmpty ? '전체' : _region!.trim();
+  String get _regionLabel => recruitmentRegionsChipLabel(_regions);
 
   String get _ratingLabel {
     if (_minRating == null) return '평점';

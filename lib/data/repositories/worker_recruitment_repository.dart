@@ -13,16 +13,17 @@ class WorkerRecruitmentRepository {
 
   Future<WorkerRecruitmentPostingPage> getPostings({
     String? keyword,
-    String? region,
+    List<String>? regions,
     int page = 1,
     int pageSize = 20,
   }) async {
+    final regionParam = _regionQueryParam(regions);
     final res = await _apiClient.dio.get<Map<String, dynamic>>(
       '/worker/recruitment/postings',
       queryParameters: {
         if (keyword != null && keyword.trim().isNotEmpty)
           'keyword': keyword.trim(),
-        if (region != null && region.trim().isNotEmpty) 'region': region.trim(),
+        if (regionParam != null) 'region': regionParam,
         'page': page,
         'page_size': pageSize,
       },
@@ -246,6 +247,16 @@ class WorkerRecruitmentRepository {
       contentType: contentType,
       fileName: fileName,
     );
+  }
+
+  static String? _regionQueryParam(List<String>? regions) {
+    if (regions == null || regions.isEmpty) return null;
+    final parts = regions
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return null;
+    return parts.join(',');
   }
 
   static String? _extractFileName(String? contentDisposition) {

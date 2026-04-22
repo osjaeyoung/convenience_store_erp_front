@@ -34,7 +34,7 @@ class RecruitmentBloc extends Bloc<RecruitmentBlocEvent, RecruitmentBlocState> {
         gender: event.gender,
         ageMin: event.ageMin,
         ageMax: event.ageMax,
-        region: event.region,
+        regions: event.regions,
         minRating: event.minRating,
         page: event.page,
         pageSize: event.pageSize,
