@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/datetime/api_datetime_format.dart';
 import '../../../data/models/worker/worker_recruitment_models.dart';
 import '../../../data/repositories/worker_recruitment_repository.dart';
 import '../../../theme/app_colors.dart';
@@ -44,7 +45,9 @@ class _WorkerContractChatTabState extends State<WorkerContractChatTab> {
       _error = null;
     });
     try {
-      final page = await context.read<WorkerRecruitmentRepository>().getContractChats();
+      final page = await context
+          .read<WorkerRecruitmentRepository>()
+          .getContractChats();
       if (!mounted) return;
       setState(() {
         _items = page.items;
@@ -66,7 +69,8 @@ class _WorkerContractChatTabState extends State<WorkerContractChatTab> {
   Future<void> _openDetail(WorkerContractChatSummary item) async {
     final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
-        builder: (_) => WorkerContractChatDetailScreen(contractId: item.contractId),
+        builder: (_) =>
+            WorkerContractChatDetailScreen(contractId: item.contractId),
       ),
     );
     if (changed == true && mounted) {
@@ -79,18 +83,18 @@ class _WorkerContractChatTabState extends State<WorkerContractChatTab> {
     if (!confirmed || !mounted) return;
     try {
       await context.read<WorkerRecruitmentRepository>().deleteContractChat(
-            contractId: item.contractId,
-          );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('계약 채팅이 삭제되었습니다.')),
+        contractId: item.contractId,
       );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('계약 채팅이 삭제되었습니다.')));
       await _load();
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(accountDioMessage(error))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(accountDioMessage(error))));
     }
   }
 
@@ -150,6 +154,7 @@ class _WorkerContractChatTabState extends State<WorkerContractChatTab> {
                 fallback: item.title,
               );
               final unread = item.unreadCount;
+              final timeLabel = formatContractChatListTime(item.lastMessageAt);
               return Padding(
                 padding: EdgeInsets.symmetric(vertical: 20.h),
                 child: Row(
@@ -183,17 +188,39 @@ class _WorkerContractChatTabState extends State<WorkerContractChatTab> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    workerDisplayValue(
-                                      item.counterpartyName,
-                                      fallback: '상대방',
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppTypography.bodyMediumM.copyWith(
-                                      color: AppColors.textPrimary,
-                                      height: 16 / 14,
-                                    ),
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          workerDisplayValue(
+                                            item.counterpartyName,
+                                            fallback: '상대방',
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppTypography.bodyMediumM
+                                              .copyWith(
+                                                color: AppColors.textPrimary,
+                                                height: 16 / 14,
+                                              ),
+                                        ),
+                                      ),
+                                      if (timeLabel.isNotEmpty) ...[
+                                        SizedBox(width: 8.w),
+                                        Text(
+                                          timeLabel,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppTypography.bodySmallR
+                                              .copyWith(
+                                                color: AppColors.textTertiary,
+                                                height: 18 / 12,
+                                              ),
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                   SizedBox(height: 2.h),
                                   Text(
@@ -256,10 +283,7 @@ class _WorkerContractChatTabState extends State<WorkerContractChatTab> {
             },
           );
         }
-        return RefreshIndicator(
-          onRefresh: _load,
-          child: scrollableChild,
-        );
+        return RefreshIndicator(onRefresh: _load, child: scrollableChild);
       },
     );
   }

@@ -743,6 +743,7 @@ class _ProfileRow extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 8.h),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             label,
@@ -751,11 +752,13 @@ class _ProfileRow extends StatelessWidget {
               height: 16 / 14,
             ),
           ),
-          const Spacer(),
-          Flexible(
+          SizedBox(width: 12.w),
+          Expanded(
             child: Text(
               workerDisplayValue(value),
               textAlign: TextAlign.right,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: AppTypography.bodyMediumR.copyWith(
                 color: AppColors.textPrimary,
               ),

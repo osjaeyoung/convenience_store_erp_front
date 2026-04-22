@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:intl/intl.dart';
-
+import '../../../core/datetime/api_datetime_format.dart';
 import '../../../data/models/worker/worker_recruitment_models.dart';
 import '../../../data/repositories/worker_recruitment_repository.dart';
 import '../../../theme/app_colors.dart';
@@ -25,8 +24,6 @@ class WorkerContractChatDetailScreen extends StatefulWidget {
 
 class _WorkerContractChatDetailScreenState
     extends State<WorkerContractChatDetailScreen> {
-  static final DateFormat _timeFormat = DateFormat('a h:mm', 'ko_KR');
-
   bool _loading = true;
   bool _changed = false;
   bool _deleting = false;
@@ -62,18 +59,7 @@ class _WorkerContractChatDetailScreenState
     }
   }
 
-  String _formatTime(String? raw) {
-    if (raw == null || raw.isEmpty) return '';
-    var timeStr = raw.trim();
-    if (!timeStr.endsWith('Z') &&
-        !timeStr.contains('+') &&
-        !timeStr.contains(RegExp(r'-[0-9]{2}:[0-9]{2}$'))) {
-      timeStr = '${timeStr}Z';
-    }
-    final dt = DateTime.tryParse(timeStr) ?? DateTime.tryParse(raw);
-    if (dt == null) return '';
-    return _timeFormat.format(dt.toLocal());
-  }
+  String _formatTime(String? raw) => formatContractChatBubbleTime(raw);
 
   Future<void> _openDocument() async {
     final room = _detail?.thread.branchName;

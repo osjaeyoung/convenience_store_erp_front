@@ -48,8 +48,8 @@ class _AccountPolicyDetailScreenState extends State<AccountPolicyDetailScreen> {
     });
     try {
       final detail = await context.read<AuthRepository>().getPolicyDetail(
-            policyType: widget.policyType,
-          );
+        policyType: widget.policyType,
+      );
       if (!mounted) return;
       setState(() {
         _detail = detail;
@@ -73,44 +73,71 @@ class _AccountPolicyDetailScreenState extends State<AccountPolicyDetailScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _PolicyErrorView(
-                  message: accountDioMessage(_error!),
-                  onRetry: _load,
-                )
-              : ListView(
-                  padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 24.h),
+          ? _PolicyErrorView(
+              message: accountDioMessage(_error!),
+              onRetry: _load,
+            )
+          : ListView(
+              padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 24.h),
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Container(
-                      constraints: BoxConstraints(minHeight: 360.h),
-                      padding: EdgeInsets.all(16.r),
-                      decoration: BoxDecoration(
-                        color: AppColors.grey0,
-                        borderRadius: BorderRadius.circular(12.r),
-                        border: Border.all(color: AppColors.grey100),
+                    InputDecorator(
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: AppColors.grey0,
+                        contentPadding: EdgeInsets.all(16.r),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                          borderSide: const BorderSide(
+                            color: AppColors.grey100,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                          borderSide: const BorderSide(
+                            color: AppColors.grey100,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                          borderSide: const BorderSide(
+                            color: AppColors.grey100,
+                          ),
+                        ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _detail?.content ?? '',
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(minHeight: 360.h),
+                        child: SingleChildScrollView(
+                          child: SelectableText(
+                            _policyBodyOnly(
+                              _detail?.content,
+                              _detail?.updatedAt,
+                            ),
                             style: AppTypography.bodyMediumR.copyWith(
                               color: AppColors.textPrimary,
                               height: 20 / 14,
                             ),
                           ),
-                          SizedBox(height: 8.h),
-                          Text(
-                            _formatDate(_detail?.updatedAt),
-                            style: AppTypography.bodySmallR.copyWith(
-                              color: AppColors.textDisabled,
-                              height: 18 / 12,
-                            ),
-                          ),
-                        ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 8.h),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        _formatDate(_detail?.updatedAt),
+                        style: AppTypography.bodySmallR.copyWith(
+                          color: AppColors.textDisabled,
+                          height: 18 / 12,
+                        ),
                       ),
                     ),
                   ],
                 ),
+              ],
+            ),
     );
   }
 
@@ -129,13 +156,37 @@ class _AccountPolicyDetailScreenState extends State<AccountPolicyDetailScreen> {
     if (parsed == null) return '-';
     return _dateTimeFormat.format(parsed.toLocal());
   }
+
+  /// 본문에 API가 붙인 날짜/시간 줄이 있으면 제거해 본문에는 약관 텍스트만 남깁니다.
+  String _policyBodyOnly(String? content, String? updatedAt) {
+    var text = (content ?? '').trimRight();
+    if (text.isEmpty) return text;
+
+    final tsLine = RegExp(
+      r'^\s*('
+      r'\d{4}[-./]\d{1,2}[-./]\d{1,2}'
+      r'([ T]\d{1,2}:\d{2}(:\d{2})?)?'
+      r'|\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?'
+      r')\s*$',
+    );
+    var lines = text.split('\n');
+    while (lines.isNotEmpty && tsLine.hasMatch(lines.last.trim())) {
+      lines.removeLast();
+    }
+    text = lines.join('\n').trimRight();
+
+    if (updatedAt != null) {
+      final formatted = _formatDate(updatedAt);
+      if (formatted != '-' && text.endsWith(formatted)) {
+        text = text.substring(0, text.length - formatted.length).trimRight();
+      }
+    }
+    return text;
+  }
 }
 
 class _PolicyErrorView extends StatelessWidget {
-  const _PolicyErrorView({
-    required this.message,
-    required this.onRetry,
-  });
+  const _PolicyErrorView({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;

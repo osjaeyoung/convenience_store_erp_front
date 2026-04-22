@@ -101,8 +101,14 @@ class _WorkerApplicationsTabState extends State<WorkerApplicationsTab> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 24.h),
         itemCount: _items.length,
-        separatorBuilder: (_, __) =>
-            const Divider(height: 1, color: AppColors.border),
+        separatorBuilder: (_, __) => Padding(
+          padding: EdgeInsets.symmetric(vertical: 12.h),
+          child: const Divider(
+            height: 1,
+            thickness: 1,
+            color: AppColors.border,
+          ),
+        ),
         itemBuilder: (context, index) {
           final item = _items[index];
           return WorkerRecruitmentCard(
