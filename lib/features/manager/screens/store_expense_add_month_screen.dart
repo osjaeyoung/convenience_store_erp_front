@@ -297,6 +297,8 @@ class _StoreExpenseAddMonthScreenState extends State<StoreExpenseAddMonthScreen>
             branchId: widget.branchId,
             expenseMonthId: created.expenseMonthId,
             periodLabel: created.periodLabel,
+            year: created.year,
+            month: created.month,
           ),
         ),
       );

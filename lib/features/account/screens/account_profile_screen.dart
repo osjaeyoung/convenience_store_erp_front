@@ -189,7 +189,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
         verificationFailed: (error) {
           if (!mounted) return;
           setState(() => _saving = false);
-          ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(error.message ?? '인증번호 요청에 실패했습니다.')),
           );
         },
@@ -301,9 +301,9 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                         _fieldBlock(
                           caption: '이름',
                           child: AuthInputField(
-                            controller: _nameCtrl,
+                              controller: _nameCtrl,
                             hintText: '이름을 입력해주세요.',
-                            onEditingComplete: _saveNameIfChanged,
+                              onEditingComplete: _saveNameIfChanged,
                             fillColor: AppColors.grey0Alt,
                             focusedBorderColor: AppColors.grey50,
                             contentPadding: EdgeInsets.fromLTRB(16.w, 14.h, 12.w, 14.h),
@@ -363,7 +363,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                         child: Center(
                           child: GestureDetector(
                             onTap: _saving ? null : _requestPhoneVerification,
-                            child: Container(
+                                child: Container(
                               width: 76.w,
                               height: 28.h,
                               decoration: BoxDecoration(
@@ -388,9 +388,9 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                                         height: 1,
                                       ),
                                     ),
-                            ),
-                          ),
-                        ),
+                                  ),
+                                ),
+                              ),
                       ),
                     ),
                           ),

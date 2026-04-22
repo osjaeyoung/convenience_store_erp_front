@@ -146,6 +146,8 @@ class _StoreCostScreenState extends State<StoreCostScreen>
           branchId: branchId,
           expenseMonthId: month.expenseMonthId,
           periodLabel: month.periodLabel,
+          year: month.year,
+          month: month.month,
         ),
       ),
     );

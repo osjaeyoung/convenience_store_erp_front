@@ -435,7 +435,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
                             _dragSlotKey(dateStr, time),
                           );
                           return Padding(
-                            padding: EdgeInsets.only(bottom: 8.h),
+                            padding: EdgeInsets.only(bottom: 12.h), // 상하 간격을 넓혀 드래그 간섭 최소화
                             child: _SlotCard(
                               key: _slotKeyFor(dateStr, time),
                               startTime: time,
@@ -641,7 +641,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     final dy = pos.dy;
     final dx = pos.dx;
 
-    const edgeMargin = 160.0; // 드래그 시 스크롤이 시작되는 화면 끝부분의 여백
+    const edgeMargin = 220.0; // 드래그 시 스크롤이 시작되는 상하단 여백 확대
 
     bool needsScroll = false;
 
@@ -688,7 +688,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     final dy = pos.dy;
     final dx = pos.dx;
 
-    const edgeMargin = 160.0;
+    const edgeMargin = 220.0;
 
     bool scrolled = false;
 
@@ -696,7 +696,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     if (_scrollController.hasClients) {
       if (dy < edgeMargin) {
         final factor = ((edgeMargin - dy) / edgeMargin).clamp(0.0, 1.0);
-        final scrollStep = 5.0 + (25.0 * factor);
+        final scrollStep = 8.0 + (30.0 * factor); // 스크롤 속도 상향
         final newOffset = (_scrollController.offset - scrollStep)
             .clamp(0.0, _scrollController.position.maxScrollExtent);
         if (newOffset != _scrollController.offset) {
@@ -705,7 +705,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
         }
       } else if (dy > screenHeight - edgeMargin) {
         final factor = ((dy - (screenHeight - edgeMargin)) / edgeMargin).clamp(0.0, 1.0);
-        final scrollStep = 5.0 + (25.0 * factor);
+        final scrollStep = 8.0 + (30.0 * factor); // 스크롤 속도 상향
         final newOffset = (_scrollController.offset + scrollStep)
             .clamp(0.0, _scrollController.position.maxScrollExtent);
         if (newOffset != _scrollController.offset) {
@@ -719,7 +719,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     if (!_isDailyView && _horizontalScrollController.hasClients) {
       if (dx < edgeMargin) {
         final factor = ((edgeMargin - dx) / edgeMargin).clamp(0.0, 1.0);
-        final scrollStep = 5.0 + (25.0 * factor);
+        final scrollStep = 8.0 + (30.0 * factor); // 스크롤 속도 상향
         final newOffset = (_horizontalScrollController.offset - scrollStep)
             .clamp(0.0, _horizontalScrollController.position.maxScrollExtent);
         if (newOffset != _horizontalScrollController.offset) {
@@ -728,7 +728,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
         }
       } else if (dx > screenWidth - edgeMargin) {
         final factor = ((dx - (screenWidth - edgeMargin)) / edgeMargin).clamp(0.0, 1.0);
-        final scrollStep = 5.0 + (25.0 * factor);
+        final scrollStep = 8.0 + (30.0 * factor); // 스크롤 속도 상향
         final newOffset = (_horizontalScrollController.offset + scrollStep)
             .clamp(0.0, _horizontalScrollController.position.maxScrollExtent);
         if (newOffset != _horizontalScrollController.offset) {
@@ -833,7 +833,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     return _wrapDragSelectionListener(
       child: LayoutBuilder(
         builder: (context, constraints) {
-          const spacing = 8.0;
+          const spacing = 12.0; // 박스 간격 늘림
           final itemWidth = (constraints.maxWidth - spacing * 2) / 3;
           return Wrap(
             spacing: spacing,
@@ -1201,8 +1201,8 @@ class _SlotRow extends StatelessWidget {
         ? AppColors.primary
         : AppColors.textPrimary;
     return Container(
-      constraints: const BoxConstraints(minHeight: 44),
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+      constraints: const BoxConstraints(minHeight: 56), // 터치 영역 세로 여백 확대
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h), // 세로 패딩 확대
       decoration: isDragSelected
           ? BoxDecoration(
               color: AppColors.primaryLight,
@@ -1215,7 +1215,7 @@ class _SlotRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SizedBox(
-              width: 48,
+              width: 54, // 터치 영역 가로 여백 확대
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1243,10 +1243,13 @@ class _SlotRow extends StatelessWidget {
               child: GestureDetector(
                 onTap: showPlusButton ? () => onSlotTap?.call(startTime) : null,
                 behavior: HitTestBehavior.opaque,
-                child: _StaffSlotCell(
-                  assigned: assigned,
-                  showPlusButton: showPlusButton,
-                  onAddTap: () => onSlotTap?.call(startTime),
+                child: Padding(
+                  padding: EdgeInsets.only(left: 4.w), // 좌측 여백 추가로 드래그 시작점 확보
+                  child: _StaffSlotCell(
+                    assigned: assigned,
+                    showPlusButton: showPlusButton,
+                    onAddTap: () => onSlotTap?.call(startTime),
+                  ),
                 ),
               ),
             ),
@@ -1429,7 +1432,11 @@ class _SlotCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDragSlot = isDragModeSlot;
     return Container(
-      padding: EdgeInsets.all(isDragSlot ? 16 : 8),
+      // 드래그 시 터치 영역 확보를 위해 padding을 상하로 더 늘림
+      padding: EdgeInsets.symmetric(
+        horizontal: isDragSlot ? 16 : 8,
+        vertical: isDragSlot ? 24 : 8,
+      ),
       decoration: BoxDecoration(
         color: isDragSelected ? AppColors.primaryLight : AppColors.grey0,
         borderRadius: BorderRadius.circular(12.r),

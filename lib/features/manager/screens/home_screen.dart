@@ -950,11 +950,13 @@ class _SelectedBranchOverview extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _RegisteredManagerCard(
-          managerName: managerName,
-          onDetailTap: () => _openManagerRegistration(context),
-        ),
-        SizedBox(height: 24.h),
+        if (role == UserRole.manager) ...[
+          _RegisteredManagerCard(
+            managerName: managerName,
+            onDetailTap: () => _openManagerRegistration(context),
+          ),
+          SizedBox(height: 24.h),
+        ],
         _RecruitmentStatusCard(
           waitingInterview: waitingInterview,
           newApplicants: newApplicants,

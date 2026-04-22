@@ -21,11 +21,15 @@ class StoreExpenseAddItemScreen extends StatefulWidget {
     required this.branchId,
     required this.expenseMonthId,
     required this.periodLabel,
+    required this.year,
+    required this.month,
   });
 
   final int branchId;
   final int expenseMonthId;
   final String periodLabel;
+  final int year;
+  final int month;
 
   @override
   State<StoreExpenseAddItemScreen> createState() => _StoreExpenseAddItemScreenState();
@@ -329,11 +333,22 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
 
   Future<void> _pickDate() async {
     final now = DateTime.now();
+    final firstDayOfMonth = DateTime(widget.year, widget.month, 1);
+    final lastDayOfMonth = DateTime(widget.year, widget.month + 1, 0);
+
+    var initialDate = _expenseDate ?? now;
+    if (initialDate.isBefore(firstDayOfMonth)) {
+      initialDate = firstDayOfMonth;
+    } else if (initialDate.isAfter(lastDayOfMonth)) {
+      initialDate = lastDayOfMonth;
+    }
+
     final picked = await showDatePicker(
       context: context,
-      initialDate: _expenseDate ?? now,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(now.year + 2, 12, 31),
+      initialDate: initialDate,
+      firstDate: firstDayOfMonth,
+      lastDate: lastDayOfMonth,
+      helpText: '${widget.year}년 ${widget.month}월의 일자를 선택해주세요',
     );
     if (picked != null && mounted) {
       setState(() => _expenseDate = picked);

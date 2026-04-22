@@ -351,11 +351,23 @@ class _StoreExpenseEditItemScreenState extends State<StoreExpenseEditItemScreen>
 
   Future<void> _pickDate() async {
     final now = DateTime.now();
+    final d = DateTime.tryParse(widget.item.expenseDate) ?? now;
+    final firstDayOfMonth = DateTime(d.year, d.month, 1);
+    final lastDayOfMonth = DateTime(d.year, d.month + 1, 0);
+
+    var initialDate = _expenseDate ?? now;
+    if (initialDate.isBefore(firstDayOfMonth)) {
+      initialDate = firstDayOfMonth;
+    } else if (initialDate.isAfter(lastDayOfMonth)) {
+      initialDate = lastDayOfMonth;
+    }
+
     final picked = await showDatePicker(
       context: context,
-      initialDate: _expenseDate ?? now,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(now.year + 2, 12, 31),
+      initialDate: initialDate,
+      firstDate: firstDayOfMonth,
+      lastDate: lastDayOfMonth,
+      helpText: '${d.year}년 ${d.month}월의 일자를 선택해주세요',
     );
     if (picked != null && mounted) {
       setState(() => _expenseDate = picked);

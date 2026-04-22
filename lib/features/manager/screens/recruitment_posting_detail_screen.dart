@@ -103,7 +103,9 @@ class _RecruitmentPostingDetailScreenState
 
   Future<void> _load() async {
     try {
-      final detail = await context.read<ManagerHomeRepository>().getRecruitmentPostingDetail(
+      final detail = await context
+          .read<ManagerHomeRepository>()
+          .getRecruitmentPostingDetail(
             branchId: widget.branchId,
             postingId: widget.postingId,
           );
@@ -129,7 +131,9 @@ class _RecruitmentPostingDetailScreenState
   Future<void> _loadApplications() async {
     setState(() => _loadingApplications = true);
     try {
-      final page = await context.read<ManagerHomeRepository>().getRecruitmentApplications(
+      final page = await context
+          .read<ManagerHomeRepository>()
+          .getRecruitmentApplications(
             branchId: widget.branchId,
             postingId: widget.postingId,
           );
@@ -144,9 +148,9 @@ class _RecruitmentPostingDetailScreenState
         _applicationPage = null;
         _loadingApplications = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('지원현황을 불러오지 못했습니다: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('지원현황을 불러오지 못했습니다: $e')));
     }
   }
 
@@ -157,7 +161,8 @@ class _RecruitmentPostingDetailScreenState
         final repo = context.read<ManagerHomeRepository>();
         var postingId = widget.postingId;
         final shouldCreateDraftFirst =
-            widget.previewRequest != null && (postingId <= 0 || (_detail?.status == 'preview'));
+            widget.previewRequest != null &&
+            (postingId <= 0 || (_detail?.status == 'preview'));
         if (shouldCreateDraftFirst) {
           final created = await repo.createRecruitmentPosting(
             branchId: widget.branchId,
@@ -173,15 +178,15 @@ class _RecruitmentPostingDetailScreenState
           postingId: postingId,
         );
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('채용 공고가 게시되었습니다.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('채용 공고가 게시되었습니다.')));
         Navigator.of(context).pop(true);
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('게시 실패: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('게시 실패: $e')));
       } finally {
         if (mounted) {
           setState(() => _publishing = false);
@@ -190,9 +195,10 @@ class _RecruitmentPostingDetailScreenState
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('지원 기능은 현재 연결되지 않았습니다.')),
-    );
+    // manager or owner applying logic (not officially supported but user wants button to work or at least show toast)
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('점장/경영주는 지원할 수 없습니다.')));
   }
 
   Future<void> _deletePosting() async {
@@ -205,19 +211,19 @@ class _RecruitmentPostingDetailScreenState
     setState(() => _deleting = true);
     try {
       await context.read<ManagerHomeRepository>().deleteRecruitmentPosting(
-            branchId: widget.branchId,
-            postingId: widget.postingId,
-          );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('채용 공고가 삭제되었습니다.')),
+        branchId: widget.branchId,
+        postingId: widget.postingId,
       );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('채용 공고가 삭제되었습니다.')));
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('삭제 실패: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('삭제 실패: $e')));
     } finally {
       if (mounted) {
         setState(() => _deleting = false);
@@ -276,7 +282,7 @@ class _RecruitmentPostingDetailScreenState
         ),
         titleSpacing: 0,
         title: Text(
-          widget.mineMode ? '내 채용 게시글' : '채용 게시판',
+          widget.mineMode ? '내 채용 게시글' : '채용 게시판 상세',
           style: AppTypography.bodyLargeB.copyWith(
             color: AppColors.textPrimary,
             height: 24 / 16,
@@ -315,7 +321,10 @@ class _RecruitmentPostingDetailScreenState
               child: Center(
                 child: Container(
                   height: 24,
-                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 4.h,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.primaryLight,
                     borderRadius: BorderRadius.circular(4.r),
@@ -336,181 +345,196 @@ class _RecruitmentPostingDetailScreenState
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _PostingErrorView(
-                  message: _error!,
-                  onRetry: _load,
-                )
-              : _detail == null
-                  ? const Center(child: Text('공고를 불러올 수 없습니다.'))
-                  : Column(
+          ? _PostingErrorView(message: _error!, onRetry: _load)
+          : _detail == null
+          ? const Center(child: Text('공고를 불러올 수 없습니다.'))
+          : Column(
+              children: [
+                if (widget.mineMode)
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.grey0,
+                      border: Border(
+                        bottom: BorderSide(color: AppColors.grey50),
+                      ),
+                    ),
+                    child: Row(
                       children: [
-                        if (widget.mineMode)
-                          Container(
-                            decoration: BoxDecoration(
-                              color: AppColors.grey0,
-                              border: Border(
-                                bottom: BorderSide(color: AppColors.grey50),
+                        Expanded(
+                          child: _DetailTopTab(
+                            label: '내 채용 게시글',
+                            selected: _selectedTabIndex == 0,
+                            onTap: () => setState(() => _selectedTabIndex = 0),
+                          ),
+                        ),
+                        Expanded(
+                          child: _DetailTopTab(
+                            label: '지원현황',
+                            selected: _selectedTabIndex == 1,
+                            onTap: () {
+                              setState(() => _selectedTabIndex = 1);
+                              if (_applicationPage == null &&
+                                  !_loadingApplications) {
+                                _loadApplications();
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                Expanded(
+                  child: _selectedTabIndex == 1 && widget.mineMode
+                      ? _ApplicationsTabBody(
+                          applicationPage: _applicationPage,
+                          loading: _loadingApplications,
+                          onTapApplication: _openApplication,
+                        )
+                      : SingleChildScrollView(
+                          padding: EdgeInsets.only(bottom: 24.h),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _PostingSummaryHeader(detail: _detail!),
+                              Padding(
+                                padding: EdgeInsets.fromLTRB(
+                                  20.w,
+                                  20.h,
+                                  20.w,
+                                  0.h,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    _PostingSection(
+                                      title: '근무조건',
+                                      child: _PostingInfoCard(
+                                        rows: [
+                                          _PostingInfoRowData(
+                                            label: '급여',
+                                            primaryValue:
+                                                _detail!.payType ?? '-',
+                                            primaryColor: AppColors.primary,
+                                            value: _formattedAmount(
+                                              _detail!.payAmount,
+                                            ),
+                                          ),
+                                          _PostingInfoRowData(
+                                            label: '근무기간',
+                                            value: _detail!.workPeriod ?? '-',
+                                          ),
+                                          _PostingInfoRowData(
+                                            label: '근무요일',
+                                            value: _detail!.workDays ?? '-',
+                                            detail: _detail!.workDaysDetail,
+                                          ),
+                                          _PostingInfoRowData(
+                                            label: '근무시간',
+                                            value: _detail!.workTime ?? '-',
+                                            detail: _detail!.workTimeDetail,
+                                          ),
+                                          _PostingInfoRowData(
+                                            label: '업직종',
+                                            value: _detail!.jobCategory ?? '-',
+                                          ),
+                                          _PostingInfoRowData(
+                                            label: '고용형태',
+                                            value:
+                                                _detail!.employmentType ?? '-',
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(height: 20.h),
+                                    _PostingSection(
+                                      title: '모집조건',
+                                      child: _PostingInfoCard(
+                                        rows: [
+                                          _PostingInfoRowData(
+                                            label: '모집마감',
+                                            value:
+                                                _detail!.recruitmentDeadline ??
+                                                '-',
+                                          ),
+                                          _PostingInfoRowData(
+                                            label: '모집인원',
+                                            value:
+                                                _detail!.recruitmentHeadcount ??
+                                                '-',
+                                            detail: _detail!
+                                                .recruitmentHeadcountDetail,
+                                          ),
+                                          _PostingInfoRowData(
+                                            label: '학력',
+                                            value: _detail!.education ?? '-',
+                                            detail: _detail!.educationDetail,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(height: 20.h),
+                                    _PostingSection(
+                                      title: '근무지역',
+                                      child: _SingleLineInfoCard(
+                                        text:
+                                            _detail!.address ??
+                                            _detail!.regionSummary ??
+                                            '-',
+                                      ),
+                                    ),
+                                    SizedBox(height: 20.h),
+                                    _PostingSection(
+                                      title: '채용 담당자 연락처',
+                                      child: _ContactInfoCard(detail: _detail!),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: _DetailTopTab(
-                                    label: '내 채용 게시글',
-                                    selected: _selectedTabIndex == 0,
-                                    onTap: () => setState(() => _selectedTabIndex = 0),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: _DetailTopTab(
-                                    label: '지원현황',
-                                    selected: _selectedTabIndex == 1,
-                                    onTap: () {
-                                      setState(() => _selectedTabIndex = 1);
-                                      if (_applicationPage == null && !_loadingApplications) {
-                                        _loadApplications();
-                                      }
-                                    },
-                                  ),
-                                ),
-                              ],
+                            ],
+                          ),
+                        ),
+                ),
+                if (!widget.mineMode)
+                  SafeArea(
+                    top: false,
+                    child: Container(
+                      width: double.infinity,
+                      color: AppColors.grey0,
+                      padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 36.h),
+                      child: SizedBox(
+                        height: 56,
+                        child: FilledButton(
+                          onPressed: _publishing ? null : _onBottomTap,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: AppColors.grey0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.r),
                             ),
                           ),
-                        Expanded(
-                          child: _selectedTabIndex == 1 && widget.mineMode
-                              ? _ApplicationsTabBody(
-                                  applicationPage: _applicationPage,
-                                  loading: _loadingApplications,
-                                  onTapApplication: _openApplication,
+                          child: _publishing
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.2,
+                                    color: AppColors.grey0,
+                                  ),
                                 )
-                              : SingleChildScrollView(
-                                  padding: EdgeInsets.only(bottom: 24.h),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                                    children: [
-                                      _PostingSummaryHeader(detail: _detail!),
-                                      Padding(
-                                        padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 0.h),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                                          children: [
-                                            _PostingSection(
-                                              title: '근무조건',
-                                              child: _PostingInfoCard(
-                                                rows: [
-                                                  _PostingInfoRowData(
-                                                    label: '급여',
-                                                    primaryValue: _detail!.payType ?? '-',
-                                                    primaryColor: AppColors.primary,
-                                                    value: _formattedAmount(_detail!.payAmount),
-                                                  ),
-                                                  _PostingInfoRowData(
-                                                    label: '근무기간',
-                                                    value: _detail!.workPeriod ?? '-',
-                                                  ),
-                                                  _PostingInfoRowData(
-                                                    label: '근무요일',
-                                                    value: _detail!.workDays ?? '-',
-                                                    detail: _detail!.workDaysDetail,
-                                                  ),
-                                                  _PostingInfoRowData(
-                                                    label: '근무시간',
-                                                    value: _detail!.workTime ?? '-',
-                                                    detail: _detail!.workTimeDetail,
-                                                  ),
-                                                  _PostingInfoRowData(
-                                                    label: '업직종',
-                                                    value: _detail!.jobCategory ?? '-',
-                                                  ),
-                                                  _PostingInfoRowData(
-                                                    label: '공용형태',
-                                                    value: _detail!.employmentType ?? '-',
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            SizedBox(height: 20.h),
-                                            _PostingSection(
-                                              title: '모집조건',
-                                              child: _PostingInfoCard(
-                                                rows: [
-                                                  _PostingInfoRowData(
-                                                    label: '모집마감',
-                                                    value: _detail!.recruitmentDeadline ?? '-',
-                                                  ),
-                                                  _PostingInfoRowData(
-                                                    label: '모집인원',
-                                                    value: _detail!.recruitmentHeadcount ?? '-',
-                                                    detail: _detail!.recruitmentHeadcountDetail,
-                                                  ),
-                                                  _PostingInfoRowData(
-                                                    label: '학력',
-                                                    value: _detail!.education ?? '-',
-                                                    detail: _detail!.educationDetail,
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            SizedBox(height: 20.h),
-                                            _PostingSection(
-                                              title: '근무지역',
-                                              child: _SingleLineInfoCard(
-                                                text:
-                                                    _detail!.address ?? _detail!.regionSummary ?? '-',
-                                              ),
-                                            ),
-                                            SizedBox(height: 20.h),
-                                            _PostingSection(
-                                              title: '채용 담당자 연락처',
-                                              child: _ContactInfoCard(detail: _detail!),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
+                              : Text(
+                                  widget.allowPublish ? '게시' : '지원하기',
+                                  style: AppTypography.bodyLargeB.copyWith(
+                                    color: AppColors.grey0,
+                                    height: 24 / 16,
                                   ),
                                 ),
                         ),
-                        if (!widget.mineMode)
-                          SafeArea(
-                            top: false,
-                            child: Container(
-                              width: double.infinity,
-                              color: AppColors.grey0,
-                              padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 36.h),
-                              child: SizedBox(
-                                height: 56,
-                                child: FilledButton(
-                                  onPressed: _publishing ? null : _onBottomTap,
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: AppColors.primary,
-                                    foregroundColor: AppColors.grey0,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8.r),
-                                    ),
-                                  ),
-                                  child: _publishing
-                                      ? const SizedBox(
-                                          width: 22,
-                                          height: 22,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2.2,
-                                            color: AppColors.grey0,
-                                          ),
-                                        )
-                                      : Text(
-                                          widget.allowPublish ? '게시' : '지원하기',
-                                          style: AppTypography.bodyLargeB.copyWith(
-                                            color: AppColors.grey0,
-                                            fontSize: 16.sp,
-                                          ),
-                                        ),
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
+                      ),
                     ),
+                  ),
+              ],
+            ),
     );
   }
 
@@ -584,38 +608,38 @@ class _ApplicationsTabBody extends StatelessWidget {
           child: loading
               ? const Center(child: CircularProgressIndicator())
               : page == null || page.items.isEmpty
-                  ? Padding(
-                      padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 24.h),
-                      child: Align(
-                        alignment: Alignment.topCenter,
-                        child: Text(
-                          '지원자가 없습니다.',
-                          style: AppTypography.bodyMediumR.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
+              ? Padding(
+                  padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 24.h),
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: Text(
+                      '지원자가 없습니다.',
+                      style: AppTypography.bodyMediumR.copyWith(
+                        color: AppColors.textSecondary,
                       ),
-                    )
-                  : ListView(
-                      padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 24.h),
-                      children: [
-                        Text(
-                          '지원자',
-                          style: AppTypography.heading3.copyWith(
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        SizedBox(height: 8.h),
-                        for (var i = 0; i < page.items.length; i++) ...[
-                          _ApplicationCard(
-                            item: page.items[i],
-                            onTap: () => onTapApplication(page.items[i]),
-                          ),
-                          if (i != page.items.length - 1) SizedBox(height: 12.h),
-                        ],
-                      ],
                     ),
+                  ),
+                )
+              : ListView(
+                  padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 24.h),
+                  children: [
+                    Text(
+                      '지원자',
+                      style: AppTypography.heading3.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: 8.h),
+                    for (var i = 0; i < page.items.length; i++) ...[
+                      _ApplicationCard(
+                        item: page.items[i],
+                        onTap: () => onTapApplication(page.items[i]),
+                      ),
+                      if (i != page.items.length - 1) SizedBox(height: 12.h),
+                    ],
+                  ],
+                ),
         ),
       ],
     );
@@ -623,10 +647,7 @@ class _ApplicationsTabBody extends StatelessWidget {
 }
 
 class _ApplicationCard extends StatelessWidget {
-  const _ApplicationCard({
-    required this.item,
-    required this.onTap,
-  });
+  const _ApplicationCard({required this.item, required this.onTap});
 
   final RecruitmentApplicationSummary item;
   final VoidCallback onTap;
@@ -705,8 +726,10 @@ class _ApplicationCard extends StatelessWidget {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 _ApplicantRatingStars(
-                                  filledCount:
-                                      _filledApplicationStarCount(item.averageRating, maxStars: 3),
+                                  filledCount: _filledApplicationStarCount(
+                                    item.averageRating,
+                                    maxStars: 3,
+                                  ),
                                   maxStars: 3,
                                 ),
                                 SizedBox(width: 4.w),
@@ -758,9 +781,7 @@ class _PostingSummaryHeader extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 20.h),
       decoration: BoxDecoration(
         color: AppColors.grey0,
-        border: Border(
-          bottom: BorderSide(color: AppColors.grey50),
-        ),
+        border: Border(bottom: BorderSide(color: AppColors.grey50)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -807,10 +828,7 @@ class _PostingSummaryHeader extends StatelessWidget {
 }
 
 class _PostingSection extends StatelessWidget {
-  const _PostingSection({
-    required this.title,
-    required this.child,
-  });
+  const _PostingSection({required this.title, required this.child});
 
   final String title;
   final Widget child;
@@ -886,8 +904,9 @@ class _PostingInfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final detail = row.detail?.trim();
     return Row(
-      crossAxisAlignment:
-          detail != null && detail.isNotEmpty ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+      crossAxisAlignment: detail != null && detail.isNotEmpty
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.center,
       children: [
         SizedBox(
           width: 56,
@@ -910,7 +929,8 @@ class _PostingInfoRow extends StatelessWidget {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 spacing: 4,
                 children: [
-                  if (row.primaryValue != null && row.primaryValue!.trim().isNotEmpty)
+                  if (row.primaryValue != null &&
+                      row.primaryValue!.trim().isNotEmpty)
                     Text(
                       row.primaryValue!,
                       style: AppTypography.bodyMediumM.copyWith(
@@ -1024,10 +1044,7 @@ class _ContactInfoCard extends StatelessWidget {
 }
 
 class _PostingErrorView extends StatelessWidget {
-  const _PostingErrorView({
-    required this.message,
-    required this.onRetry,
-  });
+  const _PostingErrorView({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
@@ -1048,10 +1065,7 @@ class _PostingErrorView extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 16.h),
-            TextButton(
-              onPressed: onRetry,
-              child: const Text('다시 시도'),
-            ),
+            TextButton(onPressed: onRetry, child: const Text('다시 시도')),
           ],
         ),
       ),

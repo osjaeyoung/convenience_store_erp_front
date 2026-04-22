@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -9,6 +10,15 @@ import '../labor/labor_cost_formatters.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 월별 인건비 직원 목록 (API 2)
+String _formatMinutes(int minutes) {
+  if (minutes == 0) return '0분';
+  final h = minutes ~/ 60;
+  final m = minutes % 60;
+  if (h > 0 && m > 0) return '$h시간 $m분';
+  if (h > 0) return '$h시간';
+  return '$m분';
+}
+
 class LaborCostMonthlyListScreen extends StatefulWidget {
   const LaborCostMonthlyListScreen({
     super.key,
@@ -77,31 +87,85 @@ class _LaborCostMonthlyListScreenState extends State<LaborCostMonthlyListScreen>
   }
 
   Future<void> _pickMonth() async {
-    final picked = await showDatePicker(
+    var selected = DateTime(_year, _month, _day);
+    
+    await showModalBottomSheet<void>(
       context: context,
-      initialDate: DateTime(_year, _month),
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
-      helpText: '조회할 월 선택',
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        height: 280,
+        decoration: BoxDecoration(
+          color: AppColors.grey0,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: Text(
+                      '취소',
+                      style: AppTypography.bodyMediumM.copyWith(
+                        color: AppColors.grey150,
+                        fontSize: 14.sp,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      if (mounted) {
+                        setState(() {
+                          _year = selected.year;
+                          _month = selected.month;
+                        });
+                        _load();
+                      }
+                    },
+                    child: Text(
+                      '확인',
+                      style: AppTypography.bodyMediumB.copyWith(
+                        color: AppColors.primaryDark,
+                        fontSize: 14.sp,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: CupertinoTheme(
+                data: CupertinoThemeData(
+                  brightness: Brightness.light,
+                  textTheme: CupertinoTextThemeData(
+                    dateTimePickerTextStyle: AppTypography.bodyMediumR.copyWith(
+                      fontSize: 20.sp,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+                child: CupertinoDatePicker(
+                  mode: CupertinoDatePickerMode.monthYear,
+                  initialDateTime: selected,
+                  minimumDate: DateTime(2020),
+                  maximumDate: DateTime.now().add(const Duration(days: 365 * 2)),
+                  onDateTimeChanged: (v) => selected = v,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
-    if (picked == null || !mounted) return;
-    setState(() {
-      _year = picked.year;
-      _month = picked.month;
-      _day = picked.day;
-    });
-    _load();
   }
 
   String _filterDateLabel() {
-    final weekday = ['월', '화', '수', '목', '금', '토', '일'];
-    final lastDay = DateTime(_year, _month + 1, 0).day;
-    final safeDay = _day.clamp(1, lastDay);
-    final date = DateTime(_year, _month, safeDay);
-    final w = weekday[date.weekday - 1];
     final mm = _month.toString().padLeft(2, '0');
-    final dd = safeDay.toString().padLeft(2, '0');
-    return '$_year.$mm.$dd($w)';
+    return '$_year.$mm';
   }
 
   @override
@@ -301,7 +365,7 @@ class _EmployeeAccordionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final badgeOn = employee.wageType == 'monthly';
-    final weeklyHours = (employee.totalWorkMinutes / 60).toStringAsFixed(0);
+    final weeklyHours = '${(employee.totalWorkMinutes / 60).toStringAsFixed(0)}시간';
     final badgeText = badgeOn ? '월급' : '시급';
 
     return Padding(
@@ -373,10 +437,10 @@ class _EmployeeAccordionCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Padding(
-                            padding: EdgeInsets.only(right: 24.w),
+                            padding: EdgeInsets.only(right: 14.w),
                             child: _metricValue(
                               label: '근무시간',
-                              value: '${employee.totalWorkMinutes}',
+                              value: _formatMinutes(employee.totalWorkMinutes),
                             ),
                           ),
                         ),
@@ -387,7 +451,7 @@ class _EmployeeAccordionCard extends StatelessWidget {
                         ),
                         Expanded(
                           child: Padding(
-                            padding: EdgeInsets.only(left: 24.w),
+                            padding: EdgeInsets.only(left: 14.w),
                             child: _metricValue(
                               label: '주 근로',
                               value: weeklyHours,
@@ -479,7 +543,7 @@ class _EmployeeAccordionCard extends StatelessWidget {
         Text(
           value,
           style: AppTypography.bodyMediumR.copyWith(
-            fontSize: 16.sp,
+            fontSize: 14.sp,
             color: AppColors.textSecondary,
             height: 20 / 16,
           ),
@@ -552,7 +616,7 @@ class _MonthlySummaryCard extends StatelessWidget {
             padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 12.h),
             child: Column(
               children: [
-                _summaryLine(label: '총 근무시간 합계', value: '$totalWorkMinutes'),
+                _summaryLine(label: '총 근무시간 합계', value: _formatMinutes(totalWorkMinutes)),
                 const Divider(height: 16, color: AppColors.grey25),
                 _summaryLine(label: '총 급여', value: LaborCostFormatters.won(totalCost)),
                 const Divider(height: 16, color: AppColors.grey25),

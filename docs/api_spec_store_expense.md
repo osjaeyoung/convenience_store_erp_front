@@ -318,6 +318,11 @@
 }
 ```
 
+### 비고
+- `expense_date`는 반드시 `expense_month_id`의 생성 시각(또는 매핑된 년/월)에 해당하는 달의 일자여야 합니다. 
+  - (예: 25년 9월 묶음이면 `expense_date`는 `2025-09-01` ~ `2025-09-30` 내에 존재해야 함)
+  - 범위를 벗어날 경우 `400 Bad Request` 에러를 반환해야 합니다.
+
 ---
 
 ## 5-1) (레거시) 항목 추가 (글 데이터만)
@@ -337,6 +342,9 @@
 
 ### Response Body (200)
 `5) 2-Step 추가 - Step2`와 동일(단, `files`는 기본 `[]`)
+
+### 비고
+- `expense_date`는 반드시 `expense_month_id`의 생성 시각(또는 매핑된 년/월)에 해당하는 달의 일자여야 합니다. 범위를 벗어날 경우 `400 Bad Request` 에러를 반환해야 합니다.
 
 ---
 
@@ -421,6 +429,9 @@ files=@transfer-slip.pdf
 
 ### Response Body (200)
 `5) 항목 추가`의 Response와 동일
+
+### 비고
+- `expense_date`를 변경할 경우, 반드시 해당 항목이 속한 월(`expense_month_id`의 년/월) 범위 내의 일자여야 합니다. 범위를 벗어날 경우 `400 Bad Request` 에러를 반환해야 합니다.
 
 ---
 

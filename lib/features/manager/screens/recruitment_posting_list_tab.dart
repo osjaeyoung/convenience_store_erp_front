@@ -72,7 +72,7 @@ class _RecruitmentPostingListTabState extends State<RecruitmentPostingListTab> {
       final page = widget.mine
           ? await repo.getMyRecruitmentPostings(branchId: widget.branchId)
           : await repo.getRecruitmentPostings(
-              branchId: widget.branchId,
+              branchId: widget.branchId, // 점포와 무관하게 전역 공고를 불러오지만 API 시그니처 유지
               keyword: _searchController.text.trim(),
               region: _region,
             );
@@ -125,7 +125,7 @@ class _RecruitmentPostingListTabState extends State<RecruitmentPostingListTab> {
           postingId: item.postingId,
           previewMode: false,
           allowPublish: false,
-          mineMode: widget.mine,
+          mineMode: false, // 항상 일반 모드로 열기 (지원하기 버튼이 보이도록)
         ),
       ),
     );
@@ -211,18 +211,15 @@ class _RecruitmentPostingListTabState extends State<RecruitmentPostingListTab> {
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : _error != null
-                      ? _PostingListErrorView(
-                          message: _error!,
-                          onRetry: _load,
-                        )
-                      : _PostingListView(
-                          items: _visibleItems,
-                          topPadding: widget.mine ? 0 : 10,
-                          mineMode: widget.mine,
-                          onTapItem: _openPosting,
-                          onTapApplicants: _openApplicants,
-                          onRefresh: _load,
-                        ),
+                  ? _PostingListErrorView(message: _error!, onRetry: _load)
+                  : _PostingListView(
+                      items: _visibleItems,
+                      topPadding: widget.mine ? 0 : 10,
+                      mineMode: widget.mine,
+                      onTapItem: _openPosting,
+                      onTapApplicants: _openApplicants,
+                      onRefresh: _load,
+                    ),
             ),
           ],
         ),
@@ -337,9 +334,7 @@ class _PostingListCard extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.only(bottom: 20.h),
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: AppColors.grey50),
-          ),
+          border: Border(bottom: BorderSide(color: AppColors.grey50)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -448,7 +443,8 @@ class _PostingListCard extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      item.applicantsButtonLabel ?? '지원자 ${item.applicantCount}명',
+                      item.applicantsButtonLabel ??
+                          '지원자 ${item.applicantCount}명',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
@@ -486,11 +482,7 @@ class _PostingListMetaRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(
-          icon,
-          size: 16,
-          color: AppColors.grey150,
-        ),
+        Icon(icon, size: 16, color: AppColors.grey150),
         SizedBox(width: 6.w),
         Expanded(
           child: Text(
@@ -509,10 +501,7 @@ class _PostingListMetaRow extends StatelessWidget {
 }
 
 class _PostingListErrorView extends StatelessWidget {
-  const _PostingListErrorView({
-    required this.message,
-    required this.onRetry,
-  });
+  const _PostingListErrorView({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
@@ -533,10 +522,7 @@ class _PostingListErrorView extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 16.h),
-            TextButton(
-              onPressed: onRetry,
-              child: const Text('다시 시도'),
-            ),
+            TextButton(onPressed: onRetry, child: const Text('다시 시도')),
           ],
         ),
       ),
