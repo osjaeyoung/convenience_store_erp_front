@@ -4,6 +4,8 @@
 
 기본 prefix: `/api/v1`
 
+**지역 필터·이력서 주소(`resume_region_path`, `resume_address_detail`)** 를 붙일 때의 쿼리 규약·길이 제한·스냅샷 동작은 `docs/api_spec_recruitment.md`의 **「프론트엔드 연동 가이드 (지역 필터 · 이력서 주소)」** 를 따른다.
+
 Figma 파일 `개인 공간`에서 현재 반영된 근로자 화면은 아래 10개 노드입니다.
 
 | 노드 ID | 화면명 | 서버 API |
@@ -33,9 +35,7 @@ Figma 파일 `개인 공간`에서 현재 반영된 근로자 화면은 아래 1
 ### Query
 
 - `keyword`: 공고 제목/업체명 검색
-- `region` (다중 선택): 지역 필터
-  - `region=서울&region=경기` 또는 `region=서울,경기` — **OR 조건**
-  - `서울`, `경기`, `부산` 등 상위 지역 기준으로 `region_summary`와 `address`에서 추출해 매칭
+- `region` (다중 선택): 지역 필터. **OR**, **최대 5개**, 시·도만 또는 `서울 강남구 개포2동`처럼 **공백으로 이은 경로**. `region` 키 반복 또는 `region=서울,경기` 형태. 공고의 `region_summary`·`address` 합성 텍스트와 매칭. 자세한 규약은 **`docs/api_spec_recruitment.md` → 프론트엔드 연동 가이드**.
 - `page`, `page_size`
 
 ### Response (200)
@@ -66,6 +66,8 @@ Figma 파일 `개인 공간`에서 현재 반영된 근로자 화면은 아래 1
   ]
 }
 ```
+
+- **`region_options`**: 게시 중인 공고의 주소·지역 요약에서 뽑은 **시·도** 후보(칩·빠른 필터용). 여기 없는 값도 `region` 쿼리에 보낼 수 있으며, 상세 필터는 3단 선택 결과 전체를 `region`에 실으면 된다. 의미·매칭·최대 5개 등은 `docs/api_spec_recruitment.md` **「프론트엔드 연동 가이드」** 의 **2-1)**·**1)** 절.
 
 ---
 
@@ -183,6 +185,10 @@ Figma 파일 `개인 공간`에서 현재 반영된 근로자 화면은 아래 1
 - 이미 지원한 공고: `400`
 - 본인 이력서 아님 / 없음: `404`
 - 지원 불가 상태 이력서: `400`
+
+### 비고
+
+- 지원이 성공하면 서버는 경영주/점장 **지원현황**에 쓰일 **희망 근무지 스냅샷**을 저장한다. 이력서의 `resume_region_path`·`resume_address_detail`(없으면 프로필 주소)을 합쳐 저장하며, 이후 이력서를 수정해도 이미 지원한 건의 카드 문구는 스냅샷이 우선이다. 상세는 `docs/api_spec_recruitment.md` 연동 가이드.
 
 ---
 
@@ -310,9 +316,14 @@ Figma 파일 `개인 공간`에서 현재 반영된 근로자 화면은 아래 1
   ],
   "career_entries": [],
   "work_history_items": [],
-  "add_career_button_label": "경력사항 추가"
+  "add_career_button_label": "경력사항 추가",
+  "resume_region_path": null,
+  "resume_address_detail": null
 }
 ```
+
+- `resume_region_path` (optional): 이력서 주소의 **지역** (3단 선택 결과). 공백으로 구간 구분, 예: `서울 강남구 개포2동`, `경기 수원시 장안구`. UI에서는 `서울 > 강남구 > 개포2동` 형태로 표시. **최대 300자.**
+- `resume_address_detail` (optional): **상세 주소** (도로명/건물 등 자유 입력). **최대 500자.**
 
 ---
 
@@ -364,7 +375,9 @@ Figma 파일 `개인 공간`에서 현재 반영된 근로자 화면은 아래 1
       "company_name": "(주)나눔 리테일",
       "duty": "야간스텝"
     }
-  ]
+  ],
+  "resume_region_path": "서울 강남구 개포2동",
+  "resume_address_detail": "아파트 101동 502호"
 }
 ```
 
@@ -390,9 +403,13 @@ Figma 파일 `개인 공간`에서 현재 반영된 근로자 화면은 아래 1
       "ended_year_month": "2025-04",
       "duty": "야간스텝"
     }
-  ]
+  ],
+  "resume_region_path": "서울 강남구 개포2동",
+  "resume_address_detail": "상세 주소"
 }
 ```
+
+- `resume_region_path`, `resume_address_detail`는 선택. 생략 시 기존과 동일하게 학력·경력·자기소개만 전송. 길이 제한은 위 비고와 연동 가이드 참고.
 
 ### Response (200)
 
@@ -458,283 +475,6 @@ Figma 파일 `개인 공간`에서 현재 반영된 근로자 화면은 아래 1
 ---
 
 ## 13) PATCH `/me/account`
-
-회원정보 수정 저장.
-
-### Request Body
-
-```json
-{
-  "email": "worker1@test.com",
-  "full_name": "김현수",
-  "birth_year": 1999,
-  "birth_month": 3,
-  "birth_day": 8,
-  "gender": "male",
-  "phone_number": "01012345678",
-  "address": "부산 해운대구 반송동"
-}
-```
-
-### Response (200)
-
-`GET /me/account`와 동일 스키마를 반환하며, 이메일이 바뀐 경우:
-
-- `session_refresh_required=true`
-
-프론트는 이메일 변경 후 재로그인 또는 토큰 재발급 플로우를 태워야 합니다.
-# 근로자 개인 공간 API
-
-기본 prefix: `/api/v1`
-
-Figma 파일 `개인 공간`에서 이번 구현 범위는 아래 7개 노드입니다.
-
-| 노드 ID | 화면명 | 서버 API |
-|---------|--------|----------|
-| `2534:10928` | 채용정보 | `GET /worker/recruitment/postings` |
-| `2534:16920` | 채용 상세 정보 | `GET /worker/recruitment/postings/{posting_id}` |
-| `2534:17024` | 지원하기 | `GET /worker/recruitment/postings/{posting_id}/apply-options` |
-| `2534:17115` | 지원 확인 모달 | `POST /worker/recruitment/postings/{posting_id}/applications` |
-| `2534:17214` | 지원내역 | `GET /worker/recruitment/applications` |
-| `2534:17305` | 마이페이지 | `GET /me/account` |
-| `2534:17365` | 회원정보 수정 | `PATCH /me/account` |
-
-## 인증
-
-- 모든 API는 `Authorization: Bearer {access_token}` 필요
-- `role=worker` 사용자만 `worker/*` API 호출 가능
-
----
-
-## 1) GET `/worker/recruitment/postings`
-
-근로자 채용정보 목록.
-
-### Query
-
-- `keyword`: 공고 제목/업체명 검색
-- `region` (다중 선택): 지역 필터
-  - `region=서울&region=경기` 또는 `region=서울,경기` — **OR 조건**
-  - `서울`, `경기`, `부산` 등 상위 지역 기준으로 `region_summary`와 `address`에서 추출해 매칭
-- `page`, `page_size`
-
-### Response (200)
-
-```json
-{
-  "items": [
-    {
-      "posting_id": 12,
-      "branch_id": 3,
-      "badge_label": "상시모집",
-      "company_name": "지에스25 반송행복",
-      "title": "해운대구 반송 GS편의점 일/월 야간 및 오전 근무",
-      "region_summary": "해운대구 반송 1동",
-      "pay_type": "시급",
-      "pay_amount": 10030,
-      "is_applied": false,
-      "applied_at": null,
-      "created_at": "2026-03-30T09:00:00Z"
-    }
-  ],
-  "total_count": 24,
-  "page": 1,
-  "page_size": 20,
-  "region_options": [
-    "서울",
-    "부산"
-  ]
-}
-```
-
----
-
-## 2) GET `/worker/recruitment/postings/{posting_id}`
-
-채용 상세 정보.
-
-### Response (200)
-
-```json
-{
-  "posting_id": 12,
-  "branch_id": 3,
-  "profile_image_url": null,
-  "badge_label": "상시모집",
-  "company_name": "지에스25 반송행복",
-  "title": "해운대구 반송 GS편의점 일/월 야간 및 오전 근무",
-  "region_summary": "해운대구 반송 1동",
-  "address": "부산 해운대구 아랫반송로 67-1 1층",
-  "pay_type": "시급",
-  "pay_amount": 10030,
-  "work_period": "6개월 ~ 1년",
-  "work_days": "요일협의",
-  "work_days_detail": "(일월 0시-06시/ 일 06시-11시,월06시-0시 중 선택)",
-  "work_time": "시간협의",
-  "work_time_detail": "(일월 0시-06시/ 일 06시-11시,월06시-0시 중 선택)",
-  "job_category": "편의점",
-  "employment_type": "알바",
-  "recruitment_deadline": "상시모집",
-  "recruitment_headcount": "00명",
-  "recruitment_headcount_detail": "(인원 미정)",
-  "education": "학력 무관",
-  "education_detail": null,
-  "manager_name": "이상평",
-  "contact_phone": "010-1234-1234",
-  "legal_warning_message": "구직이 아닌 광고 등이 목적으로 연락처를 이용할 경우 법적 처벌을 받을 수 있습니다.",
-  "is_applied": false,
-  "application_id": null,
-  "application_action_label": "지원하기",
-  "created_at": "2026-03-30T09:00:00Z",
-  "updated_at": "2026-03-30T09:00:00Z"
-}
-```
-
----
-
-## 3) GET `/worker/recruitment/postings/{posting_id}/apply-options`
-
-지원하기 화면 진입 시 필요한 데이터.
-
-### Response (200)
-
-```json
-{
-  "posting_id": 12,
-  "company_name": "지에스25 반송행복",
-  "title": "해운대구 반송 GS편의점 일/월 야간 및 오전 근무",
-  "already_applied": false,
-  "existing_application_id": null,
-  "can_apply": true,
-  "blocked_reason": null,
-  "resumes": [
-    {
-      "resume_id": 7,
-      "title": "김현수_이력서",
-      "resume_type_label": "이력서",
-      "is_default": true,
-      "status": "ready"
-    }
-  ],
-  "selected_resume_id": 7,
-  "confirm_title": "알림",
-  "confirm_message": "지원하시겠습니까?"
-}
-```
-
-### 비고
-
-- 이미 지원한 공고면 `already_applied=true`, `can_apply=false`
-- 이력서가 없으면 `blocked_reason="등록된 이력서가 없습니다."`
-
----
-
-## 4) POST `/worker/recruitment/postings/{posting_id}/applications`
-
-선택한 이력서로 공고 지원.
-
-### Request Body
-
-```json
-{
-  "resume_id": 7
-}
-```
-
-### Response (200)
-
-```json
-{
-  "application_id": 15,
-  "posting_id": 12,
-  "resume_id": 7,
-  "status": "applied",
-  "applied_at": "2026-03-30T10:11:12Z"
-}
-```
-
-### 실패 케이스
-
-- 이미 지원한 공고: `400`
-- 본인 이력서 아님 / 없음: `404`
-- 지원 불가 상태 이력서: `400`
-
----
-
-## 5) GET `/worker/recruitment/applications`
-
-내 지원내역 목록.
-
-### Response (200)
-
-```json
-{
-  "items": [
-    {
-      "application_id": 15,
-      "posting_id": 12,
-      "branch_id": 3,
-      "badge_label": "상시모집",
-      "company_name": "지에스25 반송행복",
-      "title": "해운대구 반송 GS편의점 일/월 야간 및 오전 근무",
-      "region_summary": "해운대구 반송 1동",
-      "pay_type": "시급",
-      "pay_amount": 10030,
-      "applied_at": "2026-03-30T10:11:12Z",
-      "applied_date_label": "지원일 2026.03.30"
-    }
-  ],
-  "total_count": 1,
-  "page": 1,
-  "page_size": 20
-}
-```
-
----
-
-## 6) GET `/worker/resumes`
-
-지원하기 화면에서 쓰는 이력서 목록.
-
-### Response (200)
-
-```json
-{
-  "items": [
-    {
-      "resume_id": 7,
-      "title": "김현수_이력서",
-      "resume_type_label": "이력서",
-      "is_default": true,
-      "status": "ready"
-    }
-  ],
-  "total_count": 1
-}
-```
-
----
-
-## 7) GET `/me/account`
-
-마이페이지/회원정보 수정 진입용.
-
-이번 근로자 화면에서 특히 쓰는 필드:
-
-- `email`
-- `full_name`
-- `birth_date`, `birth_year`, `birth_month`, `birth_day`
-- `gender`
-- `phone_number`
-- `address`
-- `settings_links`
-- `has_password_login`
-
-예시는 `docs/api_spec_me_account.md` 참고.
-
----
-
-## 8) PATCH `/me/account`
 
 회원정보 수정 저장.
 

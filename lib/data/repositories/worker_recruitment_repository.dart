@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 
+import '../../core/region/region_api_query.dart';
 import '../models/worker/worker_recruitment_models.dart';
 import '../network/api_client.dart';
 
@@ -17,7 +18,7 @@ class WorkerRecruitmentRepository {
     int page = 1,
     int pageSize = 20,
   }) async {
-    final regionParam = _regionQueryParam(regions);
+    final regionParam = regionQueryParamCommaJoined(regions);
     final res = await _apiClient.dio.get<Map<String, dynamic>>(
       '/worker/recruitment/postings',
       queryParameters: {
@@ -99,6 +100,8 @@ class WorkerRecruitmentRepository {
     String? educationStatus,
     String? careerType,
     String? selfIntroduction,
+    String? resumeRegionPath,
+    String? resumeAddressDetail,
     required List<Map<String, dynamic>> careerEntries,
   }) async {
     final res = await _apiClient.dio.post<Map<String, dynamic>>(
@@ -112,6 +115,10 @@ class WorkerRecruitmentRepository {
           'career_type': careerType.trim(),
         if (selfIntroduction != null)
           'self_introduction': selfIntroduction.trim(),
+        if (resumeRegionPath != null && resumeRegionPath.trim().isNotEmpty)
+          'resume_region_path': resumeRegionPath.trim(),
+        if (resumeAddressDetail != null && resumeAddressDetail.trim().isNotEmpty)
+          'resume_address_detail': resumeAddressDetail.trim(),
         'career_entries': careerEntries,
       },
     );
@@ -124,6 +131,8 @@ class WorkerRecruitmentRepository {
     String? educationStatus,
     String? careerType,
     String? selfIntroduction,
+    String? resumeRegionPath,
+    String? resumeAddressDetail,
     required List<Map<String, dynamic>> careerEntries,
   }) async {
     final res = await _apiClient.dio.patch<Map<String, dynamic>>(
@@ -137,6 +146,10 @@ class WorkerRecruitmentRepository {
           'career_type': careerType.trim(),
         if (selfIntroduction != null)
           'self_introduction': selfIntroduction.trim(),
+        if (resumeRegionPath != null && resumeRegionPath.trim().isNotEmpty)
+          'resume_region_path': resumeRegionPath.trim(),
+        if (resumeAddressDetail != null && resumeAddressDetail.trim().isNotEmpty)
+          'resume_address_detail': resumeAddressDetail.trim(),
         'career_entries': careerEntries,
       },
     );
@@ -247,16 +260,6 @@ class WorkerRecruitmentRepository {
       contentType: contentType,
       fileName: fileName,
     );
-  }
-
-  static String? _regionQueryParam(List<String>? regions) {
-    if (regions == null || regions.isEmpty) return null;
-    final parts = regions
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toList();
-    if (parts.isEmpty) return null;
-    return parts.join(',');
   }
 
   static String? _extractFileName(String? contentDisposition) {

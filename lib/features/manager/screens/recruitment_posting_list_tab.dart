@@ -12,6 +12,7 @@ import '../../auth/widgets/auth_input_field.dart';
 import 'recruitment_posting_detail_screen.dart';
 import 'recruitment_posting_form_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../widgets/hierarchical_region_picker_sheet.dart';
 import '../../../widgets/recruitment_region_picker_sheet.dart';
 
 class RecruitmentPostingListTab extends StatefulWidget {
@@ -107,9 +108,10 @@ class _RecruitmentPostingListTabState extends State<RecruitmentPostingListTab> {
   }
 
   Future<void> _showRegionSheet() async {
-    final next = await showRecruitmentRegionPickerSheet(
+    final next = await showHierarchicalRegionPicker(
       context,
-      selectedRegions: _regions,
+      initialSelections: _regions,
+      maxSelections: 5,
     );
     if (!mounted || next == null) return;
     if (listEquals(next, _regions)) return;
@@ -201,8 +203,8 @@ class _RecruitmentPostingListTabState extends State<RecruitmentPostingListTab> {
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 0.h),
                   child: RecruitmentFilterPill(
-                    label: recruitmentRegionsChipLabel(_regions),
-                    active: normalizeRecruitmentRegions(_regions).isNotEmpty,
+                    label: regionFilterPillLabel(_regions),
+                    active: _regions.any((e) => e.trim().isNotEmpty),
                     onTap: _showRegionSheet,
                   ),
                 ),

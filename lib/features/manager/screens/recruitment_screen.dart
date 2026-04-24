@@ -7,6 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../data/models/recruitment/recruitment_models.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import '../../../widgets/hierarchical_region_picker_sheet.dart';
 import '../../../widgets/recruitment_region_picker_sheet.dart';
 import '../../account/account_routes.dart';
 import '../../auth/widgets/auth_input_field.dart';
@@ -341,9 +342,10 @@ class _RecruitmentScreenState extends State<RecruitmentScreen>
   }
 
   Future<void> _showRegionSheet() async {
-    final next = await showRecruitmentRegionPickerSheet(
+    final next = await showHierarchicalRegionPicker(
       context,
-      selectedRegions: _regions,
+      initialSelections: _regions,
+      maxSelections: 5,
     );
     if (!mounted || next == null) return;
     if (listEquals(next, _regions)) return;
@@ -550,7 +552,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen>
     return '${_ageMax!}세 이하';
   }
 
-  String get _regionLabel => recruitmentRegionsChipLabel(_regions);
+  String get _regionLabel => regionFilterPillLabel(_regions);
 
   String get _ratingLabel {
     if (_minRating == null) return '평점';

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 
+import '../../core/region/region_api_query.dart';
 import '../models/manager_home/manager_alert.dart';
 import '../models/manager_home/manager_branch.dart';
 import '../models/manager_home/today_worker.dart';
@@ -124,7 +125,7 @@ class ManagerHomeRepository {
     int page = 1,
     int pageSize = 20,
   }) async {
-    final regionParam = _regionQueryParam(regions);
+    final regionParam = regionQueryParamCommaJoined(regions);
     final res = await _apiClient.dio.get<Map<String, dynamic>>(
       '/recruitment/branches/$branchId/home',
       queryParameters: {
@@ -214,7 +215,7 @@ class ManagerHomeRepository {
     int page = 1,
     int pageSize = 20,
   }) async {
-    final regionParam = _regionQueryParam(regions);
+    final regionParam = regionQueryParamCommaJoined(regions);
     final res = await _apiClient.dio.get<Map<String, dynamic>>(
       '/recruitment/branches/$branchId/postings',
       queryParameters: {
@@ -450,14 +451,4 @@ class ManagerHomeRepository {
     return null;
   }
 
-  /// `region=서울,경기` 형식 (다중 지역 OR 필터, API 스펙과 동일).
-  static String? _regionQueryParam(List<String>? regions) {
-    if (regions == null || regions.isEmpty) return null;
-    final parts = regions
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toList();
-    if (parts.isEmpty) return null;
-    return parts.join(',');
-  }
 }

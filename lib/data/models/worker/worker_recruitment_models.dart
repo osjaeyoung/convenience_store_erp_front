@@ -425,6 +425,8 @@ class WorkerResumeFormData {
     this.careerEntries = const [],
     this.workHistoryItems = const [],
     this.addCareerButtonLabel,
+    this.resumeRegionPath,
+    this.resumeAddressDetail,
   });
 
   final int? resumeId;
@@ -447,6 +449,9 @@ class WorkerResumeFormData {
   final List<WorkerResumeCareerEntry> careerEntries;
   final List<WorkerResumeWorkHistoryItem> workHistoryItems;
   final String? addCareerButtonLabel;
+  /// 저장용: 공백 구분 경로 (`서울 강남구 개포2동`). 화면 표시는 ` > ` 로 변환.
+  final String? resumeRegionPath;
+  final String? resumeAddressDetail;
 
   bool get isEditMode => mode == 'edit';
 
@@ -526,6 +531,8 @@ class WorkerResumeFormData {
           )
           .toList(),
       addCareerButtonLabel: _nullableString(json['add_career_button_label']),
+      resumeRegionPath: _nullableString(json['resume_region_path']),
+      resumeAddressDetail: _nullableString(json['resume_address_detail']),
     );
   }
 }

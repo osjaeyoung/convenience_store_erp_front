@@ -9,6 +9,7 @@ import '../../../data/models/worker/worker_recruitment_models.dart';
 import '../../../data/repositories/worker_recruitment_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import '../../../widgets/hierarchical_region_picker_sheet.dart';
 import '../../account/account_dio_message.dart';
 import '../widgets/worker_common.dart';
 
@@ -24,6 +25,8 @@ class WorkerResumeFormScreen extends StatefulWidget {
 class _WorkerResumeFormScreenState extends State<WorkerResumeFormScreen> {
   final TextEditingController _selfIntroductionController =
       TextEditingController();
+  final TextEditingController _addressDetailController =
+      TextEditingController();
 
   bool _loading = true;
   bool _submitting = false;
@@ -34,6 +37,7 @@ class _WorkerResumeFormScreenState extends State<WorkerResumeFormScreen> {
   String? _educationLevel;
   String? _educationStatus;
   String? _careerType;
+  String? _resumeRegionPath;
   List<_CareerEntryDraft> _careerDrafts = const [];
 
   @override
@@ -45,6 +49,7 @@ class _WorkerResumeFormScreenState extends State<WorkerResumeFormScreen> {
   @override
   void dispose() {
     _selfIntroductionController.dispose();
+    _addressDetailController.dispose();
     for (final draft in _careerDrafts) {
       draft.dispose();
     }
@@ -88,6 +93,8 @@ class _WorkerResumeFormScreenState extends State<WorkerResumeFormScreen> {
             ? data.careerTypeOptions.first.value
             : 'entry');
     _selfIntroductionController.text = data.selfIntroduction ?? '';
+    _resumeRegionPath = data.resumeRegionPath;
+    _addressDetailController.text = data.resumeAddressDetail ?? '';
     _careerDrafts = data.careerEntries
         .map(_CareerEntryDraft.fromModel)
         .toList(growable: true);
@@ -269,6 +276,8 @@ class _WorkerResumeFormScreenState extends State<WorkerResumeFormScreen> {
           educationStatus: _educationStatus,
           careerType: _careerType,
           selfIntroduction: _selfIntroductionController.text,
+          resumeRegionPath: _resumeRegionPath,
+          resumeAddressDetail: _addressDetailController.text,
           careerEntries: careerEntries,
         );
       } else {
@@ -278,6 +287,8 @@ class _WorkerResumeFormScreenState extends State<WorkerResumeFormScreen> {
           educationStatus: _educationStatus,
           careerType: _careerType,
           selfIntroduction: _selfIntroductionController.text,
+          resumeRegionPath: _resumeRegionPath,
+          resumeAddressDetail: _addressDetailController.text,
           careerEntries: careerEntries,
         );
       }
@@ -500,6 +511,68 @@ class _WorkerResumeFormScreenState extends State<WorkerResumeFormScreen> {
                                 options: data.educationStatusOptions,
                                 currentValue: _educationStatus,
                                 onSelected: (value) => _educationStatus = value,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    _Section(
+                      title: '주소',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _SelectorField(
+                            label: '지역',
+                            value: _resumeRegionPath == null ||
+                                    _resumeRegionPath!.trim().isEmpty
+                                ? ''
+                                : regionPathChevronLabel(_resumeRegionPath!),
+                            hint: '선택해주세요.',
+                            onTap: () async {
+                              final next = await showHierarchicalRegionPickerSingle(
+                                context,
+                                initialPath: _resumeRegionPath,
+                              );
+                              if (!mounted || next == null) return;
+                              setState(() {
+                                _resumeRegionPath =
+                                    next.trim().isEmpty ? null : next.trim();
+                              });
+                            },
+                          ),
+                          SizedBox(height: 16.h),
+                          Text(
+                            '상세 주소 입력',
+                            style: AppTypography.bodyMediumM.copyWith(
+                              color: AppColors.textPrimary,
+                              height: 16 / 14,
+                            ),
+                          ),
+                          SizedBox(height: 8.h),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.grey0Alt,
+                              borderRadius: BorderRadius.circular(12.r),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: TextField(
+                              controller: _addressDetailController,
+                              minLines: 1,
+                              maxLines: 3,
+                              style: AppTypography.bodyMediumR.copyWith(
+                                color: AppColors.textPrimary,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: '상세 주소를 입력해주세요.',
+                                hintStyle: AppTypography.bodyMediumR.copyWith(
+                                  color: AppColors.textDisabled,
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 16.w,
+                                  vertical: 16.h,
+                                ),
                               ),
                             ),
                           ),
