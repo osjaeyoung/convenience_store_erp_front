@@ -8,8 +8,10 @@ import 'package:printing/printing.dart';
 
 import '../../../data/models/worker/worker_recruitment_models.dart';
 import '../../../data/repositories/worker_recruitment_repository.dart';
+import '../../../utils/contract_work_day_form.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import '../../../widgets/contract_signature.dart';
 import '../../auth/widgets/auth_input_field.dart';
 
 enum _ContractChipTone { mint, worker }
@@ -125,10 +127,13 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
   }
 
   void _syncControllers(WorkerContractChatDocument doc) {
+    final fv = migrateLegacyWorkDayKeysInMap(
+      Map<String, dynamic>.from(doc.formValues),
+    );
     final keys = <String>{...doc.workerFieldKeys, ...doc.editableFieldKeys};
     for (final key in keys) {
       final current = _controllers[key];
-      final nextValue = doc.formValues[key]?.toString() ?? '';
+      final nextValue = fv[key]?.toString() ?? '';
       if (current == null) {
         _controllers[key] = TextEditingController(text: nextValue);
       } else if (current.text != nextValue) {
@@ -284,7 +289,18 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
   }
 
   Future<void> _openInlineInput(String label, String key) async {
-    final ctrl = TextEditingController(text: _controllerOrFormValue(key, _document!));
+    final initialRaw = _controllerOrFormValue(key, _document!);
+    if (isContractSignatureDataUrl(initialRaw)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('전자서명 데이터는 여기서 편집할 수 없습니다.'),
+        ),
+      );
+      return;
+    }
+
+    final ctrl = TextEditingController(text: initialRaw);
     final isAddress = _multiLineKeys.contains(key);
     final isDigitsOnly = _digitsOnlyKeys.contains(key);
 
@@ -292,87 +308,98 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.55),
       builder: (dialogContext) {
+        final maxDialogH = MediaQuery.sizeOf(dialogContext).height * 0.85;
         return Dialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16.r),
           ),
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 16.h),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  label,
-                  style: AppTypography.heading3.copyWith(fontSize: 18.sp),
-                ),
-                SizedBox(height: 14.h),
-                AuthInputField(
-                  controller: ctrl,
-                  hintText: '입력해주세요.',
-                  keyboardType:
-                      isDigitsOnly ? TextInputType.number : TextInputType.text,
-                  inputFormatters: isDigitsOnly
-                      ? [
-                          FilteringTextInputFormatter.digitsOnly,
-                          if (key == 'worker_phone' ||
-                              key == 'guardian_phone_number' ||
-                              key == 'business_phone_number' ||
-                              key == 'employer_phone')
-                            LengthLimitingTextInputFormatter(11),
-                          if (key == 'minor_age')
-                            LengthLimitingTextInputFormatter(2),
-                        ]
-                      : null,
-                  minLines: isAddress ? 3 : 1,
-                  maxLines: isAddress ? 4 : 1,
-                  fillColor: AppColors.grey25,
-                  focusedBorderColor: AppColors.primaryDark,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                ),
-                SizedBox(height: 20.h),
-                Row(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: maxDialogH),
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 16.h),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: () => Navigator.pop(dialogContext),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.grey25,
-                          foregroundColor: AppColors.textTertiary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                        ),
-                        child: const Text('취소'),
+                    Text(
+                      label,
+                      style: AppTypography.heading3.copyWith(fontSize: 18.sp),
+                    ),
+                    SizedBox(height: 14.h),
+                    AuthInputField(
+                      controller: ctrl,
+                      hintText: '입력해주세요.',
+                      keyboardType: isDigitsOnly
+                          ? TextInputType.number
+                          : TextInputType.text,
+                      inputFormatters: isDigitsOnly
+                          ? [
+                              FilteringTextInputFormatter.digitsOnly,
+                              if (key == 'worker_phone' ||
+                                  key == 'guardian_phone_number' ||
+                                  key == 'business_phone_number' ||
+                                  key == 'employer_phone')
+                                LengthLimitingTextInputFormatter(11),
+                              if (key == 'minor_age')
+                                LengthLimitingTextInputFormatter(2),
+                            ]
+                          : null,
+                      minLines: isAddress ? 3 : 1,
+                      maxLines: isAddress ? 4 : 1,
+                      fillColor: AppColors.grey25,
+                      focusedBorderColor: AppColors.primaryDark,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
                       ),
                     ),
-                    SizedBox(width: 12.w),
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: () => Navigator.pop(dialogContext, ctrl.text.trim()),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: AppColors.grey0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.r),
+                    SizedBox(height: 20.h),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: () => Navigator.pop(dialogContext),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.grey25,
+                              foregroundColor: AppColors.textTertiary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
+                            ),
+                            child: const Text('취소'),
                           ),
                         ),
-                        child: const Text('확인'),
-                      ),
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: () =>
+                                Navigator.pop(dialogContext, ctrl.text.trim()),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: AppColors.grey0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
+                            ),
+                            child: const Text('확인'),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
         );
       },
     );
 
-    ctrl.dispose();
+    // 다이얼로그 라우트가 완전히 내려간 뒤 dispose (used-after-dispose 방지)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ctrl.dispose();
+    });
 
     if (value == null || !mounted) return;
     setState(() {
@@ -385,6 +412,24 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
       await _openDateInput(key);
       return;
     }
+    if (key == 'employer_signature_text') {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('사업주 서명은 근로자 단계에서 수정할 수 없습니다.'),
+        ),
+      );
+      return;
+    }
+    if (key == 'worker_signature_text') {
+      final val = await showContractSignatureDialog(context, label: label);
+      if (val != null && mounted) {
+        setState(() {
+          _controllers[key]?.text = val;
+        });
+      }
+      return;
+    }
     await _openInlineInput(label, key);
   }
 
@@ -393,6 +438,7 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
     required _ContractChipTone tone,
     VoidCallback? onTap,
     EdgeInsets? padding,
+    bool signatureField = false,
   }) {
     final text = display?.trim() ?? '';
     final empty = text.isEmpty;
@@ -402,6 +448,30 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
       _ContractChipTone.mint => (_mintChipBg, AppColors.primary, '입력'),
       _ContractChipTone.worker => (_workerChipBg, _workerChipFg, '근로자'),
     };
+    final chipTextStyle = _contractBodyStyle.copyWith(
+      color: fg,
+      fontWeight: FontWeight.w500,
+      fontSize: 12.sp,
+      height: 18 / 12,
+    );
+    if (signatureField && !empty && isContractSignatureDataUrl(text)) {
+      final signed = Padding(
+        padding: chipPadding,
+        child: contractSignatureImageWithUnderline(
+          dataUrl: text,
+          underlineColor: AppColors.textPrimary,
+        ),
+      );
+      if (onTap == null) return signed;
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(4.r),
+          child: signed,
+        ),
+      );
+    }
     final child = Container(
       padding: chipPadding,
       decoration: BoxDecoration(
@@ -409,15 +479,16 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
         borderRadius: BorderRadius.circular(8.r),
         border: Border.all(color: fg.withValues(alpha: 0.45)),
       ),
-      child: Text(
-        empty ? emptyLabel : text,
-        style: _contractBodyStyle.copyWith(
-          color: fg,
-          fontWeight: FontWeight.w500,
-          fontSize: 12.sp,
-          height: 18 / 12,
-        ),
-      ),
+      child: signatureField
+          ? contractSignatureChipChild(
+              value: display,
+              emptyLabel: emptyLabel,
+              textStyle: chipTextStyle,
+            )
+          : Text(
+              empty ? emptyLabel : text,
+              style: chipTextStyle,
+            ),
     );
 
     if (onTap == null) return child;
@@ -448,7 +519,16 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
         : rawDisplay;
     final editable = doc.canEditField(key) && doc.chatStatus != 'completed';
     if (!editable) {
-      final text = display.trim().isNotEmpty ? display.trim() : '______';
+      final raw = display.trim();
+      if (raw.isNotEmpty && isContractSignatureDataUrl(raw)) {
+        return contractSignatureImageWithUnderline(
+          dataUrl: raw,
+          underlineColor: AppColors.textPrimary,
+          maxHeight: 32.h,
+          maxWidth: 150.w,
+        );
+      }
+      final text = raw.isNotEmpty ? raw : '______';
       return Text(
         text,
         style: _contractBodyStyle.copyWith(
@@ -462,20 +542,41 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
       tone: _ContractChipTone.worker,
       onTap: editable ? () => _openFieldEditor(label, key) : null,
       padding: padding,
+      signatureField: key == 'worker_signature_text',
     );
   }
 
-  Widget _readonlyMintChip(String? display, {EdgeInsets? padding}) {
-    final text = (display?.trim().isNotEmpty ?? false)
-        ? display!.trim()
-        : '______';
-    return Text(
+  Widget _readonlyMintChip(
+    String? display, {
+    EdgeInsets? padding,
+    bool signature = false,
+  }) {
+    final raw = display?.trim() ?? '';
+    final empty = raw.isEmpty;
+    if (signature && !empty && isContractSignatureDataUrl(raw)) {
+      final signed = contractSignatureImageWithUnderline(
+        dataUrl: raw,
+        underlineColor: AppColors.textPrimary,
+        maxHeight: 32.h,
+        maxWidth: 150.w,
+      );
+      if (padding != null) {
+        return Padding(padding: padding, child: signed);
+      }
+      return signed;
+    }
+    final text = empty ? '______' : raw;
+    final textWidget = Text(
       text,
       style: _contractBodyStyle.copyWith(
         decoration: TextDecoration.underline,
         decorationColor: AppColors.textPrimary,
       ),
     );
+    if (padding != null) {
+      return Padding(padding: padding, child: textWidget);
+    }
+    return textWidget;
   }
 
   Widget _readonlyWorkerChip(String? display) {
@@ -995,7 +1096,10 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
             Text('대표자 : ', style: _contractBodyStyle),
             _readonlyMintChip(_formValue('employer_representative_name', doc)),
             Text('(서명)', style: _contractBodyStyle),
-            _readonlyMintChip(_formValue('employer_signature_text', doc)),
+            _readonlyMintChip(
+              _formValue('employer_signature_text', doc),
+              signature: true,
+            ),
           ],
         ),
         SizedBox(height: 20.h),
@@ -1363,7 +1467,9 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
     final doc = _document;
     if (doc == null) return;
     final action = doc.primaryAction ?? 'complete';
-    final formValues = Map<String, dynamic>.from(doc.formValues);
+    final formValues = migrateLegacyWorkDayKeysInMap(
+      Map<String, dynamic>.from(doc.formValues),
+    );
 
     for (final entry in _controllers.entries) {
       formValues[entry.key] = entry.value.text.trim();

@@ -72,6 +72,36 @@
 | `employer_representative_name` | 대표자 성명 | 필수 |
 | `employer_signature_text` | 사업주 서명 | 필수 |
 
+### 서명 필드 (`employer_signature_text`, `worker_signature_text`) — 서버(백엔드) 정책
+
+앱은 서명을 **캔버스에 그린 PNG**를 **Base64 Data URL** 한 줄 문자열로 보냅니다. 필드 이름은 기존과 동일합니다.
+
+| 구분 | 설명 |
+|------|------|
+| **권장 값 형식** | `data:image/png;base64,<Base64>` |
+| **하위 호환** | 짧은 일반 텍스트만 있는 경우(예: `"홍길동"`)도 그대로 허용 |
+
+**백엔드에서 점검·수정 권장 사항**
+
+1. **저장 길이**  
+   Data URL은 수 KB~수십 KB 이상이 될 수 있습니다. `form_values`를 JSON 컬럼에 넣거나 별도 컬럼에 둘 때 **문자열 길이 제한(예: VARCHAR(255))** 이면 저장 실패·잘림이 납니다. **`TEXT`/`LONGTEXT` 등으로 확대**하거나, 아래 파일 저장 방식으로 전환하세요.
+
+2. **HTTP 요청 본문 한도**  
+   리버스 프록시·API 게이트웨이·프레임워크의 **최대 body 크기**를 계약 저장 API에 맞게 설정하세요.
+
+3. **검증(선택)**  
+   - 허용 접두사: `data:image/png;base64,` (필요 시 `image/jpeg` 등만 추가 허용)  
+   - 디코드 후 **최대 바이트 수·이미지 크기** 상한으로 남용 방지
+
+4. **저장소(권장)**  
+   DB에는 **S3 등 객체 URL** 또는 **파일 ID**만 두고, 실제 PNG는 파일로 저장하는 편이 유리합니다. (키 이름은 유지하고 값만 URL로 바꾸는 방식은 **프론트·서버 합의 후** 별도 필드 도입을 권장합니다.)
+
+5. **문서 텍스트/PDF**  
+   평문 미리보기·로그에는 Data URL 전문을 넣지 말고 **`[전자서명]` 등으로 치환**하거나, PDF 생성 시에만 이미지로 임베드하세요.
+
+6. **동일 키를 쓰는 다른 API**  
+   직원관리 **근로계약** `form_values` 등 같은 키를 쓰는 엔드포인트는 **동일 정책**을 적용합니다.
+
 ## 플로우
 
 1. 경영주/점장이 기존 근무자 검색/연결 플로우로 근로자를 점포 `employee` 로 연결합니다.
@@ -349,11 +379,13 @@
     "contract_signed_date": "2026-04-01",
     "employer_phone": "02-1234-5678",
     "employer_address": "서울 강남구 OO로 12",
-    "employer_signature_text": "홍길동"
+    "employer_signature_text": "data:image/png;base64,iVBORw0KGgoAAAANS...(생략)"
   },
   "merge_form_values": true
 }
 ```
+
+- `employer_signature_text` / `worker_signature_text`는 위와 같이 **Data URL** 또는 기존처럼 **짧은 문자열** 모두 가능합니다. 서버 요구사항은 본 문서 **「서명 필드 — 서버(백엔드) 정책」** 참고.
 
 ### action 규칙
 
@@ -362,6 +394,45 @@
 | `save_draft` | 사업장 / 근로자 | 현재 단계에서 자기 필드만 임시저장 |
 | `send_to_worker` | 사업장만 | 사업장 필수 항목 검증 후 `waiting_worker` 로 전환 |
 | `complete` | 근로자만 | 사업장 필수 + 근로자 필수 검증 후 `completed` 로 전환 |
+
+- `form_values`는 프론트가 화면 전체 상태를 통째로 보내도 됩니다.
+- 서버는 **현재 단계에서 허용된 키만 반영**하고, 다른 단계의 필드나 UI 전용 임시 필드(예: `work_day_*`)는 **무시**합니다.
+- 단, `required_field_keys`에 해당하는 필수값이 비어 있으면 기존처럼 `400`을 반환합니다.
+- `action=complete`로 `completed` 전환 시 계약 정보 기준으로 근무현황이 자동 생성됩니다.
+  - 같은 계약 유형(`template_version`)의 완료 계약이 여러 건이면 **가장 최근 완료 계약서 기준**으로 반영됩니다.
+  - 생성 범위: `contract_start_date` ~ `contract_end_date` (종료일이 없으면 시작일 1일)
+  - 생성 시간: `scheduled_work_start_time` ~ `scheduled_work_end_time`
+  - 생성 요일: `work_weekdays`/`selected_weekdays`/`work_day_*` 우선, 없으면 `work_days_per_week` + `weekly_holiday_day`로 추론
+  - 생성 상태: `scheduled`(예정)
+  - 반영 구간의 기존 자동 스케줄(`contract_auto`)은 최신 계약 기준으로 교체됩니다.
+  - 이미 수동 스케줄이 있는 날짜는 자동 생성하지 않습니다.
+
+### 프론트엔드 연동 (근무일 자동배정 — `form_values` 요일 맞춤)
+
+계약 완료 시 서버가 `contract_auto` 근무 슬롯을 만들 때 쓰는 요일 해석입니다. **Flutter/Dart와 서버(Python) 요일 번호가 달라** 잘못된 요일에 배정되던 문제를 맞추었으므로, 아래만 지키면 됩니다.
+
+1. **숫자 요일 두 가지 모두 허용 (계약 `form_values` 한정)**  
+   - **Dart `DateTime.weekday` / ISO-8601**: `1` = 월요일 … `7` = 일요일 → **권장.** 그대로 보내도 서버가 처리합니다.  
+   - **Python `DateTime.weekday`와 동일**: `0` = 월요일 … `6` = 일요일 → 기존처럼 보내도 됩니다.  
+   - 적용 필드 예: `weekly_holiday_day`, `work_weekdays` / `selected_weekdays` 배열 안의 숫자 원소.
+
+2. **문자열로 보내는 근무요일**  
+   - `work_weekdays`, `selected_weekdays`, `work_days`에 **리스트가 아니라 문자열**이어도 됩니다.  
+   - 예: `"월, 화, 수, 목, 금"`, `"월~금"`, `"월/수/금"` (구분자: 쉼표·공백·슬래시·가운뎃점 등).  
+   - `월~금`은 월→금 연속 요일로 확장됩니다.
+
+3. **체크박스 키 `work_day_1` … `work_day_7`**  
+   - 서버 해석: **`work_day_1` = 월요일**, `work_day_7` = 일요일 (Python weekday 0~6에 대응).  
+   - UI에서 요일 순서를 **일요일부터** 쓰는 경우, 체크 인덱스와 위 규칙이 어긋나지 않도록 **전송 전에 요일을 맞게 매핑**하거나, 가능하면 **`work_day_mon` … `work_day_sun`** 형태(명시 키)를 사용하세요.
+
+4. **`PUT /staff-management/branches/{branch_id}/contracts/work-rules` (근무룰 저장)**  
+   - 여기의 `weekday`는 **항상 Python 규칙 `0`~`6` (월~일)** 만 사용합니다. Dart `1`~`7`을 그대로 넣지 마세요.  
+   - 계약 `form_values`와 근무룰 API를 **같은 화면에서 쓴다면**, 근무룰 API로 넣기 전에 **0~6으로 변환**하세요.
+
+5. **입사일 표시 (직원관리 API)**  
+   - DB에 입사일이 비어 있으면 서버가 **`created_at`의 날짜**를 `hire_date` 응답에 채울 수 있습니다. 프론트는 응답 `hire_date`를 그대로 표시하면 됩니다.
+
+---
 
 ### 오류 응답 예시 (400)
 

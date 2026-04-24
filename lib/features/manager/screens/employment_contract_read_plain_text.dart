@@ -1,6 +1,8 @@
 /// 근로계약서 조회·PDF보내기용 평문 (화면과 동일한 내용)
 library employment_contract_read_plain_text;
 
+import '../../../utils/contract_signature_data.dart';
+
 String _fv(Map<String, dynamic> fv, String key) =>
     fv[key]?.toString().trim() ?? '';
 
@@ -163,7 +165,7 @@ String buildStandardEmploymentContractPlainText(
     ' 주 소 : ${addr.isEmpty ? '____________________________________' : addr}',
   );
   buf.writeln(
-    ' 대표자 : ${rep.isEmpty ? '__________' : rep} (서명) ${esign.isNotEmpty ? esign : ''}',
+    ' 대표자 : ${rep.isEmpty ? '__________' : rep} (서명) ${contractSignaturePlainText(esign)}',
   );
   buf.writeln();
   buf.writeln(
@@ -171,7 +173,7 @@ String buildStandardEmploymentContractPlainText(
   );
   buf.writeln(' 연락처 : ${wphone.isEmpty ? '__________' : wphone}');
   buf.writeln(
-    ' 성 명 : ${worker.isEmpty ? '__________' : worker} (서명) ${wsign.isNotEmpty ? wsign : ''}',
+    ' 성 명 : ${worker.isEmpty ? '__________' : worker} (서명) ${contractSignaturePlainText(wsign)}',
   );
   return buf.toString();
 }

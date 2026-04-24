@@ -9,9 +9,11 @@ import 'package:intl/intl.dart';
 
 import '../../../core/formatters/thousands_separator_input_formatter.dart';
 import '../../../data/repositories/staff_management_repository.dart';
+import '../../../utils/contract_work_day_form.dart';
 import '../../../utils/modal_title_format.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import '../../../widgets/contract_signature.dart';
 import '../../auth/widgets/auth_input_field.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -246,12 +248,12 @@ class _EmploymentContractFormScreenState
       ]);
       for (var i = 0; i < 7; i++) {
         reg([
-          'work_day_${i}_enabled',
-          'work_day_${i}_start',
-          'work_day_${i}_end',
-          'work_day_${i}_break_has',
-          'work_day_${i}_break_start',
-          'work_day_${i}_break_end',
+          contractWorkDayFormFieldKey(i, 'enabled'),
+          contractWorkDayFormFieldKey(i, 'start'),
+          contractWorkDayFormFieldKey(i, 'end'),
+          contractWorkDayFormFieldKey(i, 'break_has'),
+          contractWorkDayFormFieldKey(i, 'break_start'),
+          contractWorkDayFormFieldKey(i, 'break_end'),
         ]);
       }
     }
@@ -271,8 +273,9 @@ class _EmploymentContractFormScreenState
         contractId: _contractId!,
       );
       _titleCtrl.text = d['title']?.toString() ?? '';
-      final fv = (d['form_values'] as Map?)?.cast<String, dynamic>();
-      if (fv != null) {
+      final fvRaw = (d['form_values'] as Map?)?.cast<String, dynamic>();
+      if (fvRaw != null) {
+        final fv = migrateLegacyWorkDayKeysInMap(fvRaw);
         for (final e in fv.entries) {
           final key = e.key;
           final val = e.value;
@@ -390,6 +393,16 @@ class _EmploymentContractFormScreenState
       if (ea != null) out['extra_allowance_amount'] = ea;
       final pd = pi('payment_day');
       if (pd != null) out['payment_day'] = pd;
+      final ww = <int>[];
+      for (var i = 0; i < 7; i++) {
+        if (_c[contractWorkDayFormFieldKey(i, 'enabled')]?.text.trim() ==
+            '1') {
+          ww.add(i + 1);
+        }
+      }
+      if (ww.isNotEmpty) {
+        out['work_weekdays'] = ww;
+      }
     } else {
       final age = pi('minor_age');
       if (age != null) out['minor_age'] = age;
@@ -1030,6 +1043,7 @@ class _EmploymentContractFormScreenState
     VoidCallback? onTap,
     _ContractChipTone tone = _ContractChipTone.mint,
     EdgeInsets? padding,
+    bool signatureField = false,
   }) {
     final chipPadding = padding ?? _contractChipPadding;
     final effectiveOnTap = tone == _ContractChipTone.worker ? null : onTap;
@@ -1046,6 +1060,22 @@ class _EmploymentContractFormScreenState
       // 후견인·연소 모두 주황 팔레트, 빈 칩 문구만 다름
       _ContractChipTone.guardian => (_workerChipBg, _workerChipFg),
     };
+    if (signatureField && isContractSignatureDataUrl(t)) {
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: effectiveOnTap,
+          borderRadius: BorderRadius.circular(4.r),
+          child: Padding(
+            padding: chipPadding,
+            child: contractSignatureImageWithUnderline(
+              dataUrl: t,
+              underlineColor: AppColors.textPrimary,
+            ),
+          ),
+        ),
+      );
+    }
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -1058,15 +1088,26 @@ class _EmploymentContractFormScreenState
             borderRadius: BorderRadius.circular(8.r),
             border: Border.all(color: fg.withValues(alpha: 0.45)),
           ),
-          child: Text(
-            empty ? emptyLabel : t,
-            style: _contractFigmaBody.copyWith(
-              color: fg,
-              fontWeight: FontWeight.w500,
-              fontSize: 12.sp,
-              height: 18 / 12,
-            ),
-          ),
+          child: signatureField
+              ? contractSignatureChipChild(
+                  value: display,
+                  emptyLabel: emptyLabel,
+                  textStyle: _contractFigmaBody.copyWith(
+                    color: fg,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 12.sp,
+                    height: 18 / 12,
+                  ),
+                )
+              : Text(
+                  empty ? emptyLabel : t,
+                  style: _contractFigmaBody.copyWith(
+                    color: fg,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 12.sp,
+                    height: 18 / 12,
+                  ),
+                ),
         ),
       ),
     );
@@ -1146,13 +1187,14 @@ class _EmploymentContractFormScreenState
     final slots = List<_DayWorkSlot>.generate(7, (_) => _DayWorkSlot());
     var hadStoredDay = false;
     for (var i = 0; i < 7; i++) {
-      final en = _c['work_day_${i}_enabled']?.text.trim();
+      final en =
+          _c[contractWorkDayFormFieldKey(i, 'enabled')]?.text.trim();
       if (en == '1' || en == '0') {
         hadStoredDay = true;
         slots[i].open = en == '1';
       }
-      final ws = _c['work_day_${i}_start']?.text ?? '';
-      final we = _c['work_day_${i}_end']?.text ?? '';
+      final ws = _c[contractWorkDayFormFieldKey(i, 'start')]?.text ?? '';
+      final we = _c[contractWorkDayFormFieldKey(i, 'end')]?.text ?? '';
       if (ws.isNotEmpty) {
         final a = parseHm(ws, 9, 0);
         slots[i].sh = a.$1;
@@ -1163,12 +1205,14 @@ class _EmploymentContractFormScreenState
         slots[i].eh = b.$1;
         slots[i].em = b.$2;
       }
-      final bh = _c['work_day_${i}_break_has']?.text.trim();
+      final bh =
+          _c[contractWorkDayFormFieldKey(i, 'break_has')]?.text.trim();
       if (bh == '1' || bh == '0') {
         slots[i].breakHas = bh == '1';
       }
-      final bs = _c['work_day_${i}_break_start']?.text ?? '';
-      final be = _c['work_day_${i}_break_end']?.text ?? '';
+      final bs =
+          _c[contractWorkDayFormFieldKey(i, 'break_start')]?.text ?? '';
+      final be = _c[contractWorkDayFormFieldKey(i, 'break_end')]?.text ?? '';
       if (bs.isNotEmpty) {
         final c = parseHm(bs, 13, 0);
         slots[i].bsh = c.$1;
@@ -1646,23 +1690,25 @@ class _EmploymentContractFormScreenState
       setState(() {
         for (var i = 0; i < 7; i++) {
           final s = slots[i];
-          _c['work_day_${i}_enabled']!.text = s.open ? '1' : '0';
+          _c[contractWorkDayFormFieldKey(i, 'enabled')]!.text =
+              s.open ? '1' : '0';
           if (!s.open) {
-            _c['work_day_${i}_start']!.text = '';
-            _c['work_day_${i}_end']!.text = '';
-            _c['work_day_${i}_break_has']!.text = '0';
-            _c['work_day_${i}_break_start']!.text = '';
-            _c['work_day_${i}_break_end']!.text = '';
+            _c[contractWorkDayFormFieldKey(i, 'start')]!.text = '';
+            _c[contractWorkDayFormFieldKey(i, 'end')]!.text = '';
+            _c[contractWorkDayFormFieldKey(i, 'break_has')]!.text = '0';
+            _c[contractWorkDayFormFieldKey(i, 'break_start')]!.text = '';
+            _c[contractWorkDayFormFieldKey(i, 'break_end')]!.text = '';
           } else {
-            _c['work_day_${i}_start']!.text = '${two(s.sh)}:${two(s.sm)}';
-            _c['work_day_${i}_end']!.text = '${two(s.eh)}:${two(s.em)}';
-            _c['work_day_${i}_break_has']!.text = s.breakHas ? '1' : '0';
-            _c['work_day_${i}_break_start']!.text = s.breakHas
-                ? '${two(s.bsh)}:${two(s.bsm)}'
-                : '';
-            _c['work_day_${i}_break_end']!.text = s.breakHas
-                ? '${two(s.beh)}:${two(s.bem)}'
-                : '';
+            _c[contractWorkDayFormFieldKey(i, 'start')]!.text =
+                '${two(s.sh)}:${two(s.sm)}';
+            _c[contractWorkDayFormFieldKey(i, 'end')]!.text =
+                '${two(s.eh)}:${two(s.em)}';
+            _c[contractWorkDayFormFieldKey(i, 'break_has')]!.text =
+                s.breakHas ? '1' : '0';
+            _c[contractWorkDayFormFieldKey(i, 'break_start')]!.text =
+                s.breakHas ? '${two(s.bsh)}:${two(s.bsm)}' : '';
+            _c[contractWorkDayFormFieldKey(i, 'break_end')]!.text =
+                s.breakHas ? '${two(s.beh)}:${two(s.bem)}' : '';
           }
         }
 
@@ -2233,9 +2279,10 @@ class _EmploymentContractFormScreenState
 
   bool _hasPerDayWorkSchedule() {
     for (var i = 0; i < 7; i++) {
-      final en = _c['work_day_${i}_enabled']?.text.trim();
+      final en =
+          _c[contractWorkDayFormFieldKey(i, 'enabled')]?.text.trim();
       if (en == '0' || en == '1') return true;
-      final ws = _c['work_day_${i}_start']?.text.trim();
+      final ws = _c[contractWorkDayFormFieldKey(i, 'start')]?.text.trim();
       if (ws != null && ws.isNotEmpty) return true;
     }
     return false;
@@ -2245,10 +2292,12 @@ class _EmploymentContractFormScreenState
   List<({int i, String start, String end})> _enabledWorkDaySlots() {
     final out = <({int i, String start, String end})>[];
     for (var i = 0; i < 7; i++) {
-      final en = _c['work_day_${i}_enabled']?.text.trim();
+      final en =
+          _c[contractWorkDayFormFieldKey(i, 'enabled')]?.text.trim();
       if (en == '0') continue;
-      final ws = _c['work_day_${i}_start']?.text.trim() ?? '';
-      final we = _c['work_day_${i}_end']?.text.trim() ?? '';
+      final ws =
+          _c[contractWorkDayFormFieldKey(i, 'start')]?.text.trim() ?? '';
+      final we = _c[contractWorkDayFormFieldKey(i, 'end')]?.text.trim() ?? '';
       if (en != '1' && ws.isEmpty) continue;
       if (ws.isEmpty && we.isEmpty) continue;
       out.add((i: i, start: ws, end: we));
@@ -2322,9 +2371,16 @@ class _EmploymentContractFormScreenState
       final workSet = slots.map((s) => s.i).toSet();
       final byRange = <String, List<int>>{};
       for (final o in slots) {
-        if (_c['work_day_${o.i}_break_has']?.text.trim() != '1') continue;
-        final bs = _c['work_day_${o.i}_break_start']?.text.trim() ?? '';
-        final be = _c['work_day_${o.i}_break_end']?.text.trim() ?? '';
+        if (_c[contractWorkDayFormFieldKey(o.i, 'break_has')]?.text.trim() !=
+            '1') {
+          continue;
+        }
+        final bs =
+            _c[contractWorkDayFormFieldKey(o.i, 'break_start')]?.text.trim() ??
+                '';
+        final be =
+            _c[contractWorkDayFormFieldKey(o.i, 'break_end')]?.text.trim() ??
+                '';
         if (bs.isEmpty && be.isEmpty) continue;
         final key = '$bs~$be';
         byRange.putIfAbsent(key, () => []).add(o.i);
@@ -2939,6 +2995,7 @@ class _EmploymentContractFormScreenState
             Text('(서명)', style: _contractBodyStyle),
             _inputChip(
               display: _c['employer_signature_text']?.text,
+              signatureField: true,
               onTap: () =>
                   _openInlineInput('사업주 서명', 'employer_signature_text'),
             ),
@@ -2989,6 +3046,7 @@ class _EmploymentContractFormScreenState
             _inputChip(
               display: _c['worker_signature_text']?.text,
               tone: _ContractChipTone.worker,
+              signatureField: true,
               onTap: () => _openInlineInput('근로자 서명', 'worker_signature_text'),
             ),
           ],
@@ -3009,6 +3067,15 @@ class _EmploymentContractFormScreenState
   };
 
   Future<void> _openInlineInput(String label, String key) async {
+    if (key == 'employer_signature_text' || key == 'worker_signature_text') {
+      final val = await showContractSignatureDialog(context, label: label);
+      if (val != null && mounted) {
+        setState(() {
+          _c[key]?.text = val;
+        });
+      }
+      return;
+    }
     final initial = _wonAmountFieldKeys.contains(key)
         ? _formatWonForDisplay(_c[key]?.text)
         : (_c[key]?.text ?? '');

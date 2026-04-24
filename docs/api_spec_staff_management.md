@@ -27,6 +27,13 @@
 - 특정 슬롯 상태/메모 수정
 - 특정 슬롯 삭제
 
+
+### 프론트 참고 (자동 근무 배정·요일)
+
+- 일정 조회 시 **`schedule_source`가 `contract_auto`인 슬롯**은 근로계약 완료 시 자동 생성된 것입니다.
+- 계약서 `form_values`의 요일·주휴일 숫자/문자열 규약(Flutter `weekday` 1~7 지원, `work_days` 문자열 등)은 **`docs/api_spec_contract_chat.md` → 「프론트엔드 연동 (근무일 자동배정)」** 를 따릅니다.
+- **`PUT .../contracts/work-rules`** 의 `weekday`는 **`0`~`6`(월~일, Python)** 만 허용합니다.
+
 ---
 
 ## 1) 날짜별 근무일정 조회
@@ -1283,10 +1290,10 @@ curl -X POST "${BASE}/api/v1/staff-management/branches/${BRANCH_ID}/employees/${
     "employer_phone": "02-1234-5678", // 사업주 전화
     "employer_address": "서울시 강남구 OO로 12", // 사업주 주소
     "employer_representative_name": "홍길동", // 대표자 성명
-    "employer_signature_text": "홍길동", // 사업주 서명값
+    "employer_signature_text": "홍길동", // 사업주 서명: 짧은 텍스트 또는 앱 전자서명 `data:image/png;base64,...`
     "worker_address": "서울시 송파구 OO로 20", // 근로자 주소
     "worker_phone": "010-1234-5678", // 근로자 연락처
-    "worker_signature_text": "김현수", // 근로자 서명값
+    "worker_signature_text": "김현수", // 근로자 서명: 동일(텍스트·Data URL). 서버 정책은 api_spec_contract_chat.md 「서명 필드」
     "family_relation_certificate_submitted": "제출", // 가족관계증명서 제출 여부(연소근로자)
     "guardian_consent_submitted": "제출" // 친권자/후견인 동의서 구비 여부(연소근로자)
   },
@@ -1299,6 +1306,9 @@ curl -X POST "${BASE}/api/v1/staff-management/branches/${BRANCH_ID}/employees/${
   ]
 }
 ```
+
+- `employer_signature_text` / `worker_signature_text`: 계약 채팅과 동일하게 **전자서명 PNG Data URL** 또는 **기존 짧은 문자열** 모두 허용. 백엔드는 컬럼 길이·요청 body 한도·검증·저장소 정책을 **`docs/api_spec_contract_chat.md` → 「서명 필드 — 서버(백엔드) 정책」** 에 맞출 것.
+
 - `files`는 선택(없으면 빈 배열). 있으면 저장 시 함께 첨부됨.
 
 ### Response Body (200)

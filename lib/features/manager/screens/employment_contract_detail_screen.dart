@@ -6,6 +6,7 @@ import '../../../data/repositories/staff_management_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../../widgets/app_styled_confirm_dialog.dart';
+import '../../../widgets/contract_signature.dart';
 import 'employment_contract_attachment_helpers.dart';
 import 'employment_contract_pdf_export.dart';
 import 'employee_etc_record_inline_preview.dart';
@@ -198,6 +199,18 @@ class _EmploymentContractDetailScreenState
           SizedBox(height: 2.h),
           Container(height: 1, color: _underlineColor),
         ],
+      ),
+    );
+  }
+
+  /// 서명(data URL PNG) 또는 기존 텍스트 서명
+  Widget _uSignature(String value, {String placeholder = '　　　'}) {
+    return IntrinsicWidth(
+      child: contractSignatureReadonlyInline(
+        raw: value,
+        textStyle: _docBodyStyle,
+        underlineColor: _underlineColor,
+        placeholder: placeholder,
       ),
     );
   }
@@ -738,7 +751,7 @@ class _EmploymentContractDetailScreenState
             Text(' 대표자 : ', style: _docBodyStyle),
             _u(rep),
             Text(' (서명) ', style: _docBodyStyle),
-            _u(esign, placeholder: '　　　'),
+            _uSignature(esign, placeholder: '　　　'),
           ],
         ),
         SizedBox(height: 16.h),
@@ -762,7 +775,7 @@ class _EmploymentContractDetailScreenState
             Text(' 성 명 : ', style: _docBodyStyle),
             _u(worker),
             Text(' (서명) ', style: _docBodyStyle),
-            _u(wsign, placeholder: '　　　'),
+            _uSignature(wsign, placeholder: '　　　'),
           ],
         ),
       ],
