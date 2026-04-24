@@ -1461,6 +1461,9 @@ files=@guardian-consent.pdf
 ### Response Body (200)
 `22) 근로계약서 생성`의 Response와 동일 (`chat_status`, `chat_status_label` 포함 — 목록 조회 예시 참고).
 
+### 비고
+- `form_values`에 **전자서명 Data URL**이 들어갈 수 있습니다: 표준·연소는 `employer_signature_text` / `worker_signature_text`, 친권자 동의는 `guardian_signature_name`. 텍스트 로그·어드민 평문에는 base64 대신 **`api_spec_admin.md` → `6-4-1) 직원 근로계약서 상세 조회`** 의 `document_preview_text`를 사용합니다 (`standard_v1`, `minor_standard_v1`, `guardian_consent_v1` 지원).
+
 ---
 
 ## 26-1) 근로계약 첨부 파일 스트리밍 (PDF 미리보기 권장)
@@ -1526,7 +1529,7 @@ files=@guardian-consent.pdf
     "business_phone_number": "02-1234-5678", // 회사전화
     "consent_minor_name": "김현수", // 동의문에 들어갈 연소근로자명
     "consent_signed_date": "2026-03-06", // 작성일
-    "guardian_signature_name": "김민정" // 친권자(후견인) 서명
+    "guardian_signature_name": "김민정" // 친권자(후견인) 서명: 짧은 텍스트 또는 앱 전자서명 `data:image/png;base64,...` (어드민 `document_preview_text`에는 `[전자서명]`으로 치환)
   }
 }
 ```

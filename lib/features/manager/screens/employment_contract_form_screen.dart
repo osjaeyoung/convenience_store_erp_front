@@ -413,14 +413,9 @@ class _EmploymentContractFormScreenState
   bool _fieldNonEmpty(String key) => (_c[key]?.text.trim().isNotEmpty ?? false);
 
   bool _isWorkerOwnedField(String key) => switch (key) {
-    'worker_name' ||
     'worker_address' ||
     'worker_phone' ||
-    'worker_signature_text' ||
-    'minor_name' ||
-    'minor_age' ||
-    'minor_resident_id_masked' ||
-    'minor_address' => true,
+    'worker_signature_text' => true,
     _ => false,
   };
 
@@ -428,28 +423,6 @@ class _EmploymentContractFormScreenState
   /// 가족관계증명서 **파일**은 완료 시점에 필수 아님(이후 PATCH file). 화면 문구는 양식대로 유지.
   List<String> _missingFieldsForGuardianCompletion() {
     final m = <String>[];
-    if (!widget.isGuardian) return m;
-    if (!_fieldNonEmpty('guardian_name')) m.add('친권자(후견인) 성명');
-    if (!_fieldNonEmpty('guardian_resident_id_masked')) {
-      m.add('친권자 주민등록번호(마스킹)');
-    }
-    if (!_fieldNonEmpty('guardian_address')) m.add('친권자 주소');
-    if (!_fieldNonEmpty('guardian_phone_number')) m.add('친권자 연락처');
-    if (!_fieldNonEmpty('relation_to_minor_worker')) {
-      m.add('연소근로자와의 관계');
-    }
-    if (!_fieldNonEmpty('business_name')) m.add('회사명');
-    if (!_fieldNonEmpty('business_address')) m.add('회사주소');
-    if (!_fieldNonEmpty('business_representative_name')) m.add('대표자');
-    if (!_fieldNonEmpty('business_phone_number')) m.add('회사전화');
-    if (!_fieldNonEmpty('consent_minor_name')) m.add('동의문 속 연소근로자명');
-    final signed = _c['consent_signed_date']?.text.trim() ?? '';
-    if (signed.isEmpty || DateTime.tryParse(signed) == null) {
-      m.add('동의서 작성일(연·월·일)');
-    }
-    if (!_fieldNonEmpty('guardian_signature_name')) {
-      m.add('친권자(후견인) 서명');
-    }
     return m;
   }
 
@@ -845,13 +818,13 @@ class _EmploymentContractFormScreenState
                     Text('성 명 : ', style: _contractBodyStyle),
                     _inputChip(
                       display: _c['minor_name']?.text,
-                      tone: _ContractChipTone.worker,
+                      tone: _ContractChipTone.guardian,
                       onTap: () => _openInlineInput('연소근로자 성명', 'minor_name'),
                     ),
                     Text(' (만 ', style: _contractBodyStyle),
                     _inputChip(
                       display: _c['minor_age']?.text,
-                      tone: _ContractChipTone.worker,
+                      tone: _ContractChipTone.guardian,
                       onTap: () => _openInlineInput('만 나이', 'minor_age'),
                     ),
                     Text(' 세)', style: _contractBodyStyle),
@@ -862,13 +835,13 @@ class _EmploymentContractFormScreenState
                 '주민등록번호 : ',
                 '연소근로자 주민등록번호(마스킹)',
                 'minor_resident_id_masked',
-                tone: _ContractChipTone.worker,
+                tone: _ContractChipTone.guardian,
               ),
               _guardianLabeledChipRow(
                 '주 소 : ',
                 '연소근로자 주소',
                 'minor_address',
-                tone: _ContractChipTone.worker,
+                tone: _ContractChipTone.guardian,
                 wideChip: true,
               ),
               SizedBox(height: 8.h),
@@ -963,6 +936,7 @@ class _EmploymentContractFormScreenState
                   _inputChip(
                     display: _c['guardian_signature_name']?.text,
                     tone: _ContractChipTone.guardian,
+                    signatureField: true,
                     onTap: () => _openInlineInput(
                       '친권자(후견인) 서명',
                       'guardian_signature_name',
@@ -2848,7 +2822,6 @@ class _EmploymentContractFormScreenState
                     Text('친권자 또는 후견인의 동의서 구비 여부 : ', style: _contractBodyStyle),
                     _inputChip(
                       display: _c['guardian_consent_submitted']?.text,
-                      tone: _ContractChipTone.worker,
                       onTap: () => _openInlineInput(
                         '친권자 또는 후견인의 동의서 구비 여부',
                         'guardian_consent_submitted',
@@ -3067,7 +3040,7 @@ class _EmploymentContractFormScreenState
   };
 
   Future<void> _openInlineInput(String label, String key) async {
-    if (key == 'employer_signature_text' || key == 'worker_signature_text') {
+    if (key == 'employer_signature_text' || key == 'worker_signature_text' || key == 'guardian_signature_name') {
       final val = await showContractSignatureDialog(context, label: label);
       if (val != null && mounted) {
         setState(() {

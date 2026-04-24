@@ -466,3 +466,4 @@
 - 기존 `EmploymentContract` 테이블을 재사용하고, 계약 채팅 전용 메타데이터만 추가합니다.
 - 기존 `status` 는 최종 완료 시점에만 `completed` 로 바뀌며, 채팅 흐름은 `chat_status` 로 분리합니다.
 - 기존 일반 근로계약 API와 분리해, 계약 채팅으로 생성된 문서만 `chat_status != null` 로 관리합니다.
+- `document_preview_text` 및 서명 치환 로직은 백엔드에서 `app/services/standard_contract_text.py` 에 모으며, 계약 채팅은 `render_standard_contract_text`를 씁니다. **어드민** 근로계약 상세(`GET /admin/.../contracts/{contract_id}`)의 `document_preview_text`는 같은 모듈에서 `standard_v1`·`minor_standard_v1`(표준 본문 + 연소 보조 줄)·`guardian_consent_v1`(친권자 동의 평문, `guardian_signature_name` 서명 치환 포함)을 생성합니다.

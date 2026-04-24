@@ -963,7 +963,7 @@ class _EmploymentContractDetailScreenState
           runSpacing: 6,
           children: [
             Text('친권자(후견인) ', style: _docBodyStyle),
-            _u(_fv(fv, 'guardian_signature_name')),
+            _uSignature(_fv(fv, 'guardian_signature_name')),
             Text(' (인)', style: _docBodyStyle),
           ],
         ),

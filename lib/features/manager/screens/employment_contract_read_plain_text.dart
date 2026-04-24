@@ -216,7 +216,7 @@ String buildGuardianConsentPlainText(Map<String, dynamic> fv) {
   buf.writeln(_formatKoreanDate(_fv(fv, 'consent_signed_date')));
   buf.writeln();
   buf.writeln(
-    '친권자(후견인) ${_fv(fv, 'guardian_signature_name')} (인)',
+    '친권자(후견인) ${contractSignaturePlainText(_fv(fv, 'guardian_signature_name'))} (인)',
   );
   buf.writeln();
   buf.writeln('첨 부 : 가족관계증명서 1부');

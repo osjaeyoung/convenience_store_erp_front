@@ -421,7 +421,7 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
       );
       return;
     }
-    if (key == 'worker_signature_text') {
+    if (key == 'worker_signature_text' || key == 'guardian_signature_name') {
       final val = await showContractSignatureDialog(context, label: label);
       if (val != null && mounted) {
         setState(() {
@@ -542,7 +542,7 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
       tone: _ContractChipTone.worker,
       onTap: editable ? () => _openFieldEditor(label, key) : null,
       padding: padding,
-      signatureField: key == 'worker_signature_text',
+      signatureField: key == 'worker_signature_text' || key == 'guardian_signature_name',
     );
   }
 
@@ -962,11 +962,7 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
                       '가족관계기록사항에 관한 증명서 제출 여부 : ',
                       style: _contractBodyStyle,
                     ),
-                    _workerInputChip(
-                      key: 'family_relation_certificate_submitted',
-                      label: '가족관계기록사항에 관한 증명서 제출 여부',
-                      doc: doc,
-                    ),
+                    _readonlyMintChip(_formValue('family_relation_certificate_submitted', doc)),
                   ],
                 ),
                 SizedBox(height: 10.h),
@@ -976,11 +972,7 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
                   runSpacing: 8,
                   children: [
                     Text('친권자 또는 후견인의 동의서 구비 여부 : ', style: _contractBodyStyle),
-                    _workerInputChip(
-                      key: 'guardian_consent_submitted',
-                      label: '친권자 또는 후견인의 동의서 구비 여부',
-                      doc: doc,
-                    ),
+                    _readonlyMintChip(_formValue('guardian_consent_submitted', doc)),
                   ],
                 ),
               ],
