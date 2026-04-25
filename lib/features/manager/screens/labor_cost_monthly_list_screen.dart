@@ -365,7 +365,9 @@ class _EmployeeAccordionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final badgeOn = employee.wageType == 'monthly';
-    final weeklyHours = '${(employee.totalWorkMinutes / 60).toStringAsFixed(0)}시간';
+    final weeklyHours = employee.contractWeeklyWorkMinutes == null
+        ? '-'
+        : _formatMinutes(employee.contractWeeklyWorkMinutes!);
     final badgeText = badgeOn ? '월급' : '시급';
 
     return Padding(

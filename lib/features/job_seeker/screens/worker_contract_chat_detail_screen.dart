@@ -7,6 +7,7 @@ import '../../../data/repositories/worker_recruitment_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../account/account_dio_message.dart';
+import '../../../widgets/recruitment_inquiry_chat_composer.dart';
 import '../widgets/worker_common.dart';
 import '../widgets/worker_contract_chat_leave_dialog.dart';
 import 'worker_contract_document_screen.dart';
@@ -24,6 +25,7 @@ class WorkerContractChatDetailScreen extends StatefulWidget {
 
 class _WorkerContractChatDetailScreenState
     extends State<WorkerContractChatDetailScreen> {
+  final ScrollController _scrollController = ScrollController();
   bool _loading = true;
   bool _changed = false;
   bool _deleting = false;
@@ -34,6 +36,12 @@ class _WorkerContractChatDetailScreenState
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -50,6 +58,7 @@ class _WorkerContractChatDetailScreenState
         _detail = detail;
         _loading = false;
       });
+      _scrollToBottom(jump: true);
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -105,6 +114,103 @@ class _WorkerContractChatDetailScreenState
     }
   }
 
+  Future<void> _sendMessage(String text) async {
+    final detail = _detail;
+    if (detail == null) return;
+
+    final optimisticId = 'optimistic-${DateTime.now().microsecondsSinceEpoch}';
+    final optimisticMessage = WorkerContractChatMessage(
+      messageId: optimisticId,
+      senderRole: 'worker',
+      messageType: 'text',
+      text: text,
+      createdAt: DateTime.now().toUtc().toIso8601String(),
+    );
+
+    setState(() {
+      _detail = WorkerContractChatDetail(
+        thread: detail.thread,
+        currentUserRole: detail.currentUserRole,
+        messages: [...detail.messages, optimisticMessage],
+        canOpenDocument: detail.canOpenDocument,
+        canDownloadDocument: detail.canDownloadDocument,
+      );
+    });
+    _changed = true;
+    _scrollToBottom();
+
+    try {
+      final sentMessage = await context
+          .read<WorkerRecruitmentRepository>()
+          .sendContractChatMessage(
+            contractId: widget.contractId,
+            text: text,
+          );
+      if (!mounted) return;
+      _replaceOptimisticMessage(optimisticId, sentMessage);
+    } catch (error) {
+      if (!mounted) return;
+      _removeOptimisticMessage(optimisticId);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(accountDioMessage(error))));
+    }
+  }
+
+  void _replaceOptimisticMessage(
+    String optimisticId,
+    WorkerContractChatMessage sentMessage,
+  ) {
+    final detail = _detail;
+    if (detail == null) return;
+    setState(() {
+      _detail = WorkerContractChatDetail(
+        thread: detail.thread,
+        currentUserRole: detail.currentUserRole,
+        messages: detail.messages
+            .map(
+              (message) =>
+                  message.messageId == optimisticId ? sentMessage : message,
+            )
+            .toList(),
+        canOpenDocument: detail.canOpenDocument,
+        canDownloadDocument: detail.canDownloadDocument,
+      );
+    });
+  }
+
+  void _removeOptimisticMessage(String optimisticId) {
+    final detail = _detail;
+    if (detail == null) return;
+    setState(() {
+      _detail = WorkerContractChatDetail(
+        thread: detail.thread,
+        currentUserRole: detail.currentUserRole,
+        messages: detail.messages
+            .where((message) => message.messageId != optimisticId)
+            .toList(),
+        canOpenDocument: detail.canOpenDocument,
+        canDownloadDocument: detail.canDownloadDocument,
+      );
+    });
+  }
+
+  void _scrollToBottom({bool jump = false}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      final target = _scrollController.position.maxScrollExtent;
+      if (jump) {
+        _scrollController.jumpTo(target);
+        return;
+      }
+      _scrollController.animateTo(
+        target,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
   static TextStyle get _appBarTitleStyle => AppTypography.appBarTitle;
 
   static TextStyle get _timeStyle => AppTypography.bodyXSmallM.copyWith(
@@ -124,9 +230,8 @@ class _WorkerContractChatDetailScreenState
   @override
   Widget build(BuildContext context) {
     final detail = _detail;
-    final isCompleted = detail?.thread.isCompleted == true;
     return Scaffold(
-      backgroundColor: isCompleted ? AppColors.grey0 : AppColors.grey0Alt,
+      backgroundColor: AppColors.grey0Alt,
       appBar: AppBar(
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -186,11 +291,24 @@ class _WorkerContractChatDetailScreenState
   }
 
   Widget _buildContent(WorkerContractChatDetail detail) {
+    return Column(
+      children: [
+        Expanded(
+          child: _buildMessagesList(detail),
+        ),
+        RecruitmentInquiryChatComposer(onSend: _sendMessage),
+      ],
+    );
+  }
+
+  Widget _buildMessagesList(WorkerContractChatDetail detail) {
     final messages = detail.messages;
     return ListView.builder(
+      controller: _scrollController,
+      reverse: false, // If messages come oldest-first, we can just use false.
       padding: EdgeInsets.fromLTRB(
         20.w,
-        detail.thread.isCompleted ? 45.h : 24.h,
+        24.h,
         20.w,
         24.h,
       ),

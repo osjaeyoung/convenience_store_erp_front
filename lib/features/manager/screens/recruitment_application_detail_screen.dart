@@ -6,6 +6,7 @@ import '../../../data/repositories/manager_home_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../../widgets/app_styled_confirm_dialog.dart';
+import 'recruitment_inquiry_chat_screen.dart';
 import 'recruitment_review_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -75,6 +76,40 @@ class _RecruitmentApplicationDetailScreenState
         ),
       ),
     );
+  }
+
+  Future<void> _openInquiryChat() async {
+    final profile = _profile;
+    final employeeId = profile?.employeeId;
+    if (employeeId == null) return;
+    try {
+      final chat = await context
+          .read<ManagerHomeRepository>()
+          .createOrGetRecruitmentChat(
+            branchId: widget.branchId,
+            employeeId: employeeId,
+          );
+      if (!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute<bool>(
+          builder: (_) => ManagerRecruitmentInquiryChatScreen(
+            chatId: chat.chatId,
+            branchId: chat.branchId,
+            employeeId: chat.employeeId,
+            employeeName: chat.counterpartyName.isNotEmpty
+                ? chat.counterpartyName
+                : profile?.employeeName,
+            profileImageUrl:
+                chat.counterpartyProfileImageUrl ?? profile?.profileImageUrl,
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('채팅방을 열 수 없습니다: $error')),
+      );
+    }
   }
 
   Future<void> _delete() async {
@@ -172,31 +207,61 @@ class _RecruitmentApplicationDetailScreenState
                             padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 36.h),
                             child: SizedBox(
                               height: 56,
-                              child: FilledButton(
-                                onPressed: _deleting ? null : _delete,
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: AppColors.grey150,
-                                  foregroundColor: AppColors.grey0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8.r),
-                                  ),
-                                ),
-                                child: _deleting
-                                    ? const SizedBox(
-                                        width: 22,
-                                        height: 22,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2.2,
-                                          color: AppColors.grey0,
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    flex: 1,
+                                    child: OutlinedButton(
+                                      onPressed: _deleting ? null : _delete,
+                                      style: OutlinedButton.styleFrom(
+                                        padding: EdgeInsets.zero,
+                                        side: const BorderSide(color: AppColors.grey25),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8.r),
                                         ),
-                                      )
-                                    : Text(
-                                        _profile!.contactActionLabel ?? '삭제',
+                                        foregroundColor: AppColors.textSecondary,
+                                      ),
+                                      child: _deleting
+                                          ? const SizedBox(
+                                              width: 22,
+                                              height: 22,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2.2,
+                                                color: AppColors.textSecondary,
+                                              ),
+                                            )
+                                          : Text(
+                                              '삭제',
+                                              style: AppTypography.bodyLargeB.copyWith(
+                                                color: AppColors.textSecondary,
+                                                height: 24 / 16,
+                                              ),
+                                            ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 8.w),
+                                  Expanded(
+                                    flex: 2,
+                                    child: FilledButton(
+                                      onPressed: _openInquiryChat,
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: AppColors.primary,
+                                        foregroundColor: AppColors.grey0,
+                                        padding: EdgeInsets.zero,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8.r),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        '문의하기',
                                         style: AppTypography.bodyLargeB.copyWith(
                                           color: AppColors.grey0,
                                           height: 24 / 16,
                                         ),
                                       ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),

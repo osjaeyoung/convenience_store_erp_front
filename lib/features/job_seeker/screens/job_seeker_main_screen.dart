@@ -195,7 +195,7 @@ class _WorkerTopTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const tabs = ['채용정보', '지원내역', '이력서관리', '계약채팅'];
+    const tabs = ['채용정보', '지원내역', '이력서관리', '채팅'];
 
     return Container(
       decoration: const BoxDecoration(

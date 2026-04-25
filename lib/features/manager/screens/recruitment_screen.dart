@@ -17,6 +17,7 @@ import '../bloc/selected_branch_cubit.dart';
 import '../widgets/home_common_app_bar.dart';
 import 'recruitment_job_seeker_detail_screen.dart';
 import 'recruitment_posting_list_tab.dart';
+import '../widgets/manager_recruitment_inquiry_chat_tab.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 const String _recentViewedHeaderIconSvg = '''
@@ -71,9 +72,9 @@ class _RecruitmentScreenState extends State<RecruitmentScreen>
   @override
   void initState() {
     super.initState();
-    _selectedTabIndex = widget.initialTabIndex.clamp(0, 2);
+    _selectedTabIndex = widget.initialTabIndex.clamp(0, 3);
     _tabController = TabController(
-      length: 3,
+      length: 4,
       vsync: this,
       initialIndex: _selectedTabIndex,
     );
@@ -101,7 +102,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.navigationRequestId != widget.navigationRequestId ||
         oldWidget.initialTabIndex != widget.initialTabIndex) {
-      final nextIndex = widget.initialTabIndex.clamp(0, 2);
+      final nextIndex = widget.initialTabIndex.clamp(0, 3);
       if (_selectedTabIndex != nextIndex) {
         setState(() => _selectedTabIndex = nextIndex);
         _tabController.animateTo(nextIndex);
@@ -441,6 +442,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen>
               Tab(text: '채용 홈'),
               Tab(text: '채용 게시판'),
               Tab(text: '내 채용 게시글'),
+              Tab(text: '채팅'),
             ],
           ),
           Expanded(
@@ -526,6 +528,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen>
                     );
                   },
                 ),
+                const ManagerRecruitmentInquiryChatTab(),
               ],
             ),
           ),

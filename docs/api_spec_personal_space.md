@@ -294,7 +294,8 @@ Figma 파일 `개인 공간`에서 현재 반영된 근로자 화면은 아래 1
     "age_label": "만 26세",
     "address": "부산 해운대구 반송동",
     "email": "worker1@test.com",
-    "phone_number": "01012345678"
+    "phone_number": "01012345678",
+    "profile_image_url": "https://cdn.example.com/users/2.png"
   },
   "education_level": null,
   "education_status": null,
@@ -324,6 +325,7 @@ Figma 파일 `개인 공간`에서 현재 반영된 근로자 화면은 아래 1
 
 - `resume_region_path` (optional): 이력서 주소의 **지역** (3단 선택 결과). 공백으로 구간 구분, 예: `서울 강남구 개포2동`, `경기 수원시 장안구`. UI에서는 `서울 > 강남구 > 개포2동` 형태로 표시. **최대 300자.**
 - `resume_address_detail` (optional): **상세 주소** (도로명/건물 등 자유 입력). **최대 500자.**
+- `profile_summary.profile_image_url`: 유저 계정 프로필 사진 URL입니다. 이력서별 사진이 아니라 **유저당 1개**이며, 이력서 화면에서 사진을 변경하면 `POST /recruitment/files(type=user_profile_image)` 후 `PATCH /me/account.profile_image_url`로 저장합니다.
 
 ---
 
@@ -351,7 +353,8 @@ Figma 파일 `개인 공간`에서 현재 반영된 근로자 화면은 아래 1
     "age_label": "만 26세",
     "address": "부산 해운대구 반송동",
     "email": "worker1@test.com",
-    "phone_number": "01012345678"
+    "phone_number": "01012345678",
+    "profile_image_url": "https://cdn.example.com/users/2.png"
   },
   "education_level": "college_4",
   "education_status": "graduated",

@@ -179,6 +179,71 @@ class ManagerHomeRepository {
     return RecruitmentContactResult.fromJson(res.data!);
   }
 
+  /// 지점-근로자 1:1 통합 채팅방 생성/조회
+  Future<RecruitmentChatSummary> createOrGetRecruitmentChat({
+    required int branchId,
+    required int employeeId,
+  }) async {
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/chats/branches/$branchId/employees/$employeeId',
+    );
+    return RecruitmentChatSummary.fromJson(res.data ?? const {});
+  }
+
+  /// 지점별 채용/계약 통합 채팅 목록
+  Future<RecruitmentChatPage> getRecruitmentChats({
+    int? branchId,
+    int? employeeId,
+  }) async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/chats',
+      queryParameters: {
+        if (branchId != null) 'branch_id': branchId,
+        if (employeeId != null) 'employee_id': employeeId,
+      },
+    );
+    return RecruitmentChatPage.fromJson(res.data ?? const {});
+  }
+
+  /// 채팅 메시지 조회
+  Future<RecruitmentChatMessagePage> getRecruitmentChatMessages({
+    required int chatId,
+  }) async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/chats/$chatId/messages',
+    );
+    return RecruitmentChatMessagePage.fromJson(res.data ?? const {});
+  }
+
+  /// 채팅방 상세 진입 후 상대방 메시지를 읽음 처리
+  Future<void> markRecruitmentChatRead({required int chatId}) async {
+    await _apiClient.dio.patch<Map<String, dynamic>>('/chats/$chatId/read');
+  }
+
+  /// 채팅 텍스트 메시지 전송
+  Future<RecruitmentChatMessage> sendRecruitmentChatMessage({
+    required int chatId,
+    required String text,
+  }) async {
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/chats/$chatId/messages',
+      data: {'text': text},
+    );
+    final data = res.data ?? const {};
+    final rawMessage = data['message'];
+    if (rawMessage is Map) {
+      return RecruitmentChatMessage.fromJson(
+        Map<String, dynamic>.from(rawMessage),
+      );
+    }
+    return RecruitmentChatMessage.fromJson(data);
+  }
+
+  /// 채용/계약 통합 채팅방 삭제
+  Future<void> deleteRecruitmentChat({required int chatId}) async {
+    await _apiClient.dio.delete<Map<String, dynamic>>('/chats/$chatId');
+  }
+
   /// 구직자 프로필 열람 기록 삭제
   Future<void> deleteJobSeekerProfileOpenRecord({
     required int branchId,

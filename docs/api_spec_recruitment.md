@@ -11,19 +11,27 @@
 
 ---
 
-## 0) 채용 공고 이미지 업로드
+## 0) 이미지 업로드
 
 - `POST /recruitment/files`
-- 채용 공고 등록/수정 전에 이미지를 먼저 업로드하고, 반환된 `file_url`을 `profile_image_url`에 넣어 사용
+- 채용 공고 등록/수정 또는 유저 프로필 사진 변경 전에 이미지를 먼저 업로드하고, 반환된 `file_url`을 해당 `profile_image_url`에 넣어 사용
 
 ### Request (multipart/form-data)
 
 - `file`: 이미지 파일
-- `type`: `posting_profile_image` (고정)
+- `type`
+  - `posting_profile_image`: 채용 공고 대표 이미지
+  - `user_profile_image`: 유저 계정 프로필 이미지
 
 제한:
 - 확장자: `png`, `jpg`, `jpeg`, `webp`
 - 최대 용량: 10MB
+
+### 유저 프로필 사진 저장 흐름
+
+1. `POST /recruitment/files` + `type=user_profile_image`로 이미지 업로드
+2. 응답의 `file_url`을 `PATCH /me/account`의 `profile_image_url`로 저장
+3. 유저당 프로필 사진은 **1개**이며, 새 URL 저장 시 기존 프로필 사진 URL을 대체합니다.
 
 ### Response Body (200)
 
@@ -687,3 +695,187 @@ GET /api/v1/recruitment/branches/1/home?region=서울&region=부산
 
 - `403`: owner/manager 권한 없음 또는 점포 접근 권한 없음
 - `404`: 점포 없음 / 구직자 없음 / 공고 없음 / 지원건 없음
+
+---
+
+## 15) 채용 문의 채팅 방 생성/조회 (경영주/점장 -> 구직자)
+
+- `POST /chats/branches/{branch_id}/employees/{employee_id}`
+- 경영주/점장이 특정 구직자/최근 본 근로자에게 문의하기 위해 **지점-근로자 1:1 통합 채팅방**을 생성하거나 기존 방을 조회합니다. (최근 본 근로자 상세화면 등에서 "문의하기" 버튼 클릭 시)
+- 기존 `POST /recruitment/branches/{branch_id}/job-seekers/{employee_id}/inquiry-chats`는 사용하지 않습니다.
+
+### Request Body
+없음
+
+### Response Body (200)
+```json
+{
+  "chat_id": 101,
+  "branch_id": 1,
+  "employee_id": 602,
+  "branch_name": "나눔 편의점 강남점",
+  "counterparty_name": "이사라",
+  "counterparty_role": "worker",
+  "counterparty_profile_image_url": "https://cdn.example.com/users/602.png",
+  "status": "active",
+  "last_message": null,
+  "last_message_at": null,
+  "unread_count": 0,
+  "created_at": "2026-04-24T12:00:00Z"
+}
+```
+
+---
+
+## 16) 채용 문의 채팅 목록 조회 (경영주/점장)
+
+- `GET /chats?branch_id={branch_id}`
+- 경영주/점장이 해당 지점의 채용 문의/계약 통합 채팅 목록을 조회합니다. (채용 현황의 채팅 내역, 구인·채용의 "채팅" 탭)
+- 근로자 앱에서는 `GET /chats`로 본인이 연결된 채팅방 목록을 조회합니다.
+
+### Response Body (200)
+```json
+{
+  "items": [
+    {
+      "chat_id": 101,
+      "branch_id": 1,
+      "employee_id": 602,
+      "branch_name": "나눔 편의점 강남점",
+      "counterparty_name": "이사라",
+      "counterparty_role": "worker",
+      "counterparty_profile_image_url": "https://cdn.example.com/users/602.png",
+      "status": "active",
+      "last_message": "지원서 보고 연락드립니다.",
+      "last_message_at": "2026-04-24T12:01:00Z",
+      "unread_count": 0,
+      "created_at": "2026-04-24T12:00:00Z"
+    }
+  ],
+  "total_count": 1
+}
+```
+
+---
+
+## 17) 채용 문의 채팅 메시지 관련
+
+- `GET /chats/{chat_id}/messages`
+- `POST /chats/{chat_id}/messages`
+- `PATCH /chats/{chat_id}/read`
+- 일반 텍스트 메시지를 전송하면 상대방에게 푸시 알림이 생성/발송됩니다.
+- 계약서 전송/작성 완료 이벤트는 같은 채팅방의 `message_type=document` 카드 메시지로 함께 내려옵니다.
+- 상대방 또는 발신자가 계정 프로필 이미지를 설정한 경우 `counterparty_profile_image_url`, `sender_profile_image_url`에 표시용 URL이 포함됩니다. 없으면 `null`입니다.
+- Flutter 화면은 이 API를 실제 데이터 소스로 사용합니다. 더 이상 채팅 탭/상세에서 mock 메시지를 사용하지 않습니다.
+- `current_user_role`은 현재 로그인한 사용자의 말풍선 방향을 결정하는 기준입니다. 경영주/점장 화면에서는 일반적으로 `business`, 근로자 화면에서는 `worker`입니다.
+- 상세 화면 진입 직후 `PATCH /chats/{chat_id}/read`를 호출해 현재 로그인 사용자의 미읽음 메시지를 읽음 처리합니다. 이후 목록 조회의 해당 `unread_count`는 `0`으로 내려와야 합니다.
+
+### Message Send Request
+```json
+{
+  "text": "지원서 보고 연락드립니다."
+}
+```
+
+### Message Send Response (201)
+```json
+{
+  "message_id": "201",
+  "sender_role": "business",
+  "sender_name": "김점장",
+  "sender_profile_image_url": "https://cdn.example.com/users/manager-1.png",
+  "message_type": "text",
+  "text": "지원서 보고 연락드립니다.",
+  "created_at": "2026-04-24T12:01:00Z",
+  "contract_id": null,
+  "document_status": null,
+  "can_open_document": false,
+  "open_document_path": null
+}
+```
+
+### Mark Read Response (200)
+```json
+{
+  "chat_id": 101,
+  "unread_count": 0,
+  "read_at": "2026-04-24T12:06:00Z"
+}
+```
+
+### Message List Response (200)
+```json
+{
+  "chat": {
+    "chat_id": 101,
+    "branch_id": 1,
+    "employee_id": 602,
+    "branch_name": "나눔 편의점 강남점",
+    "counterparty_name": "이사라",
+    "counterparty_role": "worker",
+    "counterparty_profile_image_url": "https://cdn.example.com/users/602.png",
+    "status": "active",
+    "last_message": "지원서 보고 연락드립니다.",
+    "last_message_at": "2026-04-24T12:01:00Z",
+    "unread_count": 0,
+    "created_at": "2026-04-24T12:00:00Z"
+  },
+  "current_user_role": "business",
+  "messages": [
+    {
+      "message_id": "201",
+      "sender_role": "business",
+      "sender_name": "김점장",
+      "sender_profile_image_url": "https://cdn.example.com/users/manager-1.png",
+      "message_type": "text",
+      "text": "지원서 보고 연락드립니다.",
+      "created_at": "2026-04-24T12:01:00Z",
+      "contract_id": null,
+      "document_status": null,
+      "can_open_document": false,
+      "open_document_path": null
+    },
+    {
+      "message_id": "202",
+      "sender_role": "business",
+      "sender_name": "김점장",
+      "sender_profile_image_url": "https://cdn.example.com/users/manager-1.png",
+      "message_type": "document",
+      "text": "표준 근로 계약 문서",
+      "created_at": "2026-04-24T12:02:00Z",
+      "contract_id": 901,
+      "document_status": "waiting_worker",
+      "can_open_document": true,
+      "open_document_path": "/api/v1/chats/101/contracts/901/document"
+    }
+  ]
+}
+```
+
+### UI 표시 규칙
+
+- `message_type=text`: 일반 말풍선으로 표시합니다.
+- `message_type=document`: Figma처럼 흰색 카드 + 그림자 + 밑줄 텍스트로 표시하고, `can_open_document=true`일 때 문서 화면으로 이동합니다.
+- 내 메시지 여부는 `messages[].sender_role == current_user_role`로 판단합니다.
+- 프로필 이미지는 `counterparty_profile_image_url` 또는 각 메시지의 `sender_profile_image_url`을 우선 사용하고, 값이 없거나 로딩 실패 시 기본 아바타를 표시합니다.
+
+---
+
+## 18) 채용/계약 통합 채팅방 삭제
+
+- `DELETE /chats/{chat_id}`
+- 구인·채용의 "채팅" 탭 또는 근로자 개인공간의 "채팅" 목록에서 우측 `more` 아이콘을 눌러 삭제합니다.
+- 권한: 해당 채팅방의 경영주/점장 또는 해당 근로자
+
+### Response Body (200)
+```json
+{
+  "deleted": true
+}
+```
+
+### 비고
+
+- 삭제 후 목록에서 해당 채팅방을 제거합니다.
+- 서버 정책에 따라 soft delete로 처리해도 됩니다. 단, 삭제한 사용자에게는 이후 `GET /chats` 목록에 표시되지 않아야 합니다.
+

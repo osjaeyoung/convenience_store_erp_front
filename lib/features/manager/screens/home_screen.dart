@@ -969,10 +969,7 @@ class _SelectedBranchOverview extends StatelessWidget {
             context,
             target: _RecruitmentHomeDetailTarget.applicants,
           ),
-          onTapNewContactsDetail: () => _openRecruitmentStatusDetail(
-            context,
-            target: _RecruitmentHomeDetailTarget.posting,
-          ),
+          onTapNewContactsDetail: () => onOpenRecruitmentTab(3),
           onOpenRecruitment: _openRecruitment,
         ),
         SizedBox(height: 24.h),
@@ -1390,6 +1387,13 @@ class _RecruitmentStatusCard extends StatelessWidget {
             value: '$newApplicants명',
             onDetailTap: onTapNewApplicantsDetail,
             valueColor: const Color(0xFFFF453A),
+          ),
+          SizedBox(height: 8.h),
+          _RecruitmentRow(
+            label: '새로운 지원자 채팅',
+            value: newContacts > 0 ? '$newContacts건' : '',
+            onDetailTap: onTapNewContactsDetail,
+            valueColor: AppColors.textPrimary,
           ),
           SizedBox(height: 12.h),
           Container(

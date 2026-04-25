@@ -115,6 +115,7 @@ class JobSeekerProfile extends Equatable {
     required this.age,
     this.gender,
     this.contactPhone,
+    this.profileImageUrl,
     this.careerLabel,
     this.desiredLocations = const [],
     required this.averageRating,
@@ -131,6 +132,7 @@ class JobSeekerProfile extends Equatable {
   final int age;
   final String? gender;
   final String? contactPhone;
+  final String? profileImageUrl;
   final String? careerLabel;
   final List<String> desiredLocations;
   final double averageRating;
@@ -148,6 +150,7 @@ class JobSeekerProfile extends Equatable {
       age: (json['age'] as num?)?.toInt() ?? 0,
       gender: json['gender'] as String?,
       contactPhone: json['contact_phone'] as String? ?? json['phone_number'] as String?,
+      profileImageUrl: json['profile_image_url'] as String?,
       careerLabel: json['career_label'] as String?,
       desiredLocations: (json['desired_locations'] as List<dynamic>?)
               ?.map((e) => e.toString())
@@ -173,6 +176,7 @@ class JobSeekerProfile extends Equatable {
         age,
         gender,
         contactPhone,
+        profileImageUrl,
         careerLabel,
         desiredLocations,
         averageRating,
@@ -847,4 +851,224 @@ class RecruitmentContactResult extends Equatable {
   @override
   List<Object?> get props =>
       [requested, inquiryId, branchId, employeeId, employeeName, message];
+}
+
+class RecruitmentChatPage extends Equatable {
+  const RecruitmentChatPage({
+    this.items = const [],
+    required this.totalCount,
+  });
+
+  final List<RecruitmentChatSummary> items;
+  final int totalCount;
+
+  factory RecruitmentChatPage.fromJson(Map<String, dynamic> json) {
+    final items = json['items'] as List<dynamic>? ?? const [];
+    return RecruitmentChatPage(
+      items: items
+          .whereType<Map>()
+          .map(
+            (item) => RecruitmentChatSummary.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
+          )
+          .toList(),
+      totalCount: (json['total_count'] as num?)?.toInt() ?? items.length,
+    );
+  }
+
+  @override
+  List<Object?> get props => [items, totalCount];
+}
+
+class RecruitmentChatSummary extends Equatable {
+  const RecruitmentChatSummary({
+    required this.chatId,
+    required this.branchId,
+    required this.employeeId,
+    this.branchName,
+    required this.counterpartyName,
+    this.counterpartyRole,
+    this.counterpartyProfileImageUrl,
+    this.status,
+    this.lastMessage,
+    this.lastMessageAt,
+    this.unreadCount = 0,
+    this.createdAt,
+  });
+
+  final int chatId;
+  final int branchId;
+  final int employeeId;
+  final String? branchName;
+  final String counterpartyName;
+  final String? counterpartyRole;
+  final String? counterpartyProfileImageUrl;
+  final String? status;
+  final String? lastMessage;
+  final String? lastMessageAt;
+  final int unreadCount;
+  final String? createdAt;
+
+  factory RecruitmentChatSummary.fromJson(Map<String, dynamic> json) {
+    return RecruitmentChatSummary(
+      chatId: (json['chat_id'] as num?)?.toInt() ?? 0,
+      branchId: (json['branch_id'] as num?)?.toInt() ?? 0,
+      employeeId: (json['employee_id'] as num?)?.toInt() ?? 0,
+      branchName: json['branch_name'] as String?,
+      counterpartyName: json['counterparty_name'] as String? ??
+          json['employee_name'] as String? ??
+          '',
+      counterpartyRole: json['counterparty_role'] as String?,
+      counterpartyProfileImageUrl:
+          json['counterparty_profile_image_url'] as String?,
+      status: json['status'] as String?,
+      lastMessage: json['last_message'] as String? ??
+          json['last_message_preview'] as String?,
+      lastMessageAt: json['last_message_at'] as String?,
+      unreadCount: (json['unread_count'] as num?)?.toInt() ?? 0,
+      createdAt: json['created_at'] as String?,
+    );
+  }
+
+  RecruitmentChatSummary copyWith({
+    int? chatId,
+    int? branchId,
+    int? employeeId,
+    String? branchName,
+    String? counterpartyName,
+    String? counterpartyRole,
+    String? counterpartyProfileImageUrl,
+    String? status,
+    String? lastMessage,
+    String? lastMessageAt,
+    int? unreadCount,
+    String? createdAt,
+  }) {
+    return RecruitmentChatSummary(
+      chatId: chatId ?? this.chatId,
+      branchId: branchId ?? this.branchId,
+      employeeId: employeeId ?? this.employeeId,
+      branchName: branchName ?? this.branchName,
+      counterpartyName: counterpartyName ?? this.counterpartyName,
+      counterpartyRole: counterpartyRole ?? this.counterpartyRole,
+      counterpartyProfileImageUrl:
+          counterpartyProfileImageUrl ?? this.counterpartyProfileImageUrl,
+      status: status ?? this.status,
+      lastMessage: lastMessage ?? this.lastMessage,
+      lastMessageAt: lastMessageAt ?? this.lastMessageAt,
+      unreadCount: unreadCount ?? this.unreadCount,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+        chatId,
+        branchId,
+        employeeId,
+        branchName,
+        counterpartyName,
+        counterpartyRole,
+        counterpartyProfileImageUrl,
+        status,
+        lastMessage,
+        lastMessageAt,
+        unreadCount,
+        createdAt,
+      ];
+}
+
+class RecruitmentChatMessagePage extends Equatable {
+  const RecruitmentChatMessagePage({
+    required this.chat,
+    required this.currentUserRole,
+    this.messages = const [],
+  });
+
+  final RecruitmentChatSummary chat;
+  final String currentUserRole;
+  final List<RecruitmentChatMessage> messages;
+
+  factory RecruitmentChatMessagePage.fromJson(Map<String, dynamic> json) {
+    final rawMessages = json['messages'] as List<dynamic>? ?? const [];
+    return RecruitmentChatMessagePage(
+      chat: RecruitmentChatSummary.fromJson(
+        Map<String, dynamic>.from(json['chat'] as Map? ?? const {}),
+      ),
+      currentUserRole: json['current_user_role'] as String? ?? 'business',
+      messages: rawMessages
+          .whereType<Map>()
+          .map(
+            (item) => RecruitmentChatMessage.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  @override
+  List<Object?> get props => [chat, currentUserRole, messages];
+}
+
+class RecruitmentChatMessage extends Equatable {
+  const RecruitmentChatMessage({
+    required this.messageId,
+    this.senderRole,
+    this.senderName,
+    this.senderProfileImageUrl,
+    required this.messageType,
+    required this.text,
+    this.createdAt,
+    this.contractId,
+    this.documentStatus,
+    this.canOpenDocument = false,
+    this.openDocumentPath,
+  });
+
+  final String messageId;
+  final String? senderRole;
+  final String? senderName;
+  final String? senderProfileImageUrl;
+  final String messageType;
+  final String text;
+  final String? createdAt;
+  final int? contractId;
+  final String? documentStatus;
+  final bool canOpenDocument;
+  final String? openDocumentPath;
+
+  factory RecruitmentChatMessage.fromJson(Map<String, dynamic> json) {
+    return RecruitmentChatMessage(
+      messageId: json['message_id']?.toString() ?? '',
+      senderRole: json['sender_role'] as String?,
+      senderName: json['sender_name'] as String?,
+      senderProfileImageUrl: json['sender_profile_image_url'] as String?,
+      messageType: json['message_type'] as String? ?? 'text',
+      text: json['text'] as String? ?? '',
+      createdAt: json['created_at'] as String?,
+      contractId: (json['contract_id'] as num?)?.toInt(),
+      documentStatus: json['document_status'] as String?,
+      canOpenDocument: json['can_open_document'] == true,
+      openDocumentPath: json['open_document_path'] as String?,
+    );
+  }
+
+  bool get isDocument => messageType == 'document';
+
+  @override
+  List<Object?> get props => [
+        messageId,
+        senderRole,
+        senderName,
+        senderProfileImageUrl,
+        messageType,
+        text,
+        createdAt,
+        contractId,
+        documentStatus,
+        canOpenDocument,
+        openDocumentPath,
+      ];
 }

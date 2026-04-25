@@ -142,6 +142,7 @@ Figma: [`개인 공간`](https://www.figma.com/design/unoGN3istoEgvyJKbfuICS/%EA
       "wage_amount": 9860, // 계약서 기준 급여 단가
       "total_work_minutes": 725, // 월 누적 근무 분
       "total_work_hours": 12.1, // 월 누적 근무 시간
+      "contract_weekly_work_minutes": 2400, // 계약한 주 근로 분(예: 40시간). 계약값이 없으면 직원관리 수동 설정값, 둘 다 없으면 null
       "average_weekly_minutes": 960, // 주 평균 근로 분
       "base_pay": 8525580, // 총급여(기본)
       "weekly_allowance": 650760, // 주휴수당
@@ -156,6 +157,9 @@ Figma: [`개인 공간`](https://www.figma.com/design/unoGN3istoEgvyJKbfuICS/%EA
 
 - `wage_type`은 직원의 최신 근로계약(`standard_v1`/`minor_standard_v1`)의 `wage_type` 기준
 - 해당 정보가 없으면 `unknown`/`미설정`
+- `total_work_minutes`는 해당 월의 누적 총 근무시간입니다.
+- `contract_weekly_work_minutes`는 화면의 `주 근로` 표시용으로, 최신 근로계약의 소정근로 시작/종료 시각과 `work_days_per_week`로 계산한 계약 주 근로시간입니다. 계약값이 없으면 직원관리의 수동 주 근로 설정값을 사용하고, 둘 다 없으면 `null`입니다.
+- `average_weekly_minutes`는 월별 근무 스케줄/급여 기준의 평균 주 근로시간이며 계약 주 근로시간과 다를 수 있습니다.
 
 ---
 
@@ -167,8 +171,8 @@ Figma: [`개인 공간`](https://www.figma.com/design/unoGN3istoEgvyJKbfuICS/%EA
   - 주휴수당 개선안(여러 개 Point)
   - 중복 근무 발생 현황
 - 주휴 개선안 Point마다 `after_workers`에 `"employee_name": "신규채용"` 행이 붙는 경우, 초과 주간 근로를 신규 인력에 넘겨 주휴 부담을 줄이는 안을 제시하는 것으로 보며 이때 `recommends_new_hire`는 `true`, `new_hire_weekly_minutes`는 **신규 채용 인력 전체에 분배하는 주간 분 합계**입니다.
-- 분배 추천은 **1분 단위**로 계산하며, 고정 40분 단위로 끊지 않습니다.
-- 필요 시 `after_workers`에는 `"신규채용"` 행이 여러 개 내려올 수 있습니다. 각 행은 주휴 기준(주 15시간 미만) 이하로 분배된 개별 제안 단위입니다.
+- 분배 추천은 **60분 단위**로 계산합니다.
+- 필요 시 `after_workers`에는 `"신규채용"` 행이 여러 개 내려올 수 있습니다. 각 행은 `60분 단위`이며, 주휴 기준(주 15시간 미만) 이하로 분배된 개별 제안 단위입니다.
 - 신규채용 행 1개당 최소 추천 근무시간은 `180분`(3시간)입니다.
 - 초과 분배가 없으면 `recommends_new_hire`는 `false`이고 나머지 두 필드는 `null`입니다.
 
@@ -222,25 +226,30 @@ Figma: [`개인 공간`](https://www.figma.com/design/unoGN3istoEgvyJKbfuICS/%EA
       "point_title": "Point 2",
       "legal_basis": "출결 확정 기준으로 개근 + 주 소정근로시간 15시간 이상(900분) 충족 여부를 우선 적용",
       "recommends_new_hire": true,
-      "new_hire_weekly_minutes": 181,
+      "new_hire_weekly_minutes": 960,
       "recommendation_note": "주휴수당 부담을 줄이기 위해 초과 주간 근로시간은 신규 단기·알바 채용으로 분배하는 방안을 검토할 수 있습니다.",
       "before_workers": [
         {
           "employee_name": "홍승민",
           "category": "현주휴인력",
-          "weekly_work_minutes": 1080
+          "weekly_work_minutes": 1800
         }
       ],
       "after_workers": [
         {
           "employee_name": "홍승민",
           "category": "개선안",
-          "weekly_work_minutes": 899
+          "weekly_work_minutes": 840
         },
         {
           "employee_name": "신규채용",
           "category": "개선안",
-          "weekly_work_minutes": 181
+          "weekly_work_minutes": 480
+        },
+        {
+          "employee_name": "신규채용",
+          "category": "개선안",
+          "weekly_work_minutes": 480
         }
       ]
     }
@@ -263,8 +272,8 @@ Figma: [`개인 공간`](https://www.figma.com/design/unoGN3istoEgvyJKbfuICS/%EA
 - 퇴직금 발생 예정 인원: `입사 1년 도달 예정` + `최근 4주 평균 주15시간(900분) 이상`인 인원
 - 주휴수당 개선안: `출결 확정 데이터가 있는 경우` 해당 확정값의 `개근 + 주15시간(900분) 이상` 조건을 우선 적용
 - 주휴수당 개선안: `출결 확정 데이터가 없는 경우` 기존 스케줄의 **실제 주간 합계**(주15시간 이상인 주들) 기준으로 보조 판단
-- 주휴수당 개선안: 개선 후 기존 인력은 원칙적으로 `주 899분 이하`가 되도록 조정합니다.
-- 주휴수당 개선안: 분배 시간은 `1분 단위`로 계산합니다.
+- 주휴수당 개선안: 개선 후 기존 인력은 `60분 단위` 기준으로 주휴 기준 미만 최대치인 `840분(14시간)` 수준까지 우선 조정합니다.
+- 주휴수당 개선안: 분배 시간은 `60분 단위`로 계산합니다.
 - 주휴수당 개선안: 신규채용 1명당 최소 추천 근무시간은 `180분`입니다.
 - 주휴수당 개선안: 초과분은 필요 시 여러 `신규채용` 행으로 분배합니다.
 - 중복 근무 발생 현황:

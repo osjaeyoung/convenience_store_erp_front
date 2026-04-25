@@ -9,6 +9,7 @@ import '../../../data/models/worker/worker_recruitment_models.dart';
 import '../../../data/repositories/worker_recruitment_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import '../../../widgets/file_or_gallery_picker.dart';
 import '../../../widgets/hierarchical_region_picker_sheet.dart';
 import '../../account/account_dio_message.dart';
 import '../widgets/worker_common.dart';
@@ -31,9 +32,11 @@ class _WorkerResumeFormScreenState extends State<WorkerResumeFormScreen> {
   bool _loading = true;
   bool _submitting = false;
   bool _deleting = false;
+  bool _profileImageUploading = false;
   Object? _error;
 
   WorkerResumeFormData? _formData;
+  String? _profileImageUrl;
   String? _educationLevel;
   String? _educationStatus;
   String? _careerType;
@@ -93,6 +96,7 @@ class _WorkerResumeFormScreenState extends State<WorkerResumeFormScreen> {
             ? data.careerTypeOptions.first.value
             : 'entry');
     _selfIntroductionController.text = data.selfIntroduction ?? '';
+    _profileImageUrl = data.profileSummary?.profileImageUrl;
     _resumeRegionPath = data.resumeRegionPath;
     _addressDetailController.text = data.resumeAddressDetail ?? '';
     _careerDrafts = data.careerEntries
@@ -228,6 +232,37 @@ class _WorkerResumeFormScreenState extends State<WorkerResumeFormScreen> {
     setState(() {
       _careerDrafts = [..._careerDrafts, _CareerEntryDraft.empty()];
     });
+  }
+
+  Future<void> _pickProfileImage() async {
+    if (_profileImageUploading) return;
+    final picked = await pickSingleFileOrGallery(
+      context: context,
+      allowedExtensions: const ['png', 'jpg', 'jpeg', 'webp'],
+      readBytesFromFilePicker: true,
+    );
+    if (picked == null || !mounted) return;
+
+    setState(() => _profileImageUploading = true);
+    try {
+      final repo = context.read<WorkerRecruitmentRepository>();
+      final uploadedUrl = await repo.uploadWorkerProfileImage(file: picked);
+      await repo.updateMyProfileImage(profileImageUrl: uploadedUrl);
+      if (!mounted) return;
+      setState(() => _profileImageUrl = uploadedUrl);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('프로필 사진이 저장되었습니다.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(accountDioMessage(error))));
+    } finally {
+      if (mounted) {
+        setState(() => _profileImageUploading = false);
+      }
+    }
   }
 
   void _removeCareerDraft(_CareerEntryDraft target) {
@@ -380,18 +415,10 @@ class _WorkerResumeFormScreenState extends State<WorkerResumeFormScreen> {
                       ),
                       child: Column(
                         children: [
-                          Container(
-                            width: 80.r,
-                            height: 80.r,
-                            decoration: const BoxDecoration(
-                              color: AppColors.grey0,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.person_rounded,
-                              color: AppColors.grey100,
-                              size: 46.r,
-                            ),
+                          _ResumeProfileImagePicker(
+                            imageUrl: _profileImageUrl,
+                            uploading: _profileImageUploading,
+                            onTap: _pickProfileImage,
                           ),
                           SizedBox(height: 20.h),
                           _ProfileRow(label: '성명', value: profile?.fullName),
@@ -801,6 +828,82 @@ class _Section extends StatelessWidget {
           child,
         ],
       ),
+    );
+  }
+}
+
+class _ResumeProfileImagePicker extends StatelessWidget {
+  const _ResumeProfileImagePicker({
+    this.imageUrl,
+    required this.uploading,
+    required this.onTap,
+  });
+
+  final String? imageUrl;
+  final bool uploading;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = imageUrl?.trim();
+    return InkWell(
+      onTap: uploading ? null : onTap,
+      customBorder: const CircleBorder(),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 80.r,
+            height: 80.r,
+            decoration: const BoxDecoration(
+              color: AppColors.grey0,
+              shape: BoxShape.circle,
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: url != null && url.isNotEmpty
+                ? Image.network(
+                    url,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _profilePlaceholder(),
+                  )
+                : _profilePlaceholder(),
+          ),
+          Positioned(
+            right: -2.w,
+            bottom: -2.h,
+            child: Container(
+              width: 28.r,
+              height: 28.r,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.grey0, width: 2),
+              ),
+              child: uploading
+                  ? Padding(
+                      padding: EdgeInsets.all(6.r),
+                      child: const CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.grey0,
+                      ),
+                    )
+                  : Icon(
+                      Icons.camera_alt_rounded,
+                      size: 15.r,
+                      color: AppColors.grey0,
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _profilePlaceholder() {
+    return Icon(
+      Icons.person_rounded,
+      color: AppColors.grey100,
+      size: 46.r,
     );
   }
 }

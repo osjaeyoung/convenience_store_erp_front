@@ -323,6 +323,7 @@ class WorkerResumeProfileSummary {
     this.address,
     this.email,
     this.phoneNumber,
+    this.profileImageUrl,
   });
 
   final String fullName;
@@ -333,6 +334,7 @@ class WorkerResumeProfileSummary {
   final String? address;
   final String? email;
   final String? phoneNumber;
+  final String? profileImageUrl;
 
   factory WorkerResumeProfileSummary.fromJson(Map<String, dynamic> json) {
     return WorkerResumeProfileSummary(
@@ -344,6 +346,7 @@ class WorkerResumeProfileSummary {
       address: _nullableString(json['address']),
       email: _nullableString(json['email']),
       phoneNumber: _nullableString(json['phone_number']),
+      profileImageUrl: _nullableString(json['profile_image_url']),
     );
   }
 }

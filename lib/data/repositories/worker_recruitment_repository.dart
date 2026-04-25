@@ -1,8 +1,10 @@
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
 
 import '../../core/region/region_api_query.dart';
+import '../models/recruitment/recruitment_models.dart';
 import '../models/worker/worker_recruitment_models.dart';
 import '../network/api_client.dart';
 
@@ -93,6 +95,89 @@ class WorkerRecruitmentRepository {
       '/worker/resumes/$resumeId',
     );
     return WorkerResumeFormData.fromJson(res.data ?? const {});
+  }
+
+  Future<String> uploadWorkerProfileImage({required PlatformFile file}) async {
+    final formData = FormData.fromMap({
+      'file': await _multipartFile(file),
+      'type': 'user_profile_image',
+    });
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/recruitment/files',
+      data: formData,
+      options: Options(
+        connectTimeout: const Duration(seconds: 60),
+        sendTimeout: const Duration(minutes: 3),
+        receiveTimeout: const Duration(minutes: 3),
+      ),
+    );
+    final url = res.data?['file_url']?.toString().trim() ?? '';
+    if (url.isEmpty) {
+      throw DioException(
+        requestOptions: res.requestOptions,
+        response: res,
+        message: '프로필 이미지 업로드 URL이 비어 있습니다.',
+      );
+    }
+    return url;
+  }
+
+  Future<void> updateMyProfileImage({required String profileImageUrl}) async {
+    await _apiClient.dio.patch<Map<String, dynamic>>(
+      '/me/account',
+      data: {'profile_image_url': profileImageUrl.trim()},
+    );
+  }
+
+  /// 근로자 개인공간 채팅 목록: 계약서별 목록이 아니라 지점-근로자 1:1 통합 채팅방 목록
+  Future<RecruitmentChatPage> getRecruitmentChats() async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>('/chats');
+    return RecruitmentChatPage.fromJson(res.data ?? const {});
+  }
+
+  Future<RecruitmentChatMessagePage> getRecruitmentChatMessages({
+    required int chatId,
+  }) async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/chats/$chatId/messages',
+    );
+    return RecruitmentChatMessagePage.fromJson(res.data ?? const {});
+  }
+
+  /// 채팅방 상세 진입 후 상대방 메시지를 읽음 처리
+  Future<void> markRecruitmentChatRead({required int chatId}) async {
+    await _apiClient.dio.patch<Map<String, dynamic>>('/chats/$chatId/read');
+  }
+
+  Future<RecruitmentChatMessage> sendRecruitmentChatMessage({
+    required int chatId,
+    required String text,
+  }) async {
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/chats/$chatId/messages',
+      data: {'text': text},
+    );
+    final data = res.data ?? const {};
+    final rawMessage = data['message'];
+    if (rawMessage is Map) {
+      return RecruitmentChatMessage.fromJson(
+        Map<String, dynamic>.from(rawMessage),
+      );
+    }
+    if (data.isNotEmpty) {
+      return RecruitmentChatMessage.fromJson(data);
+    }
+    return RecruitmentChatMessage(
+      messageId: DateTime.now().microsecondsSinceEpoch.toString(),
+      senderRole: 'worker',
+      messageType: 'text',
+      text: text,
+      createdAt: DateTime.now().toUtc().toIso8601String(),
+    );
+  }
+
+  Future<void> deleteRecruitmentChat({required int chatId}) async {
+    await _apiClient.dio.delete<Map<String, dynamic>>('/chats/$chatId');
   }
 
   Future<WorkerResumeFormData> createResume({
@@ -236,6 +321,34 @@ class WorkerRecruitmentRepository {
     return WorkerContractChatDocument.fromJson(res.data ?? const {});
   }
 
+  /// 계약 채팅에 메시지 전송
+  Future<WorkerContractChatMessage> sendContractChatMessage({
+    required int contractId,
+    required String text,
+  }) async {
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/contract-chats/$contractId/messages',
+      data: {'text': text},
+    );
+    final data = res.data ?? const {};
+    final rawMessage = data['message'];
+    if (rawMessage is Map) {
+      return WorkerContractChatMessage.fromJson(
+        Map<String, dynamic>.from(rawMessage),
+      );
+    }
+    if (data.isNotEmpty) {
+      return WorkerContractChatMessage.fromJson(data);
+    }
+    return WorkerContractChatMessage(
+      messageId: DateTime.now().microsecondsSinceEpoch.toString(),
+      senderRole: 'worker',
+      messageType: 'text',
+      text: text,
+      createdAt: DateTime.now().toUtc().toIso8601String(),
+    );
+  }
+
   Future<WorkerContractChatDownloadResult> downloadContractChatDocument({
     required int contractId,
   }) async {
@@ -276,6 +389,37 @@ class WorkerRecruitmentRepository {
     final plainMatch =
         RegExp(r'filename=([^;]+)', caseSensitive: false).firstMatch(contentDisposition);
     if (plainMatch != null) return plainMatch.group(1)?.trim();
+    return null;
+  }
+
+  static Future<MultipartFile> _multipartFile(PlatformFile file) async {
+    final name = file.name.trim().isEmpty ? 'profile_image' : file.name.trim();
+    final contentType = _multipartMediaType(name);
+    if (file.bytes != null) {
+      return MultipartFile.fromBytes(
+        file.bytes!,
+        filename: name,
+        contentType: contentType,
+      );
+    }
+    final path = file.path;
+    if (path != null && path.isNotEmpty) {
+      return MultipartFile.fromFile(
+        path,
+        filename: name,
+        contentType: contentType,
+      );
+    }
+    throw StateError('프로필 이미지를 읽을 수 없습니다. 다시 선택해 주세요.');
+  }
+
+  static DioMediaType? _multipartMediaType(String filename) {
+    final lower = filename.toLowerCase();
+    if (lower.endsWith('.png')) return DioMediaType('image', 'png');
+    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
+      return DioMediaType('image', 'jpeg');
+    }
+    if (lower.endsWith('.webp')) return DioMediaType('image', 'webp');
     return null;
   }
 }

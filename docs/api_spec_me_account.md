@@ -50,7 +50,7 @@
   "full_name": "홍길동",
   "phone_number": "01012345678",
   "role": "worker",
-  "approval_status": "approved_by_owner",
+  "approval_status": "정상",
   "is_active": true,
   "created_at": "2026-01-01T00:00:00Z",
   "owner": null,
@@ -65,6 +65,7 @@
 
 - 역할에 따라 `owner`, `manager`, `worker` 중 하나만 채워집니다
 - 홈/대시보드 진입용 요약 응답입니다
+- 근로자(`role=worker`)의 `approval_status` 는 `정상` 또는 `정지` 로만 응답됩니다
 
 ---
 
@@ -84,8 +85,8 @@
   "role": "worker",
   "role_label_ko": "근무자",
   "usage_type_label_ko": "근무자",
-  "approval_status": "approved_by_owner",
-  "approval_status_label_ko": "점주 승인 완료",
+  "approval_status": "정상",
+  "approval_status_label_ko": "정상",
   "is_active": true,
   "member_since": "2026-01-01T00:00:00Z",
   "birth_date": "1999-03-08",
@@ -94,6 +95,7 @@
   "birth_day": 8,
   "gender": "male",
   "address": "부산 해운대구 반송동",
+  "profile_image_url": "https://cdn.example.com/users/2.png",
   "branches": [],
   "settings_links": {
     "support_url": null,
@@ -132,7 +134,8 @@
   "birth_day": 8,
   "gender": "male",
   "phone_number": "01012345678",
-  "address": "부산 해운대구 반송동"
+  "address": "부산 해운대구 반송동",
+  "profile_image_url": "https://cdn.example.com/users/2.png"
 }
 ```
 
@@ -146,6 +149,13 @@
 - 이메일 중복이면 `400`
 - **회원가입 전** 이메일 중복 여부만 확인할 때는 `GET /auth/email-exists?email=...` 를 사용합니다. (`PATCH /me/account` 는 로그인 후 계정 수정용입니다.)
 - 생년월일은 연/월/일을 모두 보내야 하며 잘못된 날짜면 `400`
+- `profile_image_url`은 계정 프로필 이미지 표시용 URL 또는 저장된 파일 URL입니다. 채팅 목록/메시지의 프로필 이미지 응답에도 이 값이 사용됩니다.
+- 유저당 프로필 이미지는 **1개**입니다. 이력서 화면에서 사진을 바꾸더라도 이력서 레코드가 아니라 `/me/account.profile_image_url`을 갱신합니다.
+- 이미지 파일은 먼저 `POST /recruitment/files` + `type=user_profile_image`로 업로드하고, 반환된 `file_url`을 `PATCH /me/account`의 `profile_image_url`로 저장합니다.
+- 통합 채팅 API(`/chats`)는 상대방/발신자 표시 이미지로 이 값을 내려줍니다.
+  - 채팅방 목록/상세의 상대방: `counterparty_profile_image_url`
+  - 메시지 발신자: `sender_profile_image_url`
+  - 값이 없으면 `null`이며, 프론트는 기본 아바타를 표시합니다.
 
 ---
 

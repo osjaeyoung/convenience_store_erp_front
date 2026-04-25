@@ -78,6 +78,7 @@ class EmployeeLaborDetail {
     required this.wageAmount,
     required this.totalWorkMinutes,
     required this.totalWorkHours,
+    this.contractWeeklyWorkMinutes,
     required this.basePay,
     required this.weeklyAllowance,
     required this.overtimePay,
@@ -91,6 +92,7 @@ class EmployeeLaborDetail {
   final int? wageAmount;
   final int totalWorkMinutes;
   final double totalWorkHours;
+  final int? contractWeeklyWorkMinutes;
   final int basePay;
   final int weeklyAllowance;
   final int overtimePay;
@@ -105,6 +107,8 @@ class EmployeeLaborDetail {
       wageAmount: (json['wage_amount'] as num?)?.toInt(),
       totalWorkMinutes: json['total_work_minutes'] as int,
       totalWorkHours: (json['total_work_hours'] as num).toDouble(),
+      contractWeeklyWorkMinutes:
+          (json['contract_weekly_work_minutes'] as num?)?.toInt(),
       basePay: json['base_pay'] as int,
       weeklyAllowance: json['weekly_allowance'] as int,
       overtimePay: json['overtime_pay'] as int,

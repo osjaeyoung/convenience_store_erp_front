@@ -1,17 +1,197 @@
-# 계약 채팅 API 명세
+# 근로 계약 및 문의 1:1 채팅 API 명세
 
-## 개요
+## 개요 (중요 변경사항: 1:1 통합 채팅방)
+
+- **기존**: 계약서(Contract) 1개당 채팅방이 1개씩 생성되는 구조였습니다.
+- **변경**: **지점(Branch)과 구직자/근로자(Employee) 간의 1:1 채팅방 1개**로 통합됩니다.
+  - 이 하나의 채팅방 안에서 **일반 문의 메시지**와 **다양한 근로계약서(생성/전송/완료)** 가 모두 오고 갑니다.
+  - 즉, '채팅방(Chat)'과 '계약서(Contract)'의 생명주기가 분리됩니다. 하나의 채팅방 안에 여러 개의 계약서 카드 메시지가 존재할 수 있습니다.
+  - `docs/api_spec_recruitment.md`에 있던 "채용 문의 채팅"(`inquiry-chats`)과 기존의 "계약 채팅"(`contract-chats`)이 **하나의 통합 채팅(`chats`)**으로 합쳐집니다.
 
 - 대상 Figma
+  - `3069-21039`, `3069-20678`, `3069-20886` 근로자 쪽 채팅 목록 및 상세
   - `2534:11025` 계약 채팅 목록
   - `2534:10737` 계약 채팅 상세
   - `2534:10867` 표준 근로계약서 작성/전송
   - `2534:10799` 작성 완료 후 채팅
   - `2534:18788` 완료 문서 조회/다운로드
-- 인증: 모든 API는 `Authorization: Bearer <token>` 필요
-- 현재 지원 문서: `standard_v1` 표준 근로계약서만 지원
 
-## 사업장 입력 방식 변경사항
+## 통합 채팅 API 구조 (백엔드 반영 완료)
+
+기존 `contract-chats` 및 `inquiry-chats` 관련 API는 앱 화면에서는 아래 `chats` API를 우선 사용합니다. `contract-chats`는 하위 호환용 계약 문서 API로 유지됩니다.
+
+### 1. 1:1 채팅방 생성/조회
+- `POST /chats/branches/{branch_id}/employees/{employee_id}`
+  - 해당 지점-근로자 간의 1:1 채팅방을 반환합니다. 없으면 생성합니다.
+  - 권한: 경영주/점장
+  - 조건: `branch_employees.linked_user_id`가 있는 앱 가입 근로자만 채팅 가능
+  - Response: `chat_id`, `branch_id`, `employee_id`, `counterparty_name`, `counterparty_profile_image_url`, `last_message`, `unread_count` 등
+
+#### Response Body (200)
+
+```json
+{
+  "chat_id": 101,
+  "branch_id": 12,
+  "employee_id": 88,
+  "branch_name": "나눔 편의점 강남점",
+  "counterparty_name": "김현수",
+  "counterparty_role": "worker",
+  "counterparty_profile_image_url": "https://cdn.example.com/users/88.png",
+  "status": "active",
+  "last_message": null,
+  "last_message_at": null,
+  "unread_count": 0,
+  "created_at": "2026-04-24T12:00:00Z"
+}
+```
+
+### 2. 채팅방 목록 조회
+- `GET /chats`
+  - Query: `branch_id`, `employee_id` optional
+  - 경영주/점장은 소속 지점의 채팅방 목록, 근로자는 본인이 연결된 채팅방 목록을 조회합니다.
+  - 일반 메시지뿐 아니라 같은 지점-근로자 사이의 계약서 전송/완료 카드도 마지막 메시지와 안 읽은 수에 반영됩니다.
+  - 상대방이 계정 프로필 이미지를 설정한 경우 `counterparty_profile_image_url`에 표시용 URL이 포함됩니다. 없으면 `null`입니다.
+
+#### Response Body (200)
+
+```json
+{
+  "items": [
+    {
+      "chat_id": 101,
+      "branch_id": 12,
+      "employee_id": 88,
+      "branch_name": "나눔 편의점 강남점",
+      "counterparty_name": "김현수",
+      "counterparty_role": "worker",
+      "counterparty_profile_image_url": "https://cdn.example.com/users/88.png",
+      "status": "active",
+      "last_message": "언제까지 쓰면 될까요?",
+      "last_message_at": "2026-04-24T12:05:00Z",
+      "unread_count": 1,
+      "created_at": "2026-04-24T12:00:00Z"
+    }
+  ],
+  "total_count": 1
+}
+```
+
+### 3. 채팅 메시지 조회 및 전송
+- `GET /chats/{chat_id}/messages`
+- `POST /chats/{chat_id}/messages` (일반 텍스트 메시지 전송)
+  - Request: `{ "text": "지원서 보고 연락드립니다." }`
+  - Response 메시지 항목에는 발신자가 계정 프로필 이미지를 설정한 경우 `sender_profile_image_url`이 포함됩니다. 없으면 `null`입니다.
+  - 메시지 전송 시 상대방에게 `type=chat_message`, `entity_type=chat`, `entity_id={chat_id}` 푸시 알림이 생성/발송됩니다.
+  - 경영주/점장 -> 근로자, 근로자 -> 해당 지점의 경영주/점장 방향 모두 지원합니다.
+
+### 3-1. 채팅방 읽음 처리
+- `PATCH /chats/{chat_id}/read`
+  - 권한: 해당 지점의 경영주/점장 또는 해당 채팅방의 근로자
+  - 채팅 상세 화면 진입 직후 호출합니다.
+  - 현재 로그인 사용자가 아직 읽지 않은 상대방 메시지를 읽음 처리하고, 이후 `GET /chats`의 해당 채팅방 `unread_count`는 `0`으로 내려와야 합니다.
+
+#### Response Body (200)
+
+```json
+{
+  "chat_id": 101,
+  "unread_count": 0,
+  "read_at": "2026-04-24T12:06:00Z"
+}
+```
+
+### 3-2. 채팅방 삭제
+- `DELETE /chats/{chat_id}`
+  - 권한: 해당 지점의 경영주/점장 또는 해당 채팅방의 근로자
+  - 목록 우측 `more` 아이콘에서 삭제 확인 후 호출합니다.
+  - 삭제한 사용자에게는 이후 `GET /chats` 목록에서 보이지 않아야 합니다.
+
+#### Response Body (200)
+
+```json
+{
+  "deleted": true
+}
+```
+
+#### Message List Response (200)
+
+```json
+{
+  "chat": {
+    "chat_id": 101,
+    "branch_id": 12,
+    "employee_id": 88,
+    "branch_name": "나눔 편의점 강남점",
+    "counterparty_name": "김현수",
+    "counterparty_role": "worker",
+    "counterparty_profile_image_url": "https://cdn.example.com/users/88.png",
+    "status": "active",
+    "last_message": "언제까지 쓰면 될까요?",
+    "last_message_at": "2026-04-24T12:05:00Z",
+    "unread_count": 0,
+    "created_at": "2026-04-24T12:00:00Z"
+  },
+  "current_user_role": "business",
+  "messages": [
+    {
+      "message_id": "201",
+      "sender_role": "business",
+      "sender_name": "홍길동",
+      "sender_profile_image_url": "https://cdn.example.com/users/manager-1.png",
+      "message_type": "text",
+      "text": "계약서 작성 부탁드립니다.",
+      "created_at": "2026-04-24T09:30:00Z",
+      "contract_id": null,
+      "document_status": null,
+      "can_open_document": false,
+      "open_document_path": null
+    },
+    {
+      "message_id": "202",
+      "sender_role": "business",
+      "sender_name": "홍길동",
+      "sender_profile_image_url": "https://cdn.example.com/users/manager-1.png",
+      "message_type": "document",
+      "text": "표준 근로 계약 문서",
+      "created_at": "2026-04-24T09:30:00Z",
+      "contract_id": 901,
+      "document_status": "waiting_worker",
+      "can_open_document": true,
+      "open_document_path": "/api/v1/chats/101/contracts/901/document"
+    },
+    {
+      "message_id": "203",
+      "sender_role": "worker",
+      "sender_name": "김현수",
+      "sender_profile_image_url": "https://cdn.example.com/users/88.png",
+      "message_type": "text",
+      "text": "언제까지 쓰면 될까요?",
+      "created_at": "2026-04-24T12:05:00Z",
+      "contract_id": null,
+      "document_status": null,
+      "can_open_document": false,
+      "open_document_path": null
+    }
+  ]
+}
+```
+
+### 4. 계약서 생성 (채팅방 내)
+- `POST /chats/{chat_id}/contracts`
+  - 채팅방 내에서 새로운 계약서(초안) 생성.
+  - 기존 `POST /contract-chats/branches/{branch_id}/employees/{employee_id}`와 같은 문서 응답을 반환합니다.
+
+### 5. 계약 문서 조회 / 수정 / 전송 / 완료
+- `GET /chats/{chat_id}/contracts/{contract_id}/document`
+- `PATCH /chats/{chat_id}/contracts/{contract_id}/document`
+  - `action`: `save_draft`, `send_to_worker` (이때 채팅방에 계약서 카드 메시지가 전송됨), `complete` (근로자 작성 완료 메시지 전송)
+  - 같은 지점-근로자의 계약서만 해당 채팅방에서 열 수 있습니다.
+
+---
+
+## 기존 사업장 입력 방식 (계약서 관련 규칙은 동일하게 유지)
 
 - 이번 계약서 UI에서 **점장/경영주와 근로자가 같은 시점에 같은 문서를 완성하지 않습니다.**
 - **1단계**: 점장/경영주가 사업장 측 항목만 입력하고 `send_to_worker` 로 전송합니다.
@@ -27,9 +207,9 @@
 
 | 항목 | 변경 후 규칙 |
 |------|--------------|
-| 문서 생성 | 근로자 검색/연결 후 `POST /contract-chats/branches/{branch_id}/employees/{employee_id}` |
-| 임시저장 | `PATCH /contract-chats/{contract_id}/document` + `action=save_draft` |
-| 근로자에게 전송 | `PATCH /contract-chats/{contract_id}/document` + `action=send_to_worker` |
+| 문서 생성 | `POST /chats/branches/{branch_id}/employees/{employee_id}`로 채팅방 확보 후 `POST /chats/{chat_id}/contracts` |
+| 임시저장 | `PATCH /chats/{chat_id}/contracts/{contract_id}/document` + `action=save_draft` |
+| 근로자에게 전송 | `PATCH /chats/{chat_id}/contracts/{contract_id}/document` + `action=send_to_worker` |
 | 사업장 입력 범위 | 근무조건, 임금, 사업체 정보, 사업주 서명 |
 | 사업장 입력 불가 항목 | 근로자 주소, 근로자 연락처, 근로자 서명 |
 | 목록 상태 | 전송 전 `임시저장`, 전송 후 `미완료`, 근로자 완료 후 `작성 완료` |
@@ -108,10 +288,11 @@
    - 기존 API 재사용:
      - `GET /staff-management/branches/{branch_id}/employees/search-users`
      - `POST /staff-management/branches/{branch_id}/employees/from-user`
-2. 경영주/점장이 `POST /contract-chats/branches/{branch_id}/employees/{employee_id}` 로 계약 채팅을 생성합니다.
-3. 경영주/점장이 `PATCH /contract-chats/{contract_id}/document` 에서 자기 항목을 저장하고, `action=send_to_worker` 로 전송합니다.
-4. 근로자는 `GET /contract-chats` 에서 미완료 계약을 확인하고, 문서를 열어 자기 항목만 입력합니다.
-5. 근로자가 `action=complete` 로 완료하면 계약 채팅 상태가 `completed` 로 바뀌고 다운로드가 가능해집니다.
+2. 경영주/점장이 `POST /chats/branches/{branch_id}/employees/{employee_id}` 로 해당 근로자와의 1:1 채팅방을 생성/조회합니다.
+3. 계약서가 필요하면 `POST /chats/{chat_id}/contracts` 로 채팅방 안에 계약서를 생성합니다.
+4. 경영주/점장이 `PATCH /chats/{chat_id}/contracts/{contract_id}/document` 에서 자기 항목을 저장하고, `action=send_to_worker` 로 전송합니다.
+5. 근로자는 `GET /chats` 또는 `GET /chats/{chat_id}/messages` 에서 계약 카드 메시지를 확인하고, 문서를 열어 자기 항목만 입력합니다.
+6. 근로자가 `action=complete` 로 완료하면 계약 상태가 `completed` 로 바뀌고 해당 채팅방에 완료 카드가 표시됩니다.
 
 ## 상태값
 
