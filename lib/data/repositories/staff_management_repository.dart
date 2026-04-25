@@ -165,6 +165,30 @@ class StaffManagementRepository {
     return res.data!;
   }
 
+  /// 비회원 근무자 직접 등록
+  ///
+  /// 앱 계정과 연결하지 않는 근무자이므로, 이후 같은 연락처로 사용자가 가입/로그인해도
+  /// 자동 연결하지 않는다.
+  Future<Map<String, dynamic>> registerGuestEmployee({
+    required int branchId,
+    required String name,
+    required String phoneNumber,
+    String? hireDate,
+  }) async {
+    final now = DateTime.now();
+    final hireDateStr = hireDate ??
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/staff-management/branches/$branchId/employees/guest',
+      data: {
+        'name': name.trim(),
+        'phone_number': phoneNumber.trim(),
+        'hire_date': hireDateStr,
+      },
+    );
+    return res.data!;
+  }
+
   /// 자기 자신 근무자로 등록
   Future<Map<String, dynamic>> registerSelf({
     required int branchId,
@@ -569,6 +593,7 @@ class StaffManagementRepository {
     required int employeeId,
     required int year,
     required int month,
+    required String title,
     required List<Map<String, dynamic>> files,
   }) async {
     final res = await _apiClient.dio.post<Map<String, dynamic>>(
@@ -576,6 +601,7 @@ class StaffManagementRepository {
       data: {
         'year': year,
         'month': month,
+        'title': title.trim(),
         'files': files,
       },
     );

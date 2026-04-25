@@ -1390,10 +1390,10 @@ class _RecruitmentStatusCard extends StatelessWidget {
           ),
           SizedBox(height: 8.h),
           _RecruitmentRow(
-            label: '새로운 지원자 채팅',
-            value: newContacts > 0 ? '$newContacts건' : '',
+            label: '새로운 지원자 채팅 ',
+            value: '$newContacts건',
+            valueColor: const Color(0xFFFF453A),
             onDetailTap: onTapNewContactsDetail,
-            valueColor: AppColors.textPrimary,
           ),
           SizedBox(height: 12.h),
           Container(

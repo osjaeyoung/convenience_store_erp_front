@@ -7,6 +7,7 @@ import '../../../theme/app_typography.dart';
 import 'employment_contract_add_method_screen.dart';
 import 'employment_contract_attachment_helpers.dart';
 import 'employment_contract_detail_screen.dart';
+import 'employment_contract_file_attach_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 근로계약서 목록 (템플릿별 필터 + 추가하기 + 상세)
@@ -18,6 +19,7 @@ class EmploymentContractsListScreen extends StatefulWidget {
     required this.employeeName,
     required this.screenTitle,
     this.templateVersion,
+    this.fileOnly = false,
   });
 
   final int branchId;
@@ -25,6 +27,7 @@ class EmploymentContractsListScreen extends StatefulWidget {
   final String employeeName;
   final String screenTitle;
   final String? templateVersion;
+  final bool fileOnly;
 
   @override
   State<EmploymentContractsListScreen> createState() =>
@@ -99,13 +102,20 @@ class _EmploymentContractsListScreenState
     final tv = widget.templateVersion ?? 'standard_v1';
     final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
-        builder: (_) => EmploymentContractAddMethodScreen(
-          branchId: widget.branchId,
-          employeeId: widget.employeeId,
-          employeeName: widget.employeeName,
-          templateVersion: tv,
-          listTitle: widget.screenTitle,
-        ),
+        builder: (_) => widget.fileOnly
+            ? EmploymentContractFileAttachScreen(
+                branchId: widget.branchId,
+                employeeId: widget.employeeId,
+                templateVersion: tv,
+                screenTitle: widget.screenTitle,
+              )
+            : EmploymentContractAddMethodScreen(
+                branchId: widget.branchId,
+                employeeId: widget.employeeId,
+                employeeName: widget.employeeName,
+                templateVersion: tv,
+                listTitle: widget.screenTitle,
+              ),
       ),
     );
     if (changed == true && mounted) _load();

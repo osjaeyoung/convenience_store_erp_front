@@ -19,6 +19,7 @@ Future<void> openEmployeeDocumentMenuItem(
   int? starCount,
   required List<Map<String, dynamic>> workHistories,
   Object? payrollStatementsRaw,
+  bool fileOnlyDocuments = false,
   VoidCallback? onPayrollFlowFinished,
   VoidCallback? onWorkHistoryFlowFinished,
 }) async {
@@ -49,6 +50,7 @@ Future<void> openEmployeeDocumentMenuItem(
             branchId: branchId,
             employeeId: employeeId,
             employeeName: employeeName,
+            fileOnly: fileOnlyDocuments,
             initialItemsPayload: payrollStatementsRaw is List
                 ? {'payroll_statements': payrollStatementsRaw}
                 : null,
@@ -68,6 +70,7 @@ Future<void> openEmployeeDocumentMenuItem(
             employeeName: employeeName,
             screenTitle: '근로계약서',
             templateVersion: 'standard_v1',
+            fileOnly: fileOnlyDocuments,
           ),
         ),
       );
@@ -81,6 +84,7 @@ Future<void> openEmployeeDocumentMenuItem(
             employeeName: employeeName,
             screenTitle: '연소근로자(18세 미만) 표준근로계약',
             templateVersion: 'minor_standard_v1',
+            fileOnly: fileOnlyDocuments,
           ),
         ),
       );
@@ -94,6 +98,7 @@ Future<void> openEmployeeDocumentMenuItem(
             employeeName: employeeName,
             screenTitle: '친권자(후견인) 동의서',
             templateVersion: 'guardian_consent_v1',
+            fileOnly: fileOnlyDocuments,
           ),
         ),
       );

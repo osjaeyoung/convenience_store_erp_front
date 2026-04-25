@@ -9,6 +9,7 @@ import '../../../theme/app_typography.dart';
 import '../../../data/repositories/staff_management_repository.dart';
 import '../../../widgets/app_styled_confirm_dialog.dart';
 import 'employee_document_menu_actions.dart';
+import 'guest_worker_registration_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 근무자 등록 화면
@@ -88,7 +89,8 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
         branchId: branchId,
         phone: phone,
       );
-      final users = (data['users'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      final users =
+          (data['users'] as List?)?.cast<Map<String, dynamic>>() ?? [];
       if (users.isEmpty) {
         setState(() {
           _searchResults = [];
@@ -175,9 +177,9 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
 
     final hireDate = _editableHireDate ?? emp['hire_date'] as String? ?? '';
     if (hireDate.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('입사일을 설정해 주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('입사일을 설정해 주세요.')));
       return;
     }
 
@@ -198,16 +200,16 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
         );
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('저장되었습니다.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('저장되었습니다.')));
         widget.onRegistered?.call();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('저장 실패: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('저장 실패: $e')));
       }
     } finally {
       if (mounted) {
@@ -228,8 +230,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
 
     final confirmed = await showAppStyledConfirmDialog(
       context,
-      message:
-          '이 근무자를 퇴사 처리하시겠습니까?\n퇴사일은 오늘 날짜로 등록됩니다.',
+      message: '이 근무자를 퇴사 처리하시겠습니까?\n퇴사일은 오늘 날짜로 등록됩니다.',
       confirmLabel: '확인',
       confirmBackgroundColor: AppColors.primaryDark,
     );
@@ -251,22 +252,36 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
         },
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('퇴사 처리되었습니다.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('퇴사 처리되었습니다.')));
         widget.onRegistered?.call();
         Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('퇴사 처리 실패: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('퇴사 처리 실패: $e')));
       }
     } finally {
       if (mounted) {
         setState(() => _isProcessingRetirement = false);
       }
+    }
+  }
+
+  Future<void> _openGuestWorkerRegistration() async {
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => GuestWorkerRegistrationScreen(
+          branchId: widget.branchId,
+          onRegistered: widget.onRegistered,
+        ),
+      ),
+    );
+    if (changed == true) {
+      widget.onRegistered?.call();
     }
   }
 
@@ -290,9 +305,14 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: _GuestWorkerRegisterChip(
+                      onTap: _openGuestWorkerRegistration,
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
                   _buildRegistrationCard(),
-                  SizedBox(height: 16.h),
-                  _buildDocumentList(registered: false),
                 ],
               ),
             ),
@@ -306,10 +326,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF9FEDD4),
-            Color(0xFFE1F0B8),
-          ],
+          colors: [Color(0xFF9FEDD4), Color(0xFFE1F0B8)],
         ),
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
@@ -336,9 +353,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
           TextField(
             controller: _phoneController,
             keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-            ],
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             decoration: InputDecoration(
               hintText: '앱내 가입된 근무자 연락처를 검색해주세요.',
               hintStyle: AppTypography.bodyMediumR.copyWith(
@@ -365,10 +380,13 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                 borderRadius: BorderRadius.circular(12.r),
                 borderSide: const BorderSide(color: AppColors.grey50),
               ),
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 16.w,
+                vertical: 14.h,
+              ),
             ),
-            onSubmitted: (_) => _selectedUser == null ? _onSearch() : _onRegister(),
+            onSubmitted: (_) =>
+                _selectedUser == null ? _onSearch() : _onRegister(),
           ),
           if (_searchResults.isNotEmpty && _selectedUser == null) ...[
             SizedBox(height: 8.h),
@@ -383,7 +401,8 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: _searchResults.length,
-                separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.grey50),
+                separatorBuilder: (_, __) =>
+                    const Divider(height: 1, color: AppColors.grey50),
                 itemBuilder: (context, index) {
                   final user = _searchResults[index];
                   final name = user['name'] as String? ?? '-';
@@ -636,18 +655,15 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
             onTap: () {
               if (!registered || employee == null) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('근무자 등록 후 이용할 수 있습니다.'),
-                  ),
+                  const SnackBar(content: Text('근무자 등록 후 이용할 수 있습니다.')),
                 );
                 return;
               }
               final employeeId = (employee['employee_id'] as num?)?.toInt();
               if (employeeId == null) return;
               final name = employee['name'] as String? ?? '-';
-              final hireDate = _editableHireDate ??
-                  employee['hire_date'] as String? ??
-                  '';
+              final hireDate =
+                  _editableHireDate ?? employee['hire_date'] as String? ?? '';
               final phone = employee['phone_number'] as String? ?? '-';
               openEmployeeDocumentMenuItem(
                 context,
@@ -660,8 +676,8 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                 contact: phone,
                 resignationDate:
                     (employee['employment_status'] as String?) == 'retired'
-                        ? employee['resignation_date'] as String?
-                        : null,
+                    ? employee['resignation_date'] as String?
+                    : null,
                 starCount: null,
                 workHistories: const <Map<String, dynamic>>[],
                 payrollStatementsRaw: null,
@@ -690,10 +706,7 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF9FEDD4),
-                  Color(0xFFE1F0B8),
-                ],
+                colors: [Color(0xFF9FEDD4), Color(0xFFE1F0B8)],
               ),
               borderRadius: BorderRadius.circular(16.r),
               boxShadow: [
@@ -836,7 +849,8 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
           _buildDocumentList(registered: true, employee: emp),
           SizedBox(height: 16.h),
           GestureDetector(
-            onTap: (emp['employment_status'] as String?) == 'retired' ||
+            onTap:
+                (emp['employment_status'] as String?) == 'retired' ||
                     _isProcessingRetirement
                 ? null
                 : _onRetirementTap,
@@ -851,7 +865,8 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
                   fontWeight: FontWeight.w600,
                   height: 16 / 14,
                   decoration: TextDecoration.underline,
-                  decorationColor: (emp['employment_status'] as String?) == 'retired'
+                  decorationColor:
+                      (emp['employment_status'] as String?) == 'retired'
                       ? AppColors.grey100
                       : AppColors.grey150,
                 ),
@@ -859,6 +874,35 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _GuestWorkerRegisterChip extends StatelessWidget {
+  const _GuestWorkerRegisterChip({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.textSecondary,
+      borderRadius: BorderRadius.circular(4.r),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(4.r),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
+          child: Text(
+            '비회원 근무자 등록',
+            style: AppTypography.bodySmallB.copyWith(
+              color: AppColors.grey0,
+              fontSize: 12.sp,
+              height: 16 / 12,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -944,4 +988,3 @@ class _ConfirmRegistrationDialog extends StatelessWidget {
     );
   }
 }
-

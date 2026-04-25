@@ -92,6 +92,10 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           date: date,
         );
         final expected = await _getExpectedLaborOrNull(event.branchId);
+        final recruitmentChatCount = await _visibleRecruitmentChatCount(
+          branchId: event.branchId,
+          recruitment: recruitment,
+        );
 
         final rows = _todayWorkersToRows(todayWorkers);
         final workDate = _normalizeWorkDate(
@@ -121,11 +125,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
             primaryKey: 'today_applicants_count',
             fallbackKey: 'new_applicants',
           ),
-          newContacts: _recruitmentCount(
-            recruitment,
-            primaryKey: 'active_postings_count',
-            fallbackKey: 'new_contacts',
-          ),
+          newContacts: recruitmentChatCount,
           rows: rows,
           workDate: _normalizeWorkDate(workDate),
           dateLabel: _formatDateLabel(_normalizeWorkDate(workDate)),
@@ -158,6 +158,10 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           date: date,
         );
         final expected = await _getExpectedLaborOrNull(event.branchId);
+        final recruitmentChatCount = await _visibleRecruitmentChatCount(
+          branchId: event.branchId,
+          recruitment: recruitment,
+        );
 
         final rows = _managerTodayWorkersToRows(workers);
         final workDate = _normalizeWorkDate(
@@ -180,11 +184,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
             primaryKey: 'today_applicants_count',
             fallbackKey: 'new_applicants',
           ),
-          newContacts: _recruitmentCount(
-            recruitment,
-            primaryKey: 'active_postings_count',
-            fallbackKey: 'new_contacts',
-          ),
+          newContacts: recruitmentChatCount,
           rows: rows,
           workDate: _normalizeWorkDate(workDate),
           dateLabel: _formatDateLabel(_normalizeWorkDate(workDate)),
@@ -440,11 +440,37 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     Map<String, dynamic> recruitment, {
     required String primaryKey,
     required String fallbackKey,
+    List<String> extraKeys = const [],
   }) {
-    if (recruitment.containsKey(primaryKey)) {
-      return _toInt(recruitment[primaryKey]);
+    for (final key in [primaryKey, fallbackKey, ...extraKeys]) {
+      if (recruitment.containsKey(key)) {
+        return _toInt(recruitment[key]);
+      }
     }
-    return _toInt(recruitment[fallbackKey]);
+    return 0;
+  }
+
+  Future<int> _visibleRecruitmentChatCount({
+    required int branchId,
+    required Map<String, dynamic> recruitment,
+  }) async {
+    try {
+      final page = await _managerHomeRepository.getRecruitmentChats(
+        branchId: branchId,
+      );
+      return page.items.length;
+    } catch (_) {
+      return _recruitmentCount(
+        recruitment,
+        primaryKey: 'new_applicant_chat_count',
+        fallbackKey: 'new_contacts',
+        extraKeys: const [
+          'new_applicant_chats_count',
+          'chat_count',
+          'unread_chat_count',
+        ],
+      );
+    }
   }
 
   int? _toNullableInt(Object? value) {

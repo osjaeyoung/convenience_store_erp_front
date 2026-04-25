@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 
 import '../../../data/models/store_expense/store_expense_dashboard.dart';
@@ -1275,10 +1276,10 @@ class _MonthExpenseCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12.r),
                       child: Padding(
                         padding: EdgeInsets.all(2.r),
-                        child: Icon(
-                          Icons.delete_outline_rounded,
-                          size: 24,
-                          color: AppColors.grey150,
+                        child: SvgPicture.asset(
+                          'assets/icons/svg/icon/trash.svg',
+                          width: 28,
+                          height: 28,
                         ),
                       ),
                     ),

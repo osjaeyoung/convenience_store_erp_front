@@ -171,7 +171,12 @@
 - 홈 대시보드와 구인 모듈이 동일 데이터를 보도록 아래 기준으로 집계
   - `application_count`: 해당 지점의 게시된 공고(`published`) 지원 건수
   - `today_applicants_count`: 오늘 접수된 지원 건수
+  - `new_applicant_chat_count`: `GET /chats?branch_id={branch_id}`에서 현재 로그인 경영주/점장에게 실제로 보이는 채팅방 수
+    - 미읽음 메시지 수가 아니라 채팅방 개수입니다.
+    - 삭제/숨김 처리된 채팅방은 제외합니다.
+    - 계약 문서 카드 메시지는 마지막 메시지/미읽음 수에는 반영되지만, 이 카운트는 한 채팅방당 1건만 셉니다.
   - `active_postings_count`: 현재 게시중(`published`) 공고 수
+- 프론트는 홈 카드의 `새로운 지원자 채팅` 표시를 채팅 탭과 동일하게 맞추기 위해 `GET /chats?branch_id={branch_id}` 목록 개수를 우선 사용합니다. 이 API의 `new_applicant_chat_count`도 같은 기준으로 내려와야 합니다.
 
 ### Response Body (200)
 
@@ -179,6 +184,7 @@
 {
   "application_count": 5,
   "today_applicants_count": 2,
+  "new_applicant_chat_count": 2,
   "active_postings_count": 2,
   "updated_at": "2026-09-11T08:00:00Z"
 }
@@ -524,7 +530,12 @@
 - 홈 대시보드와 구인 모듈이 동일 데이터를 보도록 아래 기준으로 집계
   - `application_count`: 해당 지점의 게시된 공고(`published`) 지원 건수
   - `today_applicants_count`: 오늘 접수된 지원 건수
+  - `new_applicant_chat_count`: `GET /chats?branch_id={branch_id}`에서 현재 로그인 경영주/점장에게 실제로 보이는 채팅방 수
+    - 미읽음 메시지 수가 아니라 채팅방 개수입니다.
+    - 삭제/숨김 처리된 채팅방은 제외합니다.
+    - 계약 문서 카드 메시지는 마지막 메시지/미읽음 수에는 반영되지만, 이 카운트는 한 채팅방당 1건만 셉니다.
   - `active_postings_count`: 현재 게시중(`published`) 공고 수
+- 프론트는 홈 카드의 `새로운 지원자 채팅` 표시를 채팅 탭과 동일하게 맞추기 위해 `GET /chats?branch_id={branch_id}` 목록 개수를 우선 사용합니다. 이 API의 `new_applicant_chat_count`도 같은 기준으로 내려와야 합니다.
 
 ### Response Body (200)
 
@@ -532,6 +543,7 @@
 {
   "application_count": 5,
   "today_applicants_count": 2,
+  "new_applicant_chat_count": 2,
   "active_postings_count": 2,
   "updated_at": "2026-09-11T08:00:00Z"
 }

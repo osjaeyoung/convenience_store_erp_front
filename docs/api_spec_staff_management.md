@@ -438,6 +438,41 @@
 
 ---
 
+## 9-2) 비회원 근무자 직접 등록
+
+- `POST /staff-management/branches/{branch_id}/employees/guest`
+- 갑작스러운 알바 펑크 등으로 앱 가입/검색 없이 이름과 연락처만 입력해 임시 근무자를 등록합니다.
+- **중요**: 비회원 근무자는 `linked_user_id=null`, `is_guest=true` 로 저장하며, 이후 같은 연락처의 사용자가 회원가입/로그인하더라도 자동 연결하지 않습니다.
+- 비회원 근무자는 앱 계정이 없으므로 전자서명/채팅 기반 계약서 작성 대상이 아닙니다. 계약서/동의서는 `23-1) 파일 전용 등록`으로만 업로드합니다.
+
+### Request Body
+```json
+{
+  "name": "임시근무자",
+  "phone_number": "01012341234",
+  "hire_date": "2026-04-25"
+}
+```
+
+### Response Body (200)
+```json
+{
+  "employee_id": 777,
+  "employee_number": "010-00777",
+  "name": "임시근무자",
+  "phone_number": "01012341234",
+  "hire_date": "2026-04-25",
+  "resignation_date": null,
+  "employment_status": "active",
+  "linked_user_id": null,
+  "is_guest": true,
+  "contract_input_mode": "file_only",
+  "created_at": "2026-04-25T05:00:00Z"
+}
+```
+
+---
+
 ## 10) 근무자 상세 조회 (직원정보 화면)
 
 - `GET /staff-management/branches/{branch_id}/employees/{employee_id}`
@@ -458,6 +493,8 @@
     "resignation_date": null, // 퇴사일
     "employment_status": "active", // active|retired
     "linked_user_id": 25, // 연결 사용자 ID
+    "is_guest": false, // 비회원 직접 등록 근무자 여부
+    "contract_input_mode": "digital_or_file", // digital_or_file|file_only
     "created_at": "2026-09-11T08:00:00Z" // 등록 시각
   },
   "labor_contracts": [
@@ -728,12 +765,14 @@
 
 - `POST /staff-management/branches/{branch_id}/employees/{employee_id}/payroll-statements/file-only`
 - **글 데이터 없이 파일만으로 등록**: 연/월만 지정하고 수치 데이터는 0으로 저장.
+- `title`은 사용자가 입력한 표시 제목입니다. 없으면 서버는 `"{year}년 {month}월 급여명세"`로 자동 생성할 수 있습니다.
 - **권장 요청 형식**: `multipart/form-data`
 
 ### Request (`multipart/form-data`)
 ```text
 year=2025
 month=12
+title=2025년 12월 급여명세
 files=@2025-12-급여명세.pdf
 files=@2025-12-부속자료.pdf
 ```
@@ -741,6 +780,7 @@ files=@2025-12-부속자료.pdf
 ### 비고
 - 서버가 업로드된 파일을 S3에 저장하고, 응답의 `s3_file_key` / `s3_file_url` / `files[]` 를 채웁니다.
 - 레거시 호환을 위해 기존 JSON `files[].file_key` 방식도 계속 허용합니다.
+- 비회원 근무자의 급여명세는 이 파일 전용 등록 화면을 기본 진입점으로 사용합니다.
 
 ### Response Body (200)
 `16) 급여명세 저장`의 Response와 동일 (수치 필드 0, files에 첨부파일 반영)
@@ -1339,6 +1379,7 @@ curl -X POST "${BASE}/api/v1/staff-management/branches/${BRANCH_ID}/employees/${
 
 - `POST /staff-management/branches/{branch_id}/employees/{employee_id}/employment-contracts/file-only`
 - **글 데이터 없이 파일만으로 등록**: `form_values` 없이 `template_version`과 파일만으로 등록. `status=draft`, `completion_rate=0`.
+- 비회원 근무자(`is_guest=true`, `linked_user_id=null`)는 전자서명/채팅 기반 계약 진행을 할 수 없으므로 이 파일 전용 등록만 허용합니다.
 - **`template_version` 세 가지 모두 허용 (구현·검증 동일)**  
   - `standard_v1` — 일반 표준 근로계약서 PDF 등  
   - `minor_standard_v1` — 연소근로자 표준 근로계약서  

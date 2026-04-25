@@ -111,6 +111,7 @@
       "recruitment": {
         "application_count": 2,
         "today_applicants_count": 2,
+        "new_applicant_chat_count": 2,
         "active_postings_count": 2,
         "updated_at": "2026-09-11T08:00:00Z"
       },
@@ -140,6 +141,7 @@
   "recruitment": {
     "application_count": 2,
     "today_applicants_count": 2,
+    "new_applicant_chat_count": 2,
     "active_postings_count": 2,
     "updated_at": "2026-09-11T08:00:00Z"
   },
@@ -158,7 +160,9 @@
 - 홈 대시보드와 구인 모듈이 동일 데이터를 보도록 아래 기준으로 집계
   - `application_count`: 해당 지점의 게시된 공고(`published`) 지원 건수
   - `today_applicants_count`: 오늘 접수된 지원 건수
+  - `new_applicant_chat_count`: 채용 문의/계약 통합 채팅방 중 홈에 표시할 신규 지원자 채팅 건수
   - `active_postings_count`: 현재 게시중(`published`) 공고 수
+- 프론트는 홈 카드의 `새로운 지원자 채팅` 표시를 채팅 탭과 동일하게 맞추기 위해 `GET /chats?branch_id={branch_id}` 목록 개수를 우선 사용합니다. 이 API의 `new_applicant_chat_count`도 같은 기준으로 내려와야 합니다.
 
 ### Request Body
 없음
@@ -168,6 +172,7 @@
 {
   "application_count": 2,
   "today_applicants_count": 2,
+  "new_applicant_chat_count": 2,
   "active_postings_count": 2,
   "updated_at": "2026-09-11T08:00:00Z"
 }

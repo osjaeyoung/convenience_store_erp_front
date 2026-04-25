@@ -157,8 +157,8 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
           IconButton(
             icon: Image.asset(
               'assets/icons/png/common/trash_icon.png',
-              width: 24,
-              height: 24,
+              width: 28,
+              height: 28,
             ),
             onPressed: _detail != null ? _onDeleteTap : null,
           ),

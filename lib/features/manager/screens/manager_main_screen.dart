@@ -60,7 +60,7 @@ class _ManagerMainScreenState extends State<ManagerMainScreen> {
     super.initState();
     _currentIndex = widget.initialTabIndex.clamp(0, 4);
     _laborCostInitialTabIndex = widget.initialLaborCostTabIndex.clamp(0, 2);
-    _recruitmentInitialTabIndex = widget.initialRecruitmentTabIndex.clamp(0, 2);
+    _recruitmentInitialTabIndex = widget.initialRecruitmentTabIndex.clamp(0, 3);
     _logoTapHandler = _onLogoGoHome;
     ManagerLogoNavigation.register(_logoTapHandler);
   }
@@ -78,7 +78,7 @@ class _ManagerMainScreenState extends State<ManagerMainScreen> {
     final requestedLaborCostTab = widget.initialLaborCostTabIndex.clamp(0, 2);
     final requestedRecruitmentTab = widget.initialRecruitmentTabIndex.clamp(
       0,
-      2,
+      3,
     );
     if (requestedTab == _currentIndex &&
         requestedLaborCostTab == _laborCostInitialTabIndex &&
@@ -270,7 +270,7 @@ class _ManagerMainScreenState extends State<ManagerMainScreen> {
         _laborCostNavigationRequestId += 1;
       }
       if (recruitmentTabIndex != null) {
-        _recruitmentInitialTabIndex = recruitmentTabIndex.clamp(0, 2);
+        _recruitmentInitialTabIndex = recruitmentTabIndex.clamp(0, 3);
         _recruitmentNavigationRequestId += 1;
       }
     });

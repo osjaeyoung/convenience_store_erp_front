@@ -7,6 +7,7 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../payroll/payroll_formatters.dart';
 import 'payroll_add_method_screen.dart';
+import 'payroll_file_attach_screen.dart';
 import 'payroll_statement_detail_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -18,11 +19,13 @@ class PayrollStatementListScreen extends StatefulWidget {
     required this.employeeId,
     required this.employeeName,
     this.initialItemsPayload,
+    this.fileOnly = false,
   });
 
   final int branchId;
   final int employeeId;
   final String employeeName;
+  final bool fileOnly;
   /// 직원 상세 API 등에서 넘긴 `payroll_statements` 또는 `{ "items": [...] }` 형태
   final Map<String, dynamic>? initialItemsPayload;
 
@@ -87,11 +90,16 @@ class _PayrollStatementListScreenState extends State<PayrollStatementListScreen>
   Future<void> _openAdd() async {
     final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
-        builder: (_) => PayrollAddMethodScreen(
-          branchId: widget.branchId,
-          employeeId: widget.employeeId,
-          employeeName: widget.employeeName,
-        ),
+        builder: (_) => widget.fileOnly
+            ? PayrollFileAttachScreen(
+                branchId: widget.branchId,
+                employeeId: widget.employeeId,
+              )
+            : PayrollAddMethodScreen(
+                branchId: widget.branchId,
+                employeeId: widget.employeeId,
+                employeeName: widget.employeeName,
+              ),
       ),
     );
     if (changed == true && mounted) {
