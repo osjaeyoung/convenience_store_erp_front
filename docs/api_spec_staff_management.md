@@ -704,7 +704,7 @@
 ## 16) 급여명세 저장 (글 데이터 + 파일)
 
 - `POST /staff-management/branches/{branch_id}/employees/{employee_id}/payroll-statements`
-- **중복 허용**: 같은 근무자·같은 연/월이라도 여러 건 생성 가능 (제목 동일해도 됨)
+- 직접 작성 급여명세는 같은 근무자·같은 연/월에 1개만 저장할 수 있습니다.
 - **파일 함께 저장 가능**: `files` 배열에 file_key, file_url, file_name 포함 시 저장 시점에 첨부
 
 ### Request Body
@@ -729,6 +729,20 @@
 }
 ```
 - `files`는 선택(없으면 빈 배열). 있으면 저장 시 함께 첨부됨.
+- 같은 근무자·같은 연/월의 **직접 작성 급여명세**가 이미 있으면 `400`을 반환합니다. 파일 전용 등록 항목은 별도 항목이므로 같은 월에 함께 존재할 수 있습니다.
+
+### Error Response (400, 같은 월 직접 작성 중복)
+```json
+{
+  "detail": {
+    "message": "직접 작성 급여명세서는 같은 직원·같은 월에 1개만 저장할 수 있습니다.",
+    "payroll_id": 88,
+    "year": 2026,
+    "month": 4,
+    "hint": "파일 전용 항목을 새로 등록하려면 payroll-statements/file-only API를 사용해주세요."
+  }
+}
+```
 
 ### Response Body (200)
 ```json
@@ -765,21 +779,28 @@
 
 - `POST /staff-management/branches/{branch_id}/employees/{employee_id}/payroll-statements/file-only`
 - **글 데이터 없이 파일만으로 등록**: 연/월만 지정하고 수치 데이터는 0으로 저장.
-- `title`은 사용자가 입력한 표시 제목입니다. 없으면 서버는 `"{year}년 {month}월 급여명세"`로 자동 생성할 수 있습니다.
-- **권장 요청 형식**: `multipart/form-data`
+- **계약서 파일 전용 등록과 동일한 메커니즘**으로 처리합니다.
+  - 프론트는 S3 URL 또는 `file_key`를 직접 만들지 않고 파일 바이너리를 `multipart/form-data`로 백엔드에 보냅니다.
+  - 백엔드가 S3 업로드, `file_key`, `file_url`/presigned URL 생성을 담당합니다.
+  - Flutter/웹에 `S3_PUBLIC_BASE_URL` 설정은 필요하지 않습니다.
+- **요청 형식**: `multipart/form-data`
 
 ### Request (`multipart/form-data`)
 ```text
 year=2025
 month=12
-title=2025년 12월 급여명세
 files=@2025-12-급여명세.pdf
 files=@2025-12-부속자료.pdf
 ```
 
 ### 비고
 - 서버가 업로드된 파일을 S3에 저장하고, 응답의 `s3_file_key` / `s3_file_url` / `files[]` 를 채웁니다.
-- 레거시 호환을 위해 기존 JSON `files[].file_key` 방식도 계속 허용합니다.
+- `year`, `month`, `files`는 필수입니다. `files`는 `file` 단일 필드 또는 `files` 반복 필드 모두 허용합니다.
+- 파일 전용 등록은 같은 근무자·같은 연/월에 직접 작성 급여명세가 있어도 **새 급여명세 row**로 저장합니다. 따라서 목록에서는 직접 작성 1건과 파일 전용 등록 1건이 별도 `items[]`로 내려갑니다.
+- 파일 전용 등록은 횟수 제한 없이 가능합니다. 같은 월에 여러 번 등록하면 등록 요청마다 별도 급여명세 항목이 추가됩니다.
+- 한 급여명세 항목에 파일을 더 붙이고 싶을 때만 `20) 급여명세 파일 저장`을 사용합니다.
+- `title`은 현재 급여명세 저장 모델에 별도 컬럼이 없어 저장하지 않습니다. 화면 제목은 `"{year}년 {month}월 급여명세"` 또는 `files[0].file_name`으로 표시하세요.
+- 레거시 호환을 위해 기존 JSON `files[].file_key` 방식은 허용할 수 있지만, 신규 클라이언트는 계약서와 동일하게 multipart 파일 업로드만 사용합니다.
 - 비회원 근무자의 급여명세는 이 파일 전용 등록 화면을 기본 진입점으로 사용합니다.
 
 ### Response Body (200)
@@ -791,6 +812,7 @@ files=@2025-12-부속자료.pdf
 
 - `GET /staff-management/branches/{branch_id}/employees/{employee_id}/payroll-statements?year=2025&month=12`
 - `year`, `month` 쿼리는 선택값(필터)
+- 같은 연/월이어도 직접 작성과 파일 전용 등록은 각각 별도 `items[]` 항목으로 내려갑니다.
 
 ### Request Body
 없음

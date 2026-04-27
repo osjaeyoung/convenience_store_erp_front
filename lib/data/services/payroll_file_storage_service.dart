@@ -7,7 +7,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 /// 참고:
 /// - 실제 파일 업로드(예: presigned PUT)는 별도 업로드 API 연동이 필요하다.
 /// - `S3_PUBLIC_BASE_URL`이 있으면 `file_url`을 붙인다.
-/// - **근로계약 `##23-1`**: `file_url` 생략 시 서버가 `file_key`로 합성할 수 있음(스펙).
+/// - 급여명세·근로계약 모두 `file_url` 생략 시 서버가 `file_key`로 합성할 수 있음(스펙).
 class PayrollFileStorageService {
   PayrollFileStorageService();
 
@@ -24,9 +24,10 @@ class PayrollFileStorageService {
 
     final base = dotenv.env['S3_PUBLIC_BASE_URL']?.trim() ?? '';
     if (base.isEmpty) {
-      throw StateError(
-        'S3_PUBLIC_BASE_URL이 비어 있습니다. '
-        'presigned 업로드 API 연동 또는 공개 URL 베이스 설정이 필요합니다.',
+      return PayrollUploadedAttachment(
+        fileKey: fileKey,
+        fileUrl: null,
+        fileName: originalName,
       );
     }
     final normalizedBase = base.endsWith('/') ? base.substring(0, base.length - 1) : base;

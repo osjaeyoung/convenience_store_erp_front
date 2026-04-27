@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -18,18 +19,21 @@ class PayrollStatementFormScreen extends StatefulWidget {
     required this.branchId,
     required this.employeeId,
     required this.employeeName,
+    this.directWrittenPeriods = const <String>{},
   });
 
   final int branchId;
   final int employeeId;
   final String employeeName;
+  final Set<String> directWrittenPeriods;
 
   @override
   State<PayrollStatementFormScreen> createState() =>
       _PayrollStatementFormScreenState();
 }
 
-class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen> {
+class _PayrollStatementFormScreenState
+    extends State<PayrollStatementFormScreen> {
   static TextStyle get _heading2 => TextStyle(
     fontFamily: 'Pretendard',
     fontSize: 20.sp,
@@ -59,14 +63,14 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
   int _month = DateTime.now().month;
   bool _deductionFillLoading = false;
   bool _deductionAmountsLoaded = false;
-  final List<bool> _deductionChecked =
-      List<bool>.generate(7, (_) => false);
+  final List<bool> _deductionChecked = List<bool>.generate(7, (_) => false);
 
   bool _submitting = false;
   bool _autoFillLoading = false;
   int _autoFillSeq = 0;
 
-  static EdgeInsets get _payrollInputPadding => EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h);
+  static EdgeInsets get _payrollInputPadding =>
+      EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h);
 
   @override
   void initState() {
@@ -101,7 +105,9 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
     final h = PayrollFormatters.parseDigits(_hoursCtrl.text) ?? 0;
     final w = PayrollFormatters.parseDigits(_hourlyCtrl.text) ?? 0;
     final base = h * w;
-    _basePayCtrl.text = base > 0 ? NumberFormat('#,###', 'ko_KR').format(base) : '';
+    _basePayCtrl.text = base > 0
+        ? NumberFormat('#,###', 'ko_KR').format(base)
+        : '';
   }
 
   void _applyAutoFill(Map<String, dynamic> d) {
@@ -118,14 +124,20 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
       if (minutes != null && minutes > 0) {
         _hoursCtrl.text = (minutes / 60).round().toString();
       }
-      if (hourly != null) _hourlyCtrl.text = NumberFormat('#,###', 'ko_KR').format(hourly);
+      if (hourly != null) {
+        _hourlyCtrl.text = NumberFormat('#,###', 'ko_KR').format(hourly);
+      }
       if (base != null) {
         _basePayCtrl.text = NumberFormat('#,###', 'ko_KR').format(base);
       } else {
         _updateBasePayDisplay();
       }
-      if (weekly != null) _weeklyCtrl.text = NumberFormat('#,###', 'ko_KR').format(weekly);
-      _overtimeCtrl.text = overtime > 0 ? NumberFormat('#,###', 'ko_KR').format(overtime) : '0';
+      if (weekly != null) {
+        _weeklyCtrl.text = NumberFormat('#,###', 'ko_KR').format(weekly);
+      }
+      _overtimeCtrl.text = overtime > 0
+          ? NumberFormat('#,###', 'ko_KR').format(overtime)
+          : '0';
       if (resident is String && resident.isNotEmpty) {
         _residentCtrl.text = resident;
       }
@@ -160,14 +172,14 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
   }
 
   List<TextEditingController> get _deductionControllers => [
-        _dedNationalCtrl,
-        _dedHealthCtrl,
-        _dedEmployCtrl,
-        _dedLongTermCtrl,
-        _dedIncomeCtrl,
-        _dedLocalCtrl,
-        _dedOtherCtrl,
-      ];
+    _dedNationalCtrl,
+    _dedHealthCtrl,
+    _dedEmployCtrl,
+    _dedLongTermCtrl,
+    _dedIncomeCtrl,
+    _dedLocalCtrl,
+    _dedOtherCtrl,
+  ];
 
   static const List<String> _deductionLabels = [
     '국민연금',
@@ -215,8 +227,9 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
         _dedNationalCtrl.text = _amountToFieldText(data['national_pension']);
         _dedHealthCtrl.text = _amountToFieldText(data['health_insurance']);
         _dedEmployCtrl.text = _amountToFieldText(data['employment_insurance']);
-        _dedLongTermCtrl.text =
-            _amountToFieldText(data['long_term_care_insurance']);
+        _dedLongTermCtrl.text = _amountToFieldText(
+          data['long_term_care_insurance'],
+        );
         _dedIncomeCtrl.text = _amountToFieldText(data['income_tax']);
         _dedLocalCtrl.text = _amountToFieldText(data['local_income_tax']);
         _deductionAmountsLoaded = true;
@@ -244,11 +257,9 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
     if (!_deductionAmountsLoaded) {
       if (!(_formKey.currentState?.validate() ?? false)) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('위 급여 정보를 먼저 입력해 주세요.'),
-            ),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('위 급여 정보를 먼저 입력해 주세요.')));
         }
         setState(() => _deductionChecked[index] = false);
         return;
@@ -259,6 +270,10 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_hasDirectWrittenPayrollForSelectedMonth()) {
+      _showDuplicateManualPayrollMessage();
+      return;
+    }
     setState(() => _submitting = true);
     try {
       final repo = context.read<StaffManagementRepository>();
@@ -274,20 +289,64 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
         body: body,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('급여명세가 저장되었습니다.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('급여명세가 저장되었습니다.')));
         Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('저장 실패: $e')),
-        );
+        final duplicateMessage = _manualDuplicateErrorMessage(e);
+        if (duplicateMessage != null) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(duplicateMessage)));
+          return;
+        }
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('저장 실패: $e')));
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
+  }
+
+  String get _selectedPeriodKey =>
+      '$_year-${_month.toString().padLeft(2, '0')}';
+
+  bool _hasDirectWrittenPayrollForSelectedMonth() {
+    return widget.directWrittenPeriods.contains(_selectedPeriodKey);
+  }
+
+  void _showDuplicateManualPayrollMessage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '$_year년 $_month월 직접 작성 급여명세가 이미 있습니다. 이전 급여명세를 삭제한 뒤 다시 작성해주세요.',
+        ),
+      ),
+    );
+  }
+
+  String? _manualDuplicateErrorMessage(Object error) {
+    if (error is! DioException || error.response?.statusCode != 400) {
+      return null;
+    }
+    final data = error.response?.data;
+    if (data is! Map<String, dynamic>) return null;
+    final detail = data['detail'];
+    if (detail is Map<String, dynamic>) {
+      final message = detail['message']?.toString();
+      final year = (detail['year'] as num?)?.toInt() ?? _year;
+      final month = (detail['month'] as num?)?.toInt() ?? _month;
+      if (message != null && message.contains('직접 작성')) {
+        return '$year년 $month월 직접 작성 급여명세가 이미 있습니다. 이전 급여명세를 삭제한 뒤 다시 작성해주세요.';
+      }
+    } else if (detail is String && detail.contains('직접 작성')) {
+      return detail;
+    }
+    return null;
   }
 
   void _pickWorker() {
@@ -414,8 +473,10 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                                 ),
                               ),
                             ),
-                            Icon(Icons.keyboard_arrow_down_rounded,
-                                color: AppColors.grey150),
+                            Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: AppColors.grey150,
+                            ),
                           ],
                         ),
                       ),
@@ -433,10 +494,12 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                                 value: _year,
                                 decoration: _fieldDecoration('선택해주세요.'),
                                 items: years
-                                    .map((y) => DropdownMenuItem(
-                                          value: y,
-                                          child: Text('$y년'),
-                                        ))
+                                    .map(
+                                      (y) => DropdownMenuItem(
+                                        value: y,
+                                        child: Text('$y년'),
+                                      ),
+                                    )
                                     .toList(),
                                 onChanged: (v) {
                                   setState(() => _year = v ?? _year);
@@ -480,9 +543,7 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                       controller: _residentCtrl,
                       hintText: '선택 입력',
                       keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       fillColor: AppColors.grey0,
                       contentPadding: _payrollInputPadding,
                     ),
@@ -493,9 +554,7 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                       controller: _hoursCtrl,
                       hintText: '',
                       keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       fillColor: AppColors.grey0,
                       contentPadding: _payrollInputPadding,
                       suffixText: ' 시간',
@@ -513,9 +572,7 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                       controller: _hourlyCtrl,
                       hintText: '',
                       keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        ThousandsSeparatorInputFormatter(),
-                      ],
+                      inputFormatters: [ThousandsSeparatorInputFormatter()],
                       fillColor: AppColors.grey0,
                       contentPadding: _payrollInputPadding,
                       suffixText: ' 원',
@@ -544,26 +601,19 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                       controller: _weeklyCountCtrl,
                       hintText: '',
                       keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       fillColor: AppColors.grey0,
                       contentPadding: _payrollInputPadding,
                       suffixText: ' 회',
                     ),
                     SizedBox(height: 6.h),
-                    Text(
-                      '주휴수당 (원)',
-                      style: _labelStyle,
-                    ),
+                    Text('주휴수당 (원)', style: _labelStyle),
                     SizedBox(height: 6.h),
                     ValidatedAuthInputField(
                       controller: _weeklyCtrl,
                       hintText: '',
                       keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        ThousandsSeparatorInputFormatter(),
-                      ],
+                      inputFormatters: [ThousandsSeparatorInputFormatter()],
                       fillColor: AppColors.grey0,
                       contentPadding: _payrollInputPadding,
                       suffixText: ' 원',
@@ -581,9 +631,7 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                       controller: _overtimeCtrl,
                       hintText: '0',
                       keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        ThousandsSeparatorInputFormatter(),
-                      ],
+                      inputFormatters: [ThousandsSeparatorInputFormatter()],
                       fillColor: AppColors.grey0,
                       contentPadding: _payrollInputPadding,
                       suffixText: ' 원',
@@ -642,8 +690,9 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                                       ? null
                                       : (v) => _onDeductionCheckChanged(i, v),
                                   checkColor: AppColors.grey0,
-                                  fillColor:
-                                      WidgetStateProperty.resolveWith((s) {
+                                  fillColor: WidgetStateProperty.resolveWith((
+                                    s,
+                                  ) {
                                     if (s.contains(WidgetState.selected)) {
                                       return AppColors.primary;
                                     }
@@ -660,7 +709,9 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                               ],
                             ),
                             AnimatedCrossFade(
-                              firstChild: const SizedBox(width: double.infinity),
+                              firstChild: const SizedBox(
+                                width: double.infinity,
+                              ),
                               secondChild: Padding(
                                 padding: EdgeInsets.only(top: 8.h),
                                 child: ValidatedAuthInputField(
@@ -675,8 +726,7 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
                                   fillColor: AppColors.grey0,
                                   contentPadding: _payrollInputPadding,
                                   focusedBorderColor: AppColors.primaryDark,
-                                  hintStyle:
-                                      AppTypography.bodyMediumR.copyWith(
+                                  hintStyle: AppTypography.bodyMediumR.copyWith(
                                     color: isOther
                                         ? AppColors.textTertiary
                                         : AppColors.primary,
@@ -740,17 +790,16 @@ class _PayrollStatementFormScreenState extends State<PayrollStatementFormScreen>
   }
 
   TextStyle get _labelStyle => AppTypography.bodySmallB.copyWith(
-        color: AppColors.textSecondary,
-        fontSize: 13.sp,
-      );
+    color: AppColors.textSecondary,
+    fontSize: 13.sp,
+  );
 
   InputDecoration _fieldDecoration(String? hint) {
     return InputDecoration(
       hintText: hint,
       filled: true,
       fillColor: AppColors.grey0,
-      contentPadding:
-          EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+      contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10.r),
         borderSide: const BorderSide(color: AppColors.grey50),

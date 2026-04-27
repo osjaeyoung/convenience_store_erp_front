@@ -154,13 +154,12 @@ class StaffManagementRepository {
     String? hireDate,
   }) async {
     final now = DateTime.now();
-    final hireDateStr = hireDate ?? '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final hireDateStr =
+        hireDate ??
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     final res = await _apiClient.dio.post<Map<String, dynamic>>(
       '/staff-management/branches/$branchId/employees/from-user',
-      data: {
-        'user_id': userId,
-        'hire_date': hireDateStr,
-      },
+      data: {'user_id': userId, 'hire_date': hireDateStr},
     );
     return res.data!;
   }
@@ -176,7 +175,8 @@ class StaffManagementRepository {
     String? hireDate,
   }) async {
     final now = DateTime.now();
-    final hireDateStr = hireDate ??
+    final hireDateStr =
+        hireDate ??
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     final res = await _apiClient.dio.post<Map<String, dynamic>>(
       '/staff-management/branches/$branchId/employees/guest',
@@ -316,9 +316,10 @@ class StaffManagementRepository {
     return res.data!;
   }
 
-  static Future<MultipartFile> _etcRecordMultipartFile(PlatformFile file) async {
-    final name =
-        file.name.trim().isEmpty ? 'attachment' : file.name.trim();
+  static Future<MultipartFile> _etcRecordMultipartFile(
+    PlatformFile file,
+  ) async {
+    final name = file.name.trim().isEmpty ? 'attachment' : file.name.trim();
     final contentType = _etcMultipartMediaType(name);
     if (file.bytes != null) {
       return MultipartFile.fromBytes(
@@ -389,9 +390,7 @@ class StaffManagementRepository {
     try {
       final res = await _apiClient.dio.get(
         '/staff-management/branches/$branchId/employees/$employeeId/employment-contracts/$contractId/attachment',
-        queryParameters: {
-          if (fileId != null) 'file_id': fileId,
-        },
+        queryParameters: {if (fileId != null) 'file_id': fileId},
         options: Options(
           responseType: ResponseType.bytes,
           headers: {'Accept': '*/*'},
@@ -412,9 +411,7 @@ class StaffManagementRepository {
         );
       }
       if (code == 503) {
-        throw StateError(
-          '파일 저장소(S3)가 서버에 연결되어 있지 않습니다. 관리자에게 문의해 주세요.',
-        );
+        throw StateError('파일 저장소(S3)가 서버에 연결되어 있지 않습니다. 관리자에게 문의해 주세요.');
       }
       rethrow;
     }
@@ -446,10 +443,9 @@ class StaffManagementRepository {
       if (title != null && title.isNotEmpty) 'title': title,
     });
     for (final file in files) {
-      formData.files.add(MapEntry(
-        'files',
-        await _etcRecordMultipartFile(file),
-      ));
+      formData.files.add(
+        MapEntry('files', await _etcRecordMultipartFile(file)),
+      );
     }
     final res = await _apiClient.dio.post<Map<String, dynamic>>(
       '/staff-management/branches/$branchId/employees/$employeeId/employment-contracts/file-only',
@@ -486,10 +482,9 @@ class StaffManagementRepository {
   }) async {
     final formData = FormData();
     for (final file in files) {
-      formData.files.add(MapEntry(
-        'files',
-        await _etcRecordMultipartFile(file),
-      ));
+      formData.files.add(
+        MapEntry('files', await _etcRecordMultipartFile(file)),
+      );
     }
     final res = await _apiClient.dio.patch<Map<String, dynamic>>(
       '/staff-management/branches/$branchId/employees/$employeeId/employment-contracts/$contractId/file',
@@ -524,10 +519,7 @@ class StaffManagementRepository {
   }) async {
     final res = await _apiClient.dio.post<Map<String, dynamic>>(
       '/staff-management/branches/$branchId/employees/$employeeId/reviews',
-      data: {
-        'rating': rating,
-        'comment': comment,
-      },
+      data: {'rating': rating, 'comment': comment},
     );
     return res.data!;
   }
@@ -553,10 +545,7 @@ class StaffManagementRepository {
   }) async {
     final res = await _apiClient.dio.get<Map<String, dynamic>>(
       '/staff-management/branches/$branchId/employees/$employeeId/payroll-auto-fill',
-      queryParameters: {
-        'year': year,
-        'month': month,
-      },
+      queryParameters: {'year': year, 'month': month},
     );
     return res.data!;
   }
@@ -587,23 +576,33 @@ class StaffManagementRepository {
     return res.data!;
   }
 
-  /// 급여명세 파일 전용 등록 (연/월 + `files` 필수) — 스펙 ##16-1
+  /// 급여명세 파일 전용 등록 (연/월 + multipart `files` 필수) — 스펙 ##16-1
   Future<Map<String, dynamic>> createPayrollStatementFileOnly({
     required int branchId,
     required int employeeId,
     required int year,
     required int month,
-    required String title,
-    required List<Map<String, dynamic>> files,
+    String? title,
+    required List<PlatformFile> files,
   }) async {
+    final formData = FormData.fromMap({
+      'year': year,
+      'month': month,
+      if (title != null && title.trim().isNotEmpty) 'title': title.trim(),
+    });
+    for (final file in files) {
+      formData.files.add(
+        MapEntry('files', await _etcRecordMultipartFile(file)),
+      );
+    }
     final res = await _apiClient.dio.post<Map<String, dynamic>>(
       '/staff-management/branches/$branchId/employees/$employeeId/payroll-statements/file-only',
-      data: {
-        'year': year,
-        'month': month,
-        'title': title.trim(),
-        'files': files,
-      },
+      data: formData,
+      options: Options(
+        connectTimeout: const Duration(seconds: 60),
+        sendTimeout: const Duration(minutes: 5),
+        receiveTimeout: const Duration(minutes: 5),
+      ),
     );
     return res.data!;
   }

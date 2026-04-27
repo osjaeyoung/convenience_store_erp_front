@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../data/repositories/staff_management_repository.dart';
-import '../../../data/services/payroll_file_storage_service.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../auth/widgets/auth_input_field.dart';
@@ -63,61 +62,41 @@ class _PayrollFileAttachScreenState extends State<PayrollFileAttachScreen> {
   }
 
   Future<void> _onAddPressed() async {
-    if (_titleCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('제목을 입력해 주세요.')),
-      );
-      return;
-    }
-
     final formName = _titleCtrl.text.trim();
     final picked = _picked;
     if (picked == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('파일을 첨부해 주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('파일을 첨부해 주세요.')));
       return;
     }
 
     setState(() => _submitting = true);
     try {
       final repo = context.read<StaffManagementRepository>();
-      final uploaded = PayrollFileStorageService().buildAttachmentMetadata(
-        branchId: widget.branchId,
-        employeeId: widget.employeeId,
-        file: picked,
-      );
       await repo.createPayrollStatementFileOnly(
         branchId: widget.branchId,
         employeeId: widget.employeeId,
         year: _year,
         month: _month,
-        title: formName,
-        files: [uploaded.toApiMap()],
+        title: formName.isEmpty ? null : formName,
+        files: [picked],
       );
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('「$formName」 급여명세 파일이 저장되었습니다.'),
+          content: Text(
+            '「${formName.isEmpty ? picked.name : formName}」 급여명세 파일이 저장되었습니다.',
+          ),
         ),
       );
       Navigator.pop(context, true);
-    } on StateError catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '첨부파일 메타 생성 실패: ${e.message}',
-            ),
-          ),
-        );
-      }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('저장 실패: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('저장 실패: $e')));
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -183,9 +162,7 @@ class _PayrollFileAttachScreenState extends State<PayrollFileAttachScreen> {
               )
             else ...[
               PickedFileInlinePreview(
-                key: ValueKey<String>(
-                  '${_picked!.name}_${_picked!.size}',
-                ),
+                key: ValueKey<String>('${_picked!.name}_${_picked!.size}'),
                 file: _picked!,
                 height: 280,
                 onTapReplace: _pickFile,

@@ -14,11 +14,13 @@ class PayrollAddMethodScreen extends StatelessWidget {
     required this.branchId,
     required this.employeeId,
     required this.employeeName,
+    required this.directWrittenPeriods,
   });
 
   final int branchId;
   final int employeeId;
   final String employeeName;
+  final Set<String> directWrittenPeriods;
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +57,7 @@ class PayrollAddMethodScreen extends StatelessWidget {
                         branchId: branchId,
                         employeeId: employeeId,
                         employeeName: employeeName,
+                        directWrittenPeriods: directWrittenPeriods,
                       ),
                     ),
                   );
@@ -138,10 +141,7 @@ class _MethodRow extends StatelessWidget {
                   ),
                 ),
               ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: AppColors.grey100,
-              ),
+              Icon(Icons.chevron_right_rounded, color: AppColors.grey100),
             ],
           ),
         ),

@@ -8,6 +8,8 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../../widgets/app_styled_confirm_dialog.dart';
 import '../payroll/payroll_formatters.dart';
+import 'employee_etc_file_preview_common.dart';
+import 'employee_etc_record_inline_preview.dart';
 import 'payroll_statement_pdf_export.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -106,9 +108,9 @@ class _PayrollStatementDetailScreenState
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('삭제 실패: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('삭제 실패: $e')));
       }
     }
   }
@@ -134,26 +136,151 @@ class _PayrollStatementDetailScreenState
         employeeName: widget.employeeName,
       );
       if (!mounted) return;
-      await Printing.sharePdf(
-        bytes: bytes,
-        filename: _pdfFileName(),
-      );
+      await Printing.sharePdf(bytes: bytes, filename: _pdfFileName());
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('PDF 저장에 실패했습니다: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('PDF 저장에 실패했습니다: $e')));
       }
     } finally {
       if (mounted) setState(() => _pdfBusy = false);
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Future<void> _onDownloadAttachedFile() async {
+    final fileUrl = _primaryFileUrl(_row);
+    if (fileUrl == null || fileUrl.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('다운로드할 첨부 파일이 없습니다.')));
+      return;
+    }
+    setState(() => _pdfBusy = true);
+    try {
+      await EtcFilePreviewCommon.downloadAttachment(
+        fileUrl: fileUrl,
+        recordTitle: _displayTitle(),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('파일 저장에 실패했습니다: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _pdfBusy = false);
+    }
+  }
+
+  String _displayTitle() {
+    final title = _row['title']?.toString().trim();
+    if (title != null && title.isNotEmpty) return title;
     final y = (_row['year'] as num?)?.toInt() ?? 0;
     final m = (_row['month'] as num?)?.toInt() ?? 0;
-    final titleText = '$y.$m월 급여 명세';
+    return '$y.$m월 급여 명세';
+  }
+
+  bool _isFileOnlyPayroll(Map<String, dynamic> item) {
+    final type =
+        (item['entry_type'] ??
+                item['creation_type'] ??
+                item['source'] ??
+                item['payroll_type'] ??
+                item['input_mode'])
+            ?.toString()
+            .toLowerCase();
+    if (type != null &&
+        (type.contains('manual') ||
+            type.contains('direct') ||
+            type.contains('written'))) {
+      return false;
+    }
+    if (type != null &&
+        (type.contains('file') ||
+            type.contains('upload') ||
+            type.contains('attachment'))) {
+      return true;
+    }
+    if (item['is_file_only'] == true || item['file_only'] == true) {
+      return true;
+    }
+
+    if (!_hasAttachment(item)) return false;
+    const numericKeys = [
+      'total_work_minutes',
+      'hourly_wage',
+      'base_pay',
+      'weekly_allowance',
+      'overtime_pay',
+      'taxable_salary',
+      'gross_salary',
+      'national_pension',
+      'health_insurance',
+      'employment_insurance',
+      'long_term_care_insurance',
+      'income_tax',
+      'local_income_tax',
+      'total_deduction',
+      'net_pay',
+    ];
+    final allAmountsEmpty = numericKeys.every((key) {
+      final value = item[key];
+      if (value == null) return true;
+      if (value is num) return value == 0;
+      return num.tryParse(value.toString()) == 0;
+    });
+    final resident = item['resident_id_masked']?.toString().trim() ?? '';
+    return allAmountsEmpty && resident.isEmpty;
+  }
+
+  bool _hasAttachment(Map<String, dynamic> item) {
+    final files = item['files'];
+    if (files is List && files.isNotEmpty) return true;
+    return (_stringValue(item['s3_file_url'])?.isNotEmpty ?? false) ||
+        (_stringValue(item['file_url'])?.isNotEmpty ?? false);
+  }
+
+  String? _primaryFileUrl(Map<String, dynamic> item) {
+    final files = item['files'];
+    if (files is List) {
+      for (final file in files) {
+        if (file is! Map) continue;
+        final url =
+            _stringValue(file['file_url']) ??
+            _stringValue(file['s3_file_url']) ??
+            _stringValue(file['url']);
+        if (url != null && url.isNotEmpty) return url;
+      }
+    }
+    return _stringValue(item['s3_file_url']) ?? _stringValue(item['file_url']);
+  }
+
+  String? _primaryFileName(Map<String, dynamic> item) {
+    final files = item['files'];
+    if (files is List) {
+      for (final file in files) {
+        if (file is! Map) continue;
+        final name =
+            _stringValue(file['file_name']) ??
+            _stringValue(file['name']) ??
+            _stringValue(file['original_name']);
+        if (name != null && name.isNotEmpty) return name;
+      }
+    }
+    return _stringValue(item['file_name']) ?? _displayTitle();
+  }
+
+  String? _stringValue(Object? value) {
+    final text = value?.toString().trim();
+    if (text == null || text.isEmpty) return null;
+    return text;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final titleText = _displayTitle();
+    final isFileOnly = _isFileOnlyPayroll(_row);
 
     final deductions = <MapEntry<String, int>>[];
     for (final e in _deductionKeys.entries) {
@@ -220,109 +347,154 @@ class _PayrollStatementDetailScreenState
                     ],
                   ),
                   SizedBox(height: 16.h),
-                  _infoCard(),
-                  SizedBox(height: 20.h),
-                  Text(
-                    '공제항목',
-                    style: AppTypography.bodyMediumB.copyWith(
-                      fontSize: 15.sp,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  SizedBox(height: 10.h),
-                  if (!hasDeductions)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 16,
-                        horizontal: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.grey25,
-                        borderRadius: BorderRadius.circular(12.r),
-                        border: Border.all(color: AppColors.grey50),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.info_outline, color: AppColors.grey150),
-                          SizedBox(width: 8.w),
-                          Expanded(
-                            child: Text(
-                              '공제항목이 없습니다.',
-                              style: AppTypography.bodyMediumR.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    Container(
-                      padding: EdgeInsets.all(12.r),
-                      decoration: BoxDecoration(
-                        color: AppColors.grey0Alt,
-                        borderRadius: BorderRadius.circular(12.r),
-                        border: Border.all(color: AppColors.grey50),
-                      ),
-                      child: Column(
-                        children: [
-                          for (final d in deductions)
-                            _kvRow(d.key, PayrollFormatters.krwInt(d.value)),
-                          if (totalDed > 0)
-                            Padding(
-                              padding: EdgeInsets.only(top: 8.h),
-                              child: _kvRow(
-                                '공제 합계',
-                                PayrollFormatters.krwInt(totalDed),
-                                emphasize: true,
-                              ),
-                            ),
-                        ],
+                  if (isFileOnly)
+                    _filePreviewContent()
+                  else ...[
+                    _infoCard(),
+                    SizedBox(height: 20.h),
+                    Text(
+                      '공제항목',
+                      style: AppTypography.bodyMediumB.copyWith(
+                        fontSize: 15.sp,
+                        color: AppColors.textPrimary,
                       ),
                     ),
-                  SizedBox(height: 24.h),
-                  if ((_num('net_pay') ?? 0) > 0)
-                    Padding(
-                      padding: EdgeInsets.only(bottom: 8.h),
-                      child: _kvRow(
-                        '실지급액',
-                        PayrollFormatters.krwInt(_num('net_pay')),
-                        emphasize: true,
-                      ),
-                    ),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: OutlinedButton(
-                      onPressed: (_pdfBusy || _loading) ? null : _onDownload,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primaryDark,
-                        side: const BorderSide(color: AppColors.primaryDark),
-                        shape: RoundedRectangleBorder(
+                    SizedBox(height: 10.h),
+                    if (!hasDeductions)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                          horizontal: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.grey25,
                           borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(color: AppColors.grey50),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.info_outline, color: AppColors.grey150),
+                            SizedBox(width: 8.w),
+                            Expanded(
+                              child: Text(
+                                '공제항목이 없습니다.',
+                                style: AppTypography.bodyMediumR.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: EdgeInsets.all(12.r),
+                        decoration: BoxDecoration(
+                          color: AppColors.grey0Alt,
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(color: AppColors.grey50),
+                        ),
+                        child: Column(
+                          children: [
+                            for (final d in deductions)
+                              _kvRow(d.key, PayrollFormatters.krwInt(d.value)),
+                            if (totalDed > 0)
+                              Padding(
+                                padding: EdgeInsets.only(top: 8.h),
+                                child: _kvRow(
+                                  '공제 합계',
+                                  PayrollFormatters.krwInt(totalDed),
+                                  emphasize: true,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
-                      child: _pdfBusy
-                          ? SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppColors.primaryDark,
-                              ),
-                            )
-                          : Text(
-                              '다운로드',
-                              style: AppTypography.bodyMediumB.copyWith(
-                                color: AppColors.primaryDark,
-                                fontSize: 16.sp,
-                              ),
-                            ),
-                    ),
-                  ),
+                    SizedBox(height: 24.h),
+                    if ((_num('net_pay') ?? 0) > 0)
+                      Padding(
+                        padding: EdgeInsets.only(bottom: 8.h),
+                        child: _kvRow(
+                          '실지급액',
+                          PayrollFormatters.krwInt(_num('net_pay')),
+                          emphasize: true,
+                        ),
+                      ),
+                    _downloadButton(onPressed: _onDownload),
+                  ],
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _filePreviewContent() {
+    final fileUrl = _primaryFileUrl(_row);
+    final fileName = _primaryFileName(_row);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (fileUrl != null && fileUrl.isNotEmpty)
+          EtcRecordInlineFilePreview(
+            fileUrl: fileUrl,
+            height: 460,
+            displayFileName: fileName,
+          )
+        else
+          Container(
+            padding: EdgeInsets.all(16.r),
+            decoration: BoxDecoration(
+              color: AppColors.grey25,
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: AppColors.grey50),
+            ),
+            child: Text(
+              '등록된 첨부 파일을 불러오지 못했습니다.',
+              style: AppTypography.bodyMediumR.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+        SizedBox(height: 24.h),
+        _downloadButton(
+          onPressed: fileUrl == null || fileUrl.isEmpty
+              ? null
+              : _onDownloadAttachedFile,
+        ),
+      ],
+    );
+  }
+
+  Widget _downloadButton({required VoidCallback? onPressed}) {
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: OutlinedButton(
+        onPressed: (_pdfBusy || _loading) ? null : onPressed,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primaryDark,
+          side: const BorderSide(color: AppColors.primaryDark),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+        ),
+        child: _pdfBusy
+            ? SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.primaryDark,
+                ),
+              )
+            : Text(
+                '다운로드',
+                style: AppTypography.bodyMediumB.copyWith(
+                  color: AppColors.primaryDark,
+                  fontSize: 16.sp,
+                ),
+              ),
+      ),
     );
   }
 
