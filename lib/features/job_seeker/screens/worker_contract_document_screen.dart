@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
-import 'package:printing/printing.dart';
 
 import '../../../data/models/worker/worker_recruitment_models.dart';
 import '../../../data/repositories/worker_recruitment_repository.dart';
@@ -33,7 +33,8 @@ class WorkerContractDocumentScreen extends StatefulWidget {
       _WorkerContractDocumentScreenState();
 }
 
-class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScreen> {
+class _WorkerContractDocumentScreenState
+    extends State<WorkerContractDocumentScreen> {
   static const Color _autoFillOrange = Color(0xFFFF8D28);
   static const String _autoFillMarker = '자동 기입';
   static const Color _mintChipBg = Color(0xFFE2F6F0);
@@ -86,7 +87,8 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
   bool _changed = false;
   String? _error;
   WorkerContractChatDocument? _document;
-  final Map<String, TextEditingController> _controllers = <String, TextEditingController>{};
+  final Map<String, TextEditingController> _controllers =
+      <String, TextEditingController>{};
 
   @override
   void initState() {
@@ -147,10 +149,10 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
   }
 
   TextStyle get _contractBodyStyle => AppTypography.bodyMediumR.copyWith(
-        color: AppColors.textPrimary,
-        fontSize: 14.sp,
-        height: 25 / 14,
-      );
+    color: AppColors.textPrimary,
+    fontSize: 14.sp,
+    height: 25 / 14,
+  );
 
   TextStyle get _contractNoteStyle =>
       _contractBodyStyle.copyWith(color: AppColors.textSecondary);
@@ -222,7 +224,9 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
   }
 
   String _periodChipDisplay(WorkerContractChatDocument doc) {
-    final start = _formatKoreanDateFromIso(_formValue('contract_start_date', doc));
+    final start = _formatKoreanDateFromIso(
+      _formValue('contract_start_date', doc),
+    );
     final end = _formatKoreanDateFromIso(_formValue('contract_end_date', doc));
     if (start.isEmpty && end.isEmpty) return '';
     if (start.isNotEmpty && end.isNotEmpty) return '$start부터 $end까지';
@@ -252,11 +256,7 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
     if (dt == null) {
       return (year: '', month: '', day: '');
     }
-    return (
-      year: '${dt.year}',
-      month: '${dt.month}',
-      day: '${dt.day}',
-    );
+    return (year: '${dt.year}', month: '${dt.month}', day: '${dt.day}');
   }
 
   ({String year, String month, String day}) _datePartsFromKey(
@@ -293,9 +293,7 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
     if (isContractSignatureDataUrl(initialRaw)) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('전자서명 데이터는 여기서 편집할 수 없습니다.'),
-        ),
+        const SnackBar(content: Text('전자서명 데이터는 여기서 편집할 수 없습니다.')),
       );
       return;
     }
@@ -415,9 +413,7 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
     if (key == 'employer_signature_text') {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('사업주 서명은 근로자 단계에서 수정할 수 없습니다.'),
-        ),
+        const SnackBar(content: Text('사업주 서명은 근로자 단계에서 수정할 수 없습니다.')),
       );
       return;
     }
@@ -485,10 +481,7 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
               emptyLabel: emptyLabel,
               textStyle: chipTextStyle,
             )
-          : Text(
-              empty ? emptyLabel : text,
-              style: chipTextStyle,
-            ),
+          : Text(empty ? emptyLabel : text, style: chipTextStyle),
     );
 
     if (onTap == null) return child;
@@ -542,7 +535,8 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
       tone: _ContractChipTone.worker,
       onTap: editable ? () => _openFieldEditor(label, key) : null,
       padding: padding,
-      signatureField: key == 'worker_signature_text' || key == 'guardian_signature_name',
+      signatureField:
+          key == 'worker_signature_text' || key == 'guardian_signature_name',
     );
   }
 
@@ -649,13 +643,16 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
     final isMinor = doc.templateVersion == 'minor_standard_v1';
     final wageAmount = _formatNumber(doc.formValues['wage_amount']);
     final bonusAmount = _formatNumber(doc.formValues['bonus_amount']);
-    final otherAllowanceAmount =
-        _formatNumber(doc.formValues['other_allowance_amount']);
+    final otherAllowanceAmount = _formatNumber(
+      doc.formValues['other_allowance_amount'],
+    );
     final mealAllowance = _formatNumber(doc.formValues['meal_allowance']);
-    final transportAllowance =
-        _formatNumber(doc.formValues['transport_allowance']);
-    final extraAllowanceAmount =
-        _formatNumber(doc.formValues['extra_allowance_amount']);
+    final transportAllowance = _formatNumber(
+      doc.formValues['transport_allowance'],
+    );
+    final extraAllowanceAmount = _formatNumber(
+      doc.formValues['extra_allowance_amount'],
+    );
     final paymentDay = _formatNumber(doc.formValues['payment_day']);
     final periodText = _periodChipDisplay(doc);
     final signedParts = _signingDateParts(doc);
@@ -667,12 +664,7 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
     final otherAllowanceIncluded = _boolValue('other_allowance_included', doc);
 
     return ListView(
-      padding: EdgeInsets.fromLTRB(
-        20.w,
-        16.h,
-        20.w,
-        bottomPadding ?? 120.h,
-      ),
+      padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, bottomPadding ?? 120.h),
       children: [
         if (showDocumentTitle) ...[
           Text(
@@ -782,12 +774,18 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
             children: [
               Text('근무일/휴일 : 매주 ', style: _contractBodyStyle),
               if (workDaysPerWeek.isEmpty)
-                Text('소정 근로 시간 입력시 자동 기입', style: _contractBodyStyle.copyWith(color: _autoFillOrange))
+                Text(
+                  '소정 근로 시간 입력시 자동 기입',
+                  style: _contractBodyStyle.copyWith(color: _autoFillOrange),
+                )
               else
                 _readonlyMintChip(workDaysPerWeek),
               Text('일(또는 매일단위)근무, 주휴일 매주 ', style: _contractBodyStyle),
               if (weeklyHolidayDay.isEmpty)
-                Text('자동 기입', style: _contractBodyStyle.copyWith(color: _autoFillOrange))
+                Text(
+                  '자동 기입',
+                  style: _contractBodyStyle.copyWith(color: _autoFillOrange),
+                )
               else
                 _readonlyMintChip(weeklyHolidayDay),
               Text('요일', style: _contractBodyStyle),
@@ -814,8 +812,13 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
                         Text('· ', style: _contractBodyStyle),
                         Text('월(일, 시간)급 : ', style: _contractBodyStyle),
                         _readonlyMintChip(
-                          wageAmount.isEmpty ? '' : '${_wageTypeLabel(doc)} $wageAmount',
-                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                          wageAmount.isEmpty
+                              ? ''
+                              : '${_wageTypeLabel(doc)} $wageAmount',
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 10.w,
+                            vertical: 4.h,
+                          ),
                         ),
                         Text(' 원', style: _contractBodyStyle),
                       ],
@@ -890,7 +893,9 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               Text('· 기타(', style: _contractBodyStyle),
-                              _readonlyMintChip(_formValue('extra_allowance_name', doc)),
+                              _readonlyMintChip(
+                                _formValue('extra_allowance_name', doc),
+                              ),
                               Text(') ', style: _contractBodyStyle),
                               _readonlyMintChip(extraAllowanceAmount),
                               Text('원', style: _contractBodyStyle),
@@ -906,7 +911,10 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
                       runSpacing: 8,
                       children: [
                         Text('· ', style: _contractBodyStyle),
-                        Text('임금지급일 : 매월(매주 또는 매일) ', style: _contractBodyStyle),
+                        Text(
+                          '임금지급일 : 매월(매주 또는 매일) ',
+                          style: _contractBodyStyle,
+                        ),
                         _readonlyMintChip(paymentDay),
                         Text('일 (휴일의 경우는 전일 지급)', style: _contractBodyStyle),
                       ],
@@ -919,9 +927,13 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
                       children: [
                         Text('· ', style: _contractBodyStyle),
                         Text('지급방법 : 근로자에게 직접지급(', style: _contractBodyStyle),
-                        _readonlyChoiceCircle(_paymentMethodLabel(doc) == '직접 지급'),
+                        _readonlyChoiceCircle(
+                          _paymentMethodLabel(doc) == '직접 지급',
+                        ),
                         Text('), 근로자 명의 예금통장에 입금(', style: _contractBodyStyle),
-                        _readonlyChoiceCircle(_paymentMethodLabel(doc) == '예금통장에 입금'),
+                        _readonlyChoiceCircle(
+                          _paymentMethodLabel(doc) == '예금통장에 입금',
+                        ),
                         Text(')', style: _contractBodyStyle),
                       ],
                     ),
@@ -938,10 +950,7 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
             children: [
               Text('연차유급휴가', style: _contractBodyStyle),
               SizedBox(height: 4.h),
-              Text(
-                '연차유급휴가는 근로기준법에서 정하는 바에 따라 부여함',
-                style: _contractBodyStyle,
-              ),
+              Text('연차유급휴가는 근로기준법에서 정하는 바에 따라 부여함', style: _contractBodyStyle),
             ],
           ),
         ),
@@ -962,7 +971,9 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
                       '가족관계기록사항에 관한 증명서 제출 여부 : ',
                       style: _contractBodyStyle,
                     ),
-                    _readonlyMintChip(_formValue('family_relation_certificate_submitted', doc)),
+                    _readonlyMintChip(
+                      _formValue('family_relation_certificate_submitted', doc),
+                    ),
                   ],
                 ),
                 SizedBox(height: 10.h),
@@ -972,7 +983,9 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
                   runSpacing: 8,
                   children: [
                     Text('친권자 또는 후견인의 동의서 구비 여부 : ', style: _contractBodyStyle),
-                    _readonlyMintChip(_formValue('guardian_consent_submitted', doc)),
+                    _readonlyMintChip(
+                      _formValue('guardian_consent_submitted', doc),
+                    ),
                   ],
                 ),
               ],
@@ -1028,10 +1041,7 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
               children: [
                 Text('기 타', style: _contractBodyStyle),
                 SizedBox(height: 4.h),
-                Text(
-                  '이 계약에 정함이 없는 사항은 근로기준법령에 의함',
-                  style: _contractBodyStyle,
-                ),
+                Text('이 계약에 정함이 없는 사항은 근로기준법령에 의함', style: _contractBodyStyle),
               ],
             ),
           ),
@@ -1116,11 +1126,7 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Text('연락처 : ', style: _contractBodyStyle),
-            _workerInputChip(
-              key: 'worker_phone',
-              label: '근로자 연락처',
-              doc: doc,
-            ),
+            _workerInputChip(key: 'worker_phone', label: '근로자 연락처', doc: doc),
           ],
         ),
         SizedBox(height: 8.h),
@@ -1253,17 +1259,9 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
             runSpacing: 8,
             children: [
               Text('성 명 : ', style: _contractBodyStyle),
-              _workerInputChip(
-                key: 'minor_name',
-                label: '연소근로자 성명',
-                doc: doc,
-              ),
+              _workerInputChip(key: 'minor_name', label: '연소근로자 성명', doc: doc),
               Text(' (만 ', style: _contractBodyStyle),
-              _workerInputChip(
-                key: 'minor_age',
-                label: '만 나이',
-                doc: doc,
-              ),
+              _workerInputChip(key: 'minor_age', label: '만 나이', doc: doc),
               Text(' 세)', style: _contractBodyStyle),
             ],
           ),
@@ -1283,12 +1281,7 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
         ),
         SizedBox(height: 8.h),
         _guardianDocHeading('사업장 개요'),
-        _guardianLabeledValueRow(
-          '회사명 : ',
-          'business_name',
-          doc,
-          label: '회사명',
-        ),
+        _guardianLabeledValueRow('회사명 : ', 'business_name', doc, label: '회사명'),
         _guardianLabeledValueRow(
           '회사주소 : ',
           'business_address',
@@ -1320,10 +1313,7 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
               label: '동의문 속 연소근로자명',
               doc: doc,
             ),
-            Text(
-              ' 가 위 사업장에서 근로를 하는 것에 대하여 동의합니다.',
-              style: _contractBodyStyle,
-            ),
+            Text(' 가 위 사업장에서 근로를 하는 것에 대하여 동의합니다.', style: _contractBodyStyle),
           ],
         ),
         SizedBox(height: 20.h),
@@ -1342,7 +1332,10 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
               if (signedParts.year.isNotEmpty ||
                   signedParts.month.isNotEmpty ||
                   signedParts.day.isNotEmpty)
-                Text('(${signedParts.year}.${signedParts.month}.${signedParts.day})', style: _contractNoteStyle),
+                Text(
+                  '(${signedParts.year}.${signedParts.month}.${signedParts.day})',
+                  style: _contractNoteStyle,
+                ),
             ],
           ),
         ),
@@ -1384,9 +1377,9 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
       decorationColor: _autoFillOrange,
     );
     TextStyle underlinedUnderscore(TextStyle s) => s.copyWith(
-          decoration: TextDecoration.underline,
-          decorationColor: AppColors.textPrimary,
-        );
+      decoration: TextDecoration.underline,
+      decorationColor: AppColors.textPrimary,
+    );
 
     List<TextSpan> underlineUnderscores(String chunk) {
       final reg = RegExp(r'_+');
@@ -1396,10 +1389,12 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
         if (m.start > i) {
           out.add(TextSpan(text: chunk.substring(i, m.start), style: base));
         }
-        out.add(TextSpan(
-          text: chunk.substring(m.start, m.end),
-          style: underlinedUnderscore(base),
-        ));
+        out.add(
+          TextSpan(
+            text: chunk.substring(m.start, m.end),
+            style: underlinedUnderscore(base),
+          ),
+        );
         i = m.end;
       }
       if (i < chunk.length) {
@@ -1469,7 +1464,9 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
 
     setState(() => _submitting = true);
     try {
-      final next = await context.read<WorkerRecruitmentRepository>().patchContractChatDocument(
+      final next = await context
+          .read<WorkerRecruitmentRepository>()
+          .patchContractChatDocument(
             contractId: widget.contractId,
             action: action,
             formValues: formValues,
@@ -1482,16 +1479,20 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
         _document = next;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(next.primaryAction == 'complete' ? '작성이 완료되었습니다.' : '저장되었습니다.')),
+        SnackBar(
+          content: Text(
+            next.primaryAction == 'complete' ? '작성이 완료되었습니다.' : '저장되었습니다.',
+          ),
+        ),
       );
       if (next.chatStatus == 'completed') {
         Navigator.of(context).pop(true);
       }
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_messageFromError(error))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_messageFromError(error))));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -1505,9 +1506,25 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
           .downloadContractChatDocument(contractId: widget.contractId);
       if (!mounted) return;
       final contentType = result.contentType?.toLowerCase() ?? '';
-      final fileName = result.fileName ??
-          (contentType.contains('text') ? 'contract_${widget.contractId}.txt' : 'contract_${widget.contractId}.pdf');
-      await Printing.sharePdf(bytes: result.bytes, filename: fileName);
+      final isText = contentType.contains('text');
+      final fileName =
+          result.fileName ??
+          (isText
+              ? 'contract_${widget.contractId}.txt'
+              : 'contract_${widget.contractId}.pdf');
+      final savedPath = await FilePicker.platform.saveFile(
+        dialogTitle: '근로계약서 저장',
+        fileName: fileName,
+        bytes: result.bytes,
+        type: FileType.custom,
+        allowedExtensions: isText ? const ['txt'] : const ['pdf'],
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(savedPath == null ? '저장이 취소되었습니다.' : '근로계약서가 저장되었습니다.'),
+        ),
+      );
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1522,7 +1539,8 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
   Widget build(BuildContext context) {
     final doc = _document;
     final isCompleted = doc?.chatStatus == 'completed';
-    final canSubmit = doc != null &&
+    final canSubmit =
+        doc != null &&
         doc.primaryAction != null &&
         doc.chatStatus != 'completed' &&
         doc.editableFieldKeys.isNotEmpty;
@@ -1557,19 +1575,19 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24.w),
-                    child: Text(
-                      _error!,
-                      textAlign: TextAlign.center,
-                      style: AppTypography.bodyMediumR.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
+          ? Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.w),
+                child: Text(
+                  _error!,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.bodyMediumR.copyWith(
+                    color: AppColors.textSecondary,
                   ),
-                )
-              : _buildContent(doc!),
+                ),
+              ),
+            )
+          : _buildContent(doc!),
       bottomNavigationBar: doc == null
           ? null
           : Container(
@@ -1586,52 +1604,57 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
                   height: 56.h,
                   child: doc.chatStatus == 'completed'
                       ? OutlinedButton(
-                        onPressed: _downloading ? null : _download,
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppColors.primary),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.r),
+                          onPressed: _downloading ? null : _download,
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColors.primary),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                            foregroundColor: AppColors.primary,
                           ),
-                          foregroundColor: AppColors.primary,
-                        ),
-                        child: _downloading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : Text(
-                                '다운로드',
-                                style: AppTypography.bodyLargeB.copyWith(
-                                  color: AppColors.primary,
+                          child: _downloading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  '다운로드',
+                                  style: AppTypography.bodyLargeB.copyWith(
+                                    color: AppColors.primary,
+                                  ),
                                 ),
-                              ),
-                      )
+                        )
                       : FilledButton(
-                        onPressed: (canSubmit && !_submitting) ? _submit : null,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          disabledBackgroundColor: AppColors.grey100,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.r),
+                          onPressed: (canSubmit && !_submitting)
+                              ? _submit
+                              : null,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            disabledBackgroundColor: AppColors.grey100,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
                           ),
+                          child: _submitting
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.grey0,
+                                  ),
+                                )
+                              : Text(
+                                  doc.primaryActionLabel ??
+                                      _prettyAction(doc.primaryAction),
+                                  style: AppTypography.bodyLargeB.copyWith(
+                                    color: AppColors.grey0,
+                                  ),
+                                ),
                         ),
-                        child: _submitting
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppColors.grey0,
-                                ),
-                              )
-                            : Text(
-                                doc.primaryActionLabel ?? _prettyAction(doc.primaryAction),
-                                style: AppTypography.bodyLargeB.copyWith(
-                                  color: AppColors.grey0,
-                                ),
-                              ),
-                      ),
                 ),
               ),
             ),
@@ -1680,12 +1703,7 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
         TextSpan(
           style: previewStyle,
           children: previewRaw.isEmpty
-              ? [
-                  TextSpan(
-                    text: '문서 미리보기를 불러오는 중입니다.',
-                    style: previewStyle,
-                  ),
-                ]
+              ? [TextSpan(text: '문서 미리보기를 불러오는 중입니다.', style: previewStyle)]
               : _previewSpans(previewRaw, previewStyle),
         ),
       ),
@@ -1778,51 +1796,62 @@ class _WorkerContractDocumentScreenState extends State<WorkerContractDocumentScr
                   ),
                   SizedBox(height: 10.h),
                   ...editableKeys.map((key) {
-              final required = doc.requiredFieldKeys.contains(key);
-              final controller = _controllers[key] ?? TextEditingController();
-              _controllers[key] = controller;
-              return Padding(
-                padding: EdgeInsets.only(bottom: 12.h),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      required ? '${_labelFor(key, doc)} *' : _labelFor(key, doc),
-                      style: AppTypography.bodySmallM.copyWith(
-                        color: required ? const Color(0xFFFF8D28) : AppColors.textSecondary,
+                    final required = doc.requiredFieldKeys.contains(key);
+                    final controller =
+                        _controllers[key] ?? TextEditingController();
+                    _controllers[key] = controller;
+                    return Padding(
+                      padding: EdgeInsets.only(bottom: 12.h),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            required
+                                ? '${_labelFor(key, doc)} *'
+                                : _labelFor(key, doc),
+                            style: AppTypography.bodySmallM.copyWith(
+                              color: required
+                                  ? const Color(0xFFFF8D28)
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                          SizedBox(height: 6.h),
+                          TextField(
+                            controller: controller,
+                            minLines: key == 'worker_address' ? 2 : 1,
+                            maxLines: key == 'worker_address' ? 3 : 1,
+                            decoration: InputDecoration(
+                              hintText: _labelFor(key, doc),
+                              isDense: true,
+                              filled: true,
+                              fillColor: AppColors.grey0,
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12.w,
+                                vertical: 12.h,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8.r),
+                                borderSide: const BorderSide(
+                                  color: AppColors.border,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8.r),
+                                borderSide: const BorderSide(
+                                  color: AppColors.border,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8.r),
+                                borderSide: const BorderSide(
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    SizedBox(height: 6.h),
-                    TextField(
-                      controller: controller,
-                      minLines: key == 'worker_address' ? 2 : 1,
-                      maxLines: key == 'worker_address' ? 3 : 1,
-                      decoration: InputDecoration(
-                        hintText: _labelFor(key, doc),
-                        isDense: true,
-                        filled: true,
-                        fillColor: AppColors.grey0,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 12.w,
-                          vertical: 12.h,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8.r),
-                          borderSide: const BorderSide(color: AppColors.border),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8.r),
-                          borderSide: const BorderSide(color: AppColors.border),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8.r),
-                          borderSide: const BorderSide(color: AppColors.primary),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
+                    );
                   }),
                 ],
                 if (doc.chatStatus == 'completed') ...[

@@ -9,6 +9,7 @@ import '../../../data/repositories/manager_home_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../../widgets/file_or_gallery_picker.dart';
+import '../../../widgets/hierarchical_region_picker_sheet.dart';
 import '../../auth/widgets/auth_input_field.dart';
 import 'recruitment_posting_detail_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -55,6 +56,7 @@ class _RecruitmentPostingFormScreenState
   PlatformFile? _pickedImage;
   Uint8List? _pickedImageBytes;
   String? _profileImageUrl;
+  String? _regionPath;
   bool _saving = false;
   String _payType = '시급';
   String _jobCategory = '편의점';
@@ -68,7 +70,9 @@ class _RecruitmentPostingFormScreenState
     _companyCtrl.text = detail?.companyName ?? widget.branchName;
     if (detail != null) {
       _titleCtrl.text = detail.title ?? '';
-      _payAmountCtrl.text = detail.payAmount == 0 ? '' : detail.payAmount.toString();
+      _payAmountCtrl.text = detail.payAmount == 0
+          ? ''
+          : detail.payAmount.toString();
       _workPeriodCtrl.text = detail.workPeriod ?? '';
       _workDaysCtrl.text = detail.workDays ?? '';
       _workDaysDetailCtrl.text = detail.workDaysDetail ?? '';
@@ -80,7 +84,8 @@ class _RecruitmentPostingFormScreenState
       _headcountDetailCtrl.text = detail.recruitmentHeadcountDetail ?? '';
       _educationCtrl.text = detail.education ?? '';
       _educationDetailCtrl.text = detail.educationDetail ?? '';
-      _addressCtrl.text = detail.address ?? detail.regionSummary ?? '';
+      _regionPath = detail.regionPath ?? detail.regionSummary;
+      _addressCtrl.text = detail.address ?? '';
       _managerNameCtrl.text = detail.managerName ?? '';
       _contactPhoneCtrl.text = detail.contactPhone ?? '';
       _payType = detail.payType ?? _payType;
@@ -125,6 +130,21 @@ class _RecruitmentPostingFormScreenState
     });
   }
 
+  Future<void> _pickWorkRegion() async {
+    final next = await showHierarchicalRegionPicker(
+      context,
+      initialSelections: _regionPath == null || _regionPath!.trim().isEmpty
+          ? const []
+          : [_regionPath!],
+      maxSelections: 1,
+    );
+    if (!mounted || next == null) return;
+    setState(() {
+      _regionPath = next.isEmpty ? null : next.first;
+      _addressCtrl.clear();
+    });
+  }
+
   Future<void> _goNext() async {
     final baseRequest = _buildRequestOrNull();
     if (baseRequest == null) return;
@@ -140,9 +160,9 @@ class _RecruitmentPostingFormScreenState
           request: request,
         );
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('채용 공고가 수정되었습니다.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('채용 공고가 수정되었습니다.')));
         Navigator.of(context).pop(true);
         return;
       }
@@ -192,6 +212,7 @@ class _RecruitmentPostingFormScreenState
     final deadline = textOf(_deadlineCtrl);
     final headcount = textOf(_headcountCtrl);
     final education = textOf(_educationCtrl);
+    final regionPath = _regionPath?.trim() ?? '';
     final address = textOf(_addressCtrl);
     final managerName = textOf(_managerNameCtrl);
     final contactPhone = textOf(_contactPhoneCtrl);
@@ -207,15 +228,15 @@ class _RecruitmentPostingFormScreenState
       if (deadline.isEmpty) '모집마감',
       if (headcount.isEmpty) '모집인원',
       if (education.isEmpty) '학력',
-      if (address.isEmpty) '근무지역',
+      if (regionPath.isEmpty) '근무지역',
       if (managerName.isEmpty) '담당자',
       if (contactPhone.isEmpty) '연락처',
     ];
 
     if (missing.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${missing.first}을(를) 입력해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('${missing.first}을(를) 입력해주세요.')));
       return null;
     }
 
@@ -223,8 +244,9 @@ class _RecruitmentPostingFormScreenState
       profileImageUrl: _profileImageUrl,
       companyName: companyName,
       title: title,
-      regionSummary: address,
-      address: address,
+      regionSummary: regionPath,
+      regionPath: regionPath,
+      address: address.isEmpty ? regionPath : address,
       payType: _payType,
       payAmount: payAmount!,
       workPeriod: workPeriod,
@@ -251,9 +273,12 @@ class _RecruitmentPostingFormScreenState
   ) async {
     var profileImageUrl = _profileImageUrl?.trim();
     final pickedImage = _pickedImage;
-    if (pickedImage != null && (profileImageUrl == null || profileImageUrl.isEmpty)) {
+    if (pickedImage != null &&
+        (profileImageUrl == null || profileImageUrl.isEmpty)) {
       final uploaded = await repo.uploadRecruitmentFile(file: pickedImage);
-      profileImageUrl = uploaded.fileUrl.trim().isEmpty ? null : uploaded.fileUrl.trim();
+      profileImageUrl = uploaded.fileUrl.trim().isEmpty
+          ? null
+          : uploaded.fileUrl.trim();
       if (mounted) {
         setState(() => _profileImageUrl = profileImageUrl);
       } else {
@@ -348,7 +373,8 @@ class _RecruitmentPostingFormScreenState
                                       child: _PayTypeButton(
                                         label: '시급',
                                         selected: _payType == '시급',
-                                        onTap: () => setState(() => _payType = '시급'),
+                                        onTap: () =>
+                                            setState(() => _payType = '시급'),
                                       ),
                                     ),
                                     SizedBox(width: 12.w),
@@ -356,7 +382,8 @@ class _RecruitmentPostingFormScreenState
                                       child: _PayTypeButton(
                                         label: '월급',
                                         selected: _payType == '월급',
-                                        onTap: () => setState(() => _payType = '월급'),
+                                        onTap: () =>
+                                            setState(() => _payType = '월급'),
                                       ),
                                     ),
                                   ],
@@ -366,7 +393,9 @@ class _RecruitmentPostingFormScreenState
                                   _payAmountCtrl,
                                   hint: '입력해주세요.',
                                   keyboardType: TextInputType.number,
-                                  inputFormatters: [ThousandsSeparatorInputFormatter()],
+                                  inputFormatters: [
+                                    ThousandsSeparatorInputFormatter(),
+                                  ],
                                 ),
                               ],
                             ),
@@ -413,7 +442,10 @@ class _RecruitmentPostingFormScreenState
                           ),
                           _InputGroup(
                             label: '고용형태',
-                            child: _textField(_employmentTypeCtrl, hint: '입력해주세요.'),
+                            child: _textField(
+                              _employmentTypeCtrl,
+                              hint: '입력해주세요.',
+                            ),
                           ),
                         ],
                       ),
@@ -465,7 +497,7 @@ class _RecruitmentPostingFormScreenState
                       title: '근무지역',
                       child: _InputGroup(
                         label: '근무지역',
-                        child: _textField(_addressCtrl, hint: '입력해주세요.'),
+                        child: _regionSelectField(),
                       ),
                     ),
                     _SectionBlock(
@@ -478,7 +510,10 @@ class _RecruitmentPostingFormScreenState
                         children: [
                           _InputGroup(
                             label: '담당자',
-                            child: _textField(_managerNameCtrl, hint: '입력해주세요.'),
+                            child: _textField(
+                              _managerNameCtrl,
+                              hint: '입력해주세요.',
+                            ),
                           ),
                           _InputGroup(
                             label: '연락처',
@@ -487,7 +522,9 @@ class _RecruitmentPostingFormScreenState
                               hint: '입력해주세요.',
                               keyboardType: TextInputType.phone,
                               inputFormatters: [
-                                FilteringTextInputFormatter.allow(RegExp(r'[0-9-]')),
+                                FilteringTextInputFormatter.allow(
+                                  RegExp(r'[0-9-]'),
+                                ),
                               ],
                             ),
                           ),
@@ -596,6 +633,48 @@ class _RecruitmentPostingFormScreenState
       ],
     );
   }
+
+  Widget _regionSelectField() {
+    final selected = _regionPath?.trim();
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _pickWorkRegion,
+        borderRadius: BorderRadius.circular(12.r),
+        child: Container(
+          width: double.infinity,
+          constraints: BoxConstraints(minHeight: 52.h),
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+          decoration: BoxDecoration(
+            color: AppColors.grey0Alt,
+            borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  selected == null || selected.isEmpty
+                      ? '지역을 선택해주세요.'
+                      : regionPathChevronLabel(selected),
+                  style: AppTypography.bodyMediumR.copyWith(
+                    color: selected == null || selected.isEmpty
+                        ? AppColors.textDisabled
+                        : AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: 18,
+                color: AppColors.grey150,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _SectionLabel extends StatelessWidget {
@@ -635,10 +714,7 @@ class _SectionBlock extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.only(
-        top: hasTitle ? 20 : 0,
-        bottom: 32.h,
-      ),
+      padding: EdgeInsets.only(top: hasTitle ? 20 : 0, bottom: 32.h),
       decoration: BoxDecoration(
         border: showDivider
             ? const Border(
@@ -811,11 +887,7 @@ class _ImageAttachmentBox extends StatelessWidget {
                   ),
                 ),
               )
-            : const Icon(
-                Icons.add_rounded,
-                size: 40,
-                color: AppColors.primary,
-              ),
+            : const Icon(Icons.add_rounded, size: 40, color: AppColors.primary),
       ),
     );
   }

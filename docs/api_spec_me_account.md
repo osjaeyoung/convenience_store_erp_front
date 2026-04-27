@@ -203,6 +203,8 @@
 
 - 정렬: `created_at DESC`, 동순위는 `notification_id DESC`
 - `unread_count`는 `only_unread` 필터와 무관하게 전체 미읽음 개수입니다.
+- `unread_count`는 전체 알림 중 `is_read=false`인 항목 수와 항상 일치해야 합니다. 프론트 상단 알림 아이콘은 이 값이 `1` 이상이면 활성 상태로 표시합니다.
+- `PATCH /push/notifications/{notification_id}/read` 성공 후 같은 알림은 `GET /me/notifications`에서 `is_read=true`로 내려와야 하며, `unread_count`에서 제외되어야 합니다.
 - 알림 상세 액션은 `target_route`, `tab`, `entity_type`, `entity_id`를 사용해 화면 전환합니다.
 
 ---

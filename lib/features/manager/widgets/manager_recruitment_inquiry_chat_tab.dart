@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -25,10 +27,17 @@ class _ManagerRecruitmentInquiryChatTabState
   Object? _error;
   int? _loadedBranchId;
   List<RecruitmentChatSummary> _chats = const [];
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _load(int branchId) async {
@@ -46,12 +55,37 @@ class _ManagerRecruitmentInquiryChatTabState
         _chats = page.items;
         _loading = false;
       });
+      _startPolling(branchId);
     } catch (error) {
       if (!mounted) return;
       setState(() {
         _error = error;
         _loading = false;
       });
+    }
+  }
+
+  void _startPolling(int branchId) {
+    if (_pollTimer?.isActive == true && _loadedBranchId == branchId) return;
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      _refreshSilently(branchId);
+    });
+  }
+
+  Future<void> _refreshSilently(int branchId) async {
+    if (!mounted || _loading) return;
+    try {
+      final page = await context
+          .read<ManagerHomeRepository>()
+          .getRecruitmentChats(branchId: branchId);
+      if (!mounted || _loadedBranchId != branchId) return;
+      setState(() {
+        _chats = page.items;
+        _error = null;
+      });
+    } catch (_) {
+      // 실시간성 보강용 polling 실패는 기존 화면을 유지한다.
     }
   }
 
@@ -89,14 +123,12 @@ class _ManagerRecruitmentInquiryChatTabState
     if (confirmed != true || !mounted) return;
 
     try {
-      await context
-          .read<ManagerHomeRepository>()
-          .deleteRecruitmentChat(chatId: chat.chatId);
+      await context.read<ManagerHomeRepository>().deleteRecruitmentChat(
+        chatId: chat.chatId,
+      );
       if (!mounted) return;
       setState(() {
-        _chats = _chats
-            .where((item) => item.chatId != chat.chatId)
-            .toList();
+        _chats = _chats.where((item) => item.chatId != chat.chatId).toList();
       });
       ScaffoldMessenger.of(
         context,
@@ -113,6 +145,7 @@ class _ManagerRecruitmentInquiryChatTabState
   Widget build(BuildContext context) {
     final branchId = context.watch<SelectedBranchCubit>().state;
     if (branchId == null) {
+      _pollTimer?.cancel();
       return Center(
         child: Text(
           '지점을 선택해주세요.',
@@ -169,11 +202,8 @@ class _ManagerRecruitmentInquiryChatTabState
     return ListView.separated(
       padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 24.h),
       itemCount: _chats.length,
-      separatorBuilder: (_, __) => const Divider(
-        color: AppColors.border,
-        height: 1,
-        thickness: 1,
-      ),
+      separatorBuilder: (_, __) =>
+          const Divider(color: AppColors.border, height: 1, thickness: 1),
       itemBuilder: (context, index) {
         final chat = _chats[index];
         final unread = chat.unreadCount;
@@ -274,11 +304,7 @@ class _DefaultChatAvatarIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Icon(
-        Icons.person,
-        color: AppColors.grey150,
-        size: 20.r,
-      ),
+      child: Icon(Icons.person, color: AppColors.grey150, size: 20.r),
     );
   }
 }

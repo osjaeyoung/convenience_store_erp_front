@@ -48,8 +48,8 @@ class WorkStatusBadge extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: compact ? 8 : 10,
-        vertical: compact ? 3 : 4,
+        horizontal: compact ? 6 : 10,
+        vertical: compact ? 2 : 4,
       ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(4.r),
@@ -63,9 +63,9 @@ class WorkStatusBadge extends StatelessWidget {
         textAlign: TextAlign.center,
         style: AppTypography.bodySmallB.copyWith(
           color: style.textColor,
-          fontSize: compact ? 12 : 13,
+          fontSize: compact ? 10.5.sp : 13.sp,
           fontWeight: FontWeight.w600,
-          height: 16 / (compact ? 12 : 13),
+          height: compact ? 14 / 10.5 : 16 / 13,
         ),
       ),
     );

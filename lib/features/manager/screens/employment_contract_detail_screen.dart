@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:printing/printing.dart';
+import 'package:file_picker/file_picker.dart';
 
 import '../../../data/repositories/staff_management_repository.dart';
 import '../../../theme/app_colors.dart';
@@ -119,7 +119,8 @@ class _EmploymentContractDetailScreenState
 
   Future<void> _downloadPdf() async {
     final fv =
-        (_row!['form_values'] as Map?)?.cast<String, dynamic>() ?? <String, dynamic>{};
+        (_row!['form_values'] as Map?)?.cast<String, dynamic>() ??
+        <String, dynamic>{};
     setState(() => _pdfBusy = true);
     try {
       final bytes = await buildEmploymentContractPdfBytes(
@@ -128,15 +129,24 @@ class _EmploymentContractDetailScreenState
         documentTitle: _documentTitle(),
       );
       if (!mounted) return;
-      await Printing.sharePdf(
+      final savedPath = await FilePicker.platform.saveFile(
+        dialogTitle: '근로계약서 저장',
+        fileName: _pdfFileName(),
         bytes: bytes,
-        filename: _pdfFileName(),
+        type: FileType.custom,
+        allowedExtensions: const ['pdf'],
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(savedPath == null ? '저장이 취소되었습니다.' : '근로계약서가 저장되었습니다.'),
+        ),
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('PDF 저장에 실패했습니다: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('PDF 저장에 실패했습니다: $e')));
       }
     } finally {
       if (mounted) setState(() => _pdfBusy = false);
@@ -151,21 +161,21 @@ class _EmploymentContractDetailScreenState
     if (ok != true || !mounted) return;
     try {
       await context.read<StaffManagementRepository>().deleteEmploymentContract(
-            branchId: widget.branchId,
-            employeeId: widget.employeeId,
-            contractId: widget.contractId,
-          );
+        branchId: widget.branchId,
+        employeeId: widget.employeeId,
+        contractId: widget.contractId,
+      );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('삭제되었습니다.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('삭제되었습니다.')));
         Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('삭제 실패: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('삭제 실패: $e')));
       }
     }
   }
@@ -236,9 +246,9 @@ class _EmploymentContractDetailScreenState
   }
 
   Widget _t(String text) => Padding(
-        padding: EdgeInsets.only(bottom: 2.h),
-        child: Text(text, style: _docBodyStyle),
-      );
+    padding: EdgeInsets.only(bottom: 2.h),
+    child: Text(text, style: _docBodyStyle),
+  );
 
   static String _fv(Map<String, dynamic> fv, String key) =>
       fv[key]?.toString().trim() ?? '';
@@ -250,10 +260,10 @@ class _EmploymentContractDetailScreenState
   }
 
   static String _wageTypeKo(String? t) => switch (t) {
-        'hourly' => '시급',
-        'daily' => '일급',
-        _ => '월급',
-      };
+    'hourly' => '시급',
+    'daily' => '일급',
+    _ => '월급',
+  };
 
   static String _paymentMethodLine(Map<String, dynamic> fv) {
     final t = _fv(fv, 'payment_method');
@@ -282,19 +292,19 @@ class _EmploymentContractDetailScreenState
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(24.r),
-                    child: Text(
-                      _error!,
-                      textAlign: TextAlign.center,
-                      style: AppTypography.bodyMediumR.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
+          ? Center(
+              child: Padding(
+                padding: EdgeInsets.all(24.r),
+                child: Text(
+                  _error!,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.bodyMediumR.copyWith(
+                    color: AppColors.textSecondary,
                   ),
-                )
-              : _buildContent(),
+                ),
+              ),
+            )
+          : _buildContent(),
     );
   }
 
@@ -314,19 +324,12 @@ class _EmploymentContractDetailScreenState
         Container(
           padding: EdgeInsets.fromLTRB(20.w, 16.h, 12.w, 20.h),
           decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: Color(0xFFF5F5F7)),
-            ),
+            border: Border(bottom: BorderSide(color: Color(0xFFF5F5F7))),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(
-                child: Text(
-                  _documentTitle(),
-                  style: _docHeadingStyle,
-                ),
-              ),
+              Expanded(child: Text(_documentTitle(), style: _docHeadingStyle)),
               IconButton(
                 onPressed: _delete,
                 icon: Image.asset(
@@ -401,19 +404,12 @@ class _EmploymentContractDetailScreenState
         Container(
           padding: EdgeInsets.fromLTRB(20.w, 16.h, 12.w, 20.h),
           decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: Color(0xFFF5F5F7)),
-            ),
+            border: Border(bottom: BorderSide(color: Color(0xFFF5F5F7))),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(
-                child: Text(
-                  _documentTitle(),
-                  style: _docHeadingStyle,
-                ),
-              ),
+              Expanded(child: Text(_documentTitle(), style: _docHeadingStyle)),
               IconButton(
                 onPressed: _delete,
                 icon: Image.asset(
@@ -459,10 +455,7 @@ class _EmploymentContractDetailScreenState
     );
   }
 
-  Widget _buildStandardContractReadBody(
-    Map<String, dynamic> fv,
-    bool isMinor,
-  ) {
+  Widget _buildStandardContractReadBody(Map<String, dynamic> fv, bool isMinor) {
     final employer = _fv(fv, 'employer_name').isEmpty
         ? _fv(fv, 'employer_business_name')
         : _fv(fv, 'employer_name');
@@ -481,7 +474,8 @@ class _EmploymentContractDetailScreenState
     final bonusOn =
         fv['bonus_included'] == true || _fv(fv, 'bonus_included') == 'true';
     final bonusAmt = _fv(fv, 'bonus_amount');
-    final otherOn = fv['other_allowance_included'] == true ||
+    final otherOn =
+        fv['other_allowance_included'] == true ||
         _fv(fv, 'other_allowance_included') == 'true';
     final otherAmt = _fv(fv, 'other_allowance_amount');
     final meal = _fv(fv, 'meal_allowance');
@@ -679,10 +673,7 @@ class _EmploymentContractDetailScreenState
             runSpacing: 8,
             crossAxisAlignment: WrapCrossAlignment.end,
             children: [
-              Text(
-                ' · 가족관계기록사항에 관한 증명서 제출 여부 : ',
-                style: _docBodyStyle,
-              ),
+              Text(' · 가족관계기록사항에 관한 증명서 제출 여부 : ', style: _docBodyStyle),
               _u(_fv(fv, 'family_relation_certificate_submitted')),
             ],
           ),
@@ -692,10 +683,7 @@ class _EmploymentContractDetailScreenState
             runSpacing: 8,
             crossAxisAlignment: WrapCrossAlignment.end,
             children: [
-              Text(
-                ' · 친권자 또는 후견인의 동의서 구비 여부 : ',
-                style: _docBodyStyle,
-              ),
+              Text(' · 친권자 또는 후견인의 동의서 구비 여부 : ', style: _docBodyStyle),
               _u(_fv(fv, 'guardian_consent_submitted')),
             ],
           ),
@@ -783,15 +771,13 @@ class _EmploymentContractDetailScreenState
   }
 
   Widget _guardianReadHeading(String s) => Padding(
-        padding: EdgeInsets.only(top: 6.h, bottom: 10.h),
-        child: Text(
-          s,
-          style: _docBodyStyle.copyWith(fontWeight: FontWeight.w600),
-        ),
-      );
+    padding: EdgeInsets.only(top: 6.h, bottom: 10.h),
+    child: Text(s, style: _docBodyStyle.copyWith(fontWeight: FontWeight.w600)),
+  );
 
   Widget _buildGuardianReadBody(Map<String, dynamic> fv) {
-    bool any = _fv(fv, 'guardian_name').isNotEmpty ||
+    bool any =
+        _fv(fv, 'guardian_name').isNotEmpty ||
         _fv(fv, 'minor_name').isNotEmpty ||
         _fv(fv, 'business_name').isNotEmpty;
 
@@ -948,10 +934,7 @@ class _EmploymentContractDetailScreenState
           children: [
             Text('본인은 위 연소근로자 ', style: _docBodyStyle),
             _u(consentName),
-            Text(
-              ' 가 위 사업장에서 근로를 하는 것에 대하여 동의합니다.',
-              style: _docBodyStyle,
-            ),
+            Text(' 가 위 사업장에서 근로를 하는 것에 대하여 동의합니다.', style: _docBodyStyle),
           ],
         ),
         SizedBox(height: 16.h),

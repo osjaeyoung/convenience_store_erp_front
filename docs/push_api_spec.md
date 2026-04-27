@@ -108,6 +108,9 @@
 }
 ```
 
+- `unread_count`는 `only_unread` 필터와 무관하게 현재 사용자 전체 알림 중 `is_read=false`인 개수입니다.
+- 프론트 상단 알림 아이콘은 `unread_count > 0`일 때 활성 상태로 표시하므로, 알림함에 미읽음 항목이 있으면 반드시 1 이상으로 내려와야 합니다.
+
 ## 2-2) 푸시 알림 읽음 상태 변경
 
 - Method: `PATCH`
@@ -131,6 +134,8 @@
   "read_at": "2026-04-07T10:21:10Z"
 }
 ```
+
+- 읽음 처리 성공 후 `GET /me/notifications` 또는 `GET /push/notifications`의 같은 항목은 `is_read=true`로 내려와야 하며, `unread_count`에서 제외되어야 합니다.
 
 ## 2-3) 푸시 알림 삭제
 
@@ -187,6 +192,7 @@
 - `entity_type` (string, strongly recommended): 상세 리소스 타입
 - `entity_id` (string/int, strongly recommended): 상세 리소스 ID
 - `notification_id` (string/int, optional): 앱 알림함 row 식별자
+- `title`, `body` (string, recommended): foreground/data fallback 표시용 문구. 서버는 FCM `notification`과 `data` 양쪽에 포함합니다.
 
 예시 `entity_type`:
 - `contract_chat`
@@ -310,7 +316,28 @@
 - entity_id: `{application_id}`
 - branch_id: `{branch_id}`
 
-### 6-4) 관리자 문의 답변 등록/수정 시 (어드민 -> 문의 작성자)
+### 6-4) 채용 통합 채팅 메시지 전송 시
+
+- 트리거: `POST /chats/{chat_id}/messages`
+- 수신자: 해당 채팅방 상대방 user_id
+- title: `[{branch.name}] 새 채팅 메시지`
+- body: `{message.text}` (빈 값이면 `구인채용 채팅에 새 메시지가 도착했습니다.`)
+- type: `recruitment_chat`
+- entity_type: `recruitment_chat`
+- entity_id: `{chat_id}`
+- branch_id: `{branch_id}`
+- 경영주/점장 수신:
+  - target_role: `manager` 또는 `owner`
+  - target_route: `/manager?tab=4&recruitmentTab=3`
+  - recruitment_tab: `3`
+- 근로자 수신:
+  - target_role: `worker`
+  - target_route: `/job-seeker?tab=3`
+- 앱이 foreground 상태여도 알림이 떠야 하므로 FCM `notification.title/body` 또는 data `title/body` 중 하나는 반드시 포함합니다.
+- data-only 전송 시에도 프론트 fallback을 위해 `type=recruitment_chat`, `entity_type=recruitment_chat`, `entity_id={chat_id}`를 포함해야 합니다.
+- 서버는 채팅 메시지 푸시를 지연 큐에만 적재하지 않고 메시지 저장 직후 앱 알림 row 생성과 FCM 발송을 바로 시도합니다.
+
+### 6-5) 관리자 문의 답변 등록/수정 시 (어드민 -> 문의 작성자)
 
 - 트리거:
   - `POST /admin/inquiries/{inquiry_id}/answer`
@@ -341,7 +368,7 @@
 }
 ```
 
-### 6-5) 사업주 인증 승인/반려 시 (어드민 -> 경영주)
+### 6-6) 사업주 인증 승인/반려 시 (어드민 -> 경영주)
 
 - 트리거: `PATCH /admin/owner-certifications/{branch_id}`
 - 수신자: 해당 `branches.owner_user_id`

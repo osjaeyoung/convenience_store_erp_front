@@ -160,9 +160,10 @@
 - 홈 대시보드와 구인 모듈이 동일 데이터를 보도록 아래 기준으로 집계
   - `application_count`: 해당 지점의 게시된 공고(`published`) 지원 건수
   - `today_applicants_count`: 오늘 접수된 지원 건수
-  - `new_applicant_chat_count`: 채용 문의/계약 통합 채팅방 중 홈에 표시할 신규 지원자 채팅 건수
+  - `new_applicant_chat_count`: 채용 문의/계약 통합 채팅방 중 현재 로그인 사용자 기준 **읽지 않은 메시지가 있는 채팅방 수**
   - `active_postings_count`: 현재 게시중(`published`) 공고 수
-- 프론트는 홈 카드의 `새로운 지원자 채팅` 표시를 채팅 탭과 동일하게 맞추기 위해 `GET /chats?branch_id={branch_id}` 목록 개수를 우선 사용합니다. 이 API의 `new_applicant_chat_count`도 같은 기준으로 내려와야 합니다.
+- 프론트는 홈 카드의 `새로운 지원자 채팅` 표시를 위해 `GET /chats?branch_id={branch_id}` 응답 중 `unread_count > 0`인 채팅방 개수를 우선 사용합니다. 이 API의 `new_applicant_chat_count`도 같은 기준으로 내려와야 합니다.
+- 채팅 상세 진입 후 `PATCH /chats/{chat_id}/read`가 성공하면 해당 사용자의 `GET /chats` 응답에서 해당 채팅방 `unread_count`는 `0`이어야 하며, 홈 `new_applicant_chat_count`에서도 제외되어야 합니다.
 
 ### Request Body
 없음

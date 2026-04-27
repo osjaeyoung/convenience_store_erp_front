@@ -123,6 +123,7 @@
 
 - `PUT /staff-management/branches/{branch_id}/schedules/day`
 - 해당 날짜의 기존 일정은 입력값으로 전체 교체
+- `assignments: []`는 해당 30분 슬롯의 배정 인원을 모두 비우는 삭제 동작입니다. 서버는 빈 배열을 오류로 보지 않고 기존 schedule row를 삭제/미생성 처리해야 합니다.
 
 ### Request Body
 ```json
@@ -168,6 +169,7 @@
 
 - `PUT /staff-management/branches/{branch_id}/schedules/week`
 - 대상 주(7일) 기존 일정은 입력값으로 전체 교체
+- 각 슬롯의 `assignments: []`는 해당 시간대 배정을 비우는 삭제 동작입니다. 프론트는 근무배정에서 선택 직원을 모두 해제하거나 드래그 선택을 모두 해제하면 빈 배열을 보낼 수 있습니다.
 
 ### Request Body
 ```json

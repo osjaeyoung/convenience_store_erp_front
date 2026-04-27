@@ -8,6 +8,7 @@ import '../../../data/models/recruitment/recruitment_models.dart';
 import '../../../data/repositories/manager_home_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import '../../../widgets/app_styled_confirm_dialog.dart';
 import '../../auth/widgets/auth_input_field.dart';
 import 'recruitment_posting_detail_screen.dart';
 import 'recruitment_posting_form_screen.dart';
@@ -127,7 +128,7 @@ class _RecruitmentPostingListTabState extends State<RecruitmentPostingListTab> {
           postingId: item.postingId,
           previewMode: false,
           allowPublish: false,
-          mineMode: false, // 항상 일반 모드로 열기 (지원하기 버튼이 보이도록)
+          mineMode: widget.mine,
         ),
       ),
     );
@@ -163,6 +164,35 @@ class _RecruitmentPostingListTabState extends State<RecruitmentPostingListTab> {
     );
     if (changed == true && mounted) {
       _load();
+    }
+  }
+
+  Future<void> _deletePosting(RecruitmentPostingSummary item) async {
+    final ok = await showAppStyledDeleteDialog(
+      context,
+      message: '이 채용 공고를 삭제할까요?',
+    );
+    if (ok != true || !mounted) return;
+
+    try {
+      await context.read<ManagerHomeRepository>().deleteRecruitmentPosting(
+        branchId: widget.branchId,
+        postingId: item.postingId,
+      );
+      if (!mounted) return;
+      setState(() {
+        _visibleItems = _visibleItems
+            .where((candidate) => candidate.postingId != item.postingId)
+            .toList();
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('채용 공고가 삭제되었습니다.')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('삭제 실패: $e')));
     }
   }
 
@@ -220,6 +250,7 @@ class _RecruitmentPostingListTabState extends State<RecruitmentPostingListTab> {
                       mineMode: widget.mine,
                       onTapItem: _openPosting,
                       onTapApplicants: _openApplicants,
+                      onDeletePosting: _deletePosting,
                       onRefresh: _load,
                     ),
             ),
@@ -261,6 +292,7 @@ class _PostingListView extends StatelessWidget {
     required this.mineMode,
     required this.onTapItem,
     required this.onTapApplicants,
+    required this.onDeletePosting,
     required this.onRefresh,
   });
 
@@ -269,6 +301,7 @@ class _PostingListView extends StatelessWidget {
   final bool mineMode;
   final ValueChanged<RecruitmentPostingSummary> onTapItem;
   final ValueChanged<RecruitmentPostingSummary> onTapApplicants;
+  final ValueChanged<RecruitmentPostingSummary> onDeletePosting;
   final Future<void> Function() onRefresh;
 
   @override
@@ -305,6 +338,7 @@ class _PostingListView extends StatelessWidget {
             mineMode: mineMode,
             onTap: () => onTapItem(item),
             onTapApplicants: () => onTapApplicants(item),
+            onDelete: () => onDeletePosting(item),
           );
         },
         separatorBuilder: (_, __) => SizedBox(height: 0.h),
@@ -320,6 +354,7 @@ class _PostingListCard extends StatelessWidget {
     required this.mineMode,
     required this.onTap,
     required this.onTapApplicants,
+    required this.onDelete,
   });
 
   static final NumberFormat _numberFormat = NumberFormat('#,###');
@@ -328,6 +363,7 @@ class _PostingListCard extends StatelessWidget {
   final bool mineMode;
   final VoidCallback onTap;
   final VoidCallback onTapApplicants;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -426,40 +462,68 @@ class _PostingListCard extends StatelessWidget {
             ),
             if (mineMode) ...[
               SizedBox(height: 20.h),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: onTapApplicants,
-                  borderRadius: BorderRadius.circular(8.r),
-                  child: Container(
-                    width: double.infinity,
-                    height: 48,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: AppColors.grey0,
-                      borderRadius: BorderRadius.circular(8.r),
-                      border: Border.all(
-                        color: item.applicantCount > 0
-                            ? AppColors.primary
-                            : AppColors.grey100,
-                      ),
-                    ),
-                    child: Text(
-                      item.applicantsButtonLabel ??
-                          '지원자 ${item.applicantCount}명',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: AppTypography.bodyLargeB.copyWith(
-                        fontSize: 16.sp,
-                        height: 24 / 16,
-                        color: item.applicantCount > 0
-                            ? AppColors.primary
-                            : AppColors.grey150,
+              Row(
+                children: [
+                  Expanded(
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: onTapApplicants,
+                        borderRadius: BorderRadius.circular(8.r),
+                        child: Container(
+                          height: 48,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: AppColors.grey0,
+                            borderRadius: BorderRadius.circular(8.r),
+                            border: Border.all(
+                              color: item.applicantCount > 0
+                                  ? AppColors.primary
+                                  : AppColors.grey100,
+                            ),
+                          ),
+                          child: Text(
+                            item.applicantsButtonLabel ??
+                                '지원자 ${item.applicantCount}명',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: AppTypography.bodyLargeB.copyWith(
+                              fontSize: 16.sp,
+                              height: 24 / 16,
+                              color: item.applicantCount > 0
+                                  ? AppColors.primary
+                                  : AppColors.grey150,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                  SizedBox(width: 8.w),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: onDelete,
+                      borderRadius: BorderRadius.circular(8.r),
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.grey0,
+                          borderRadius: BorderRadius.circular(8.r),
+                          border: Border.all(color: AppColors.grey100),
+                        ),
+                        child: Image.asset(
+                          'assets/icons/png/common/trash_icon.png',
+                          width: 24.r,
+                          height: 24.r,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ],

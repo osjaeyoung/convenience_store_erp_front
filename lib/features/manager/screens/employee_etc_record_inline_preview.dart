@@ -15,12 +15,14 @@ class EtcRecordInlineFilePreview extends StatefulWidget {
     required this.fileUrl,
     this.height = 320,
     this.displayFileName,
+    this.showFileName = true,
     this.loadBytes,
   });
 
   final String fileUrl;
   final double height;
   final String? displayFileName;
+  final bool showFileName;
 
   /// 지정 시 S3 URL 대신 이 콜백으로 바이트 로드 (예: Bearer 스트리밍 API — 스펙 ##26-1)
   final Future<Uint8List> Function()? loadBytes;
@@ -30,12 +32,13 @@ class EtcRecordInlineFilePreview extends StatefulWidget {
       _EtcRecordInlineFilePreviewState();
 }
 
-class _EtcRecordInlineFilePreviewState extends State<EtcRecordInlineFilePreview> {
+class _EtcRecordInlineFilePreviewState
+    extends State<EtcRecordInlineFilePreview> {
   Future<Uint8List>? _bytesFuture;
 
-  Future<Uint8List> _ensureBytes() =>
-      _bytesFuture ??= widget.loadBytes?.call() ??
-          EtcFilePreviewCommon.fetchBytes(widget.fileUrl);
+  Future<Uint8List> _ensureBytes() => _bytesFuture ??=
+      widget.loadBytes?.call() ??
+      EtcFilePreviewCommon.fetchBytes(widget.fileUrl);
 
   @override
   void didUpdateWidget(EtcRecordInlineFilePreview oldWidget) {
@@ -78,9 +81,7 @@ class _EtcRecordInlineFilePreviewState extends State<EtcRecordInlineFilePreview>
               return InteractiveViewer(
                 minScale: 0.5,
                 maxScale: 4,
-                child: Center(
-                  child: Image.memory(b, fit: BoxFit.contain),
-                ),
+                child: Center(child: Image.memory(b, fit: BoxFit.contain)),
               );
             },
           );
@@ -135,9 +136,7 @@ class _EtcRecordInlineFilePreviewState extends State<EtcRecordInlineFilePreview>
               return InteractiveViewer(
                 minScale: 0.5,
                 maxScale: 4,
-                child: Center(
-                  child: Image.memory(b, fit: BoxFit.contain),
-                ),
+                child: Center(child: Image.memory(b, fit: BoxFit.contain)),
               );
             },
           );
@@ -149,7 +148,7 @@ class _EtcRecordInlineFilePreviewState extends State<EtcRecordInlineFilePreview>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (name != null && name.isNotEmpty) ...[
+        if (widget.showFileName && name != null && name.isNotEmpty) ...[
           Text(
             name,
             maxLines: 1,
@@ -166,10 +165,7 @@ class _EtcRecordInlineFilePreviewState extends State<EtcRecordInlineFilePreview>
           width: double.infinity,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8.r),
-            child: ColoredBox(
-              color: AppColors.grey25,
-              child: body,
-            ),
+            child: ColoredBox(color: AppColors.grey25, child: body),
           ),
         ),
       ],
@@ -224,9 +220,7 @@ class _EtcRecordInlineFilePreviewState extends State<EtcRecordInlineFilePreview>
         return InteractiveViewer(
           minScale: 0.5,
           maxScale: 4,
-          child: Center(
-            child: Image.memory(snap.data!, fit: BoxFit.contain),
-          ),
+          child: Center(child: Image.memory(snap.data!, fit: BoxFit.contain)),
         );
       },
     );
@@ -250,9 +244,7 @@ class _EtcRecordInlineFilePreviewState extends State<EtcRecordInlineFilePreview>
       child: Text(
         '이 형식은 미리보기를 지원하지 않습니다.',
         textAlign: TextAlign.center,
-        style: AppTypography.bodySmall.copyWith(
-          color: AppColors.textSecondary,
-        ),
+        style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
       ),
     );
   }

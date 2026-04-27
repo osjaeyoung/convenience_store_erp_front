@@ -53,14 +53,15 @@
   - 상단 `최근 열람 구직자`
   - 검색/필터 하단 `구직자 목록`
   을 한번에 반환
-- `search_results`는 요청한 `branch_id` 소속 구직자 데이터 기준으로 조회
+- `search_results`는 요청한 `branch_id` 소속 근로자 중 **앱 회원으로 연결된 근로자(`linked_user_id` 존재)** 기준으로 조회
+- 경영주/점장이 직원관리에서 직접 만든 비회원 근로자(`linked_user_id=null`)는 채용 홈의 최근 열람/검색 목록에 노출하지 않음
 
 ### Query Params
 
 - `keyword` (optional): 이름/지역/편의점명 검색
 - `gender` (optional): `male` | `female` | `all`
 - `age_min`, `age_max` (optional)
-- `region` (optional, **다중 선택**): 지역 필터. **OR 조건**. 전달 방식·경로 문자열 규칙·최대 개수·OpenAPI 표기는 하단 **「프론트엔드 연동 가이드 (지역 필터 · 이력서 주소)」** 와 동일. 채용 홈에서는 구직자 카드에 붙는 **지점 채용 검색용 텍스트**(해당 지점 최신 공고의 `region_summary`·`address` 등이 합쳐진 문자열)와 매칭한다. (근로자 앱 이력서 `resume_region_path`는 이 목록이 아니라 **근로자 지원건 프로필/지원현황** 쪽에 반영된다.)
+- `region` (optional, **다중 선택**): 지역 필터. **OR 조건**. 전달 방식·경로 문자열 규칙·최대 개수·OpenAPI 표기는 하단 **「프론트엔드 연동 가이드 (지역 필터 · 이력서 주소)」** 와 동일. 채용 홈에서는 구직자 카드에 붙는 **지점 채용 검색용 텍스트**(해당 지점 최신 공고의 `region_path` 우선, 없으면 `region_summary`·`address` 합성 문자열)와 매칭한다. (근로자 앱 이력서 `resume_region_path`는 이 목록이 아니라 **근로자 지원건 프로필/지원현황** 쪽에 반영된다.)
 - `min_rating` (optional, 0~3)
 - `page` (default=1), `page_size` (default=20)
 
@@ -178,6 +179,7 @@
 - `POST /recruitment/branches/{branch_id}/job-seekers/{employee_id}/contact`
 - 구직자 상세 화면의 `채용 문의하기` 액션
 - 문의 내용은 관리자 문의함 연동을 위해 서버에 저장됨
+- 대상 구직자가 앱 회원(`linked_user_id` 존재)이면 같은 내용으로 통합 채팅방을 생성/갱신하고 첫 메시지를 저장합니다.
 
 ### Request Body
 ```json
@@ -201,7 +203,8 @@
 ### 비고
 
 - `message`가 비어 오면 서버 기본 문구(`채용 문의를 요청했습니다.`)로 저장
-- **중요 (푸시 알림)**: 이 API가 성공적으로 호출되면, 해당 근로자(Job Seeker)에게 채용 문의가 도착했다는 푸시 알림(또는 앱 내 알림)이 발송되어야 합니다. (근로자가 앱에서 즉시 확인할 수 있도록 연동 필요)
+- **중요 (푸시 알림)**: 대상 구직자가 앱 회원이면 성공 즉시 `type=recruitment_chat`, `entity_type=recruitment_chat`, `entity_id={chat_id}`, `target_route=/job-seeker?tab=3` payload로 푸시/앱 내 알림이 생성됩니다.
+- 근로자가 이전에 채팅방을 삭제해 목록에서 숨겨둔 상태라도 새 문의 메시지가 생성되면 근로자 채팅 목록에 다시 표시됩니다.
 
 ---
 
@@ -255,8 +258,8 @@
 
 ### Query Params
 
-- `keyword` (optional): 제목/업체명 검색
-- `region` (optional, **다중 선택**): 지역 필터. **OR**, **최대 5개**, 공백 구분 경로·쉼표·키 반복 규약은 **「프론트엔드 연동 가이드 (지역 필터 · 이력서 주소)」** 참고. 서버는 공고의 `region_summary`, `address` 합성 텍스트와 매칭한다.
+- `keyword` (optional): 제목/업체명/근무지역 검색
+- `region` (optional, **다중 선택**): 지역 필터. **OR**, **최대 5개**, 공백 구분 경로·쉼표·키 반복 규약은 **「프론트엔드 연동 가이드 (지역 필터 · 이력서 주소)」** 참고. 서버는 공고의 `region_path`를 최우선으로 매칭하고, 값이 없는 기존 공고만 `region_summary`, `address` 합성 텍스트와 매칭한다.
 - `include_draft` (optional, default=false): `true`면 draft 포함
 - `page`, `page_size`
 
@@ -270,7 +273,8 @@
       "badge_label": "상시모집",
       "company_name": "지에스25 반송행복(업체명)",
       "title": "해운대구 반송 GS편의점 일/월 야간 및 오전 근무",
-      "region_summary": "해운대구 반송 1동",
+      "region_summary": "부산 해운대구 반송1동",
+      "region_path": "부산 해운대구 반송1동",
       "pay_type": "시급",
       "pay_amount": 10030,
       "applicant_count": 2,
@@ -312,7 +316,8 @@
   "badge_label": "상시모집",
   "company_name": "지에스25 반송행복(업체명)",
   "title": "해운대구 반송 GS편의점 일/월 야간 및 오전 근무",
-  "region_summary": "해운대구 반송 1동",
+  "region_summary": "부산 해운대구 반송1동",
+  "region_path": "부산 해운대구 반송1동",
   "address": "부산 해운대구 아랫반송로 67-1 (반송동, 미진스토아) 1층",
   "pay_type": "시급",
   "pay_amount": 10030,
@@ -352,6 +357,14 @@
 ### Response Body (200)
 `7) 채용 공고 상세 조회`와 동일 (`posting_id=0`, `status=preview`)
 
+### 지역 입력 규칙
+
+- 프론트는 공고 작성 화면의 근무지역을 근로자 채용 게시판과 동일한 3단 지역 선택 UI로 입력한다.
+- `region_path`는 필수 저장 기준값이며, 앱 지역 트리 라벨을 공백 한 칸으로 이어 붙인다. 예: `서울 강남구 개포2동`, `부산 해운대구 반송1동`.
+- `region_summary`는 목록/카드 표시용 문구이며 기본값은 `region_path`와 동일하게 내려준다.
+- `address`는 상세주소/도로명 주소 표시용이다. 상세주소가 없으면 서버는 `region_path`를 fallback 표시값으로 사용할 수 있다.
+- 기존 클라이언트 호환을 위해 `region_path`가 빠진 요청은 `region_summary`, `address` 순서로 검색 기준값을 보정하지만, 신규 화면은 반드시 근로자 지역 입력과 같은 `region_path`를 보내는 것을 권장한다.
+
 ---
 
 ## 9) 채용 공고 등록 (임시저장)
@@ -367,7 +380,8 @@
   "profile_image_url": "https://cdn.example.com/recruitment/company-1.png",
   "company_name": "지에스25 반송행복(업체명)",
   "title": "해운대구 반송 GS편의점 일/월 야간 및 오전 근무",
-  "region_summary": "해운대구 반송 1동",
+  "region_summary": "부산 해운대구 반송1동",
+  "region_path": "부산 해운대구 반송1동",
   "address": "부산 해운대구 아랫반송로 67-1 (반송동, 미진스토아) 1층",
   "pay_type": "시급",
   "pay_amount": 10030,
@@ -639,7 +653,7 @@ GET /api/v1/recruitment/branches/1/home?region=서울&region=부산
 
 **대상 텍스트**
 
-- **채용 공고 목록**(경영주 게시판·근로자 `GET /worker/recruitment/postings`): 공고마다 `address`와 `region_summary`를 **공백 한 칸으로 이어 붙인 문자열**(앞뒤 공백 정리).
+- **채용 공고 목록**(경영주 게시판·근로자 `GET /worker/recruitment/postings`): 공고마다 `region_path`를 최우선으로 사용한다. 기존 데이터처럼 `region_path`가 비어 있으면 `address`와 `region_summary`를 **공백 한 칸으로 이어 붙인 문자열**(앞뒤 공백 정리)을 fallback으로 사용한다.
 - **채용 홈**(`GET .../home`): 점포 소속 구직자 카드마다, 해당 지점 **최신 공고** 기준으로 만든 **채용 검색용 텍스트**(지역·주소·업체명·지점명 등이 합쳐진 문자열). 근로자 이력서 `resume_region_path`와는 **데이터 소스가 다르다**.
 
 **한 개의 `region` 값(한 경로)에 대한 판정 순서**
@@ -656,7 +670,7 @@ GET /api/v1/recruitment/branches/1/home?region=서울&region=부산
 
 ### 2-1) `GET /worker/recruitment/postings` 응답의 `region_options`
 
-- **의미**: 현재 **게시 중**인 공고들의 `address`·`region_summary`에서 뽑아 온 **시·도 수준** 후보 목록(중복 제거·정해진 순으로 정렬).
+- **의미**: 현재 **게시 중**인 공고들의 `region_path`에서 뽑아 온 **시·도 수준** 후보 목록(중복 제거·정해진 순으로 정렬). `region_path`가 없는 기존 공고는 `address`·`region_summary`에서 fallback 추출한다.
 - **용도**: 빠른 지역 칩·필터 초기 후보 표시 등. **반드시 이 목록만 쿼리에 보내야 하는 것은 아니다.** 3단 트리에서 고른 `서울 강남구 개포2동`처럼 **더 긴 경로**를 `region`에 그대로 넣는 것이 상세 필터에는 적합하다.
 - `region_options`에 없는 시·도를 사용자가 고른 경우에도, 위 **별칭·토큰 규칙**만 맞으면 필터는 동작한다.
 
@@ -769,6 +783,26 @@ GET /api/v1/recruitment/branches/1/home?region=서울&region=부산
 - Flutter 화면은 이 API를 실제 데이터 소스로 사용합니다. 더 이상 채팅 탭/상세에서 mock 메시지를 사용하지 않습니다.
 - `current_user_role`은 현재 로그인한 사용자의 말풍선 방향을 결정하는 기준입니다. 경영주/점장 화면에서는 일반적으로 `business`, 근로자 화면에서는 `worker`입니다.
 - 상세 화면 진입 직후 `PATCH /chats/{chat_id}/read`를 호출해 현재 로그인 사용자의 미읽음 메시지를 읽음 처리합니다. 이후 목록 조회의 해당 `unread_count`는 `0`으로 내려와야 합니다.
+- 프론트는 앱 실행 중 실시간성을 위해 채팅 목록은 약 5초, 채팅 상세는 약 3초 간격으로 polling합니다. 서버는 `GET /chats`, `GET /chats/{chat_id}/messages`가 최신 메시지/읽음 상태를 즉시 반영하도록 해야 합니다.
+- 향후 WebSocket/SSE를 제공할 경우 `chat_id`, `message_id`, `sender_role`, `message_type`, `text`, `created_at`, `unread_count`를 포함한 이벤트를 현재 REST 응답 구조와 동일하게 내려주면 polling을 대체할 수 있습니다.
+- `POST /chats/{chat_id}/messages` 성공 시 상대방이 앱 foreground 상태여도 알림이 표시되도록 FCM 알림을 발송해야 합니다. data-only 푸시를 사용하는 경우에도 `title`/`body` 또는 프론트 fallback 가능한 `type=recruitment_chat`, `entity_type=recruitment_chat`를 포함합니다.
+
+### Foreground Push Payload
+```json
+{
+  "type": "recruitment_chat",
+  "target_role": "manager",
+  "target_route": "/manager?tab=4&recruitmentTab=3",
+  "entity_type": "recruitment_chat",
+  "entity_id": "101",
+  "branch_id": "1",
+  "recruitment_tab": "3",
+  "title": "[나눔 편의점 강남점] 새 채팅 메시지",
+  "body": "지원서 보고 연락드립니다."
+}
+```
+- 근로자 수신 시 `target_role=worker`, `target_route=/job-seeker?tab=3`로 내려줍니다.
+- iOS/Android foreground에서도 표시되도록 FCM `notification.title/body` 또는 data `title/body` 중 하나는 반드시 포함하는 것을 권장합니다.
 
 ### Message Send Request
 ```json

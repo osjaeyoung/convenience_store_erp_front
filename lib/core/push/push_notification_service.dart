@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:firebase_core/firebase_core.dart' show Firebase, FirebaseException;
+import 'package:firebase_core/firebase_core.dart'
+    show Firebase, FirebaseException;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -69,7 +70,9 @@ class PushNotificationService {
     await _initializeLocalNotifications();
 
     _onMessageSub = FirebaseMessaging.onMessage.listen(_onForegroundMessage);
-    _onOpenedSub = FirebaseMessaging.onMessageOpenedApp.listen(_onOpenedMessage);
+    _onOpenedSub = FirebaseMessaging.onMessageOpenedApp.listen(
+      _onOpenedMessage,
+    );
     _onTokenRefreshSub = _messaging.onTokenRefresh.listen((token) async {
       await _safeUpsertToken(token);
     });
@@ -188,7 +191,9 @@ class PushNotificationService {
   }
 
   Future<void> _initializeLocalNotifications() async {
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
     const iosSettings = DarwinInitializationSettings();
     const settings = InitializationSettings(
       android: androidSettings,
@@ -217,14 +222,20 @@ class PushNotificationService {
   }
 
   Future<void> _onForegroundMessage(RemoteMessage message) async {
+    final payload = <String, dynamic>{...message.data};
+    final isRecruitmentChat = _isRecruitmentChatPayload(payload);
     final title =
-        message.notification?.title ?? message.data['title']?.toString();
-    final body = message.notification?.body ?? message.data['body']?.toString();
+        message.notification?.title ??
+        message.data['title']?.toString() ??
+        (isRecruitmentChat ? '새 채팅 메시지' : null);
+    final body =
+        message.notification?.body ??
+        message.data['body']?.toString() ??
+        (isRecruitmentChat ? '구인채용 채팅에 새 메시지가 도착했습니다.' : null);
     if ((title == null || title.isEmpty) && (body == null || body.isEmpty)) {
       return;
     }
 
-    final payload = <String, dynamic>{...message.data};
     final route = resolveRoute(payload);
     if (route != null) {
       payload['target_route'] = route;
@@ -250,6 +261,15 @@ class PushNotificationService {
 
   void _onOpenedMessage(RemoteMessage message) {
     _handleTapData(message.data);
+  }
+
+  bool _isRecruitmentChatPayload(Map<String, dynamic> data) {
+    final type = data['type']?.toString().toLowerCase();
+    final entityType = data['entity_type']?.toString().toLowerCase();
+    return type == 'recruitment_chat' ||
+        type == 'chat_message' ||
+        entityType == 'recruitment_chat' ||
+        entityType == 'chat';
   }
 
   void _handleTapData(Map<String, dynamic> data) {
@@ -299,7 +319,8 @@ class PushNotificationService {
       if (isJobSeeker) {
         Navigator.of(context).push(
           MaterialPageRoute<void>(
-            builder: (_) => WorkerContractChatDetailScreen(contractId: entityId),
+            builder: (_) =>
+                WorkerContractChatDetailScreen(contractId: entityId),
           ),
         );
       }
@@ -354,6 +375,13 @@ class PushNotificationService {
       case 'manager_recruitment':
       case 'recruitment_application':
         return '/manager?tab=4&recruitmentTab=1';
+      case 'recruitment_chat':
+      case 'chat_message':
+        final targetRole = rawData['target_role']?.toString().toLowerCase();
+        if (targetRole == 'manager' || targetRole == 'owner') {
+          return '/manager?tab=4&recruitmentTab=3';
+        }
+        return '/job-seeker?tab=3';
       case 'job_seeker_recruitment':
         return '/job-seeker?tab=0';
       case 'job_seeker_application':

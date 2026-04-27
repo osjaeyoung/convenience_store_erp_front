@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -24,11 +26,21 @@ class _WorkerContractChatTabState extends State<WorkerContractChatTab> {
   List<RecruitmentChatSummary> _items = const <RecruitmentChatSummary>[];
   final String _emptyTitle = '아직 채팅이 없어요.';
   final String _emptyDescription = '점장 또는 경영주와 대화를 시작하면\n이곳에 표시됩니다.';
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      _refreshSilently();
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -44,6 +56,7 @@ class _WorkerContractChatTabState extends State<WorkerContractChatTab> {
       setState(() {
         _items = page.items;
         _loading = false;
+        _error = null;
       });
     } catch (error) {
       if (!mounted) return;
@@ -51,6 +64,22 @@ class _WorkerContractChatTabState extends State<WorkerContractChatTab> {
         _error = error;
         _loading = false;
       });
+    }
+  }
+
+  Future<void> _refreshSilently() async {
+    if (!mounted || _loading) return;
+    try {
+      final page = await context
+          .read<WorkerRecruitmentRepository>()
+          .getRecruitmentChats();
+      if (!mounted) return;
+      setState(() {
+        _items = page.items;
+        _error = null;
+      });
+    } catch (_) {
+      // 실시간성 보강용 polling 실패는 기존 목록을 유지한다.
     }
   }
 
@@ -87,9 +116,7 @@ class _WorkerContractChatTabState extends State<WorkerContractChatTab> {
       );
       if (!mounted) return;
       setState(() {
-        _items = _items
-            .where((chat) => chat.chatId != item.chatId)
-            .toList();
+        _items = _items.where((chat) => chat.chatId != item.chatId).toList();
       });
       ScaffoldMessenger.of(
         context,
@@ -163,7 +190,9 @@ class _WorkerContractChatTabState extends State<WorkerContractChatTab> {
                         onTap: () => _openDetail(item),
                         child: Row(
                           children: [
-                            _ChatAvatar(imageUrl: item.counterpartyProfileImageUrl),
+                            _ChatAvatar(
+                              imageUrl: item.counterpartyProfileImageUrl,
+                            ),
                             SizedBox(width: 8.w),
                             Expanded(
                               child: Text(
@@ -246,10 +275,7 @@ class _ChatAvatar extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: AppColors.grey0,
-        border: Border.all(
-          color: AppColors.borderLight,
-          width: 1,
-        ),
+        border: Border.all(color: AppColors.borderLight, width: 1),
       ),
       clipBehavior: Clip.antiAlias,
       child: url != null && url.isNotEmpty

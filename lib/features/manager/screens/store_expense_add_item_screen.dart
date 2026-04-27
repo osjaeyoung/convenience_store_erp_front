@@ -1,7 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/formatters/thousands_separator_input_formatter.dart';
@@ -32,7 +31,8 @@ class StoreExpenseAddItemScreen extends StatefulWidget {
   final int month;
 
   @override
-  State<StoreExpenseAddItemScreen> createState() => _StoreExpenseAddItemScreenState();
+  State<StoreExpenseAddItemScreen> createState() =>
+      _StoreExpenseAddItemScreenState();
 }
 
 class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
@@ -123,10 +123,7 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
                     SizedBox(height: 20.h),
                     _label('금액'),
                     SizedBox(height: 8.h),
-                    _inputTile(
-                      controller: _amountCtrl,
-                      hint: '입력해주세요.',
-                    ),
+                    _inputTile(controller: _amountCtrl, hint: '입력해주세요.'),
                     SizedBox(height: 20.h),
                     _fileArea(),
                   ],
@@ -236,98 +233,166 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
   }
 
   Widget _fileArea() {
-    return InkWell(
-      onTap: _pickFiles,
-      borderRadius: BorderRadius.circular(12.r),
-      child: Container(
-        width: double.infinity,
-        constraints: const BoxConstraints(minHeight: 132),
-        padding: EdgeInsets.all(16.r),
-        decoration: BoxDecoration(
-          color: AppColors.primaryLight,
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: AppColors.primary),
-        ),
-        child: _pickedFiles.isEmpty
-            ? Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.add_circle, color: AppColors.primary, size: 28),
-                  SizedBox(height: 8.h),
-                  Text(
-                    '파일을 첨부해주세요.',
-                    style: AppTypography.bodyMediumB.copyWith(
-                      color: AppColors.primary,
-                      fontSize: 14.sp,
-                    ),
-                  ),
-                ],
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (final f in _pickedFiles)
-                    Padding(
-                      padding: EdgeInsets.only(bottom: 12.h),
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12.r),
-                              border: Border.all(color: AppColors.grey50),
-                            ),
-                            clipBehavior: Clip.hardEdge,
-                            child: _buildInlinePreview(f),
-                          ),
-                          Positioned(
-                            top: -8,
-                            right: -8,
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _pickedFiles.remove(f);
-                                });
-                              },
-                              child: Container(
-                                padding: EdgeInsets.all(4.r),
-                                decoration: const BoxDecoration(
-                                  color: AppColors.grey200,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.close,
-                                  size: 16,
-                                  color: AppColors.grey0,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
+    if (_pickedFiles.isEmpty) {
+      return InkWell(
+        onTap: _pickFiles,
+        borderRadius: BorderRadius.circular(14.r),
+        child: Container(
+          width: double.infinity,
+          height: 132,
+          decoration: BoxDecoration(
+            color: AppColors.grey0Alt,
+            borderRadius: BorderRadius.circular(14.r),
+            border: Border.all(color: AppColors.grey50),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
+                child: Icon(
+                  Icons.add_rounded,
+                  color: AppColors.primary,
+                  size: 24,
+                ),
               ),
+              SizedBox(height: 10.h),
+              Text(
+                '파일을 첨부해주세요.',
+                style: AppTypography.bodyMediumB.copyWith(
+                  color: AppColors.primary,
+                  fontSize: 14.sp,
+                ),
+              ),
+              SizedBox(height: 4.h),
+              Text(
+                '영수증 사진 또는 PDF를 업로드할 수 있어요.',
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.textTertiary,
+                  fontSize: 12.sp,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                '첨부파일',
+                style: AppTypography.bodyMediumM.copyWith(
+                  color: AppColors.textPrimary,
+                  fontSize: 14.sp,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: _pickFiles,
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                padding: EdgeInsets.symmetric(horizontal: 8.w),
+                minimumSize: const Size(0, 36),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                '다시 선택',
+                style: AppTypography.bodySmallB.copyWith(
+                  color: AppColors.primary,
+                  fontSize: 13.sp,
+                ),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 8.h),
+        for (final f in _pickedFiles) ...[
+          _attachedFileCard(f),
+          SizedBox(height: 12.h),
+        ],
+      ],
+    );
+  }
+
+  Widget _attachedFileCard(PlatformFile file) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.grey0,
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(color: AppColors.grey50),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          Padding(
+            padding: EdgeInsets.all(12.r),
+            child: _buildInlinePreview(file),
+          ),
+          Positioned(
+            top: 10,
+            right: 10,
+            child: Material(
+              color: Colors.black.withValues(alpha: 0.56),
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () => setState(() => _pickedFiles.remove(file)),
+                child: const SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 18,
+                    color: AppColors.grey0,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildInlinePreview(PlatformFile f) {
     final path = f.path;
-    final isRemoteOrS3 = path != null && (path.startsWith('http') || path.contains('amazonaws.com') || path.startsWith('expenses/'));
-    
+    final isRemoteOrS3 =
+        path != null &&
+        (path.startsWith('http') ||
+            path.contains('amazonaws.com') ||
+            path.startsWith('expenses/'));
+
     if (isRemoteOrS3) {
       return EtcRecordInlineFilePreview(
         fileUrl: path,
-        height: 280,
+        height: 260,
         displayFileName: f.name,
+        showFileName: false,
       );
     }
-    
+
     return PickedFileInlinePreview(
       key: ValueKey<String>('${f.name}_${f.size}'),
       file: f,
-      height: 280,
+      height: 260,
+      showFileName: false,
     );
   }
 
@@ -384,7 +449,10 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
                   children: [
                     for (final c in _categories)
                       ListTile(
-                        title: Text(c.categoryLabel, textAlign: TextAlign.center),
+                        title: Text(
+                          c.categoryLabel,
+                          textAlign: TextAlign.center,
+                        ),
                         onTap: () => Navigator.pop(ctx, c),
                       ),
                   ],
@@ -418,9 +486,9 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
     final category = _selectedCategory;
     final amount = int.tryParse(_amountCtrl.text.replaceAll(',', '').trim());
     if (date == null || category == null || amount == null || amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('일자/항목/금액을 올바르게 입력해 주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('일자/항목/금액을 올바르게 입력해 주세요.')));
       return;
     }
 
@@ -448,11 +516,10 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
       Navigator.pop<bool>(context, true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('항목 저장에 실패했습니다: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('항목 저장에 실패했습니다: $e')));
       setState(() => _saving = false);
     }
   }
 }
-

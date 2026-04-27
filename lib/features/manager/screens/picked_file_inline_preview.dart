@@ -18,16 +18,19 @@ class PickedFileInlinePreview extends StatefulWidget {
     required this.file,
     this.height = 320,
     this.onTapReplace,
+    this.showFileName = true,
   });
 
   final PlatformFile file;
   final double height;
+  final bool showFileName;
 
   /// 지정 시 미리보기 탭 → 블러 위에 「파일 변경」 표시
   final VoidCallback? onTapReplace;
 
   @override
-  State<PickedFileInlinePreview> createState() => _PickedFileInlinePreviewState();
+  State<PickedFileInlinePreview> createState() =>
+      _PickedFileInlinePreviewState();
 }
 
 class _PickedFileInlinePreviewState extends State<PickedFileInlinePreview> {
@@ -71,9 +74,7 @@ class _PickedFileInlinePreviewState extends State<PickedFileInlinePreview> {
           return InteractiveViewer(
             minScale: 0.5,
             maxScale: 4,
-            child: Center(
-              child: Image.memory(snap.data!, fit: BoxFit.contain),
-            ),
+            child: Center(child: Image.memory(snap.data!, fit: BoxFit.contain)),
           );
         },
       );
@@ -103,9 +104,7 @@ class _PickedFileInlinePreviewState extends State<PickedFileInlinePreview> {
               return InteractiveViewer(
                 minScale: 0.5,
                 maxScale: 4,
-                child: Center(
-                  child: Image.memory(b, fit: BoxFit.contain),
-                ),
+                child: Center(child: Image.memory(b, fit: BoxFit.contain)),
               );
             },
           );
@@ -117,16 +116,18 @@ class _PickedFileInlinePreviewState extends State<PickedFileInlinePreview> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          displayName,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: AppTypography.bodySmall.copyWith(
-            fontSize: 13.sp,
-            color: AppColors.textSecondary,
+        if (widget.showFileName) ...[
+          Text(
+            displayName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTypography.bodySmall.copyWith(
+              fontSize: 13.sp,
+              color: AppColors.textSecondary,
+            ),
           ),
-        ),
-        SizedBox(height: 8.h),
+          SizedBox(height: 8.h),
+        ],
         SizedBox(
           height: widget.height,
           width: double.infinity,
@@ -157,8 +158,9 @@ class _PickedFileInlinePreviewState extends State<PickedFileInlinePreview> {
                                         sigmaY: 10,
                                       ),
                                       child: Container(
-                                        color: Colors.black
-                                            .withValues(alpha: 0.28),
+                                        color: Colors.black.withValues(
+                                          alpha: 0.28,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -179,14 +181,14 @@ class _PickedFileInlinePreviewState extends State<PickedFileInlinePreview> {
                                         vertical: 14,
                                       ),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(10.r),
+                                        borderRadius: BorderRadius.circular(
+                                          10.r,
+                                        ),
                                       ),
                                     ),
                                     child: Text(
                                       '파일 변경',
-                                      style:
-                                          AppTypography.bodyMediumB.copyWith(
+                                      style: AppTypography.bodyMediumB.copyWith(
                                         color: AppColors.grey0,
                                         fontSize: 15.sp,
                                       ),
@@ -201,9 +203,8 @@ class _PickedFileInlinePreviewState extends State<PickedFileInlinePreview> {
                             child: Material(
                               color: Colors.transparent,
                               child: InkWell(
-                                onTap: () => setState(
-                                  () => _showReplaceOverlay = true,
-                                ),
+                                onTap: () =>
+                                    setState(() => _showReplaceOverlay = true),
                                 child: const SizedBox.expand(),
                               ),
                             ),
@@ -272,9 +273,7 @@ class _PickedFileInlinePreviewState extends State<PickedFileInlinePreview> {
       child: Text(
         '이 형식은 미리보기를 지원하지 않습니다.',
         textAlign: TextAlign.center,
-        style: AppTypography.bodySmall.copyWith(
-          color: AppColors.textSecondary,
-        ),
+        style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
       ),
     );
   }

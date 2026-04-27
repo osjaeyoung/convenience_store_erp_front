@@ -15,17 +15,22 @@ class AccountNotificationPage {
 
   factory AccountNotificationPage.fromJson(Map<String, dynamic> json) {
     final rawItems = json['items'] as List<dynamic>? ?? const [];
+    final parsedItems = rawItems
+        .whereType<Map>()
+        .map(
+          (item) => AccountNotificationItem.fromJson(
+            item.map((key, value) => MapEntry(key.toString(), value)),
+          ),
+        )
+        .toList();
+    final responseUnreadCount = _toInt(json['unread_count']);
+    final itemUnreadCount = parsedItems.where((item) => !item.isRead).length;
     return AccountNotificationPage(
-      items: rawItems
-          .whereType<Map>()
-          .map(
-            (item) => AccountNotificationItem.fromJson(
-              item.map((key, value) => MapEntry(key.toString(), value)),
-            ),
-          )
-          .toList(),
+      items: parsedItems,
       totalCount: _toInt(json['total_count']),
-      unreadCount: _toInt(json['unread_count']),
+      unreadCount: responseUnreadCount > itemUnreadCount
+          ? responseUnreadCount
+          : itemUnreadCount,
       page: _toInt(json['page'], fallback: 1),
       pageSize: _toInt(json['page_size'], fallback: 20),
     );

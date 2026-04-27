@@ -48,15 +48,16 @@ class _EmployeeWorkHistoryScreenState extends State<EmployeeWorkHistoryScreen> {
   }
 
   Future<void> _openEditScreen() async {
-    final updatedRows = await Navigator.of(context).push<List<Map<String, dynamic>>>(
-      MaterialPageRoute<List<Map<String, dynamic>>>(
-        builder: (_) => EmployeeWorkHistoryEditScreen(
-          branchId: widget.branchId,
-          branchName: widget.branchName,
-          workHistories: _workHistories,
-        ),
-      ),
-    );
+    final updatedRows = await Navigator.of(context)
+        .push<List<Map<String, dynamic>>>(
+          MaterialPageRoute<List<Map<String, dynamic>>>(
+            builder: (_) => EmployeeWorkHistoryEditScreen(
+              branchId: widget.branchId,
+              branchName: widget.branchName,
+              workHistories: _workHistories,
+            ),
+          ),
+        );
 
     if (updatedRows == null || !mounted) return;
     setState(() {
@@ -113,7 +114,10 @@ class _EmployeeWorkHistoryScreenState extends State<EmployeeWorkHistoryScreen> {
                     backgroundColor: const Color(0xFF9D9DAA),
                     foregroundColor: AppColors.grey0,
                     minimumSize: Size(58.w, 30.h),
-                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
+                      vertical: 6.h,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10.r),
                     ),
@@ -142,18 +146,15 @@ class _EmployeeWorkHistoryScreenState extends State<EmployeeWorkHistoryScreen> {
 }
 
 class _WorkHistoryTable extends StatelessWidget {
-  const _WorkHistoryTable({
-    required this.branchName,
-    required this.rows,
-  });
+  const _WorkHistoryTable({required this.branchName, required this.rows});
 
   final String branchName;
   final List<Map<String, dynamic>> rows;
-  static const int _branchFlex = 22;
-  static const int _dateFlex = 23;
-  static const int _timeFlex = 27;
-  static const int _statusFlex = 20;
-  static const int _memoFlex = 10;
+  static const int _branchFlex = 23;
+  static const int _dateFlex = 25;
+  static const int _timeFlex = 26;
+  static const int _statusFlex = 18;
+  static const int _memoFlex = 8;
 
   @override
   Widget build(BuildContext context) {
@@ -229,16 +230,16 @@ class _WorkHistoryTable extends StatelessWidget {
                 ),
               );
             }),
-          Container(
-            height: 1,
-            color: AppColors.textPrimary,
-          ),
+          Container(height: 1, color: AppColors.textPrimary),
         ],
       ),
     );
   }
 
-  String _extractBranchName(Map<String, dynamic> row, String fallbackBranchName) {
+  String _extractBranchName(
+    Map<String, dynamic> row,
+    String fallbackBranchName,
+  ) {
     final fromRow = row['branch_name']?.toString().trim();
     if (fromRow != null && fromRow.isNotEmpty) return fromRow;
     final fallback = fallbackBranchName.trim();
@@ -353,7 +354,7 @@ class _HeaderCell extends StatelessWidget {
       textAlign: TextAlign.center,
       style: AppTypography.bodySmallB.copyWith(
         color: AppColors.textSecondary,
-        fontSize: 13.1,
+        fontSize: 11.sp,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.3,
         height: 1.3,
@@ -361,7 +362,10 @@ class _HeaderCell extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
     );
-    final centered = SizedBox(height: 40.h, child: Center(child: label));
+    final centered = SizedBox(
+      height: 40.h,
+      child: Center(child: label),
+    );
     if (flex != null) {
       return Expanded(flex: flex!, child: centered);
     }
@@ -387,14 +391,17 @@ class _BodyCell extends StatelessWidget {
       textAlign: TextAlign.center,
       style: AppTypography.bodyMediumR.copyWith(
         color: AppColors.textPrimary,
-        fontSize: 14.sp,
+        fontSize: 12.sp,
         fontWeight: FontWeight.w400,
         height: 19 / 14,
       ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
     );
-    final centered = SizedBox(height: 40.h, child: Center(child: label));
+    final centered = SizedBox(
+      height: 40.h,
+      child: Center(child: label),
+    );
     if (flex != null) {
       return Expanded(flex: flex!, child: centered);
     }

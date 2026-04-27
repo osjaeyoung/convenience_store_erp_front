@@ -435,7 +435,9 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
                             _dragSlotKey(dateStr, time),
                           );
                           return Padding(
-                            padding: EdgeInsets.only(bottom: 12.h), // 상하 간격을 넓혀 드래그 간섭 최소화
+                            padding: EdgeInsets.only(
+                              bottom: 12.h,
+                            ), // 상하 간격을 넓혀 드래그 간섭 최소화
                             child: _SlotCard(
                               key: _slotKeyFor(dateStr, time),
                               startTime: time,
@@ -486,11 +488,16 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
                 title: Text(
                   '일별',
                   style: AppTypography.bodyMediumR.copyWith(
-                    color: _isDailyView ? AppColors.primaryDark : AppColors.textPrimary,
+                    color: _isDailyView
+                        ? AppColors.primaryDark
+                        : AppColors.textPrimary,
                   ),
                 ),
                 trailing: _isDailyView
-                    ? const Icon(Icons.check_rounded, color: AppColors.primaryDark)
+                    ? const Icon(
+                        Icons.check_rounded,
+                        color: AppColors.primaryDark,
+                      )
                     : null,
                 onTap: () => Navigator.of(context).pop(true),
               ),
@@ -498,11 +505,16 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
                 title: Text(
                   '주별',
                   style: AppTypography.bodyMediumR.copyWith(
-                    color: !_isDailyView ? AppColors.primaryDark : AppColors.textPrimary,
+                    color: !_isDailyView
+                        ? AppColors.primaryDark
+                        : AppColors.textPrimary,
                   ),
                 ),
                 trailing: !_isDailyView
-                    ? const Icon(Icons.check_rounded, color: AppColors.primaryDark)
+                    ? const Icon(
+                        Icons.check_rounded,
+                        color: AppColors.primaryDark,
+                      )
                     : null,
                 onTap: () => Navigator.of(context).pop(false),
               ),
@@ -518,9 +530,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
         _isDailyView = result;
         if (!_isDailyView) {
           _weekSelectedDate = widget.today;
-          widget.onRefreshWeek(
-            _toIsoDate(_getWeekStart(_weekSelectedDate)),
-          );
+          widget.onRefreshWeek(_toIsoDate(_getWeekStart(_weekSelectedDate)));
         }
       });
     }
@@ -602,7 +612,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     _lastDragPosition = event.position;
     final slotKey = _slotKeyAtGlobalPosition(event.position);
     if (slotKey == null) return;
-    
+
     setState(() {
       _activeDragPointer = event.pointer;
       _activeDragSelectionValue = !_dragSelectedSlots.contains(slotKey);
@@ -610,7 +620,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
       _dragStartSlotKey = slotKey;
       _dragCurrentSlotKey = slotKey;
     });
-    
+
     _updateDragSelection();
   }
 
@@ -649,7 +659,8 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
       if (dy < edgeMargin && _scrollController.offset > 0) {
         needsScroll = true;
       } else if (dy > screenHeight - edgeMargin &&
-          _scrollController.offset < _scrollController.position.maxScrollExtent) {
+          _scrollController.offset <
+              _scrollController.position.maxScrollExtent) {
         needsScroll = true;
       }
     }
@@ -666,8 +677,9 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
 
     if (needsScroll) {
       if (_autoScrollTimer == null || !_autoScrollTimer!.isActive) {
-        _autoScrollTimer =
-            Timer.periodic(const Duration(milliseconds: 16), (timer) {
+        _autoScrollTimer = Timer.periodic(const Duration(milliseconds: 16), (
+          timer,
+        ) {
           _performAutoScroll(shouldSelect);
         });
       }
@@ -697,17 +709,24 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
       if (dy < edgeMargin) {
         final factor = ((edgeMargin - dy) / edgeMargin).clamp(0.0, 1.0);
         final scrollStep = 8.0 + (30.0 * factor); // 스크롤 속도 상향
-        final newOffset = (_scrollController.offset - scrollStep)
-            .clamp(0.0, _scrollController.position.maxScrollExtent);
+        final newOffset = (_scrollController.offset - scrollStep).clamp(
+          0.0,
+          _scrollController.position.maxScrollExtent,
+        );
         if (newOffset != _scrollController.offset) {
           _scrollController.jumpTo(newOffset);
           scrolled = true;
         }
       } else if (dy > screenHeight - edgeMargin) {
-        final factor = ((dy - (screenHeight - edgeMargin)) / edgeMargin).clamp(0.0, 1.0);
+        final factor = ((dy - (screenHeight - edgeMargin)) / edgeMargin).clamp(
+          0.0,
+          1.0,
+        );
         final scrollStep = 8.0 + (30.0 * factor); // 스크롤 속도 상향
-        final newOffset = (_scrollController.offset + scrollStep)
-            .clamp(0.0, _scrollController.position.maxScrollExtent);
+        final newOffset = (_scrollController.offset + scrollStep).clamp(
+          0.0,
+          _scrollController.position.maxScrollExtent,
+        );
         if (newOffset != _scrollController.offset) {
           _scrollController.jumpTo(newOffset);
           scrolled = true;
@@ -727,7 +746,10 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
           scrolled = true;
         }
       } else if (dx > screenWidth - edgeMargin) {
-        final factor = ((dx - (screenWidth - edgeMargin)) / edgeMargin).clamp(0.0, 1.0);
+        final factor = ((dx - (screenWidth - edgeMargin)) / edgeMargin).clamp(
+          0.0,
+          1.0,
+        );
         final scrollStep = 8.0 + (30.0 * factor); // 스크롤 속도 상향
         final newOffset = (_horizontalScrollController.offset + scrollStep)
             .clamp(0.0, _horizontalScrollController.position.maxScrollExtent);
@@ -754,7 +776,9 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
   void _updateDragSelection() {
     if (_dragStartSlotKey == null ||
         _dragCurrentSlotKey == null ||
-        _activeDragSelectionValue == null) return;
+        _activeDragSelectionValue == null) {
+      return;
+    }
 
     final startParts = _dragStartSlotKey!.split('_');
     final currentParts = _dragCurrentSlotKey!.split('_');
@@ -779,9 +803,11 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     final maxDate = sDate.isAfter(cDate) ? sDate : cDate;
 
     final Set<String> boundingBoxKeys = {};
-    for (DateTime d = minDate;
-        d.isBefore(maxDate) || d.isAtSameMomentAs(maxDate);
-        d = d.add(const Duration(days: 1))) {
+    for (
+      DateTime d = minDate;
+      d.isBefore(maxDate) || d.isAtSameMomentAs(maxDate);
+      d = d.add(const Duration(days: 1))
+    ) {
       final dStr = _toIsoDate(d);
       for (int i = minTimeIdx; i <= maxTimeIdx; i++) {
         boundingBoxKeys.add('${dStr}_${_slotTimes[i]}');
@@ -909,7 +935,9 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
       setState(() {
         _resetPointerDragState();
         _dragFilterEmployee = selected;
-        _dragSelectedSlots = {};
+        _dragSelectedSlots = selected == null
+            ? {}
+            : _slotKeysAssignedToEmployee(selected);
       });
       widget.onDragModeChanged?.call(selected != null);
     }
@@ -964,32 +992,88 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
 
   static String _dragSlotKey(String dateStr, String time) => '${dateStr}_$time';
 
+  Set<String> _visibleDragSlotKeys() {
+    if (_isDailyView) {
+      final todayStr = _toIsoDate(widget.today);
+      return _slotTimes.map((time) => _dragSlotKey(todayStr, time)).toSet();
+    }
+
+    final weekStart = _getWeekStart(_weekSelectedDate);
+    return {
+      for (final day in _getWeekDays(weekStart))
+        for (final time in _slotTimes) _dragSlotKey(_toIsoDate(day), time),
+    };
+  }
+
+  Set<String> _slotKeysAssignedToEmployee(({int id, String name}) employee) {
+    bool includesEmployee(List<({int id, String name})> workers) =>
+        workers.any((worker) => worker.id == employee.id);
+
+    if (_isDailyView) {
+      final todayStr = _toIsoDate(widget.today);
+      return {
+        for (final time in _slotTimes)
+          if (includesEmployee(_assignments[time] ?? const []))
+            _dragSlotKey(todayStr, time),
+      };
+    }
+
+    final weekStart = _getWeekStart(_weekSelectedDate);
+    return {
+      for (final day in _getWeekDays(weekStart))
+        for (final time in _slotTimes)
+          if (includesEmployee(
+            _weekAssignments[_toIsoDate(day)]?[time] ?? const [],
+          ))
+            _dragSlotKey(_toIsoDate(day), time),
+    };
+  }
+
+  void _setEmployeeInSlot({
+    required String dateStr,
+    required String time,
+    required ({int id, String name}) employee,
+    required bool assigned,
+  }) {
+    final todayStr = _toIsoDate(widget.today);
+    if (dateStr == todayStr) {
+      final list = _assignments[time] ?? [];
+      _assignments[time] = assigned
+          ? (list.any((worker) => worker.id == employee.id)
+                ? list
+                : [...list, employee])
+          : list.where((worker) => worker.id != employee.id).toList();
+      return;
+    }
+
+    final dayMap = Map<String, List<({int id, String name})>>.from(
+      _weekAssignments[dateStr] ?? {},
+    );
+    final list = dayMap[time] ?? [];
+    dayMap[time] = assigned
+        ? (list.any((worker) => worker.id == employee.id)
+              ? list
+              : [...list, employee])
+        : list.where((worker) => worker.id != employee.id).toList();
+    _weekAssignments = {..._weekAssignments, dateStr: dayMap};
+  }
+
   void _onCompleteDrag() {
     final emp = _dragFilterEmployee;
     if (emp == null) return;
-    final todayStr = _toIsoDate(widget.today);
     setState(() {
       _resetPointerDragState();
-      for (final key in _dragSelectedSlots) {
+      for (final key in _visibleDragSlotKeys()) {
         final idx = key.indexOf('_');
         if (idx < 0) continue;
         final dateStr = key.substring(0, idx);
         final time = key.substring(idx + 1);
-        if (dateStr == todayStr) {
-          final list = _assignments[time] ?? [];
-          if (!list.any((e) => e.id == emp.id)) {
-            _assignments[time] = [...list, emp];
-          }
-        } else {
-          final dayMap = Map<String, List<({int id, String name})>>.from(
-            _weekAssignments[dateStr] ?? {},
-          );
-          final list = dayMap[time] ?? [];
-          if (!list.any((e) => e.id == emp.id)) {
-            dayMap[time] = [...list, emp];
-            _weekAssignments = {..._weekAssignments, dateStr: dayMap};
-          }
-        }
+        _setEmployeeInSlot(
+          dateStr: dateStr,
+          time: time,
+          employee: emp,
+          assigned: _dragSelectedSlots.contains(key),
+        );
       }
       _dragFilterEmployee = null;
       _dragSelectedSlots = {};
@@ -999,7 +1083,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
 
   void _onConfirmSchedule() {
     final bloc = context.read<StaffManagementBloc>();
-    
+
     if (_isDailyView) {
       final slots = _slotTimes.map((time) {
         final list = _assignments[time] ?? [];
@@ -1007,7 +1091,11 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
           'time': time,
           'assignments': list
               .map(
-                (a) => {'employee_id': a.id, 'status': 'scheduled', 'memo': null},
+                (a) => {
+                  'employee_id': a.id,
+                  'status': 'scheduled',
+                  'memo': null,
+                },
               )
               .toList(),
         };
@@ -1022,29 +1110,33 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
     } else {
       final weekStart = _getWeekStart(_weekSelectedDate);
       final weekDays = _getWeekDays(weekStart);
-      
+
       final days = weekDays.map((d) {
         final dateStr = _toIsoDate(d);
         final dayMap = _weekAssignments[dateStr] ?? {};
-        
+
         final slots = _slotTimes.map((time) {
           final list = dayMap[time] ?? [];
           return {
             'time': time,
             'assignments': list
                 .map(
-                  (a) => {'employee_id': a.id, 'status': 'scheduled', 'memo': null},
+                  (a) => {
+                    'employee_id': a.id,
+                    'status': 'scheduled',
+                    'memo': null,
+                  },
                 )
                 .toList(),
           };
         }).toList();
-        
+
         return {
           'weekday': d.weekday - 1, // 0=Monday, 6=Sunday
           'slots': slots,
         };
       }).toList();
-      
+
       bloc.add(
         StaffManagementWeekSchedulePutRequested(
           branchId: widget.branchId,
@@ -1053,7 +1145,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
         ),
       );
     }
-    
+
     if (mounted) {
       ScaffoldMessenger.of(
         context,
@@ -1692,6 +1784,7 @@ class _EmployeeMultiSelectionModalState
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late final Map<int, ({int id, String name})> _selectedWorkers;
+  String? _selectionError;
 
   @override
   void initState() {
@@ -1710,20 +1803,32 @@ class _EmployeeMultiSelectionModalState
 
   void _toggleWorker(({int id, String name}) worker) {
     if (_selectedWorkers.containsKey(worker.id)) {
-      setState(() => _selectedWorkers.remove(worker.id));
+      setState(() {
+        _selectedWorkers.remove(worker.id);
+        _selectionError = null;
+      });
       return;
     }
 
     if (_selectedWorkers.length >= widget.maxSelectableCount) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('직원은 최대 ${widget.maxSelectableCount}명까지 선택할 수 있습니다.'),
-        ),
-      );
+      setState(() {
+        _selectionError = '직원은 최대 ${widget.maxSelectableCount}명까지 선택할 수 있습니다.';
+      });
       return;
     }
 
-    setState(() => _selectedWorkers[worker.id] = worker);
+    setState(() {
+      _selectedWorkers[worker.id] = worker;
+      _selectionError = null;
+    });
+  }
+
+  void _resetSelection() {
+    if (_selectedWorkers.isEmpty && _selectionError == null) return;
+    setState(() {
+      _selectedWorkers.clear();
+      _selectionError = null;
+    });
   }
 
   List<({int id, String name})> _selectedWorkersInOrder() {
@@ -1763,21 +1868,62 @@ class _EmployeeMultiSelectionModalState
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              widget.title,
-              style: AppTypography.heading3.copyWith(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w600,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.title,
+                    style: AppTypography.heading3.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: _selectedWorkers.isEmpty ? null : _resetSelection,
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    disabledForegroundColor: AppColors.grey100,
+                    padding: EdgeInsets.symmetric(horizontal: 8.w),
+                    minimumSize: Size(0, 36.h),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    '초기화',
+                    style: AppTypography.bodyMediumB.copyWith(fontSize: 14.sp),
+                  ),
+                ),
+              ],
             ),
             SizedBox(height: 8.h),
             Text(
-              '최대 ${widget.maxSelectableCount}명까지 선택할 수 있어요.',
+              '최대 ${widget.maxSelectableCount}명까지 선택할 수 있어요.\n모두 해제하고 확인하면 해당 시간 배정이 비워집니다.',
               style: AppTypography.bodyMediumR.copyWith(
                 color: AppColors.textSecondary,
                 fontSize: 13.sp,
               ),
             ),
+            if (_selectionError != null) ...[
+              SizedBox(height: 10.h),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10.r),
+                  border: Border.all(
+                    color: AppColors.error.withValues(alpha: 0.24),
+                  ),
+                ),
+                child: Text(
+                  _selectionError!,
+                  style: AppTypography.bodySmallR.copyWith(
+                    color: AppColors.error,
+                    fontSize: 12.sp,
+                    height: 16 / 12,
+                  ),
+                ),
+              ),
+            ],
             SizedBox(height: 20.h),
             TabBar(
               controller: _tabController,
@@ -1840,9 +1986,7 @@ class _EmployeeMultiSelectionModalState
                 SizedBox(width: 12.w),
                 Expanded(
                   child: FilledButton(
-                    onPressed: orderedSelected.isNotEmpty
-                        ? () => Navigator.of(context).pop(orderedSelected)
-                        : null,
+                    onPressed: () => Navigator.of(context).pop(orderedSelected),
                     style: FilledButton.styleFrom(
                       minimumSize: Size.fromHeight(48.h),
                       backgroundColor: AppColors.primary,

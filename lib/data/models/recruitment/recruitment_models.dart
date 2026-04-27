@@ -17,11 +17,16 @@ class RecruitmentHomeResponse extends Equatable {
 
   factory RecruitmentHomeResponse.fromJson(Map<String, dynamic> json) {
     return RecruitmentHomeResponse(
-      recentViewedJobSeekers: (json['recent_viewed_job_seekers'] as List<dynamic>?)
-              ?.map((e) => RecentViewedJobSeeker.fromJson(e as Map<String, dynamic>))
+      recentViewedJobSeekers:
+          (json['recent_viewed_job_seekers'] as List<dynamic>?)
+              ?.map(
+                (e) =>
+                    RecentViewedJobSeeker.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           const [],
-      searchResults: (json['search_results'] as List<dynamic>?)
+      searchResults:
+          (json['search_results'] as List<dynamic>?)
               ?.map((e) => JobSeekerSummary.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
@@ -32,7 +37,13 @@ class RecruitmentHomeResponse extends Equatable {
   }
 
   @override
-  List<Object?> get props => [recentViewedJobSeekers, searchResults, totalCount, page, pageSize];
+  List<Object?> get props => [
+    recentViewedJobSeekers,
+    searchResults,
+    totalCount,
+    page,
+    pageSize,
+  ];
 }
 
 class RecentViewedJobSeeker extends Equatable {
@@ -149,17 +160,22 @@ class JobSeekerProfile extends Equatable {
       employeeName: json['employee_name'] as String? ?? '',
       age: (json['age'] as num?)?.toInt() ?? 0,
       gender: json['gender'] as String?,
-      contactPhone: json['contact_phone'] as String? ?? json['phone_number'] as String?,
+      contactPhone:
+          json['contact_phone'] as String? ?? json['phone_number'] as String?,
       profileImageUrl: json['profile_image_url'] as String?,
       careerLabel: json['career_label'] as String?,
-      desiredLocations: (json['desired_locations'] as List<dynamic>?)
+      desiredLocations:
+          (json['desired_locations'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],
       averageRating: (json['average_rating'] as num?)?.toDouble() ?? 0,
       reviewCount: (json['review_count'] as num?)?.toInt() ?? 0,
-      workHistories: (json['work_histories'] as List<dynamic>?)
-              ?.map((e) => JobSeekerWorkHistory.fromJson(e as Map<String, dynamic>))
+      workHistories:
+          (json['work_histories'] as List<dynamic>?)
+              ?.map(
+                (e) => JobSeekerWorkHistory.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           const [],
       contactActionLabel: json['contact_action_label'] as String?,
@@ -176,7 +192,7 @@ class JobSeekerProfile extends Equatable {
         age,
         gender,
         contactPhone,
-        profileImageUrl,
+    profileImageUrl,
         careerLabel,
         desiredLocations,
         averageRating,
@@ -240,7 +256,8 @@ class JobSeekerReviewPage extends Equatable {
       desiredLocation: json['desired_location'] as String?,
       averageRating: (json['average_rating'] as num?)?.toDouble() ?? 0,
       reviewCount: (json['review_count'] as num?)?.toInt() ?? 0,
-      items: (json['items'] as List<dynamic>?)
+      items:
+          (json['items'] as List<dynamic>?)
               ?.map((e) => JobSeekerReview.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
@@ -299,7 +316,16 @@ class JobSeekerReview extends Equatable {
   }
 
   @override
-  List<Object?> get props => [reviewId, branchId, branchName, managerName, createdAt, rating, maxRating, comment];
+  List<Object?> get props => [
+    reviewId,
+    branchId,
+    branchName,
+    managerName,
+    createdAt,
+    rating,
+    maxRating,
+    comment,
+  ];
 }
 
 class RecruitmentUploadResult extends Equatable {
@@ -343,8 +369,13 @@ class RecruitmentPostingPage extends Equatable {
 
   factory RecruitmentPostingPage.fromJson(Map<String, dynamic> json) {
     return RecruitmentPostingPage(
-      items: (json['items'] as List<dynamic>?)
-              ?.map((e) => RecruitmentPostingSummary.fromJson(e as Map<String, dynamic>))
+      items:
+          (json['items'] as List<dynamic>?)
+              ?.map(
+                (e) => RecruitmentPostingSummary.fromJson(
+                  e as Map<String, dynamic>,
+                ),
+              )
               .toList() ??
           const [],
       totalCount: (json['total_count'] as num?)?.toInt() ?? 0,
@@ -426,6 +457,7 @@ class RecruitmentPostingDetail extends Equatable {
     this.companyName,
     this.title,
     this.regionSummary,
+    this.regionPath,
     this.address,
     this.payType,
     this.payAmount = 0,
@@ -455,6 +487,7 @@ class RecruitmentPostingDetail extends Equatable {
   final String? companyName;
   final String? title;
   final String? regionSummary;
+  final String? regionPath;
   final String? address;
   final String? payType;
   final int payAmount;
@@ -485,6 +518,7 @@ class RecruitmentPostingDetail extends Equatable {
       companyName: json['company_name'] as String?,
       title: json['title'] as String?,
       regionSummary: json['region_summary'] as String?,
+      regionPath: json['region_path'] as String?,
       address: json['address'] as String?,
       payType: json['pay_type'] as String?,
       payAmount: (json['pay_amount'] as num?)?.toInt() ?? 0,
@@ -497,7 +531,8 @@ class RecruitmentPostingDetail extends Equatable {
       employmentType: json['employment_type'] as String?,
       recruitmentDeadline: json['recruitment_deadline'] as String?,
       recruitmentHeadcount: json['recruitment_headcount'] as String?,
-      recruitmentHeadcountDetail: json['recruitment_headcount_detail'] as String?,
+      recruitmentHeadcountDetail:
+          json['recruitment_headcount_detail'] as String?,
       education: json['education'] as String?,
       educationDetail: json['education_detail'] as String?,
       managerName: json['manager_name'] as String?,
@@ -519,6 +554,7 @@ class RecruitmentPostingDetail extends Equatable {
         companyName,
         title,
         regionSummary,
+    regionPath,
         address,
         payType,
         payAmount,
@@ -575,6 +611,7 @@ class RecruitmentPostingRequest extends Equatable {
     required this.companyName,
     required this.title,
     required this.regionSummary,
+    this.regionPath,
     required this.address,
     required this.payType,
     required this.payAmount,
@@ -599,6 +636,7 @@ class RecruitmentPostingRequest extends Equatable {
   final String companyName;
   final String title;
   final String regionSummary;
+  final String? regionPath;
   final String address;
   final String payType;
   final int payAmount;
@@ -624,6 +662,7 @@ class RecruitmentPostingRequest extends Equatable {
       'company_name': companyName,
       'title': title,
       'region_summary': regionSummary,
+      'region_path': _nullableValue(regionPath),
       'address': address,
       'pay_type': payType,
       'pay_amount': payAmount,
@@ -637,7 +676,9 @@ class RecruitmentPostingRequest extends Equatable {
       'recruitment_deadline': recruitmentDeadline,
       'is_always_hiring': isAlwaysHiring,
       'recruitment_headcount': recruitmentHeadcount,
-      'recruitment_headcount_detail': _nullableValue(recruitmentHeadcountDetail),
+      'recruitment_headcount_detail': _nullableValue(
+        recruitmentHeadcountDetail,
+      ),
       'education': education,
       'education_detail': _nullableValue(educationDetail),
       'manager_name': managerName,
@@ -650,6 +691,7 @@ class RecruitmentPostingRequest extends Equatable {
     String? companyName,
     String? title,
     String? regionSummary,
+    String? regionPath,
     String? address,
     String? payType,
     int? payAmount,
@@ -674,6 +716,7 @@ class RecruitmentPostingRequest extends Equatable {
       companyName: companyName ?? this.companyName,
       title: title ?? this.title,
       regionSummary: regionSummary ?? this.regionSummary,
+      regionPath: regionPath ?? this.regionPath,
       address: address ?? this.address,
       payType: payType ?? this.payType,
       payAmount: payAmount ?? this.payAmount,
@@ -702,6 +745,7 @@ class RecruitmentPostingRequest extends Equatable {
         companyName,
         title,
         regionSummary,
+    regionPath,
         address,
         payType,
         payAmount,
@@ -752,8 +796,13 @@ class RecruitmentApplicationPage extends Equatable {
       badgeLabel: json['badge_label'] as String?,
       companyName: json['company_name'] as String?,
       title: json['title'] as String?,
-      items: (json['items'] as List<dynamic>?)
-              ?.map((e) => RecruitmentApplicationSummary.fromJson(e as Map<String, dynamic>))
+      items:
+          (json['items'] as List<dynamic>?)
+              ?.map(
+                (e) => RecruitmentApplicationSummary.fromJson(
+                  e as Map<String, dynamic>,
+                ),
+              )
               .toList() ??
           const [],
       totalCount: (json['total_count'] as num?)?.toInt() ?? 0,
@@ -761,7 +810,14 @@ class RecruitmentApplicationPage extends Equatable {
   }
 
   @override
-  List<Object?> get props => [postingId, badgeLabel, companyName, title, items, totalCount];
+  List<Object?> get props => [
+    postingId,
+    badgeLabel,
+    companyName,
+    title,
+    items,
+    totalCount,
+  ];
 }
 
 class RecruitmentApplicationSummary extends Equatable {
@@ -849,15 +905,18 @@ class RecruitmentContactResult extends Equatable {
   }
 
   @override
-  List<Object?> get props =>
-      [requested, inquiryId, branchId, employeeId, employeeName, message];
+  List<Object?> get props => [
+    requested,
+    inquiryId,
+    branchId,
+    employeeId,
+    employeeName,
+    message,
+  ];
 }
 
 class RecruitmentChatPage extends Equatable {
-  const RecruitmentChatPage({
-    this.items = const [],
-    required this.totalCount,
-  });
+  const RecruitmentChatPage({this.items = const [], required this.totalCount});
 
   final List<RecruitmentChatSummary> items;
   final int totalCount;
@@ -916,14 +975,16 @@ class RecruitmentChatSummary extends Equatable {
       branchId: (json['branch_id'] as num?)?.toInt() ?? 0,
       employeeId: (json['employee_id'] as num?)?.toInt() ?? 0,
       branchName: json['branch_name'] as String?,
-      counterpartyName: json['counterparty_name'] as String? ??
+      counterpartyName:
+          json['counterparty_name'] as String? ??
           json['employee_name'] as String? ??
           '',
       counterpartyRole: json['counterparty_role'] as String?,
       counterpartyProfileImageUrl:
           json['counterparty_profile_image_url'] as String?,
       status: json['status'] as String?,
-      lastMessage: json['last_message'] as String? ??
+      lastMessage:
+          json['last_message'] as String? ??
           json['last_message_preview'] as String?,
       lastMessageAt: json['last_message_at'] as String?,
       unreadCount: (json['unread_count'] as num?)?.toInt() ?? 0,
@@ -964,19 +1025,19 @@ class RecruitmentChatSummary extends Equatable {
 
   @override
   List<Object?> get props => [
-        chatId,
-        branchId,
-        employeeId,
-        branchName,
-        counterpartyName,
-        counterpartyRole,
-        counterpartyProfileImageUrl,
-        status,
-        lastMessage,
-        lastMessageAt,
-        unreadCount,
-        createdAt,
-      ];
+    chatId,
+    branchId,
+    employeeId,
+    branchName,
+    counterpartyName,
+    counterpartyRole,
+    counterpartyProfileImageUrl,
+    status,
+    lastMessage,
+    lastMessageAt,
+    unreadCount,
+    createdAt,
+  ];
 }
 
 class RecruitmentChatMessagePage extends Equatable {
@@ -1059,16 +1120,16 @@ class RecruitmentChatMessage extends Equatable {
 
   @override
   List<Object?> get props => [
-        messageId,
-        senderRole,
-        senderName,
-        senderProfileImageUrl,
-        messageType,
-        text,
-        createdAt,
-        contractId,
-        documentStatus,
-        canOpenDocument,
-        openDocumentPath,
-      ];
+    messageId,
+    senderRole,
+    senderName,
+    senderProfileImageUrl,
+    messageType,
+    text,
+    createdAt,
+    contractId,
+    documentStatus,
+    canOpenDocument,
+    openDocumentPath,
+  ];
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -10,6 +12,7 @@ import '../../../theme/app_typography.dart';
 import '../../../widgets/recruitment_inquiry_chat_composer.dart';
 import '../../account/account_dio_message.dart';
 import '../widgets/worker_common.dart';
+import 'worker_contract_document_screen.dart';
 
 class WorkerRecruitmentChatScreen extends StatefulWidget {
   const WorkerRecruitmentChatScreen({
@@ -36,39 +39,60 @@ class _WorkerRecruitmentChatScreenState
   RecruitmentChatSummary? _chat;
   String _currentUserRole = 'worker';
   List<RecruitmentChatMessage> _messages = const [];
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      _refreshMessages();
+    });
   }
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
 
   Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    await _refreshMessages(showLoading: true, jumpToBottom: true);
+  }
+
+  Future<void> _refreshMessages({
+    bool showLoading = false,
+    bool jumpToBottom = false,
+  }) async {
+    if (!showLoading && _loading) return;
+    if (showLoading) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final page = await context
           .read<WorkerRecruitmentRepository>()
           .getRecruitmentChatMessages(chatId: widget.chatId);
       if (!mounted) return;
+      final changed =
+          _messageSignature(page.messages) != _messageSignature(_messages);
       setState(() {
         _chat = page.chat.copyWith(unreadCount: 0);
         _currentUserRole = page.currentUserRole;
         _messages = page.messages;
         _loading = false;
+        _error = null;
       });
       _markRead(widget.chatId);
-      _scrollToBottom(jump: true);
+      if (jumpToBottom || changed) {
+        _scrollToBottom(jump: jumpToBottom);
+      }
     } catch (error) {
       if (!mounted) return;
+      if (!showLoading) return;
       setState(() {
         _error = error;
         _loading = false;
@@ -76,11 +100,17 @@ class _WorkerRecruitmentChatScreenState
     }
   }
 
+  String _messageSignature(List<RecruitmentChatMessage> messages) {
+    if (messages.isEmpty) return '0';
+    final last = messages.last;
+    return '${messages.length}:${last.messageId}:${last.createdAt}:${last.text}';
+  }
+
   Future<void> _markRead(int chatId) async {
     try {
-      await context
-          .read<WorkerRecruitmentRepository>()
-          .markRecruitmentChatRead(chatId: chatId);
+      await context.read<WorkerRecruitmentRepository>().markRecruitmentChatRead(
+        chatId: chatId,
+      );
     } catch (_) {
       // 읽음 처리 실패가 채팅 조회/응답 자체를 막지는 않도록 한다.
     }
@@ -127,6 +157,36 @@ class _WorkerRecruitmentChatScreenState
     }
   }
 
+  Future<void> _openDocumentMessage(RecruitmentChatMessage message) async {
+    final contractId =
+        message.contractId ?? _contractIdFromPath(message.openDocumentPath);
+    if (contractId == null || contractId <= 0) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('열 수 있는 계약서 정보가 없습니다.')));
+      return;
+    }
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => WorkerContractDocumentScreen(
+          contractId: contractId,
+          roomTitle: _title,
+        ),
+      ),
+    );
+    if (changed == true && mounted) {
+      _load();
+    }
+  }
+
+  int? _contractIdFromPath(String? path) {
+    if (path == null || path.trim().isEmpty) return null;
+    final matches = RegExp(r'(\d+)').allMatches(path).toList();
+    if (matches.isEmpty) return null;
+    final match = matches.last;
+    return int.tryParse(match.group(1) ?? '');
+  }
+
   void _scrollToBottom({bool jump = false}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scrollController.hasClients) return;
@@ -166,11 +226,11 @@ class _WorkerRecruitmentChatScreenState
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : _error != null
-                    ? workerErrorView(
-                        message: accountDioMessage(_error!),
-                        onRetry: _load,
-                      )
-                    : _buildMessages(),
+                ? workerErrorView(
+                    message: accountDioMessage(_error!),
+                    onRetry: _load,
+                  )
+                : _buildMessages(),
           ),
           RecruitmentInquiryChatComposer(onSend: _sendMessage),
         ],
@@ -188,17 +248,22 @@ class _WorkerRecruitmentChatScreenState
         final message = _messages[index];
         final isMe = message.senderRole == _currentUserRole;
         final previous = index > 0 ? _messages[index - 1] : null;
-        final grouped = previous != null &&
+        final grouped =
+            previous != null &&
             previous.senderRole == message.senderRole &&
             previous.createdAt == message.createdAt;
         return Padding(
           padding: EdgeInsets.only(bottom: grouped ? 5.h : 19.h),
           child: isMe
-              ? _OutgoingMessageRow(message: message)
+              ? _OutgoingMessageRow(
+                  message: message,
+                  onOpenDocument: () => _openDocumentMessage(message),
+                )
               : _IncomingMessageRow(
                   message: message,
                   imageUrl: _imageUrl,
                   showAvatar: !grouped,
+                  onOpenDocument: () => _openDocumentMessage(message),
                 ),
         );
       },
@@ -209,11 +274,13 @@ class _WorkerRecruitmentChatScreenState
 class _IncomingMessageRow extends StatelessWidget {
   const _IncomingMessageRow({
     required this.message,
+    required this.onOpenDocument,
     this.imageUrl,
     this.showAvatar = true,
   });
 
   final RecruitmentChatMessage message;
+  final VoidCallback onOpenDocument;
   final String? imageUrl;
   final bool showAvatar;
 
@@ -223,14 +290,23 @@ class _IncomingMessageRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        if (showAvatar) _ChatAvatar(imageUrl: imageUrl) else SizedBox(width: 36.r),
+        if (showAvatar)
+          _ChatAvatar(imageUrl: imageUrl)
+        else
+          SizedBox(width: 36.r),
         SizedBox(width: 10.w),
         Flexible(
           child: Row(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Flexible(child: _ChatBubble(message: message, isMe: false)),
+              Flexible(
+                child: _ChatBubble(
+                  message: message,
+                  isMe: false,
+                  onOpenDocument: onOpenDocument,
+                ),
+              ),
               if (time.isNotEmpty) ...[
                 SizedBox(width: 6.w),
                 Text(time, style: _timeStyle),
@@ -244,9 +320,13 @@ class _IncomingMessageRow extends StatelessWidget {
 }
 
 class _OutgoingMessageRow extends StatelessWidget {
-  const _OutgoingMessageRow({required this.message});
+  const _OutgoingMessageRow({
+    required this.message,
+    required this.onOpenDocument,
+  });
 
   final RecruitmentChatMessage message;
+  final VoidCallback onOpenDocument;
 
   @override
   Widget build(BuildContext context) {
@@ -259,22 +339,33 @@ class _OutgoingMessageRow extends StatelessWidget {
           Text(time, style: _timeStyle),
           SizedBox(width: 6.w),
         ],
-        Flexible(child: _ChatBubble(message: message, isMe: true)),
+        Flexible(
+          child: _ChatBubble(
+            message: message,
+            isMe: true,
+            onOpenDocument: onOpenDocument,
+          ),
+        ),
       ],
     );
   }
 }
 
 class _ChatBubble extends StatelessWidget {
-  const _ChatBubble({required this.message, required this.isMe});
+  const _ChatBubble({
+    required this.message,
+    required this.isMe,
+    required this.onOpenDocument,
+  });
 
   final RecruitmentChatMessage message;
   final bool isMe;
+  final VoidCallback onOpenDocument;
 
   @override
   Widget build(BuildContext context) {
     final isDocument = message.isDocument;
-    return Container(
+    final content = Container(
       padding: EdgeInsets.symmetric(
         horizontal: 10.w,
         vertical: isDocument && !isMe ? 5.h : 7.h,
@@ -305,12 +396,18 @@ class _ChatBubble extends StatelessWidget {
           color: isMe ? AppColors.grey0 : AppColors.textPrimary,
           fontSize: 14.sp,
           height: 19 / 14,
-          decoration: isDocument && !isMe
+          decoration: isDocument
               ? TextDecoration.underline
               : TextDecoration.none,
-          decorationColor: AppColors.textPrimary,
+          decorationColor: isMe ? AppColors.grey0 : AppColors.textPrimary,
         ),
       ),
+    );
+    if (!isDocument) return content;
+    return InkWell(
+      onTap: onOpenDocument,
+      borderRadius: BorderRadius.circular(10.r),
+      child: content,
     );
   }
 }
@@ -359,7 +456,7 @@ class _DefaultAvatarIcon extends StatelessWidget {
 }
 
 TextStyle get _timeStyle => AppTypography.bodyXSmallM.copyWith(
-      color: AppColors.textDisabled,
-      fontSize: 10.sp,
-      height: 16 / 10,
-    );
+  color: AppColors.textDisabled,
+  fontSize: 10.sp,
+  height: 16 / 10,
+);

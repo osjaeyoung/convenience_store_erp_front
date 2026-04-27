@@ -249,9 +249,9 @@ class _EmployeeWorkHistoryEditScreenState
 
     final invalidRows = dirtyRows.where((row) => row.scheduleId <= 0).toList();
     if (invalidRows.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('일부 근무 이력은 수정할 수 없습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('일부 근무 이력은 수정할 수 없습니다.')));
       return;
     }
 
@@ -405,11 +405,11 @@ class _EditWorkHistoryTable extends StatelessWidget {
   final ValueChanged<_EditableWorkHistory> onTapStatus;
   final ValueChanged<_EditableWorkHistory> onTapMemo;
 
-  static const int _branchFlex = 22;
-  static const int _dateFlex = 23;
-  static const int _timeFlex = 27;
-  static const int _statusFlex = 20;
-  static const int _memoFlex = 10;
+  static const int _branchFlex = 23;
+  static const int _dateFlex = 25;
+  static const int _timeFlex = 26;
+  static const int _statusFlex = 18;
+  static const int _memoFlex = 8;
 
   @override
   Widget build(BuildContext context) {
@@ -491,10 +491,7 @@ class _EditWorkHistoryTable extends StatelessWidget {
                 ),
               );
             }),
-          Container(
-            height: 1,
-            color: AppColors.textPrimary,
-          ),
+          Container(height: 1, color: AppColors.textPrimary),
         ],
       ),
     );
@@ -551,8 +548,8 @@ class _EditableWorkHistory {
     required this.workTime,
     required this.status,
     required this.memo,
-  })  : _savedStatus = status,
-        _savedMemo = memo;
+  }) : _savedStatus = status,
+       _savedMemo = memo;
 
   factory _EditableWorkHistory.fromMap(
     Map<String, dynamic> row,
@@ -674,7 +671,7 @@ class _EditHeaderCell extends StatelessWidget {
       textAlign: TextAlign.center,
       style: AppTypography.bodySmallB.copyWith(
         color: AppColors.textSecondary,
-        fontSize: 13.1,
+        fontSize: 11.sp,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.3,
         height: 1.3,
@@ -682,7 +679,10 @@ class _EditHeaderCell extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
     );
-    final centered = SizedBox(height: 40.h, child: Center(child: label));
+    final centered = SizedBox(
+      height: 40.h,
+      child: Center(child: label),
+    );
     if (flex != null) {
       return Expanded(flex: flex!, child: centered);
     }
@@ -708,14 +708,17 @@ class _EditBodyCell extends StatelessWidget {
       textAlign: TextAlign.center,
       style: AppTypography.bodyMediumR.copyWith(
         color: AppColors.textPrimary,
-        fontSize: 14.sp,
+        fontSize: 12.sp,
         fontWeight: FontWeight.w400,
         height: 19 / 14,
       ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
     );
-    final centered = SizedBox(height: 40.h, child: Center(child: label));
+    final centered = SizedBox(
+      height: 40.h,
+      child: Center(child: label),
+    );
     if (flex != null) {
       return Expanded(flex: flex!, child: centered);
     }

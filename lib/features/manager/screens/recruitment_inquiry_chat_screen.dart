@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -9,6 +11,7 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../../widgets/recruitment_inquiry_chat_composer.dart';
 import '../../account/account_dio_message.dart';
+import 'employment_contract_detail_screen.dart';
 
 class ManagerRecruitmentInquiryChatScreen extends StatefulWidget {
   const ManagerRecruitmentInquiryChatScreen({
@@ -41,16 +44,21 @@ class _ManagerRecruitmentInquiryChatScreenState
   RecruitmentChatSummary? _chat;
   String _currentUserRole = 'business';
   List<RecruitmentChatMessage> _messages = const [];
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     _chatId = widget.chatId;
     _load();
+    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      _refreshMessages();
+    });
   }
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
@@ -71,25 +79,42 @@ class _ManagerRecruitmentInquiryChatScreenState
   }
 
   Future<void> _load() async {
+    await _refreshMessages(showLoading: true, jumpToBottom: true);
+  }
+
+  Future<void> _refreshMessages({
+    bool showLoading = false,
+    bool jumpToBottom = false,
+  }) async {
+    if (!showLoading && _loading) return;
     final repository = context.read<ManagerHomeRepository>();
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    if (showLoading) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final chatId = await _ensureChatId();
       final page = await repository.getRecruitmentChatMessages(chatId: chatId);
       if (!mounted) return;
+      final changed =
+          _messageSignature(page.messages) != _messageSignature(_messages);
       setState(() {
         _chat = page.chat.copyWith(unreadCount: 0);
         _currentUserRole = page.currentUserRole;
         _messages = page.messages;
         _loading = false;
+        _error = null;
       });
       _markRead(chatId);
-      _scrollToBottom(jump: true);
+      if (jumpToBottom || changed) {
+        _scrollToBottom(jump: jumpToBottom);
+      }
+      if (changed && !showLoading) _changed = true;
     } catch (error) {
       if (!mounted) return;
+      if (!showLoading) return;
       setState(() {
         _error = error;
         _loading = false;
@@ -97,11 +122,17 @@ class _ManagerRecruitmentInquiryChatScreenState
     }
   }
 
+  String _messageSignature(List<RecruitmentChatMessage> messages) {
+    if (messages.isEmpty) return '0';
+    final last = messages.last;
+    return '${messages.length}:${last.messageId}:${last.createdAt}:${last.text}';
+  }
+
   Future<void> _markRead(int chatId) async {
     try {
-      await context
-          .read<ManagerHomeRepository>()
-          .markRecruitmentChatRead(chatId: chatId);
+      await context.read<ManagerHomeRepository>().markRecruitmentChatRead(
+        chatId: chatId,
+      );
     } catch (_) {
       // 읽음 처리 실패가 채팅 조회/응답 자체를 막지는 않도록 한다.
     }
@@ -152,6 +183,39 @@ class _ManagerRecruitmentInquiryChatScreenState
         context,
       ).showSnackBar(SnackBar(content: Text(accountDioMessage(error))));
     }
+  }
+
+  Future<void> _openDocumentMessage(RecruitmentChatMessage message) async {
+    final contractId =
+        message.contractId ?? _contractIdFromPath(message.openDocumentPath);
+    if (contractId == null || contractId <= 0) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('열 수 있는 계약서 정보가 없습니다.')));
+      return;
+    }
+
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => EmploymentContractDetailScreen(
+          branchId: widget.branchId,
+          employeeId: widget.employeeId,
+          employeeName: _title(),
+          contractId: contractId,
+          listTitle: '근로계약서',
+        ),
+      ),
+    );
+    if (changed == true && mounted) {
+      _load();
+    }
+  }
+
+  int? _contractIdFromPath(String? path) {
+    if (path == null || path.trim().isEmpty) return null;
+    final matches = RegExp(r'(\d+)').allMatches(path).toList();
+    if (matches.isEmpty) return null;
+    return int.tryParse(matches.last.group(1) ?? '');
   }
 
   RecruitmentChatSummary? _updatedChatWithLastMessage(
@@ -247,16 +311,17 @@ class _ManagerRecruitmentInquiryChatScreenState
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : _error != null
-                    ? _ChatErrorView(
-                        message: accountDioMessage(_error!),
-                        onRetry: _load,
-                      )
-                    : _MessageList(
-                        messages: _messages,
-                        currentUserRole: _currentUserRole,
-                        counterpartyImageUrl: _counterpartyImageUrl(),
-                        controller: _scrollController,
-                      ),
+                ? _ChatErrorView(
+                    message: accountDioMessage(_error!),
+                    onRetry: _load,
+                  )
+                : _MessageList(
+                    messages: _messages,
+                    currentUserRole: _currentUserRole,
+                    counterpartyImageUrl: _counterpartyImageUrl(),
+                    controller: _scrollController,
+                    onOpenDocument: _openDocumentMessage,
+                  ),
           ),
           RecruitmentInquiryChatComposer(onSend: _sendMessage),
         ],
@@ -271,12 +336,14 @@ class _MessageList extends StatelessWidget {
     required this.currentUserRole,
     this.counterpartyImageUrl,
     required this.controller,
+    required this.onOpenDocument,
   });
 
   final List<RecruitmentChatMessage> messages;
   final String currentUserRole;
   final String? counterpartyImageUrl;
   final ScrollController controller;
+  final ValueChanged<RecruitmentChatMessage> onOpenDocument;
 
   @override
   Widget build(BuildContext context) {
@@ -290,21 +357,27 @@ class _MessageList extends StatelessWidget {
       itemCount: messages.length,
       itemBuilder: (context, index) {
         final message = messages[index];
-        final isMe = message.senderRole == currentUserRole ||
+        final isMe =
+            message.senderRole == currentUserRole ||
             (currentUserRole == 'business' && message.senderRole == 'manager');
         final previous = index > 0 ? messages[index - 1] : null;
-        final isGroupedWithPrevious = previous != null &&
+        final isGroupedWithPrevious =
+            previous != null &&
             previous.senderRole == message.senderRole &&
             previous.createdAt == message.createdAt;
 
         return Padding(
           padding: EdgeInsets.only(bottom: isGroupedWithPrevious ? 5.h : 19.h),
           child: isMe
-              ? _OutgoingMessageRow(message: message)
+              ? _OutgoingMessageRow(
+                  message: message,
+                  onOpenDocument: () => onOpenDocument(message),
+                )
               : _IncomingMessageRow(
                   message: message,
                   imageUrl: counterpartyImageUrl,
                   showAvatar: !isGroupedWithPrevious,
+                  onOpenDocument: () => onOpenDocument(message),
                 ),
         );
       },
@@ -315,11 +388,13 @@ class _MessageList extends StatelessWidget {
 class _IncomingMessageRow extends StatelessWidget {
   const _IncomingMessageRow({
     required this.message,
+    required this.onOpenDocument,
     this.imageUrl,
     this.showAvatar = true,
   });
 
   final RecruitmentChatMessage message;
+  final VoidCallback onOpenDocument;
   final String? imageUrl;
   final bool showAvatar;
 
@@ -343,6 +418,7 @@ class _IncomingMessageRow extends StatelessWidget {
                 child: _ChatBubble(
                   message: message,
                   isMe: false,
+                  onOpenDocument: onOpenDocument,
                 ),
               ),
               if (time.isNotEmpty) ...[
@@ -358,9 +434,13 @@ class _IncomingMessageRow extends StatelessWidget {
 }
 
 class _OutgoingMessageRow extends StatelessWidget {
-  const _OutgoingMessageRow({required this.message});
+  const _OutgoingMessageRow({
+    required this.message,
+    required this.onOpenDocument,
+  });
 
   final RecruitmentChatMessage message;
+  final VoidCallback onOpenDocument;
 
   @override
   Widget build(BuildContext context) {
@@ -377,6 +457,7 @@ class _OutgoingMessageRow extends StatelessWidget {
           child: _ChatBubble(
             message: message,
             isMe: true,
+            onOpenDocument: onOpenDocument,
           ),
         ),
       ],
@@ -388,10 +469,12 @@ class _ChatBubble extends StatelessWidget {
   const _ChatBubble({
     required this.message,
     required this.isMe,
+    required this.onOpenDocument,
   });
 
   final RecruitmentChatMessage message;
   final bool isMe;
+  final VoidCallback onOpenDocument;
 
   @override
   Widget build(BuildContext context) {
@@ -427,10 +510,10 @@ class _ChatBubble extends StatelessWidget {
           color: isMe ? AppColors.grey0 : AppColors.textPrimary,
           fontSize: 14.sp,
           height: 19 / 14,
-          decoration: isDocument && !isMe
+          decoration: isDocument
               ? TextDecoration.underline
               : TextDecoration.none,
-          decorationColor: AppColors.textPrimary,
+          decorationColor: isMe ? AppColors.grey0 : AppColors.textPrimary,
           decorationThickness: 1,
         ),
       ),
@@ -438,7 +521,7 @@ class _ChatBubble extends StatelessWidget {
 
     if (!isDocument) return bubble;
     return InkWell(
-      onTap: message.canOpenDocument ? () {} : null,
+      onTap: onOpenDocument,
       borderRadius: BorderRadius.circular(10.r),
       child: bubble,
     );
@@ -489,10 +572,7 @@ class _DefaultAvatarIcon extends StatelessWidget {
 }
 
 class _ChatErrorView extends StatelessWidget {
-  const _ChatErrorView({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ChatErrorView({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
@@ -513,10 +593,7 @@ class _ChatErrorView extends StatelessWidget {
               ),
             ),
             SizedBox(height: 16.h),
-            OutlinedButton(
-              onPressed: onRetry,
-              child: const Text('다시 시도'),
-            ),
+            OutlinedButton(onPressed: onRetry, child: const Text('다시 시도')),
           ],
         ),
       ),
@@ -525,7 +602,7 @@ class _ChatErrorView extends StatelessWidget {
 }
 
 TextStyle get _bubbleTimeStyle => AppTypography.bodyXSmallM.copyWith(
-      color: AppColors.textDisabled,
-      fontSize: 10.sp,
-      height: 16 / 10,
-    );
+  color: AppColors.textDisabled,
+  fontSize: 10.sp,
+  height: 16 / 10,
+);

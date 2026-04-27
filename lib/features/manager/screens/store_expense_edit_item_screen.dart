@@ -27,10 +27,12 @@ class StoreExpenseEditItemScreen extends StatefulWidget {
   final StoreExpenseItem item;
 
   @override
-  State<StoreExpenseEditItemScreen> createState() => _StoreExpenseEditItemScreenState();
+  State<StoreExpenseEditItemScreen> createState() =>
+      _StoreExpenseEditItemScreenState();
 }
 
-class _StoreExpenseEditItemScreenState extends State<StoreExpenseEditItemScreen> {
+class _StoreExpenseEditItemScreenState
+    extends State<StoreExpenseEditItemScreen> {
   final TextEditingController _amountCtrl = TextEditingController();
   final TextEditingController _memoCtrl = TextEditingController();
   DateTime? _expenseDate;
@@ -44,15 +46,18 @@ class _StoreExpenseEditItemScreenState extends State<StoreExpenseEditItemScreen>
   void initState() {
     super.initState();
     _expenseDate = DateTime.tryParse(widget.item.expenseDate);
-    _amountCtrl.text = NumberFormat('#,###', 'ko_KR').format(widget.item.amount);
+    _amountCtrl.text = NumberFormat(
+      '#,###',
+      'ko_KR',
+    ).format(widget.item.amount);
     _memoCtrl.text = widget.item.memo ?? '';
     // 기존 파일들을 _pickedFiles에 넣어두기 (이름만 표시되도록)
     if (widget.item.files.isNotEmpty) {
-      _pickedFiles.addAll(widget.item.files.map((f) => PlatformFile(
-        name: f.fileName,
-        size: 0,
-        path: f.fileUrl,
-      )));
+      _pickedFiles.addAll(
+        widget.item.files.map(
+          (f) => PlatformFile(name: f.fileName, size: 0, path: f.fileUrl),
+        ),
+      );
     }
     _loadCategories();
   }
@@ -71,7 +76,9 @@ class _StoreExpenseEditItemScreenState extends State<StoreExpenseEditItemScreen>
       if (!mounted) return;
       setState(() {
         _categories = cats.where((e) => e.isActive).toList();
-        _selectedCategory = _categories.where((e) => e.categoryCode == widget.item.categoryCode).firstOrNull;
+        _selectedCategory = _categories
+            .where((e) => e.categoryCode == widget.item.categoryCode)
+            .firstOrNull;
         _loadingCategories = false;
       });
     } catch (_) {
@@ -136,7 +143,9 @@ class _StoreExpenseEditItemScreenState extends State<StoreExpenseEditItemScreen>
                     _label('항목'),
                     SizedBox(height: 8.h),
                     _selectorTile(
-                      value: _selectedCategory?.categoryLabel ?? widget.item.categoryLabel,
+                      value:
+                          _selectedCategory?.categoryLabel ??
+                          widget.item.categoryLabel,
                       hint: _loadingCategories ? '불러오는 중...' : '선택해주세요.',
                       onTap: _loadingCategories ? null : _pickCategory,
                     ),
@@ -254,24 +263,35 @@ class _StoreExpenseEditItemScreenState extends State<StoreExpenseEditItemScreen>
   }
 
   Widget _fileArea() {
+    if (_pickedFiles.isEmpty) {
     return InkWell(
       onTap: _pickFiles,
-      borderRadius: BorderRadius.circular(12.r),
+        borderRadius: BorderRadius.circular(14.r),
       child: Container(
         width: double.infinity,
-        constraints: const BoxConstraints(minHeight: 132),
-        padding: EdgeInsets.all(16.r),
+          height: 132,
         decoration: BoxDecoration(
-          color: AppColors.primaryLight,
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: AppColors.primary),
-        ),
-        child: _pickedFiles.isEmpty
-            ? Column(
+            color: AppColors.grey0Alt,
+            borderRadius: BorderRadius.circular(14.r),
+            border: Border.all(color: AppColors.grey50),
+          ),
+          child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.add_circle, color: AppColors.primary, size: 28),
-                  SizedBox(height: 8.h),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
+                child: Icon(
+                  Icons.add_rounded,
+                  color: AppColors.primary,
+                  size: 24,
+                ),
+              ),
+              SizedBox(height: 10.h),
                   Text(
                     '파일을 첨부해주세요.',
                     style: AppTypography.bodyMediumB.copyWith(
@@ -279,73 +299,130 @@ class _StoreExpenseEditItemScreenState extends State<StoreExpenseEditItemScreen>
                       fontSize: 14.sp,
                     ),
                   ),
-                ],
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              SizedBox(height: 4.h),
+              Text(
+                '영수증 사진 또는 PDF를 업로드할 수 있어요.',
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.textTertiary,
+                  fontSize: 12.sp,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  for (final f in _pickedFiles)
-                    Padding(
-                      padding: EdgeInsets.only(bottom: 12.h),
-                      child: Stack(
-                        clipBehavior: Clip.none,
+        Row(
                         children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12.r),
-                              border: Border.all(color: AppColors.grey50),
-                            ),
-                            clipBehavior: Clip.hardEdge,
-                            child: _buildInlinePreview(f),
-                          ),
-                          Positioned(
-                            top: -8,
-                            right: -8,
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _pickedFiles.remove(f);
-                                });
-                              },
-                              child: Container(
-                                padding: EdgeInsets.all(4.r),
-                                decoration: const BoxDecoration(
-                                  color: AppColors.grey200,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.close,
-                                  size: 16,
-                                  color: AppColors.grey0,
-                                ),
+            Expanded(
+              child: Text(
+                '첨부파일',
+                style: AppTypography.bodyMediumM.copyWith(
+                  color: AppColors.textPrimary,
+                  fontSize: 14.sp,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: _pickFiles,
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                padding: EdgeInsets.symmetric(horizontal: 8.w),
+                minimumSize: const Size(0, 36),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                '다시 선택',
+                style: AppTypography.bodySmallB.copyWith(
+                  color: AppColors.primary,
+                  fontSize: 13.sp,
                               ),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                ],
+        SizedBox(height: 8.h),
+        for (final f in _pickedFiles) ...[
+          _attachedFileCard(f),
+          SizedBox(height: 12.h),
+        ],
+      ],
+    );
+  }
+
+  Widget _attachedFileCard(PlatformFile file) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.grey0,
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(color: AppColors.grey50),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          Padding(
+            padding: EdgeInsets.all(12.r),
+            child: _buildInlinePreview(file),
+          ),
+          Positioned(
+            top: 10,
+            right: 10,
+            child: Material(
+              color: Colors.black.withValues(alpha: 0.56),
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () => setState(() => _pickedFiles.remove(file)),
+                child: const SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 18,
+                    color: AppColors.grey0,
+                  ),
+                ),
               ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildInlinePreview(PlatformFile f) {
     final path = f.path;
-    final isRemoteOrS3 = path != null && (path.startsWith('http') || path.contains('amazonaws.com') || path.startsWith('expenses/'));
+    final isRemoteOrS3 =
+        path != null &&
+        (path.startsWith('http') ||
+            path.contains('amazonaws.com') ||
+            path.startsWith('expenses/'));
     
     if (isRemoteOrS3) {
       return EtcRecordInlineFilePreview(
         fileUrl: path,
-        height: 280,
+        height: 260,
         displayFileName: f.name,
+        showFileName: false,
       );
     }
     
     return PickedFileInlinePreview(
       key: ValueKey<String>('${f.name}_${f.size}'),
       file: f,
-      height: 280,
+      height: 260,
+      showFileName: false,
     );
   }
 
@@ -403,7 +480,10 @@ class _StoreExpenseEditItemScreenState extends State<StoreExpenseEditItemScreen>
                   children: [
                     for (final c in _categories)
                       ListTile(
-                        title: Text(c.categoryLabel, textAlign: TextAlign.center),
+                        title: Text(
+                          c.categoryLabel,
+                          textAlign: TextAlign.center,
+                        ),
                         onTap: () => Navigator.pop(ctx, c),
                       ),
                   ],
@@ -437,9 +517,9 @@ class _StoreExpenseEditItemScreenState extends State<StoreExpenseEditItemScreen>
     final category = _selectedCategory;
     final amount = int.tryParse(_amountCtrl.text.replaceAll(',', '').trim());
     if (date == null || amount == null || amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('일자/항목/금액을 올바르게 입력해 주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('일자/항목/금액을 올바르게 입력해 주세요.')));
       return;
     }
 
@@ -458,7 +538,13 @@ class _StoreExpenseEditItemScreenState extends State<StoreExpenseEditItemScreen>
       // 수정된 파일이 기존 파일과 다를 수 있지만,
       // 현재 API에서 '수정 시 파일만 부분 업데이트'를 처리하는 방법은 `appendItemFiles`뿐입니다.
       // 새로 선택된 파일이 있을 때만 append 합니다 (삭제는 스펙상 아직 지원되지 않거나 append만 가능한 것으로 가정).
-      final newFiles = _pickedFiles.where((f) => f.bytes != null || (f.path != null && !f.path!.startsWith('http'))).toList();
+      final newFiles = _pickedFiles
+          .where(
+            (f) =>
+                f.bytes != null ||
+                (f.path != null && !f.path!.startsWith('http')),
+          )
+          .toList();
       if (newFiles.isNotEmpty) {
         await repo.appendItemFiles(
           branchId: widget.branchId,
@@ -471,15 +557,16 @@ class _StoreExpenseEditItemScreenState extends State<StoreExpenseEditItemScreen>
       Navigator.pop<bool>(context, true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('항목 수정에 실패했습니다: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('항목 수정에 실패했습니다: $e')));
       setState(() => _saving = false);
     }
   }
 
   Future<void> _delete() async {
-    final sure = await showDialog<bool>(
+    final sure =
+        await showDialog<bool>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.55),
       builder: (ctx) => Dialog(
@@ -551,7 +638,8 @@ class _StoreExpenseEditItemScreenState extends State<StoreExpenseEditItemScreen>
           ),
         ),
       ),
-    ) ?? false;
+        ) ??
+        false;
 
     if (!sure || !mounted) return;
 
@@ -566,9 +654,9 @@ class _StoreExpenseEditItemScreenState extends State<StoreExpenseEditItemScreen>
       Navigator.pop<bool>(context, true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('항목 삭제에 실패했습니다: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('항목 삭제에 실패했습니다: $e')));
       setState(() => _saving = false);
     }
   }

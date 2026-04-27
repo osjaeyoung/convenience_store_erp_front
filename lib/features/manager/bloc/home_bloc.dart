@@ -458,16 +458,15 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       final page = await _managerHomeRepository.getRecruitmentChats(
         branchId: branchId,
       );
-      return page.items.length;
+      return page.items.where((chat) => chat.unreadCount > 0).length;
     } catch (_) {
       return _recruitmentCount(
         recruitment,
-        primaryKey: 'new_applicant_chat_count',
-        fallbackKey: 'new_contacts',
+        primaryKey: 'unread_chat_count',
+        fallbackKey: 'new_applicant_unread_chat_count',
         extraKeys: const [
-          'new_applicant_chats_count',
-          'chat_count',
-          'unread_chat_count',
+          'new_applicant_unread_chats_count',
+          'unread_chats_count',
         ],
       );
     }
