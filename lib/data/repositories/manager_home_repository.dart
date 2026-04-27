@@ -42,7 +42,10 @@ class ManagerHomeRepository {
       },
     );
     final items = res.data?['items'] as List<dynamic>? ?? const [];
-    return items.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+    return items
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
   }
 
   /// 이름+전화번호 매칭 점포 일괄 연결
@@ -122,6 +125,7 @@ class ManagerHomeRepository {
     int? ageMax,
     List<String>? regions,
     double? minRating,
+    bool searchAllWorkers = true,
     int page = 1,
     int pageSize = 20,
   }) async {
@@ -129,12 +133,14 @@ class ManagerHomeRepository {
     final res = await _apiClient.dio.get<Map<String, dynamic>>(
       '/recruitment/branches/$branchId/home',
       queryParameters: {
-        if (keyword != null && keyword.trim().isNotEmpty) 'keyword': keyword.trim(),
+        if (keyword != null && keyword.trim().isNotEmpty)
+          'keyword': keyword.trim(),
         if (gender != null && gender.trim().isNotEmpty) 'gender': gender,
         if (ageMin != null) 'age_min': ageMin,
         if (ageMax != null) 'age_max': ageMax,
         if (regionParam != null) 'region': regionParam,
         if (minRating != null) 'min_rating': minRating,
+        if (searchAllWorkers) 'scope': 'all_workers',
         'page': page,
         'page_size': pageSize,
       },
@@ -188,6 +194,31 @@ class ManagerHomeRepository {
       '/chats/branches/$branchId/employees/$employeeId',
     );
     return RecruitmentChatSummary.fromJson(res.data ?? const {});
+  }
+
+  /// 지원현황 상세에서 채팅 생성/조회.
+  /// 근로자 앱 지원건은 employee_id가 없을 수 있으므로 application_id 기준으로 연다.
+  Future<RecruitmentChatSummary> createOrGetRecruitmentChatForApplication({
+    required int branchId,
+    required int applicationId,
+    int? fallbackEmployeeId,
+  }) async {
+    try {
+      final res = await _apiClient.dio.post<Map<String, dynamic>>(
+        '/chats/branches/$branchId/applications/$applicationId',
+      );
+      return RecruitmentChatSummary.fromJson(res.data ?? const {});
+    } on DioException catch (error) {
+      if (fallbackEmployeeId != null &&
+          fallbackEmployeeId > 0 &&
+          error.response?.statusCode == 404) {
+        return createOrGetRecruitmentChat(
+          branchId: branchId,
+          employeeId: fallbackEmployeeId,
+        );
+      }
+      rethrow;
+    }
   }
 
   /// 지점별 채용/계약 통합 채팅 목록
@@ -263,10 +294,7 @@ class ManagerHomeRepository {
   }) async {
     final res = await _apiClient.dio.get<Map<String, dynamic>>(
       '/recruitment/branches/$branchId/job-seekers/$employeeId/reviews',
-      queryParameters: {
-        'page': page,
-        'page_size': pageSize,
-      },
+      queryParameters: {'page': page, 'page_size': pageSize},
     );
     return JobSeekerReviewPage.fromJson(res.data!);
   }
@@ -284,7 +312,8 @@ class ManagerHomeRepository {
     final res = await _apiClient.dio.get<Map<String, dynamic>>(
       '/recruitment/branches/$branchId/postings',
       queryParameters: {
-        if (keyword != null && keyword.trim().isNotEmpty) 'keyword': keyword.trim(),
+        if (keyword != null && keyword.trim().isNotEmpty)
+          'keyword': keyword.trim(),
         if (regionParam != null) 'region': regionParam,
         if (includeDraft) 'include_draft': true,
         'page': page,
@@ -302,10 +331,7 @@ class ManagerHomeRepository {
   }) async {
     final res = await _apiClient.dio.get<Map<String, dynamic>>(
       '/recruitment/branches/$branchId/my-postings',
-      queryParameters: {
-        'page': page,
-        'page_size': pageSize,
-      },
+      queryParameters: {'page': page, 'page_size': pageSize},
     );
     return RecruitmentPostingPage.fromJson(res.data!);
   }
@@ -485,7 +511,9 @@ class ManagerHomeRepository {
     return res.data!;
   }
 
-  static Future<MultipartFile> _recruitmentMultipartFile(PlatformFile file) async {
+  static Future<MultipartFile> _recruitmentMultipartFile(
+    PlatformFile file,
+  ) async {
     final name = file.name.trim().isEmpty ? 'attachment' : file.name.trim();
     final contentType = _recruitmentMultipartMediaType(name);
     if (file.bytes != null) {
@@ -515,5 +543,4 @@ class ManagerHomeRepository {
     if (lower.endsWith('.webp')) return DioMediaType('image', 'webp');
     return null;
   }
-
 }

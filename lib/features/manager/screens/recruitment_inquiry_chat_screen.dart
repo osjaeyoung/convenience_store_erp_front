@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/chat/recruitment_chat_read_store.dart';
 import '../../../core/datetime/api_datetime_format.dart';
 import '../../../data/models/recruitment/recruitment_models.dart';
 import '../../../data/repositories/manager_home_repository.dart';
@@ -100,6 +101,7 @@ class _ManagerRecruitmentInquiryChatScreenState
       if (!mounted) return;
       final changed =
           _messageSignature(page.messages) != _messageSignature(_messages);
+      final hadUnread = page.chat.unreadCount > 0;
       setState(() {
         _chat = page.chat.copyWith(unreadCount: 0);
         _currentUserRole = page.currentUserRole;
@@ -107,7 +109,12 @@ class _ManagerRecruitmentInquiryChatScreenState
         _loading = false;
         _error = null;
       });
-      _markRead(chatId);
+      await _markRead(chatId);
+      await RecruitmentChatReadStore.markReadThrough(
+        chatId: chatId,
+        lastMessageAt: _latestMessageAt(page),
+      );
+      if (hadUnread) _changed = true;
       if (jumpToBottom || changed) {
         _scrollToBottom(jump: jumpToBottom);
       }
@@ -136,6 +143,13 @@ class _ManagerRecruitmentInquiryChatScreenState
     } catch (_) {
       // 읽음 처리 실패가 채팅 조회/응답 자체를 막지는 않도록 한다.
     }
+  }
+
+  String? _latestMessageAt(RecruitmentChatMessagePage page) {
+    if (page.messages.isNotEmpty) {
+      return page.messages.last.createdAt;
+    }
+    return page.chat.lastMessageAt;
   }
 
   Future<void> _sendMessage(String text) async {

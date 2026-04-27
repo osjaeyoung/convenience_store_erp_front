@@ -53,7 +53,9 @@
   - 상단 `최근 열람 구직자`
   - 검색/필터 하단 `구직자 목록`
   을 한번에 반환
-- `search_results`는 요청한 `branch_id` 소속 근로자 중 **앱 회원으로 연결된 근로자(`linked_user_id` 존재)** 기준으로 조회
+- `search_results`는 기본적으로 **전체 근로자 앱 회원/구직자 풀**을 대상으로 조회합니다. 특정 지점에 이미 등록된 근무자만 노출하면 안 됩니다.
+- `branch_id`는 접근 권한, 최근 열람 기록, 리뷰/문의 컨텍스트를 식별하기 위한 값입니다. 검색 대상 범위를 해당 지점 소속 근무자로 제한하는 값이 아닙니다.
+- `employee_id`는 채용 홈/프로필/채팅 API에서 공통으로 사용하는 구직자 식별자입니다. 해당 지점의 사전등록 근로자 ID가 아니어도 되며, 전체 근로자 앱 회원 풀에서 내려온 값을 그대로 사용합니다.
 - 경영주/점장이 직원관리에서 직접 만든 비회원 근로자(`linked_user_id=null`)는 채용 홈의 최근 열람/검색 목록에 노출하지 않음
 
 ### Query Params
@@ -61,9 +63,10 @@
 - `keyword` (optional): 이름/지역/편의점명 검색
 - `gender` (optional): `male` | `female` | `all`
 - `age_min`, `age_max` (optional)
-- `region` (optional, **다중 선택**): 지역 필터. **OR 조건**. 전달 방식·경로 문자열 규칙·최대 개수·OpenAPI 표기는 하단 **「프론트엔드 연동 가이드 (지역 필터 · 이력서 주소)」** 와 동일. 채용 홈에서는 구직자 카드에 붙는 **지점 채용 검색용 텍스트**(해당 지점 최신 공고의 `region_path` 우선, 없으면 `region_summary`·`address` 합성 문자열)와 매칭한다. (근로자 앱 이력서 `resume_region_path`는 이 목록이 아니라 **근로자 지원건 프로필/지원현황** 쪽에 반영된다.)
+- `region` (optional, **다중 선택**): 지역 필터. **OR 조건**. 전달 방식·경로 문자열 규칙·최대 개수·OpenAPI 표기는 하단 **「프론트엔드 연동 가이드 (지역 필터 · 이력서 주소)」** 와 동일. 채용 홈에서는 근로자 이력서의 `resume_region_path`를 최우선으로 매칭하고, 없으면 프로필 주소/희망 근무지 스냅샷 등 서버가 보유한 구직자 위치 텍스트를 fallback으로 사용합니다.
 - `min_rating` (optional, 0~3)
-- `page` (default=1), `page_size` (default=20)
+- `scope` (optional): `all_workers` 권장. 전체 근로자 앱 회원/구직자 풀에서 검색합니다. 미전달 시에도 서버 기본값은 `all_workers`로 처리합니다. 과거 호환이 필요한 경우에만 서버 내부에서 별도 `branch_workers` 범위를 지원할 수 있습니다.
+- `page` (default=1), `page_size` (default=20): 프론트는 채용 홈 하단 도달 시 `page`를 1씩 증가시켜 무한 스크롤로 이어 붙입니다. 서버는 같은 검색 조건에서 안정적인 정렬 순서를 유지하고, `total_count`를 전체 검색 결과 수로 내려줘야 합니다.
 
 ### Response Body (200)
 
@@ -654,7 +657,7 @@ GET /api/v1/recruitment/branches/1/home?region=서울&region=부산
 **대상 텍스트**
 
 - **채용 공고 목록**(경영주 게시판·근로자 `GET /worker/recruitment/postings`): 공고마다 `region_path`를 최우선으로 사용한다. 기존 데이터처럼 `region_path`가 비어 있으면 `address`와 `region_summary`를 **공백 한 칸으로 이어 붙인 문자열**(앞뒤 공백 정리)을 fallback으로 사용한다.
-- **채용 홈**(`GET .../home`): 점포 소속 구직자 카드마다, 해당 지점 **최신 공고** 기준으로 만든 **채용 검색용 텍스트**(지역·주소·업체명·지점명 등이 합쳐진 문자열). 근로자 이력서 `resume_region_path`와는 **데이터 소스가 다르다**.
+- **채용 홈**(`GET .../home`): 전체 근로자 앱 회원/구직자 풀을 대상으로, 근로자 이력서의 `resume_region_path`를 최우선 검색 텍스트로 사용한다. 이력서 지역이 없으면 프로필 주소, 희망 근무지 스냅샷 등 서버가 보유한 구직자 위치 텍스트를 fallback으로 사용한다.
 
 **한 개의 `region` 값(한 경로)에 대한 판정 순서**
 
@@ -716,6 +719,7 @@ GET /api/v1/recruitment/branches/1/home?region=서울&region=부산
 
 - `POST /chats/branches/{branch_id}/employees/{employee_id}`
 - 경영주/점장이 특정 구직자/최근 본 근로자에게 문의하기 위해 **지점-근로자 1:1 통합 채팅방**을 생성하거나 기존 방을 조회합니다. (최근 본 근로자 상세화면 등에서 "문의하기" 버튼 클릭 시)
+- `employee_id`는 `GET /recruitment/branches/{branch_id}/home` 또는 구직자 프로필 조회에서 받은 전체 구직자 식별자입니다. 서버는 `branch_id` 접근 권한만 검증하고, 대상 근로자가 해당 지점에 이미 등록되어 있는지를 채팅 생성 조건으로 삼으면 안 됩니다.
 - 기존 `POST /recruitment/branches/{branch_id}/job-seekers/{employee_id}/inquiry-chats`는 사용하지 않습니다.
 
 ### Request Body
@@ -738,6 +742,17 @@ GET /api/v1/recruitment/branches/1/home?region=서울&region=부산
   "created_at": "2026-04-24T12:00:00Z"
 }
 ```
+
+### 15-1) 지원현황 상세에서 채팅 방 생성/조회
+
+- `POST /chats/branches/{branch_id}/applications/{application_id}`
+- `지원현황 상세` 화면의 `문의하기` 액션
+- 근로자 앱에서 지원한 건은 `employee_id`가 없거나 내부 사전등록 근무자 ID와 다를 수 있으므로, 지원건 상세에서는 `application_id` 기준으로 채팅방을 생성/조회합니다.
+- 서버는 해당 지원건의 `applicant_user_id` 또는 연결된 근로자 계정을 찾아 같은 지점-근로자 통합 채팅방을 반환합니다.
+- 비회원/미연결 지원자처럼 채팅 대상 user가 없는 경우 `404` 대신 `409` 또는 `400`과 함께 사용자 표시용 메시지(`message`)를 내려주는 것을 권장합니다.
+
+### Response Body (200)
+`15) 채용 문의 채팅 방 생성/조회`와 동일합니다.
 
 ---
 
@@ -782,7 +797,7 @@ GET /api/v1/recruitment/branches/1/home?region=서울&region=부산
 - 상대방 또는 발신자가 계정 프로필 이미지를 설정한 경우 `counterparty_profile_image_url`, `sender_profile_image_url`에 표시용 URL이 포함됩니다. 없으면 `null`입니다.
 - Flutter 화면은 이 API를 실제 데이터 소스로 사용합니다. 더 이상 채팅 탭/상세에서 mock 메시지를 사용하지 않습니다.
 - `current_user_role`은 현재 로그인한 사용자의 말풍선 방향을 결정하는 기준입니다. 경영주/점장 화면에서는 일반적으로 `business`, 근로자 화면에서는 `worker`입니다.
-- 상세 화면 진입 직후 `PATCH /chats/{chat_id}/read`를 호출해 현재 로그인 사용자의 미읽음 메시지를 읽음 처리합니다. 이후 목록 조회의 해당 `unread_count`는 `0`으로 내려와야 합니다.
+- 상세 화면 진입 직후 `PATCH /chats/{chat_id}/read`를 호출해 현재 로그인 사용자의 미읽음 메시지를 읽음 처리합니다. 서버는 사용자별 `last_read_message_id` 또는 `last_read_at` 커서를 저장해야 하며, 이후 목록 조회의 `unread_count`는 **해당 커서 이후 상대방이 보낸 메시지 수만** 내려줘야 합니다. 이미 읽은 메시지를 누적해서 다시 포함하면 안 됩니다.
 - 프론트는 앱 실행 중 실시간성을 위해 채팅 목록은 약 5초, 채팅 상세는 약 3초 간격으로 polling합니다. 서버는 `GET /chats`, `GET /chats/{chat_id}/messages`가 최신 메시지/읽음 상태를 즉시 반영하도록 해야 합니다.
 - 향후 WebSocket/SSE를 제공할 경우 `chat_id`, `message_id`, `sender_role`, `message_type`, `text`, `created_at`, `unread_count`를 포함한 이벤트를 현재 REST 응답 구조와 동일하게 내려주면 polling을 대체할 수 있습니다.
 - `POST /chats/{chat_id}/messages` 성공 시 상대방이 앱 foreground 상태여도 알림이 표시되도록 FCM 알림을 발송해야 합니다. data-only 푸시를 사용하는 경우에도 `title`/`body` 또는 프론트 fallback 가능한 `type=recruitment_chat`, `entity_type=recruitment_chat`를 포함합니다.

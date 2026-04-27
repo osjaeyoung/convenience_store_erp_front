@@ -107,14 +107,14 @@ class JobSeekerSummary extends Equatable {
 
   @override
   List<Object?> get props => [
-        employeeId,
-        employeeName,
-        age,
-        gender,
-        desiredLocation,
-        averageRating,
-        reviewCount,
-      ];
+    employeeId,
+    employeeName,
+    age,
+    gender,
+    desiredLocation,
+    averageRating,
+    reviewCount,
+  ];
 }
 
 class JobSeekerProfile extends Equatable {
@@ -185,22 +185,22 @@ class JobSeekerProfile extends Equatable {
 
   @override
   List<Object?> get props => [
-        employeeId,
-        applicantUserId,
-        sourceType,
-        employeeName,
-        age,
-        gender,
-        contactPhone,
+    employeeId,
+    applicantUserId,
+    sourceType,
+    employeeName,
+    age,
+    gender,
+    contactPhone,
     profileImageUrl,
-        careerLabel,
-        desiredLocations,
-        averageRating,
-        reviewCount,
-        workHistories,
-        contactActionLabel,
-        resumeTitle,
-      ];
+    careerLabel,
+    desiredLocations,
+    averageRating,
+    reviewCount,
+    workHistories,
+    contactActionLabel,
+    resumeTitle,
+  ];
 }
 
 class JobSeekerWorkHistory extends Equatable {
@@ -269,16 +269,16 @@ class JobSeekerReviewPage extends Equatable {
 
   @override
   List<Object?> get props => [
-        employeeId,
-        employeeName,
-        desiredLocation,
-        averageRating,
-        reviewCount,
-        items,
-        totalCount,
-        page,
-        pageSize,
-      ];
+    employeeId,
+    employeeName,
+    desiredLocation,
+    averageRating,
+    reviewCount,
+    items,
+    totalCount,
+    page,
+    pageSize,
+  ];
 }
 
 class JobSeekerReview extends Equatable {
@@ -435,18 +435,18 @@ class RecruitmentPostingSummary extends Equatable {
 
   @override
   List<Object?> get props => [
-        postingId,
-        badgeLabel,
-        companyName,
-        title,
-        regionSummary,
-        payType,
-        payAmount,
-        applicantCount,
-        applicantsButtonLabel,
-        status,
-        createdAt,
-      ];
+    postingId,
+    badgeLabel,
+    companyName,
+    title,
+    regionSummary,
+    payType,
+    payAmount,
+    applicantCount,
+    applicantsButtonLabel,
+    status,
+    createdAt,
+  ];
 }
 
 class RecruitmentPostingDetail extends Equatable {
@@ -548,35 +548,35 @@ class RecruitmentPostingDetail extends Equatable {
 
   @override
   List<Object?> get props => [
-        postingId,
-        profileImageUrl,
-        badgeLabel,
-        companyName,
-        title,
-        regionSummary,
+    postingId,
+    profileImageUrl,
+    badgeLabel,
+    companyName,
+    title,
+    regionSummary,
     regionPath,
-        address,
-        payType,
-        payAmount,
-        workPeriod,
-        workDays,
-        workDaysDetail,
-        workTime,
-        workTimeDetail,
-        jobCategory,
-        employmentType,
-        recruitmentDeadline,
-        recruitmentHeadcount,
-        recruitmentHeadcountDetail,
-        education,
-        educationDetail,
-        managerName,
-        contactPhone,
-        legalWarningMessage,
-        status,
-        createdAt,
-        updatedAt,
-      ];
+    address,
+    payType,
+    payAmount,
+    workPeriod,
+    workDays,
+    workDaysDetail,
+    workTime,
+    workTimeDetail,
+    jobCategory,
+    employmentType,
+    recruitmentDeadline,
+    recruitmentHeadcount,
+    recruitmentHeadcountDetail,
+    education,
+    educationDetail,
+    managerName,
+    contactPhone,
+    legalWarningMessage,
+    status,
+    createdAt,
+    updatedAt,
+  ];
 }
 
 class RecruitmentPostingSaveResult extends Equatable {
@@ -741,36 +741,43 @@ class RecruitmentPostingRequest extends Equatable {
 
   @override
   List<Object?> get props => [
-        profileImageUrl,
-        companyName,
-        title,
-        regionSummary,
+    profileImageUrl,
+    companyName,
+    title,
+    regionSummary,
     regionPath,
-        address,
-        payType,
-        payAmount,
-        workPeriod,
-        workDays,
-        workDaysDetail,
-        workTime,
-        workTimeDetail,
-        jobCategory,
-        employmentType,
-        recruitmentDeadline,
-        isAlwaysHiring,
-        recruitmentHeadcount,
-        recruitmentHeadcountDetail,
-        education,
-        educationDetail,
-        managerName,
-        contactPhone,
-      ];
+    address,
+    payType,
+    payAmount,
+    workPeriod,
+    workDays,
+    workDaysDetail,
+    workTime,
+    workTimeDetail,
+    jobCategory,
+    employmentType,
+    recruitmentDeadline,
+    isAlwaysHiring,
+    recruitmentHeadcount,
+    recruitmentHeadcountDetail,
+    education,
+    educationDetail,
+    managerName,
+    contactPhone,
+  ];
 }
 
 String? _nullableValue(String? value) {
   final trimmed = value?.trim();
   if (trimmed == null || trimmed.isEmpty) return null;
   return trimmed;
+}
+
+int? _intValue(Object? value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(value.toString());
 }
 
 class RecruitmentApplicationPage extends Equatable {
@@ -862,17 +869,17 @@ class RecruitmentApplicationSummary extends Equatable {
 
   @override
   List<Object?> get props => [
-        applicationId,
-        appliedDateLabel,
-        employeeId,
-        applicantUserId,
-        applicationSource,
-        employeeName,
-        desiredLocation,
-        averageRating,
-        reviewCount,
-        resumeTitle,
-      ];
+    applicationId,
+    appliedDateLabel,
+    employeeId,
+    applicantUserId,
+    applicationSource,
+    employeeName,
+    desiredLocation,
+    averageRating,
+    reviewCount,
+    resumeTitle,
+  ];
 }
 
 /// `POST .../job-seekers/{id}/contact` 응답
@@ -1101,22 +1108,44 @@ class RecruitmentChatMessage extends Equatable {
   final String? openDocumentPath;
 
   factory RecruitmentChatMessage.fromJson(Map<String, dynamic> json) {
+    final metadata = (json['metadata'] as Map?)?.cast<String, dynamic>();
+    final document = (json['document'] as Map?)?.cast<String, dynamic>();
+    final source = <String, dynamic>{...?metadata, ...?document, ...json};
+    final type =
+        source['message_type']?.toString() ??
+        source['type']?.toString() ??
+        'text';
     return RecruitmentChatMessage(
-      messageId: json['message_id']?.toString() ?? '',
-      senderRole: json['sender_role'] as String?,
-      senderName: json['sender_name'] as String?,
-      senderProfileImageUrl: json['sender_profile_image_url'] as String?,
-      messageType: json['message_type'] as String? ?? 'text',
-      text: json['text'] as String? ?? '',
-      createdAt: json['created_at'] as String?,
-      contractId: (json['contract_id'] as num?)?.toInt(),
-      documentStatus: json['document_status'] as String?,
-      canOpenDocument: json['can_open_document'] == true,
-      openDocumentPath: json['open_document_path'] as String?,
+      messageId: source['message_id']?.toString() ?? '',
+      senderRole: source['sender_role'] as String?,
+      senderName: source['sender_name'] as String?,
+      senderProfileImageUrl: source['sender_profile_image_url'] as String?,
+      messageType: type,
+      text: source['text'] as String? ?? '',
+      createdAt: source['created_at'] as String?,
+      contractId: _intValue(
+        source['contract_id'] ??
+            source['employment_contract_id'] ??
+            source['document_id'],
+      ),
+      documentStatus: source['document_status'] as String?,
+      canOpenDocument:
+          source['can_open_document'] == true ||
+          source['open_document_path'] != null ||
+          source['contract_id'] != null ||
+          source['employment_contract_id'] != null,
+      openDocumentPath:
+          source['open_document_path'] as String? ??
+          source['document_path'] as String?,
     );
   }
 
-  bool get isDocument => messageType == 'document';
+  bool get isDocument {
+    final normalized = messageType.toLowerCase();
+    return normalized == 'document' ||
+        normalized == 'contract' ||
+        normalized == 'contract_document';
+  }
 
   @override
   List<Object?> get props => [

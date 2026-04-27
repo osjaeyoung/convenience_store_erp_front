@@ -335,6 +335,7 @@
   - target_route: `/job-seeker?tab=3`
 - 앱이 foreground 상태여도 알림이 떠야 하므로 FCM `notification.title/body` 또는 data `title/body` 중 하나는 반드시 포함합니다.
 - data-only 전송 시에도 프론트 fallback을 위해 `type=recruitment_chat`, `entity_type=recruitment_chat`, `entity_id={chat_id}`를 포함해야 합니다.
+- Android 발송 시 `android.notification.channel_id`는 앱 매니페스트/로컬 채널과 같은 `high_importance_channel`을 사용합니다. 채널이 누락되면 Android 8+ 백그라운드 알림 표시가 누락될 수 있습니다.
 - 서버는 채팅 메시지 푸시를 지연 큐에만 적재하지 않고 메시지 저장 직후 앱 알림 row 생성과 FCM 발송을 바로 시도합니다.
 
 ### 6-5) 관리자 문의 답변 등록/수정 시 (어드민 -> 문의 작성자)

@@ -59,15 +59,17 @@ class PushNotificationService {
 
     // 앱 시작 시점에 푸시 권한을 요청하여 iOS에서 APNs 토큰이 생성되도록 유도 (Firebase Phone Auth silent verification 등에서 필요)
     await requestFcmPermission();
-    await _requestPlatformLocalNotificationPermission();
 
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    // Foreground 알림은 아래 onMessage에서 local notification으로만 표시한다.
+    // iOS의 FCM foreground presentation까지 켜면 같은 푸시가 2번 보일 수 있다.
     await _messaging.setForegroundNotificationPresentationOptions(
-      alert: true,
+      alert: false,
       badge: true,
-      sound: true,
+      sound: false,
     );
     await _initializeLocalNotifications();
+    await _requestPlatformLocalNotificationPermission();
 
     _onMessageSub = FirebaseMessaging.onMessage.listen(_onForegroundMessage);
     _onOpenedSub = FirebaseMessaging.onMessageOpenedApp.listen(

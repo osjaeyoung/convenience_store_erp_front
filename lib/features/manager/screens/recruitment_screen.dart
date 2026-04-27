@@ -57,8 +57,10 @@ class _RecruitmentScreenState extends State<RecruitmentScreen>
     with SingleTickerProviderStateMixin {
   static const int _minimumRecruitmentAge = 14;
   static const int _maximumRecruitmentAge = 99;
+  static const int _recruitmentPageSize = 20;
 
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _homeScrollController = ScrollController();
   late final TabController _tabController;
 
   int _selectedTabIndex = 0;
@@ -79,6 +81,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen>
       initialIndex: _selectedTabIndex,
     );
     _tabController.addListener(_onTabChanged);
+    _homeScrollController.addListener(_onHomeScrolled);
   }
 
   void _onTabChanged() {
@@ -89,8 +92,33 @@ class _RecruitmentScreenState extends State<RecruitmentScreen>
     }
   }
 
+  void _onHomeScrolled() {
+    if (_selectedTabIndex != 0 || !_homeScrollController.hasClients) return;
+    if (_homeScrollController.position.extentAfter > 360) return;
+
+    final branchId = context.read<SelectedBranchCubit>().state;
+    if (branchId == null) return;
+
+    _requestNextHomePage(branchId);
+  }
+
+  void _requestNextHomePage(int branchId, {bool force = false}) {
+    final state = context.read<RecruitmentBloc>().state;
+    if (state.branchId != branchId ||
+        !state.hasMoreSearchResults ||
+        state.isLoadingMore ||
+        (!force && state.paginationErrorMessage != null) ||
+        state.status == RecruitmentBlocStatus.loading) {
+      return;
+    }
+
+    _requestHome(branchId, page: (state.homeData?.page ?? 1) + 1, append: true);
+  }
+
   @override
   void dispose() {
+    _homeScrollController.removeListener(_onHomeScrolled);
+    _homeScrollController.dispose();
     _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     _searchController.dispose();
@@ -110,7 +138,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen>
     }
   }
 
-  void _requestHome(int branchId) {
+  void _requestHome(int branchId, {int page = 1, bool append = false}) {
     final (ageMin, ageMax) = _sanitizedAgeRange(_ageMin, _ageMax);
     _lastRequestedBranchId = branchId;
     context.read<RecruitmentBloc>().add(
@@ -122,6 +150,10 @@ class _RecruitmentScreenState extends State<RecruitmentScreen>
         ageMax: ageMax,
         regions: _regions.isEmpty ? null : _regions,
         minRating: _minRating,
+        searchAllWorkers: true,
+        append: append,
+        page: page,
+        pageSize: _recruitmentPageSize,
       ),
     );
   }
@@ -270,7 +302,9 @@ class _RecruitmentScreenState extends State<RecruitmentScreen>
                         ),
                         child: Text(
                           '취소',
-                          style: AppTypography.bodyMediumM.copyWith(fontSize: 14.sp),
+                          style: AppTypography.bodyMediumM.copyWith(
+                            fontSize: 14.sp,
+                          ),
                         ),
                       ),
                     ),
@@ -293,7 +327,9 @@ class _RecruitmentScreenState extends State<RecruitmentScreen>
                         ),
                         child: Text(
                           '초기화',
-                          style: AppTypography.bodyMediumM.copyWith(fontSize: 14.sp),
+                          style: AppTypography.bodyMediumM.copyWith(
+                            fontSize: 14.sp,
+                          ),
                         ),
                       ),
                     ),
@@ -305,8 +341,9 @@ class _RecruitmentScreenState extends State<RecruitmentScreen>
                           final max = _parseAgeValue(maxController.text);
                           final message = _ageValidationMessage(min, max);
                           if (message != null) {
-                            ScaffoldMessenger.of(context)
-                                .showSnackBar(SnackBar(content: Text(message)));
+                            ScaffoldMessenger.of(
+                              context,
+                            ).showSnackBar(SnackBar(content: Text(message)));
                             return;
                           }
                           Navigator.of(dialogContext).pop(true);
@@ -321,7 +358,9 @@ class _RecruitmentScreenState extends State<RecruitmentScreen>
                         ),
                         child: Text(
                           '적용',
-                          style: AppTypography.bodyMediumB.copyWith(fontSize: 14.sp),
+                          style: AppTypography.bodyMediumB.copyWith(
+                            fontSize: 14.sp,
+                          ),
                         ),
                       ),
                     ),
@@ -482,6 +521,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen>
 
                         return _RecruitmentHomeTab(
                           state: state,
+                          scrollController: _homeScrollController,
                           searchController: _searchController,
                           genderLabel: _genderLabel,
                           ageLabel: _ageLabel,
@@ -493,6 +533,8 @@ class _RecruitmentScreenState extends State<RecruitmentScreen>
                           onTapRegion: _showRegionSheet,
                           onTapRating: _showRatingSheet,
                           onRetry: () => _requestHome(branchId),
+                          onRetryLoadMore: () =>
+                              _requestNextHomePage(branchId, force: true),
                           onTapProfile: (employeeId) =>
                               _openProfile(branchId, employeeId),
                         );
@@ -606,10 +648,10 @@ class _RecruitmentScreenState extends State<RecruitmentScreen>
   }
 }
 
-
 class _RecruitmentHomeTab extends StatelessWidget {
   const _RecruitmentHomeTab({
     required this.state,
+    required this.scrollController,
     required this.searchController,
     required this.genderLabel,
     required this.ageLabel,
@@ -621,10 +663,12 @@ class _RecruitmentHomeTab extends StatelessWidget {
     required this.onTapRegion,
     required this.onTapRating,
     required this.onRetry,
+    required this.onRetryLoadMore,
     required this.onTapProfile,
   });
 
   final RecruitmentBlocState state;
+  final ScrollController scrollController;
   final TextEditingController searchController;
   final String genderLabel;
   final String ageLabel;
@@ -636,6 +680,7 @@ class _RecruitmentHomeTab extends StatelessWidget {
   final VoidCallback onTapRegion;
   final VoidCallback onTapRating;
   final VoidCallback onRetry;
+  final VoidCallback onRetryLoadMore;
   final ValueChanged<int> onTapProfile;
 
   @override
@@ -659,75 +704,83 @@ class _RecruitmentHomeTab extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: () async => onRetry(),
       child: ListView(
+        controller: scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.zero,
         children: [
-          if (state.status == RecruitmentBlocStatus.loading)
+          if (state.status == RecruitmentBlocStatus.loading &&
+              !state.isLoadingMore)
             const LinearProgressIndicator(
               minHeight: 1,
               color: AppColors.primary,
               backgroundColor: AppColors.grey25,
             ),
-        _RecentViewedSection(
-          items: data.recentViewedJobSeekers,
-          onTapProfile: onTapProfile,
-        ),
-        Padding(
-          padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 0.h),
-          child: _RecruitmentSearchField(
-            controller: searchController,
-            onSubmitted: (_) => onSubmittedSearch(),
-          ),
-        ),
-        SizedBox(height: 12.h),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: EdgeInsets.symmetric(horizontal: 20.w),
-          child: Row(
-            children: [
-              RecruitmentFilterPill(
-                label: genderLabel,
-                active: genderLabel != '성별',
-                onTap: onTapGender,
-              ),
-              SizedBox(width: 8.w),
-              RecruitmentFilterPill(
-                label: ageLabel,
-                active: ageLabel != '연령',
-                onTap: onTapAge,
-              ),
-              SizedBox(width: 8.w),
-              RecruitmentFilterPill(
-                label: regionLabel,
-                active: regionLabel != '전체',
-                onTap: onTapRegion,
-              ),
-              SizedBox(width: 8.w),
-              RecruitmentFilterPill(
-                label: ratingLabel,
-                active: ratingLabel != '평점',
-                onTap: onTapRating,
-              ),
-            ],
-          ),
-        ),
-        if (state.status == RecruitmentBlocStatus.failure)
-          Padding(
-            padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 0.h),
-            child: Text(
-              state.errorMessage ?? '검색 결과를 새로 불러오지 못했습니다.',
-              style: AppTypography.bodySmallR.copyWith(color: AppColors.error),
-            ),
-          ),
-        Padding(
-          padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 24.h),
-          child: _SearchResultsSection(
-            items: data.searchResults,
+          _RecentViewedSection(
+            items: data.recentViewedJobSeekers,
             onTapProfile: onTapProfile,
           ),
-        ),
-      ],
-    ));
+          Padding(
+            padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 0.h),
+            child: _RecruitmentSearchField(
+              controller: searchController,
+              onSubmitted: (_) => onSubmittedSearch(),
+            ),
+          ),
+          SizedBox(height: 12.h),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
+            child: Row(
+              children: [
+                RecruitmentFilterPill(
+                  label: genderLabel,
+                  active: genderLabel != '성별',
+                  onTap: onTapGender,
+                ),
+                SizedBox(width: 8.w),
+                RecruitmentFilterPill(
+                  label: ageLabel,
+                  active: ageLabel != '연령',
+                  onTap: onTapAge,
+                ),
+                SizedBox(width: 8.w),
+                RecruitmentFilterPill(
+                  label: regionLabel,
+                  active: regionLabel != '전체',
+                  onTap: onTapRegion,
+                ),
+                SizedBox(width: 8.w),
+                RecruitmentFilterPill(
+                  label: ratingLabel,
+                  active: ratingLabel != '평점',
+                  onTap: onTapRating,
+                ),
+              ],
+            ),
+          ),
+          if (state.status == RecruitmentBlocStatus.failure)
+            Padding(
+              padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 0.h),
+              child: Text(
+                state.errorMessage ?? '검색 결과를 새로 불러오지 못했습니다.',
+                style: AppTypography.bodySmallR.copyWith(
+                  color: AppColors.error,
+                ),
+              ),
+            ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 24.h),
+            child: _SearchResultsSection(
+              items: data.searchResults,
+              isLoadingMore: state.isLoadingMore,
+              loadMoreErrorMessage: state.paginationErrorMessage,
+              onRetryLoadMore: onRetryLoadMore,
+              onTapProfile: onTapProfile,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -893,10 +946,16 @@ class _RecruitmentSearchField extends StatelessWidget {
 class _SearchResultsSection extends StatelessWidget {
   const _SearchResultsSection({
     required this.items,
+    required this.isLoadingMore,
+    required this.loadMoreErrorMessage,
+    required this.onRetryLoadMore,
     required this.onTapProfile,
   });
 
   final List<JobSeekerSummary> items;
+  final bool isLoadingMore;
+  final String? loadMoreErrorMessage;
+  final VoidCallback onRetryLoadMore;
   final ValueChanged<int> onTapProfile;
 
   @override
@@ -921,6 +980,23 @@ class _SearchResultsSection extends StatelessWidget {
             item: items[i],
             showDivider: i != items.length - 1,
             onTap: () => onTapProfile(items[i].employeeId),
+          ),
+        if (isLoadingMore)
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 20.h),
+            child: const SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          )
+        else if (loadMoreErrorMessage != null)
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 16.h),
+            child: TextButton(
+              onPressed: onRetryLoadMore,
+              child: const Text('더 불러오지 못했습니다. 다시 시도'),
+            ),
           ),
       ],
     );

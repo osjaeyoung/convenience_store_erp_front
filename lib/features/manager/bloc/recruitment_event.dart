@@ -16,6 +16,8 @@ class RecruitmentHomeRequested extends RecruitmentBlocEvent {
     this.ageMax,
     this.regions,
     this.minRating,
+    this.searchAllWorkers = true,
+    this.append = false,
     this.page = 1,
     this.pageSize = 20,
   });
@@ -27,19 +29,23 @@ class RecruitmentHomeRequested extends RecruitmentBlocEvent {
   final int? ageMax;
   final List<String>? regions;
   final double? minRating;
+  final bool searchAllWorkers;
+  final bool append;
   final int page;
   final int pageSize;
 
   @override
   List<Object?> get props => [
-        branchId,
-        keyword,
-        gender,
-        ageMin,
-        ageMax,
-        regions,
-        minRating,
-        page,
-        pageSize,
-      ];
+    branchId,
+    keyword,
+    gender,
+    ageMin,
+    ageMax,
+    regions,
+    minRating,
+    searchAllWorkers,
+    append,
+    page,
+    pageSize,
+  ];
 }

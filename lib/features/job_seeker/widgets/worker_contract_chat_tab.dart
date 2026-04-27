@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/chat/recruitment_chat_read_store.dart';
 import '../../../data/models/recruitment/recruitment_models.dart';
 import '../../../data/repositories/worker_recruitment_repository.dart';
 import '../../../theme/app_colors.dart';
@@ -49,12 +50,16 @@ class _WorkerContractChatTabState extends State<WorkerContractChatTab> {
       _error = null;
     });
     try {
-      final page = await context
-          .read<WorkerRecruitmentRepository>()
-          .getRecruitmentChats();
+      final repository = context.read<WorkerRecruitmentRepository>();
+      final page = await repository.getRecruitmentChats();
+      final items = await RecruitmentChatReadStore.applyLocalReadState(
+        chats: page.items,
+        fetchMessages: (chatId) =>
+            repository.getRecruitmentChatMessages(chatId: chatId),
+      );
       if (!mounted) return;
       setState(() {
-        _items = page.items;
+        _items = items;
         _loading = false;
         _error = null;
       });
@@ -70,12 +75,16 @@ class _WorkerContractChatTabState extends State<WorkerContractChatTab> {
   Future<void> _refreshSilently() async {
     if (!mounted || _loading) return;
     try {
-      final page = await context
-          .read<WorkerRecruitmentRepository>()
-          .getRecruitmentChats();
+      final repository = context.read<WorkerRecruitmentRepository>();
+      final page = await repository.getRecruitmentChats();
+      final items = await RecruitmentChatReadStore.applyLocalReadState(
+        chats: page.items,
+        fetchMessages: (chatId) =>
+            repository.getRecruitmentChatMessages(chatId: chatId),
+      );
       if (!mounted) return;
       setState(() {
-        _items = page.items;
+        _items = items;
         _error = null;
       });
     } catch (_) {
@@ -84,6 +93,11 @@ class _WorkerContractChatTabState extends State<WorkerContractChatTab> {
   }
 
   Future<void> _openDetail(RecruitmentChatSummary item) async {
+    await RecruitmentChatReadStore.markReadThrough(
+      chatId: item.chatId,
+      lastMessageAt: item.lastMessageAt,
+    );
+    if (!mounted) return;
     setState(() {
       _items = _items
           .map(
@@ -93,7 +107,7 @@ class _WorkerContractChatTabState extends State<WorkerContractChatTab> {
           )
           .toList();
     });
-    final changed = await Navigator.of(context).push<bool>(
+    await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
         builder: (_) => WorkerRecruitmentChatScreen(
           chatId: item.chatId,
@@ -102,7 +116,7 @@ class _WorkerContractChatTabState extends State<WorkerContractChatTab> {
         ),
       ),
     );
-    if (changed == true && mounted) {
+    if (mounted) {
       await _load();
     }
   }

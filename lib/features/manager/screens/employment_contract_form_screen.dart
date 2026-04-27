@@ -395,8 +395,7 @@ class _EmploymentContractFormScreenState
       if (pd != null) out['payment_day'] = pd;
       final ww = <int>[];
       for (var i = 0; i < 7; i++) {
-        if (_c[contractWorkDayFormFieldKey(i, 'enabled')]?.text.trim() ==
-            '1') {
+        if (_c[contractWorkDayFormFieldKey(i, 'enabled')]?.text.trim() == '1') {
           ww.add(i + 1);
         }
       }
@@ -413,11 +412,24 @@ class _EmploymentContractFormScreenState
   bool _fieldNonEmpty(String key) => (_c[key]?.text.trim().isNotEmpty ?? false);
 
   bool _isWorkerOwnedField(String key) => switch (key) {
-    'worker_address' ||
-    'worker_phone' ||
-    'worker_signature_text' => true,
+    'worker_address' || 'worker_phone' || 'worker_signature_text' => true,
     _ => false,
   };
+
+  String? _contractPeriodValidationMessage() {
+    final startText = _c['contract_start_date']?.text.trim() ?? '';
+    final endText = _c['contract_end_date']?.text.trim() ?? '';
+    if (startText.isEmpty || endText.isEmpty) return null;
+
+    final start = DateTime.tryParse(startText);
+    final end = DateTime.tryParse(endText);
+    if (start == null || end == null) return null;
+
+    if (!start.isBefore(end)) {
+      return '근로계약 시작일은 종료일보다 전이어야 합니다.';
+    }
+    return null;
+  }
 
   /// `docs/api_spec_staff_management.md` §28 `guardian_consent_v1` 완료 필수 필드(16개)만 검사.
   /// 가족관계증명서 **파일**은 완료 시점에 필수 아님(이후 PATCH file). 화면 문구는 양식대로 유지.
@@ -442,6 +454,14 @@ class _EmploymentContractFormScreenState
       m.add('근로개시일(근로계약기간 시작일)');
     } else if (DateTime.tryParse(startDate) == null) {
       m.add('근로개시일(날짜 형식 확인)');
+    }
+    final endDate = _c['contract_end_date']?.text.trim() ?? '';
+    if (endDate.isNotEmpty && DateTime.tryParse(endDate) == null) {
+      m.add('근로계약기간 종료일(날짜 형식 확인)');
+    }
+    final periodMessage = _contractPeriodValidationMessage();
+    if (periodMessage != null) {
+      m.add(periodMessage);
     }
 
     if (!_fieldNonEmpty('work_place')) m.add('근무 장소');
@@ -501,8 +521,10 @@ class _EmploymentContractFormScreenState
     String? subtitle,
   }) {
     if (!mounted || missing.isEmpty) return;
-    
-    final barrierLabel = MaterialLocalizations.of(context).modalBarrierDismissLabel;
+
+    final barrierLabel = MaterialLocalizations.of(
+      context,
+    ).modalBarrierDismissLabel;
     showGeneralDialog<void>(
       context: context,
       barrierDismissible: true,
@@ -552,7 +574,8 @@ class _EmploymentContractFormScreenState
                           ),
                           SizedBox(height: 16.h),
                           Text(
-                            subtitle ?? '완료 저장 전 아래 항목을 채워 주세요. (직원관리 API 근로계약서 완료 필수 항목 기준)',
+                            subtitle ??
+                                '완료 저장 전 아래 항목을 채워 주세요. (직원관리 API 근로계약서 완료 필수 항목 기준)',
                             style: AppTypography.bodyMediumR.copyWith(
                               fontSize: 14.sp,
                               color: AppColors.textSecondary,
@@ -565,35 +588,45 @@ class _EmploymentContractFormScreenState
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: missing.map((e) => Padding(
-                                  padding: EdgeInsets.only(bottom: 8.h),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Padding(
-                                        padding: EdgeInsets.only(top: 8.h, right: 6.w),
-                                        child: Container(
-                                          width: 4.w,
-                                          height: 4.w,
-                                          decoration: const BoxDecoration(
-                                            color: AppColors.primary,
-                                            shape: BoxShape.circle,
-                                          ),
+                                children: missing
+                                    .map(
+                                      (e) => Padding(
+                                        padding: EdgeInsets.only(bottom: 8.h),
+                                        child: Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Padding(
+                                              padding: EdgeInsets.only(
+                                                top: 8.h,
+                                                right: 6.w,
+                                              ),
+                                              child: Container(
+                                                width: 4.w,
+                                                height: 4.w,
+                                                decoration: const BoxDecoration(
+                                                  color: AppColors.primary,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                              ),
+                                            ),
+                                            Expanded(
+                                              child: Text(
+                                                e,
+                                                style: AppTypography.bodyMediumR
+                                                    .copyWith(
+                                                      fontSize: 14.sp,
+                                                      color:
+                                                          AppColors.textPrimary,
+                                                      height: 1.4,
+                                                    ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                      Expanded(
-                                        child: Text(
-                                          e,
-                                          style: AppTypography.bodyMediumR.copyWith(
-                                            fontSize: 14.sp,
-                                            color: AppColors.textPrimary,
-                                            height: 1.4,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                )).toList(),
+                                    )
+                                    .toList(),
                               ),
                             ),
                           ),
@@ -607,7 +640,9 @@ class _EmploymentContractFormScreenState
                                 style: FilledButton.styleFrom(
                                   backgroundColor: AppColors.primary,
                                   foregroundColor: AppColors.grey0,
-                                  padding: EdgeInsets.symmetric(horizontal: 24.w),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 24.w,
+                                  ),
                                   elevation: 0,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8.r),
@@ -707,12 +742,17 @@ class _EmploymentContractFormScreenState
         String errMsg = '저장 실패';
         if (e is DioException && e.response?.statusCode == 400) {
           final data = e.response?.data;
-          if (data != null && data is Map<String, dynamic> && data['detail'] != null) {
+          if (data != null &&
+              data is Map<String, dynamic> &&
+              data['detail'] != null) {
             final detail = data['detail'];
             if (detail is Map<String, dynamic>) {
               if (detail['missing_fields_labels'] != null) {
-                final labelsMap = detail['missing_fields_labels'] as Map<String, dynamic>;
-                final labels = labelsMap.values.map((e) => e.toString()).toList();
+                final labelsMap =
+                    detail['missing_fields_labels'] as Map<String, dynamic>;
+                final labels = labelsMap.values
+                    .map((e) => e.toString())
+                    .toList();
                 if (labels.isNotEmpty) {
                   _showStandardCompletionMissingDialog(
                     labels,
@@ -733,10 +773,10 @@ class _EmploymentContractFormScreenState
         } else {
           errMsg = '$errMsg: $e';
         }
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errMsg)),
-        );
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(errMsg)));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -1161,8 +1201,7 @@ class _EmploymentContractFormScreenState
     final slots = List<_DayWorkSlot>.generate(7, (_) => _DayWorkSlot());
     var hadStoredDay = false;
     for (var i = 0; i < 7; i++) {
-      final en =
-          _c[contractWorkDayFormFieldKey(i, 'enabled')]?.text.trim();
+      final en = _c[contractWorkDayFormFieldKey(i, 'enabled')]?.text.trim();
       if (en == '1' || en == '0') {
         hadStoredDay = true;
         slots[i].open = en == '1';
@@ -1179,13 +1218,11 @@ class _EmploymentContractFormScreenState
         slots[i].eh = b.$1;
         slots[i].em = b.$2;
       }
-      final bh =
-          _c[contractWorkDayFormFieldKey(i, 'break_has')]?.text.trim();
+      final bh = _c[contractWorkDayFormFieldKey(i, 'break_has')]?.text.trim();
       if (bh == '1' || bh == '0') {
         slots[i].breakHas = bh == '1';
       }
-      final bs =
-          _c[contractWorkDayFormFieldKey(i, 'break_start')]?.text ?? '';
+      final bs = _c[contractWorkDayFormFieldKey(i, 'break_start')]?.text ?? '';
       final be = _c[contractWorkDayFormFieldKey(i, 'break_end')]?.text ?? '';
       if (bs.isNotEmpty) {
         final c = parseHm(bs, 13, 0);
@@ -1664,8 +1701,9 @@ class _EmploymentContractFormScreenState
       setState(() {
         for (var i = 0; i < 7; i++) {
           final s = slots[i];
-          _c[contractWorkDayFormFieldKey(i, 'enabled')]!.text =
-              s.open ? '1' : '0';
+          _c[contractWorkDayFormFieldKey(i, 'enabled')]!.text = s.open
+              ? '1'
+              : '0';
           if (!s.open) {
             _c[contractWorkDayFormFieldKey(i, 'start')]!.text = '';
             _c[contractWorkDayFormFieldKey(i, 'end')]!.text = '';
@@ -1677,12 +1715,15 @@ class _EmploymentContractFormScreenState
                 '${two(s.sh)}:${two(s.sm)}';
             _c[contractWorkDayFormFieldKey(i, 'end')]!.text =
                 '${two(s.eh)}:${two(s.em)}';
-            _c[contractWorkDayFormFieldKey(i, 'break_has')]!.text =
-                s.breakHas ? '1' : '0';
-            _c[contractWorkDayFormFieldKey(i, 'break_start')]!.text =
-                s.breakHas ? '${two(s.bsh)}:${two(s.bsm)}' : '';
-            _c[contractWorkDayFormFieldKey(i, 'break_end')]!.text =
-                s.breakHas ? '${two(s.beh)}:${two(s.bem)}' : '';
+            _c[contractWorkDayFormFieldKey(i, 'break_has')]!.text = s.breakHas
+                ? '1'
+                : '0';
+            _c[contractWorkDayFormFieldKey(i, 'break_start')]!.text = s.breakHas
+                ? '${two(s.bsh)}:${two(s.bsm)}'
+                : '';
+            _c[contractWorkDayFormFieldKey(i, 'break_end')]!.text = s.breakHas
+                ? '${two(s.beh)}:${two(s.bem)}'
+                : '';
           }
         }
 
@@ -1833,6 +1874,7 @@ class _EmploymentContractFormScreenState
       );
     }
 
+    String? periodError;
     final ok = await showDialog<bool>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.55),
@@ -1863,6 +1905,7 @@ class _EmploymentContractFormScreenState
                     day: start.day,
                     yearUp: () {
                       setLocal(() {
+                        periodError = null;
                         final ny = (start.year + 1).clamp(2000, 2100);
                         final nd = start.day.clamp(1, dayMax(ny, start.month));
                         start = DateTime(ny, start.month, nd);
@@ -1870,6 +1913,7 @@ class _EmploymentContractFormScreenState
                     },
                     yearDown: () {
                       setLocal(() {
+                        periodError = null;
                         final ny = (start.year - 1).clamp(2000, 2100);
                         final nd = start.day.clamp(1, dayMax(ny, start.month));
                         start = DateTime(ny, start.month, nd);
@@ -1877,6 +1921,7 @@ class _EmploymentContractFormScreenState
                     },
                     monthUp: () {
                       setLocal(() {
+                        periodError = null;
                         final nm = start.month == 12 ? 1 : start.month + 1;
                         final ny = start.month == 12
                             ? start.year + 1
@@ -1887,6 +1932,7 @@ class _EmploymentContractFormScreenState
                     },
                     monthDown: () {
                       setLocal(() {
+                        periodError = null;
                         final nm = start.month == 1 ? 12 : start.month - 1;
                         final ny = start.month == 1
                             ? start.year - 1
@@ -1897,6 +1943,7 @@ class _EmploymentContractFormScreenState
                     },
                     dayUp: () {
                       setLocal(() {
+                        periodError = null;
                         final max = dayMax(start.year, start.month);
                         final nd = start.day >= max ? 1 : start.day + 1;
                         start = DateTime(start.year, start.month, nd);
@@ -1904,6 +1951,7 @@ class _EmploymentContractFormScreenState
                     },
                     dayDown: () {
                       setLocal(() {
+                        periodError = null;
                         final max = dayMax(start.year, start.month);
                         final nd = start.day <= 1 ? max : start.day - 1;
                         start = DateTime(start.year, start.month, nd);
@@ -1918,6 +1966,7 @@ class _EmploymentContractFormScreenState
                     day: end.day,
                     yearUp: () {
                       setLocal(() {
+                        periodError = null;
                         final ny = (end.year + 1).clamp(2000, 2100);
                         final nd = end.day.clamp(1, dayMax(ny, end.month));
                         end = DateTime(ny, end.month, nd);
@@ -1925,6 +1974,7 @@ class _EmploymentContractFormScreenState
                     },
                     yearDown: () {
                       setLocal(() {
+                        periodError = null;
                         final ny = (end.year - 1).clamp(2000, 2100);
                         final nd = end.day.clamp(1, dayMax(ny, end.month));
                         end = DateTime(ny, end.month, nd);
@@ -1932,6 +1982,7 @@ class _EmploymentContractFormScreenState
                     },
                     monthUp: () {
                       setLocal(() {
+                        periodError = null;
                         final nm = end.month == 12 ? 1 : end.month + 1;
                         final ny = end.month == 12 ? end.year + 1 : end.year;
                         final nd = end.day.clamp(1, dayMax(ny, nm));
@@ -1940,6 +1991,7 @@ class _EmploymentContractFormScreenState
                     },
                     monthDown: () {
                       setLocal(() {
+                        periodError = null;
                         final nm = end.month == 1 ? 12 : end.month - 1;
                         final ny = end.month == 1 ? end.year - 1 : end.year;
                         final nd = end.day.clamp(1, dayMax(ny, nm));
@@ -1948,6 +2000,7 @@ class _EmploymentContractFormScreenState
                     },
                     dayUp: () {
                       setLocal(() {
+                        periodError = null;
                         final max = dayMax(end.year, end.month);
                         final nd = end.day >= max ? 1 : end.day + 1;
                         end = DateTime(end.year, end.month, nd);
@@ -1955,13 +2008,37 @@ class _EmploymentContractFormScreenState
                     },
                     dayDown: () {
                       setLocal(() {
+                        periodError = null;
                         final max = dayMax(end.year, end.month);
                         final nd = end.day <= 1 ? max : end.day - 1;
                         end = DateTime(end.year, end.month, nd);
                       });
                     },
                   ),
-                  SizedBox(height: 24.h),
+                  SizedBox(height: 16.h),
+                  if (periodError != null) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12.w,
+                        vertical: 10.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                      child: Text(
+                        periodError!,
+                        style: AppTypography.bodySmallR.copyWith(
+                          color: AppColors.error,
+                          height: 18 / 12,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    SizedBox(height: 12.h),
+                  ] else
+                    SizedBox(height: 8.h),
                   Row(
                     children: [
                       Expanded(
@@ -1978,7 +2055,15 @@ class _EmploymentContractFormScreenState
                       SizedBox(width: 12.w),
                       Expanded(
                         child: FilledButton(
-                          onPressed: () => Navigator.pop(ctx, true),
+                          onPressed: () {
+                            if (!start.isBefore(end)) {
+                              setLocal(() {
+                                periodError = '시작일은 종료일보다 전이어야 합니다.';
+                              });
+                              return;
+                            }
+                            Navigator.pop(ctx, true);
+                          },
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: AppColors.grey0,
@@ -2253,8 +2338,7 @@ class _EmploymentContractFormScreenState
 
   bool _hasPerDayWorkSchedule() {
     for (var i = 0; i < 7; i++) {
-      final en =
-          _c[contractWorkDayFormFieldKey(i, 'enabled')]?.text.trim();
+      final en = _c[contractWorkDayFormFieldKey(i, 'enabled')]?.text.trim();
       if (en == '0' || en == '1') return true;
       final ws = _c[contractWorkDayFormFieldKey(i, 'start')]?.text.trim();
       if (ws != null && ws.isNotEmpty) return true;
@@ -2266,11 +2350,9 @@ class _EmploymentContractFormScreenState
   List<({int i, String start, String end})> _enabledWorkDaySlots() {
     final out = <({int i, String start, String end})>[];
     for (var i = 0; i < 7; i++) {
-      final en =
-          _c[contractWorkDayFormFieldKey(i, 'enabled')]?.text.trim();
+      final en = _c[contractWorkDayFormFieldKey(i, 'enabled')]?.text.trim();
       if (en == '0') continue;
-      final ws =
-          _c[contractWorkDayFormFieldKey(i, 'start')]?.text.trim() ?? '';
+      final ws = _c[contractWorkDayFormFieldKey(i, 'start')]?.text.trim() ?? '';
       final we = _c[contractWorkDayFormFieldKey(i, 'end')]?.text.trim() ?? '';
       if (en != '1' && ws.isEmpty) continue;
       if (ws.isEmpty && we.isEmpty) continue;
@@ -2351,10 +2433,10 @@ class _EmploymentContractFormScreenState
         }
         final bs =
             _c[contractWorkDayFormFieldKey(o.i, 'break_start')]?.text.trim() ??
-                '';
+            '';
         final be =
             _c[contractWorkDayFormFieldKey(o.i, 'break_end')]?.text.trim() ??
-                '';
+            '';
         if (bs.isEmpty && be.isEmpty) continue;
         final key = '$bs~$be';
         byRange.putIfAbsent(key, () => []).add(o.i);
@@ -3040,7 +3122,9 @@ class _EmploymentContractFormScreenState
   };
 
   Future<void> _openInlineInput(String label, String key) async {
-    if (key == 'employer_signature_text' || key == 'worker_signature_text' || key == 'guardian_signature_name') {
+    if (key == 'employer_signature_text' ||
+        key == 'worker_signature_text' ||
+        key == 'guardian_signature_name') {
       final val = await showContractSignatureDialog(context, label: label);
       if (val != null && mounted) {
         setState(() {
@@ -3128,9 +3212,7 @@ class _EmploymentContractFormScreenState
                           if (v == null || v < 1 || v > 31) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text(
-                                  '임금 지급일은 매월 1일~31일만 입력할 수 있습니다.',
-                                ),
+                                content: Text('임금 지급일은 매월 1일~31일만 입력할 수 있습니다.'),
                               ),
                             );
                             return;

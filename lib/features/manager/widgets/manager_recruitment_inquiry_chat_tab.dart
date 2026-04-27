@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/chat/recruitment_chat_read_store.dart';
 import '../../../data/models/recruitment/recruitment_models.dart';
 import '../../../data/repositories/manager_home_repository.dart';
 import '../../../theme/app_colors.dart';
@@ -47,12 +48,16 @@ class _ManagerRecruitmentInquiryChatTabState
       _loadedBranchId = branchId;
     });
     try {
-      final page = await context
-          .read<ManagerHomeRepository>()
-          .getRecruitmentChats(branchId: branchId);
+      final repository = context.read<ManagerHomeRepository>();
+      final page = await repository.getRecruitmentChats(branchId: branchId);
+      final chats = await RecruitmentChatReadStore.applyLocalReadState(
+        chats: page.items,
+        fetchMessages: (chatId) =>
+            repository.getRecruitmentChatMessages(chatId: chatId),
+      );
       if (!mounted) return;
       setState(() {
-        _chats = page.items;
+        _chats = chats;
         _loading = false;
       });
       _startPolling(branchId);
@@ -76,12 +81,16 @@ class _ManagerRecruitmentInquiryChatTabState
   Future<void> _refreshSilently(int branchId) async {
     if (!mounted || _loading) return;
     try {
-      final page = await context
-          .read<ManagerHomeRepository>()
-          .getRecruitmentChats(branchId: branchId);
+      final repository = context.read<ManagerHomeRepository>();
+      final page = await repository.getRecruitmentChats(branchId: branchId);
+      final chats = await RecruitmentChatReadStore.applyLocalReadState(
+        chats: page.items,
+        fetchMessages: (chatId) =>
+            repository.getRecruitmentChatMessages(chatId: chatId),
+      );
       if (!mounted || _loadedBranchId != branchId) return;
       setState(() {
-        _chats = page.items;
+        _chats = chats;
         _error = null;
       });
     } catch (_) {
@@ -90,6 +99,11 @@ class _ManagerRecruitmentInquiryChatTabState
   }
 
   Future<void> _openChat(RecruitmentChatSummary chat) async {
+    await RecruitmentChatReadStore.markReadThrough(
+      chatId: chat.chatId,
+      lastMessageAt: chat.lastMessageAt,
+    );
+    if (!mounted) return;
     setState(() {
       _chats = _chats
           .map(
@@ -99,7 +113,7 @@ class _ManagerRecruitmentInquiryChatTabState
           )
           .toList();
     });
-    final changed = await Navigator.of(context).push<bool>(
+    await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
         builder: (_) => ManagerRecruitmentInquiryChatScreen(
           chatId: chat.chatId,
@@ -110,7 +124,7 @@ class _ManagerRecruitmentInquiryChatTabState
         ),
       ),
     );
-    if (changed == true && mounted && _loadedBranchId != null) {
+    if (mounted && _loadedBranchId != null) {
       await _load(_loadedBranchId!);
     }
   }

@@ -5,7 +5,6 @@ import '../../../data/models/recruitment/recruitment_models.dart';
 import '../../../data/repositories/manager_home_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
-import '../../../widgets/app_styled_confirm_dialog.dart';
 import 'recruitment_inquiry_chat_screen.dart';
 import 'recruitment_review_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -29,7 +28,6 @@ class _RecruitmentApplicationDetailScreenState
     extends State<RecruitmentApplicationDetailScreen> {
   JobSeekerProfile? _profile;
   bool _loading = true;
-  bool _deleting = false;
   String? _error;
 
   @override
@@ -40,7 +38,9 @@ class _RecruitmentApplicationDetailScreenState
 
   Future<void> _load() async {
     try {
-      final profile = await context.read<ManagerHomeRepository>().getRecruitmentApplicationDetail(
+      final profile = await context
+          .read<ManagerHomeRepository>()
+          .getRecruitmentApplicationDetail(
             branchId: widget.branchId,
             applicationId: widget.applicationId,
           );
@@ -69,8 +69,9 @@ class _RecruitmentApplicationDetailScreenState
           branchId: widget.branchId,
           employeeId: profile.employeeId ?? -1,
           initialEmployeeName: profile.employeeName,
-          initialDesiredLocation:
-              profile.desiredLocations.isNotEmpty ? profile.desiredLocations.first : null,
+          initialDesiredLocation: profile.desiredLocations.isNotEmpty
+              ? profile.desiredLocations.first
+              : null,
           initialAverageRating: profile.averageRating,
           initialReviewCount: profile.reviewCount,
         ),
@@ -80,14 +81,14 @@ class _RecruitmentApplicationDetailScreenState
 
   Future<void> _openInquiryChat() async {
     final profile = _profile;
-    final employeeId = profile?.employeeId;
-    if (employeeId == null) return;
+    if (profile == null) return;
     try {
       final chat = await context
           .read<ManagerHomeRepository>()
-          .createOrGetRecruitmentChat(
+          .createOrGetRecruitmentChatForApplication(
             branchId: widget.branchId,
-            employeeId: employeeId,
+            applicationId: widget.applicationId,
+            fallbackEmployeeId: profile.employeeId,
           );
       if (!mounted) return;
       await Navigator.of(context).push(
@@ -98,47 +99,17 @@ class _RecruitmentApplicationDetailScreenState
             employeeId: chat.employeeId,
             employeeName: chat.counterpartyName.isNotEmpty
                 ? chat.counterpartyName
-                : profile?.employeeName,
+                : profile.employeeName,
             profileImageUrl:
-                chat.counterpartyProfileImageUrl ?? profile?.profileImageUrl,
+                chat.counterpartyProfileImageUrl ?? profile.profileImageUrl,
           ),
         ),
       );
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('채팅방을 열 수 없습니다: $error')),
-      );
-    }
-  }
-
-  Future<void> _delete() async {
-    final ok = await showAppStyledDeleteDialog(
-      context,
-      message: '이 지원자를 삭제할까요?',
-    );
-    if (ok != true || !mounted) return;
-
-    setState(() => _deleting = true);
-    try {
-      await context.read<ManagerHomeRepository>().deleteRecruitmentApplication(
-            branchId: widget.branchId,
-            applicationId: widget.applicationId,
-          );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('지원자가 삭제되었습니다.')),
-      );
-      Navigator.of(context).pop(true);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('삭제 실패: $e')),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _deleting = false);
-      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('채팅방을 열 수 없습니다: $error')));
     }
   }
 
@@ -165,109 +136,68 @@ class _RecruitmentApplicationDetailScreenState
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _ApplicationErrorView(
-                  message: _error!,
-                  onRetry: _load,
-                )
-              : _profile == null
-                  ? const Center(child: Text('데이터를 불러올 수 없습니다.'))
-                  : Column(
+          ? _ApplicationErrorView(message: _error!, onRetry: _load)
+          : _profile == null
+          ? const Center(child: Text('데이터를 불러올 수 없습니다.'))
+          : Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 24.h),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Expanded(
-                          child: SingleChildScrollView(
-                            padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 24.h),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                _ApplicationHeroCard(
-                                  profile: _profile!,
-                                  onViewReviews: _openReviews,
-                                ),
-                                SizedBox(height: 20.h),
-                                Text(
-                                  '근무 이력',
-                                  style: AppTypography.heading3.copyWith(
-                                    fontWeight: FontWeight.w500,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                                SizedBox(height: 8.h),
-                                _ApplicationWorkHistoryCard(
-                                  histories: _profile!.workHistories,
-                                ),
-                              ],
-                            ),
+                        _ApplicationHeroCard(
+                          profile: _profile!,
+                          onViewReviews: _openReviews,
+                        ),
+                        SizedBox(height: 20.h),
+                        Text(
+                          '근무 이력',
+                          style: AppTypography.heading3.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textPrimary,
                           ),
                         ),
-                        SafeArea(
-                          top: false,
-                          child: Container(
-                            width: double.infinity,
-                            color: AppColors.grey0,
-                            padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 36.h),
-                            child: SizedBox(
-                              height: 56,
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    flex: 1,
-                                    child: OutlinedButton(
-                                      onPressed: _deleting ? null : _delete,
-                                      style: OutlinedButton.styleFrom(
-                                        padding: EdgeInsets.zero,
-                                        side: const BorderSide(color: AppColors.grey25),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8.r),
-                                        ),
-                                        foregroundColor: AppColors.textSecondary,
-                                      ),
-                                      child: _deleting
-                                          ? const SizedBox(
-                                              width: 22,
-                                              height: 22,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2.2,
-                                                color: AppColors.textSecondary,
-                                              ),
-                                            )
-                                          : Text(
-                                              '삭제',
-                                              style: AppTypography.bodyLargeB.copyWith(
-                                                color: AppColors.textSecondary,
-                                                height: 24 / 16,
-                                              ),
-                                            ),
-                                    ),
-                                  ),
-                                  SizedBox(width: 8.w),
-                                  Expanded(
-                                    flex: 2,
-                                    child: FilledButton(
-                                      onPressed: _openInquiryChat,
-                                      style: FilledButton.styleFrom(
-                                        backgroundColor: AppColors.primary,
-                                        foregroundColor: AppColors.grey0,
-                                        padding: EdgeInsets.zero,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8.r),
-                                        ),
-                                      ),
-                                      child: Text(
-                                        '문의하기',
-                                        style: AppTypography.bodyLargeB.copyWith(
-                                          color: AppColors.grey0,
-                                          height: 24 / 16,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                        SizedBox(height: 8.h),
+                        _ApplicationWorkHistoryCard(
+                          histories: _profile!.workHistories,
                         ),
                       ],
                     ),
+                  ),
+                ),
+                SafeArea(
+                  top: false,
+                  child: Container(
+                    width: double.infinity,
+                    color: AppColors.grey0,
+                    padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 36.h),
+                    child: SizedBox(
+                      height: 56,
+                      child: FilledButton(
+                        onPressed: _openInquiryChat,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.grey0,
+                          padding: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                        ),
+                        child: Text(
+                          '문의하기',
+                          style: AppTypography.bodyLargeB.copyWith(
+                            color: AppColors.grey0,
+                            height: 24 / 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 }
@@ -283,8 +213,9 @@ class _ApplicationHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final locations =
-        profile.desiredLocations.isEmpty ? const ['-'] : profile.desiredLocations;
+    final locations = profile.desiredLocations.isEmpty
+        ? const ['-']
+        : profile.desiredLocations;
     return Container(
       padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 20.h),
       decoration: BoxDecoration(
@@ -292,10 +223,7 @@ class _ApplicationHeroCard extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
-          colors: [
-            Color(0xFF9FEFD4),
-            Color(0xFFE1F0B8),
-          ],
+          colors: [Color(0xFF9FEFD4), Color(0xFFE1F0B8)],
         ),
       ),
       child: Column(
@@ -322,7 +250,9 @@ class _ApplicationHeroCard extends StatelessWidget {
               children: [
                 for (var i = 0; i < locations.length; i++)
                   Padding(
-                    padding: EdgeInsets.only(bottom: i == locations.length - 1 ? 0 : 8),
+                    padding: EdgeInsets.only(
+                      bottom: i == locations.length - 1 ? 0 : 8,
+                    ),
                     child: _valueText(locations[i]),
                   ),
               ],
@@ -332,7 +262,7 @@ class _ApplicationHeroCard extends StatelessWidget {
             _ApplicationInfoRow(
               label: '이력서',
               value: _valueText(profile.resumeTitle!),
-          ),
+            ),
           SizedBox(height: 8.h),
           _ApplicationInfoRow(
             label: '평점',
@@ -439,10 +369,7 @@ class _ApplicationInfoRow extends StatelessWidget {
           ),
           SizedBox(width: 12.w),
           Expanded(
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: value,
-            ),
+            child: Align(alignment: Alignment.centerRight, child: value),
           ),
         ],
       ),
@@ -499,11 +426,11 @@ class _ApplicationWorkHistoryCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                      items[i].periodLabel ?? '-',
-                      style: AppTypography.bodyMediumR.copyWith(
-                        fontSize: 14.sp,
-                        height: 19 / 14,
-                        color: AppColors.textSecondary,
+                    items[i].periodLabel ?? '-',
+                    style: AppTypography.bodyMediumR.copyWith(
+                      fontSize: 14.sp,
+                      height: 19 / 14,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   SizedBox(width: 16.w),
@@ -544,10 +471,7 @@ class _ApplicationWorkHistoryCard extends StatelessWidget {
 }
 
 class _ApplicationErrorView extends StatelessWidget {
-  const _ApplicationErrorView({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ApplicationErrorView({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
@@ -568,10 +492,7 @@ class _ApplicationErrorView extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 16.h),
-            TextButton(
-              onPressed: onRetry,
-              child: const Text('다시 시도'),
-            ),
+            TextButton(onPressed: onRetry, child: const Text('다시 시도')),
           ],
         ),
       ),
