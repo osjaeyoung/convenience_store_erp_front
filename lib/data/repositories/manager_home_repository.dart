@@ -299,6 +299,20 @@ class ManagerHomeRepository {
     return JobSeekerReviewPage.fromJson(res.data!);
   }
 
+  /// 등록 전 근로자 앱 회원의 구직자 리뷰 상세 조회
+  Future<JobSeekerReviewPage> getJobSeekerReviewsByWorkerUserId({
+    required int branchId,
+    required int workerUserId,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final res = await _apiClient.dio.get<Map<String, dynamic>>(
+      '/recruitment/branches/$branchId/job-seekers/users/$workerUserId/reviews',
+      queryParameters: {'page': page, 'page_size': pageSize},
+    );
+    return JobSeekerReviewPage.fromJson(res.data!);
+  }
+
   /// 채용 게시판 목록 조회
   Future<RecruitmentPostingPage> getRecruitmentPostings({
     required int branchId,

@@ -68,6 +68,7 @@ class _RecruitmentApplicationDetailScreenState
         builder: (_) => RecruitmentReviewScreen(
           branchId: widget.branchId,
           employeeId: profile.employeeId ?? -1,
+          workerUserId: profile.workerUserId,
           initialEmployeeName: profile.employeeName,
           initialDesiredLocation: profile.desiredLocations.isNotEmpty
               ? profile.desiredLocations.first

@@ -55,7 +55,8 @@
   을 한번에 반환
 - `search_results`는 기본적으로 **전체 근로자 앱 회원/구직자 풀**을 대상으로 조회합니다. 특정 지점에 이미 등록된 근무자만 노출하면 안 됩니다.
 - `branch_id`는 접근 권한, 최근 열람 기록, 리뷰/문의 컨텍스트를 식별하기 위한 값입니다. 검색 대상 범위를 해당 지점 소속 근무자로 제한하는 값이 아닙니다.
-- `employee_id`는 채용 홈/프로필/채팅 API에서 공통으로 사용하는 구직자 식별자입니다. 해당 지점의 사전등록 근로자 ID가 아니어도 되며, 전체 근로자 앱 회원 풀에서 내려온 값을 그대로 사용합니다.
+- `employee_id`는 프로필 열람/문의/채팅 API에서 사용하는 구직자 식별자입니다. 해당 지점에 이미 등록된 근로자는 실제 `BranchEmployee.id`가 내려오고, 아직 등록 전인 근로자 앱 회원은 `-worker_user_id` 형태의 임시 식별자가 내려옵니다.
+- `worker_user_id`는 근로자 앱 회원 계정 ID입니다. 값이 있으면 리뷰 조회는 `worker_user_id` 기준 API를 우선 사용합니다.
 - 경영주/점장이 직원관리에서 직접 만든 비회원 근로자(`linked_user_id=null`)는 채용 홈의 최근 열람/검색 목록에 노출하지 않음
 
 ### Query Params
@@ -66,7 +67,7 @@
 - `region` (optional, **다중 선택**): 지역 필터. **OR 조건**. 전달 방식·경로 문자열 규칙·최대 개수·OpenAPI 표기는 하단 **「프론트엔드 연동 가이드 (지역 필터 · 이력서 주소)」** 와 동일. 채용 홈에서는 근로자 이력서의 `resume_region_path`를 최우선으로 매칭하고, 없으면 프로필 주소/희망 근무지 스냅샷 등 서버가 보유한 구직자 위치 텍스트를 fallback으로 사용합니다.
 - `min_rating` (optional, 0~3)
 - `scope` (optional): `all_workers` 권장. 전체 근로자 앱 회원/구직자 풀에서 검색합니다. 미전달 시에도 서버 기본값은 `all_workers`로 처리합니다. 과거 호환이 필요한 경우에만 서버 내부에서 별도 `branch_workers` 범위를 지원할 수 있습니다.
-- `page` (default=1), `page_size` (default=20): 프론트는 채용 홈 하단 도달 시 `page`를 1씩 증가시켜 무한 스크롤로 이어 붙입니다. 서버는 같은 검색 조건에서 안정적인 정렬 순서를 유지하고, `total_count`를 전체 검색 결과 수로 내려줘야 합니다.
+- `page` (default=1), `page_size` (default=20)
 
 ### Response Body (200)
 
@@ -83,6 +84,7 @@
   "search_results": [
     {
       "employee_id": 602,
+      "worker_user_id": 901,
       "employee_name": "이사라",
       "age": 24,
       "gender": "female",
@@ -97,6 +99,12 @@
 }
 ```
 
+### 식별자 규칙
+
+- 지점에 이미 등록된 근로자: `employee_id=602`, `worker_user_id=901`
+- 전체 근로자 앱 회원 풀에서 조회됐지만 아직 현재 지점에 등록되지 않은 근로자: `employee_id=-901`, `worker_user_id=901`
+- 프론트는 프로필/문의/채팅에는 `employee_id`를 그대로 사용하고, 리뷰 조회에는 `worker_user_id`가 있으면 `worker_user_id` 기준 API를 사용합니다.
+
 ---
 
 ## 2) 구직자 프로필 열람 기록 저장
@@ -104,6 +112,7 @@
 - `POST /recruitment/branches/{branch_id}/job-seekers/{employee_id}/open`
 - 프로필 진입 시 호출
 - `최근 열람 구직자` 영역 구성에 사용
+- `employee_id`는 채용 홈에서 받은 값을 그대로 전달합니다. `employee_id=-{worker_user_id}`인 등록 전 근로자는 서버가 현재 지점의 연결 근무자 row를 생성한 뒤 실제 `employee_id`로 열람 기록을 저장합니다.
 
 ### Request Body
 없음
@@ -147,6 +156,7 @@
 
 - `GET /recruitment/branches/{branch_id}/job-seekers/{employee_id}`
 - Figma `최근 열람 회원` 상세 화면 데이터
+- `employee_id`는 채용 홈에서 받은 값을 그대로 전달합니다. `employee_id=-{worker_user_id}`인 등록 전 근로자는 근로자 계정/이력서 기반 프로필을 반환합니다.
 
 ### Request Body
 없음
@@ -156,6 +166,7 @@
 ```json
 {
   "employee_id": 602,
+  "worker_user_id": 901,
   "employee_name": "이사라",
   "age": 24,
   "gender": "female",
@@ -182,7 +193,8 @@
 - `POST /recruitment/branches/{branch_id}/job-seekers/{employee_id}/contact`
 - 구직자 상세 화면의 `채용 문의하기` 액션
 - 문의 내용은 관리자 문의함 연동을 위해 서버에 저장됨
-- 대상 구직자가 앱 회원(`linked_user_id` 존재)이면 같은 내용으로 통합 채팅방을 생성/갱신하고 첫 메시지를 저장합니다.
+- 대상 구직자가 앱 회원(`worker_user_id` 존재 또는 `linked_user_id` 존재)이면 같은 내용으로 통합 채팅방을 생성/갱신하고 첫 메시지를 저장합니다.
+- `employee_id=-{worker_user_id}`인 등록 전 근로자에게 문의하면 서버가 현재 지점의 연결 근무자 row를 생성한 뒤 채팅방을 만듭니다.
 
 ### Request Body
 ```json
@@ -214,8 +226,11 @@
 ## 4) 구직자 리뷰 상세 조회
 
 - `GET /recruitment/branches/{branch_id}/job-seekers/{employee_id}/reviews?page=1&page_size=20`
+- `GET /recruitment/branches/{branch_id}/job-seekers/users/{worker_user_id}/reviews?page=1&page_size=20`
 - Figma `리뷰보기` 화면 데이터
 - 리뷰 카드마다 `branch_name`, `manager_name` 포함 (각 지점별 점장 리뷰 식별용)
+- 등록 전 근로자 앱 회원처럼 아직 현재 지점의 `employee_id`가 없는 대상은 **`worker_user_id` 기준 API**를 사용합니다.
+- `worker_user_id` 기준 API는 해당 근로자 계정에 연결된 과거/타 지점 근무자 row의 리뷰를 모아서 반환합니다.
 
 ### Request Body
 없음
@@ -249,7 +264,9 @@
 
 ### 비고
 
-- `employee_id`가 음수일 경우(근로자 앱을 통한 외부 지원자) 리뷰 내역이 없으므로 `404` 에러 대신 빈 리뷰 목록(`items: []`, `total_count: 0`)과 평점 0점 형태로 정상 응답(`200`)을 반환합니다.
+- 리뷰 내역이 없으면 `404` 에러 대신 빈 리뷰 목록(`items: []`, `total_count: 0`)과 평점 0점 형태로 정상 응답(`200`)을 반환합니다.
+- 전체 근로자 앱 회원 풀에서 내려온 구직자는 현재 지점에 등록 전일 수 있으므로, 프론트는 `worker_user_id`가 있으면 `worker_user_id` 기준 API를 우선 사용합니다. 유효한 `worker_user_id`가 없는 상태에서 `employee_id=-1` 같은 임시값으로 리뷰 API를 호출하지 않습니다.
+- `employee_id=-{some_id}`가 실제 근로자 계정이 아닌 과거 호환 값이면 서버는 같은 지점의 `BranchEmployee.id={some_id}`를 fallback으로 찾아 이름과 빈 리뷰 목록을 내려줄 수 있습니다.
 
 ---
 

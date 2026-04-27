@@ -13,6 +13,7 @@ class RecruitmentReviewScreen extends StatefulWidget {
     super.key,
     required this.branchId,
     required this.employeeId,
+    this.workerUserId,
     this.initialEmployeeName,
     this.initialDesiredLocation,
     this.initialAverageRating,
@@ -21,13 +22,15 @@ class RecruitmentReviewScreen extends StatefulWidget {
 
   final int branchId;
   final int employeeId;
+  final int? workerUserId;
   final String? initialEmployeeName;
   final String? initialDesiredLocation;
   final double? initialAverageRating;
   final int? initialReviewCount;
 
   @override
-  State<RecruitmentReviewScreen> createState() => _RecruitmentReviewScreenState();
+  State<RecruitmentReviewScreen> createState() =>
+      _RecruitmentReviewScreenState();
 }
 
 class _RecruitmentReviewScreenState extends State<RecruitmentReviewScreen> {
@@ -43,10 +46,30 @@ class _RecruitmentReviewScreenState extends State<RecruitmentReviewScreen> {
 
   Future<void> _loadReviews() async {
     try {
-      final page = await context.read<ManagerHomeRepository>().getJobSeekerReviews(
-            branchId: widget.branchId,
-            employeeId: widget.employeeId,
-          );
+      final workerUserId =
+          widget.workerUserId ??
+          (widget.employeeId < 0 ? -widget.employeeId : null);
+      final repository = context.read<ManagerHomeRepository>();
+      final page = workerUserId != null && workerUserId > 0
+          ? await repository.getJobSeekerReviewsByWorkerUserId(
+              branchId: widget.branchId,
+              workerUserId: workerUserId,
+            )
+          : widget.employeeId > 0
+          ? await repository.getJobSeekerReviews(
+              branchId: widget.branchId,
+              employeeId: widget.employeeId,
+            )
+          : JobSeekerReviewPage(
+              employeeId: widget.employeeId,
+              employeeName: widget.initialEmployeeName ?? '-',
+              desiredLocation: widget.initialDesiredLocation,
+              averageRating: widget.initialAverageRating ?? 0,
+              reviewCount: widget.initialReviewCount ?? 0,
+              totalCount: 0,
+              page: 1,
+              pageSize: 20,
+            );
       if (!mounted) return;
       setState(() {
         _reviewPage = page;
@@ -87,41 +110,42 @@ class _RecruitmentReviewScreenState extends State<RecruitmentReviewScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _ReviewErrorView(
-                  message: _error!,
-                  onRetry: _loadReviews,
-                )
-              : Column(
-                  children: [
-                    _ReviewSummaryHeader(
-                      employeeName: page?.employeeName ?? widget.initialEmployeeName ?? '-',
-                      desiredLocation:
-                          page?.desiredLocation ?? widget.initialDesiredLocation ?? '-',
-                      averageRating:
-                          page?.averageRating ?? widget.initialAverageRating ?? 0,
-                      reviewCount: page?.reviewCount ?? widget.initialReviewCount ?? 0,
-                    ),
-                    Expanded(
-                      child: (page == null || page.items.isEmpty)
-                          ? Center(
-                              child: Text(
-                                '등록된 리뷰가 없습니다.',
-                                style: AppTypography.bodyMediumR.copyWith(
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            )
-                          : ListView.separated(
-                              padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 24.h),
-                              itemBuilder: (context, index) {
-                                return _ReviewCard(review: page.items[index]);
-                              },
-                              separatorBuilder: (_, __) => SizedBox(height: 16.h),
-                              itemCount: page.items.length,
-                            ),
-                    ),
-                  ],
+          ? _ReviewErrorView(message: _error!, onRetry: _loadReviews)
+          : Column(
+              children: [
+                _ReviewSummaryHeader(
+                  employeeName:
+                      page?.employeeName ?? widget.initialEmployeeName ?? '-',
+                  desiredLocation:
+                      page?.desiredLocation ??
+                      widget.initialDesiredLocation ??
+                      '-',
+                  averageRating:
+                      page?.averageRating ?? widget.initialAverageRating ?? 0,
+                  reviewCount:
+                      page?.reviewCount ?? widget.initialReviewCount ?? 0,
                 ),
+                Expanded(
+                  child: (page == null || page.items.isEmpty)
+                      ? Center(
+                          child: Text(
+                            '등록된 리뷰가 없습니다.',
+                            style: AppTypography.bodyMediumR.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        )
+                      : ListView.separated(
+                          padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 24.h),
+                          itemBuilder: (context, index) {
+                            return _ReviewCard(review: page.items[index]);
+                          },
+                          separatorBuilder: (_, __) => SizedBox(height: 16.h),
+                          itemCount: page.items.length,
+                        ),
+                ),
+              ],
+            ),
     );
   }
 }
@@ -146,9 +170,7 @@ class _ReviewSummaryHeader extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 20.h),
       decoration: BoxDecoration(
         color: AppColors.grey0,
-        border: Border(
-          bottom: BorderSide(color: AppColors.grey25),
-        ),
+        border: Border(bottom: BorderSide(color: AppColors.grey25)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -193,7 +215,10 @@ class _ReviewSummaryHeader extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         _ScoreStars(
-                          filledCount: _filledStarCount(averageRating, maxStars: 3),
+                          filledCount: _filledStarCount(
+                            averageRating,
+                            maxStars: 3,
+                          ),
                           maxStars: 3,
                           color: AppColors.primary,
                         ),
@@ -226,8 +251,9 @@ class _ReviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final createdAt =
-        (review.createdAt ?? '').trim().isNotEmpty ? _formatDateTime(review.createdAt!) : '-';
+    final createdAt = (review.createdAt ?? '').trim().isNotEmpty
+        ? _formatDateTime(review.createdAt!)
+        : '-';
 
     return Container(
       padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 16.h),
@@ -283,7 +309,9 @@ class _ReviewCard extends StatelessWidget {
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              (review.comment ?? '').trim().isEmpty ? '-' : review.comment!.trim(),
+              (review.comment ?? '').trim().isEmpty
+                  ? '-'
+                  : review.comment!.trim(),
               style: AppTypography.bodyMediumR.copyWith(
                 fontSize: 14.sp,
                 height: 20 / 14,
@@ -299,10 +327,7 @@ class _ReviewCard extends StatelessWidget {
 }
 
 class _ReviewScoreChip extends StatelessWidget {
-  const _ReviewScoreChip({
-    required this.rating,
-    required this.maxRating,
-  });
+  const _ReviewScoreChip({required this.rating, required this.maxRating});
 
   final int rating;
   final int maxRating;
@@ -318,11 +343,7 @@ class _ReviewScoreChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.star_rounded,
-            size: 12,
-            color: Color(0xFFFFD464),
-          ),
+          Icon(Icons.star_rounded, size: 12, color: Color(0xFFFFD464)),
           SizedBox(width: 2.w),
           Text(
             '$rating / $maxRating',
@@ -339,10 +360,7 @@ class _ReviewScoreChip extends StatelessWidget {
 }
 
 class _ReviewErrorView extends StatelessWidget {
-  const _ReviewErrorView({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ReviewErrorView({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
@@ -363,10 +381,7 @@ class _ReviewErrorView extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 16.h),
-            TextButton(
-              onPressed: onRetry,
-              child: const Text('다시 시도'),
-            ),
+            TextButton(onPressed: onRetry, child: const Text('다시 시도')),
           ],
         ),
       ),

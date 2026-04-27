@@ -78,12 +78,12 @@ class RecruitmentBloc extends Bloc<RecruitmentBlocEvent, RecruitmentBlocState> {
     RecruitmentHomeResponse next,
   ) {
     final seenEmployeeIds = previous.searchResults
-        .map((item) => item.employeeId)
+        .map(_jobSeekerIdentityKey)
         .toSet();
     final appendedSearchResults = [
       ...previous.searchResults,
       for (final item in next.searchResults)
-        if (seenEmployeeIds.add(item.employeeId)) item,
+        if (seenEmployeeIds.add(_jobSeekerIdentityKey(item))) item,
     ];
 
     return RecruitmentHomeResponse(
@@ -95,5 +95,11 @@ class RecruitmentBloc extends Bloc<RecruitmentBlocEvent, RecruitmentBlocState> {
       page: next.page,
       pageSize: next.pageSize,
     );
+  }
+
+  String _jobSeekerIdentityKey(JobSeekerSummary item) {
+    final workerUserId = item.workerUserId;
+    if (workerUserId != null && workerUserId > 0) return 'user:$workerUserId';
+    return 'employee:${item.employeeId}';
   }
 }

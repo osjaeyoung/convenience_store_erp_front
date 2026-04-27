@@ -165,12 +165,17 @@ class _RecruitmentScreenState extends State<RecruitmentScreen>
     }
   }
 
-  Future<void> _openProfile(int branchId, int employeeId) async {
+  Future<void> _openProfile(
+    int branchId,
+    int employeeId, {
+    int? workerUserId,
+  }) async {
     final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
         builder: (_) => RecruitmentJobSeekerDetailScreen(
           branchId: branchId,
           employeeId: employeeId,
+          workerUserId: workerUserId,
         ),
       ),
     );
@@ -535,8 +540,12 @@ class _RecruitmentScreenState extends State<RecruitmentScreen>
                           onRetry: () => _requestHome(branchId),
                           onRetryLoadMore: () =>
                               _requestNextHomePage(branchId, force: true),
-                          onTapProfile: (employeeId) =>
-                              _openProfile(branchId, employeeId),
+                          onTapProfile: (employeeId, {workerUserId}) =>
+                              _openProfile(
+                                branchId,
+                                employeeId,
+                                workerUserId: workerUserId,
+                              ),
                         );
                       },
                     );
@@ -681,7 +690,7 @@ class _RecruitmentHomeTab extends StatelessWidget {
   final VoidCallback onTapRating;
   final VoidCallback onRetry;
   final VoidCallback onRetryLoadMore;
-  final ValueChanged<int> onTapProfile;
+  final void Function(int employeeId, {int? workerUserId}) onTapProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -788,7 +797,7 @@ class _RecentViewedSection extends StatelessWidget {
   const _RecentViewedSection({required this.items, required this.onTapProfile});
 
   final List<RecentViewedJobSeeker> items;
-  final ValueChanged<int> onTapProfile;
+  final void Function(int employeeId, {int? workerUserId}) onTapProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -842,7 +851,10 @@ class _RecentViewedSection extends StatelessWidget {
                     for (var i = 0; i < items.length; i++) ...[
                       _RecentViewedCard(
                         item: items[i],
-                        onTap: () => onTapProfile(items[i].employeeId),
+                        onTap: () => onTapProfile(
+                          items[i].employeeId,
+                          workerUserId: items[i].workerUserId,
+                        ),
                       ),
                       if (i != items.length - 1) SizedBox(width: 16.w),
                     ],
@@ -956,7 +968,7 @@ class _SearchResultsSection extends StatelessWidget {
   final bool isLoadingMore;
   final String? loadMoreErrorMessage;
   final VoidCallback onRetryLoadMore;
-  final ValueChanged<int> onTapProfile;
+  final void Function(int employeeId, {int? workerUserId}) onTapProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -979,7 +991,10 @@ class _SearchResultsSection extends StatelessWidget {
           _SearchResultCard(
             item: items[i],
             showDivider: i != items.length - 1,
-            onTap: () => onTapProfile(items[i].employeeId),
+            onTap: () => onTapProfile(
+              items[i].employeeId,
+              workerUserId: items[i].workerUserId,
+            ),
           ),
         if (isLoadingMore)
           Padding(

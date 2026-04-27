@@ -49,12 +49,14 @@ class RecruitmentHomeResponse extends Equatable {
 class RecentViewedJobSeeker extends Equatable {
   const RecentViewedJobSeeker({
     required this.employeeId,
+    this.workerUserId,
     required this.employeeName,
     required this.age,
     this.viewedAt,
   });
 
   final int employeeId;
+  final int? workerUserId;
   final String employeeName;
   final int age;
   final String? viewedAt;
@@ -62,6 +64,9 @@ class RecentViewedJobSeeker extends Equatable {
   factory RecentViewedJobSeeker.fromJson(Map<String, dynamic> json) {
     return RecentViewedJobSeeker(
       employeeId: (json['employee_id'] as num?)?.toInt() ?? 0,
+      workerUserId:
+          (json['worker_user_id'] as num?)?.toInt() ??
+          (json['applicant_user_id'] as num?)?.toInt(),
       employeeName: json['employee_name'] as String? ?? '',
       age: (json['age'] as num?)?.toInt() ?? 0,
       viewedAt: json['viewed_at'] as String?,
@@ -71,12 +76,19 @@ class RecentViewedJobSeeker extends Equatable {
   String get nameWithAge => '$employeeName($age세)';
 
   @override
-  List<Object?> get props => [employeeId, employeeName, age, viewedAt];
+  List<Object?> get props => [
+    employeeId,
+    workerUserId,
+    employeeName,
+    age,
+    viewedAt,
+  ];
 }
 
 class JobSeekerSummary extends Equatable {
   const JobSeekerSummary({
     required this.employeeId,
+    this.workerUserId,
     required this.employeeName,
     required this.age,
     this.gender,
@@ -86,6 +98,7 @@ class JobSeekerSummary extends Equatable {
   });
 
   final int employeeId;
+  final int? workerUserId;
   final String employeeName;
   final int age;
   final String? gender;
@@ -96,6 +109,9 @@ class JobSeekerSummary extends Equatable {
   factory JobSeekerSummary.fromJson(Map<String, dynamic> json) {
     return JobSeekerSummary(
       employeeId: (json['employee_id'] as num?)?.toInt() ?? 0,
+      workerUserId:
+          (json['worker_user_id'] as num?)?.toInt() ??
+          (json['applicant_user_id'] as num?)?.toInt(),
       employeeName: json['employee_name'] as String? ?? '',
       age: (json['age'] as num?)?.toInt() ?? 0,
       gender: json['gender'] as String?,
@@ -108,6 +124,7 @@ class JobSeekerSummary extends Equatable {
   @override
   List<Object?> get props => [
     employeeId,
+    workerUserId,
     employeeName,
     age,
     gender,
@@ -121,6 +138,7 @@ class JobSeekerProfile extends Equatable {
   const JobSeekerProfile({
     this.employeeId,
     this.applicantUserId,
+    this.workerUserId,
     this.sourceType,
     required this.employeeName,
     required this.age,
@@ -138,6 +156,7 @@ class JobSeekerProfile extends Equatable {
 
   final int? employeeId;
   final int? applicantUserId;
+  final int? workerUserId;
   final String? sourceType;
   final String employeeName;
   final int age;
@@ -156,6 +175,9 @@ class JobSeekerProfile extends Equatable {
     return JobSeekerProfile(
       employeeId: (json['employee_id'] as num?)?.toInt(),
       applicantUserId: (json['applicant_user_id'] as num?)?.toInt(),
+      workerUserId:
+          (json['worker_user_id'] as num?)?.toInt() ??
+          (json['applicant_user_id'] as num?)?.toInt(),
       sourceType: json['source_type'] as String?,
       employeeName: json['employee_name'] as String? ?? '',
       age: (json['age'] as num?)?.toInt() ?? 0,
@@ -187,6 +209,7 @@ class JobSeekerProfile extends Equatable {
   List<Object?> get props => [
     employeeId,
     applicantUserId,
+    workerUserId,
     sourceType,
     employeeName,
     age,

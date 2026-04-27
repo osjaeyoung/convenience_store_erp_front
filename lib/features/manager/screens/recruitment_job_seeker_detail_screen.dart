@@ -5,7 +5,6 @@ import '../../../data/models/recruitment/recruitment_models.dart';
 import '../../../data/repositories/manager_home_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
-import '../../../widgets/app_styled_confirm_dialog.dart';
 import 'recruitment_inquiry_chat_screen.dart';
 import 'recruitment_review_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -15,10 +14,12 @@ class RecruitmentJobSeekerDetailScreen extends StatefulWidget {
     super.key,
     required this.branchId,
     required this.employeeId,
+    this.workerUserId,
   });
 
   final int branchId;
   final int employeeId;
+  final int? workerUserId;
 
   @override
   State<RecruitmentJobSeekerDetailScreen> createState() =>
@@ -77,6 +78,7 @@ class _RecruitmentJobSeekerDetailScreenState
         builder: (_) => RecruitmentReviewScreen(
           branchId: widget.branchId,
           employeeId: widget.employeeId,
+          workerUserId: profile.workerUserId ?? widget.workerUserId,
           initialEmployeeName: profile.employeeName,
           initialDesiredLocation: profile.desiredLocations.isNotEmpty
               ? profile.desiredLocations.first
@@ -91,12 +93,20 @@ class _RecruitmentJobSeekerDetailScreenState
   Future<void> _openInquiryChat() async {
     final profile = _profile;
     try {
-      final chat = await context
-          .read<ManagerHomeRepository>()
-          .createOrGetRecruitmentChat(
-            branchId: widget.branchId,
-            employeeId: widget.employeeId,
-          );
+      final repository = context.read<ManagerHomeRepository>();
+      var employeeId = _effectiveEmployeeIdForChat(profile);
+      if (employeeId < 0) {
+        final contact = await repository.postJobSeekerContact(
+          branchId: widget.branchId,
+          employeeId: employeeId,
+          message: null,
+        );
+        employeeId = contact.employeeId;
+      }
+      final chat = await repository.createOrGetRecruitmentChat(
+        branchId: widget.branchId,
+        employeeId: employeeId,
+      );
       if (!mounted) return;
       await Navigator.of(context).push(
         MaterialPageRoute<bool>(
@@ -120,32 +130,12 @@ class _RecruitmentJobSeekerDetailScreenState
     }
   }
 
-  Future<void> _onDeleteTap() async {
-    final confirmed = await showAppStyledDeleteDialog(
-      context,
-      message: '최근 열람 기록에서\n삭제하시겠습니까?',
-    );
-
-    if (confirmed != true || !mounted) return;
-
-    try {
-      await context
-          .read<ManagerHomeRepository>()
-          .deleteJobSeekerProfileOpenRecord(
-            branchId: widget.branchId,
-            employeeId: widget.employeeId,
-          );
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('열람 기록이 삭제되었습니다.')));
-      Navigator.of(context).pop(true);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('삭제에 실패했습니다: $e')));
+  int _effectiveEmployeeIdForChat(JobSeekerProfile? profile) {
+    final profileEmployeeId = profile?.employeeId;
+    if (profileEmployeeId != null && profileEmployeeId > 0) {
+      return profileEmployeeId;
     }
+    return widget.employeeId;
   }
 
   @override
