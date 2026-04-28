@@ -63,3 +63,37 @@ String formatContractChatListTime(String? raw) {
   if (local == null) return '';
   return DateFormat('M.d a h:mm', 'ko_KR').format(local);
 }
+
+/// 구인채용 채팅 말풍선 날짜+시각 표기 (로컬).
+String formatRecruitmentChatBubbleTime(String? raw) {
+  final local = tryParseApiDateTimeToLocal(raw);
+  if (local == null) return '';
+  return DateFormat('a h:mm', 'ko_KR').format(local);
+}
+
+/// 구인채용 채팅 날짜 구분선 표기 (로컬).
+String formatRecruitmentChatDateDivider(String? raw) {
+  final local = tryParseApiDateTimeToLocal(raw);
+  if (local == null) return '';
+  return DateFormat('yyyy년 M월 d일 EEEE', 'ko_KR').format(local);
+}
+
+bool isSameRecruitmentChatDate(String? a, String? b) {
+  final left = tryParseApiDateTimeToLocal(a);
+  final right = tryParseApiDateTimeToLocal(b);
+  if (left == null || right == null) return false;
+  return left.year == right.year &&
+      left.month == right.month &&
+      left.day == right.day;
+}
+
+bool isSameRecruitmentChatMinute(String? a, String? b) {
+  final left = tryParseApiDateTimeToLocal(a);
+  final right = tryParseApiDateTimeToLocal(b);
+  if (left == null || right == null) return false;
+  return left.year == right.year &&
+      left.month == right.month &&
+      left.day == right.day &&
+      left.hour == right.hour &&
+      left.minute == right.minute;
+}

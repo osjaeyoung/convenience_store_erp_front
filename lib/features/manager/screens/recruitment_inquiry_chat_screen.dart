@@ -375,26 +375,76 @@ class _MessageList extends StatelessWidget {
             message.senderRole == currentUserRole ||
             (currentUserRole == 'business' && message.senderRole == 'manager');
         final previous = index > 0 ? messages[index - 1] : null;
+        final next = index + 1 < messages.length ? messages[index + 1] : null;
+        final showDateDivider =
+            previous == null ||
+            !isSameRecruitmentChatDate(previous.createdAt, message.createdAt);
         final isGroupedWithPrevious =
             previous != null &&
             previous.senderRole == message.senderRole &&
-            previous.createdAt == message.createdAt;
+            isSameRecruitmentChatMinute(previous.createdAt, message.createdAt);
+        final showTime =
+            next == null ||
+            next.senderRole != message.senderRole ||
+            !isSameRecruitmentChatMinute(next.createdAt, message.createdAt);
 
-        return Padding(
-          padding: EdgeInsets.only(bottom: isGroupedWithPrevious ? 5.h : 19.h),
-          child: isMe
-              ? _OutgoingMessageRow(
-                  message: message,
-                  onOpenDocument: () => onOpenDocument(message),
-                )
-              : _IncomingMessageRow(
-                  message: message,
-                  imageUrl: counterpartyImageUrl,
-                  showAvatar: !isGroupedWithPrevious,
-                  onOpenDocument: () => onOpenDocument(message),
-                ),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (showDateDivider) _ChatDateDivider(createdAt: message.createdAt),
+            Padding(
+              padding: EdgeInsets.only(
+                bottom: isGroupedWithPrevious ? 5.h : 19.h,
+              ),
+              child: isMe
+                  ? _OutgoingMessageRow(
+                      message: message,
+                      showTime: showTime,
+                      onOpenDocument: () => onOpenDocument(message),
+                    )
+                  : _IncomingMessageRow(
+                      message: message,
+                      imageUrl: counterpartyImageUrl,
+                      showAvatar: !isGroupedWithPrevious,
+                      showTime: showTime,
+                      onOpenDocument: () => onOpenDocument(message),
+                    ),
+            ),
+          ],
         );
       },
+    );
+  }
+}
+
+class _ChatDateDivider extends StatelessWidget {
+  const _ChatDateDivider({required this.createdAt});
+
+  final String? createdAt;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = formatRecruitmentChatDateDivider(createdAt);
+    if (label.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: EdgeInsets.only(bottom: 20.h),
+      child: Center(
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+          decoration: BoxDecoration(
+            color: AppColors.grey100.withValues(alpha: 0.7),
+            borderRadius: BorderRadius.circular(999.r),
+          ),
+          child: Text(
+            label,
+            style: AppTypography.bodyXSmallM.copyWith(
+              color: AppColors.textSecondary,
+              fontSize: 11.sp,
+              height: 16 / 11,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -405,16 +455,18 @@ class _IncomingMessageRow extends StatelessWidget {
     required this.onOpenDocument,
     this.imageUrl,
     this.showAvatar = true,
+    required this.showTime,
   });
 
   final RecruitmentChatMessage message;
   final VoidCallback onOpenDocument;
   final String? imageUrl;
   final bool showAvatar;
+  final bool showTime;
 
   @override
   Widget build(BuildContext context) {
-    final time = formatContractChatBubbleTime(message.createdAt);
+    final time = formatRecruitmentChatBubbleTime(message.createdAt);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
@@ -435,7 +487,7 @@ class _IncomingMessageRow extends StatelessWidget {
                   onOpenDocument: onOpenDocument,
                 ),
               ),
-              if (time.isNotEmpty) ...[
+              if (showTime && time.isNotEmpty) ...[
                 SizedBox(width: 6.w),
                 Text(time, style: _bubbleTimeStyle),
               ],
@@ -451,19 +503,21 @@ class _OutgoingMessageRow extends StatelessWidget {
   const _OutgoingMessageRow({
     required this.message,
     required this.onOpenDocument,
+    required this.showTime,
   });
 
   final RecruitmentChatMessage message;
   final VoidCallback onOpenDocument;
+  final bool showTime;
 
   @override
   Widget build(BuildContext context) {
-    final time = formatContractChatBubbleTime(message.createdAt);
+    final time = formatRecruitmentChatBubbleTime(message.createdAt);
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        if (time.isNotEmpty) ...[
+        if (showTime && time.isNotEmpty) ...[
           Text(time, style: _bubbleTimeStyle),
           SizedBox(width: 6.w),
         ],
