@@ -84,7 +84,7 @@
   "search_results": [
     {
       "employee_id": 602,
-      "worker_user_id": 901,
+      "worker_user_id": 701,
       "employee_name": "이사라",
       "age": 24,
       "gender": "female",
@@ -275,12 +275,13 @@
 - `GET /recruitment/branches/{branch_id}/postings`
 - Figma `채용 게시판` 카드 목록
 - **참고:** 경로에 `branch_id`가 포함되어 있으나, 앱 내 전역 채용 게시판 역할을 하므로 `branch_id`와 무관하게 플랫폼 내 **모든 지점의 발행된 채용 공고**를 반환합니다.
+- `draft` 공고는 전역 게시판에 공개되지 않습니다. `include_draft=true`를 보낸 경우에도 현재 로그인 사용자가 해당 `branch_id`에서 직접 작성한 임시저장 공고만 함께 내려갑니다.
 
 ### Query Params
 
 - `keyword` (optional): 제목/업체명/근무지역 검색
 - `region` (optional, **다중 선택**): 지역 필터. **OR**, **최대 5개**, 공백 구분 경로·쉼표·키 반복 규약은 **「프론트엔드 연동 가이드 (지역 필터 · 이력서 주소)」** 참고. 서버는 공고의 `region_path`를 최우선으로 매칭하고, 값이 없는 기존 공고만 `region_summary`, `address` 합성 텍스트와 매칭한다.
-- `include_draft` (optional, default=false): `true`면 draft 포함
+- `include_draft` (optional, default=false): `true`면 현재 로그인 사용자의 해당 지점 draft만 추가 포함. 다른 지점/다른 작성자의 draft는 포함되지 않음
 - `page`, `page_size`
 
 ### Response Body (200)
@@ -325,7 +326,8 @@
 
 - `GET /recruitment/branches/{branch_id}/postings/{posting_id}`
 - Figma `채용 게시판 상세` 화면
-- **참고:** 다른 지점의 공고도 조회할 수 있도록 `branch_id`에 종속되지 않고 `posting_id`에 해당하는 공고의 상세 정보를 반환합니다.
+- **참고:** 발행된 공고는 다른 지점의 공고도 조회할 수 있도록 `branch_id`에 종속되지 않고 `posting_id` 기준으로 상세 정보를 반환합니다.
+- `draft` 공고 상세는 현재 로그인 사용자가 해당 `branch_id`에서 직접 작성한 공고일 때만 조회할 수 있습니다. 그 외 draft는 공개 공고가 아니므로 조회 대상이 아니며 `404`로 처리합니다.
 
 ### Response Body (200)
 
@@ -392,6 +394,7 @@
 - `POST /recruitment/branches/{branch_id}/postings`
 - Figma `채용 공고 올리기`에서 `다음` 후 임시저장(draft)
 - `preview` 확인 후 사용자가 저장할 때만 호출
+- `profile_image_url`은 `POST /recruitment/files` 업로드 결과를 전달합니다. 값을 `null`로 보내면 등록된 업체 프로필 사진을 제거합니다.
 
 ### Request Body
 
@@ -439,6 +442,7 @@
 
 - `POST /recruitment/branches/{branch_id}/postings/{posting_id}/publish`
 - Figma `미리보기` 화면의 `게시` 버튼
+- 해당 `branch_id`에서 현재 로그인 사용자가 작성한 공고만 게시할 수 있습니다.
 
 ### Response Body (200)
 
@@ -470,6 +474,7 @@
       "application_id": 3301,
       "applied_date_label": "지원날짜 2026.03.30",
       "employee_id": 602,
+      "worker_user_id": 901,
       "applicant_user_id": null,
       "application_source": "employee",
       "employee_name": "이사라",
@@ -482,6 +487,7 @@
       "application_id": -17,
       "applied_date_label": "지원날짜 2026.03.30",
       "employee_id": null,
+      "worker_user_id": 901,
       "applicant_user_id": 901,
       "application_source": "worker",
       "employee_name": "김현수",
@@ -500,6 +506,7 @@
 - 기존 `BranchEmployee` 지원자는 `application_source="employee"`
 - 근로자 앱에서 직접 지원한 경우 `application_source="worker"`
 - 근로자 앱 지원건은 단일 상세/삭제 라우트를 유지하기 위해 `application_id`가 **음수**로 내려갑니다
+- `worker_user_id`는 리뷰/채팅 등 사용자 기준 API 호출에 사용합니다. 근로자 앱 직접 지원건은 `applicant_user_id`와 동일한 값이며, 기존 `BranchEmployee` 지원자는 계정 연결이 없으면 `null`일 수 있습니다.
 - 근로자 앱 지원건 카드의 `employee_name`은 회원가입 이름 우선, `desired_location`은 이력서 기준 주소 우선으로 내려갑니다
 
 ---
@@ -509,7 +516,7 @@
 - `GET /recruitment/branches/{branch_id}/applications/{application_id}`
 - Figma `지원현황 상세` 화면
 - 응답은 구직자 프로필과 동일 포맷이며 `contact_action_label`이 `삭제`
-- 근로자 앱 지원건은 `source_type="worker"`, `applicant_user_id`, `resume_title`이 함께 내려갈 수 있음
+- 근로자 앱 지원건은 `source_type="worker"`, `worker_user_id`, `applicant_user_id`, `resume_title`이 함께 내려갈 수 있음
 - 근로자 앱 지원건 데이터 우선순위
   - `phone_number`: 회원가입 프로필(`user_profiles.phone_number`) 기준
   - `employee_name`: 회원가입 이름(`users.full_name`) 우선, 없으면 지원 당시 snapshot 이름 fallback
@@ -523,6 +530,7 @@
 ```json
 {
   "employee_id": null,
+  "worker_user_id": 901,
   "applicant_user_id": 901,
   "source_type": "worker",
   "employee_name": "김현수",
@@ -575,6 +583,8 @@
 - `PATCH /recruitment/branches/{branch_id}/postings/{posting_id}`
 - Figma `내 채용 게시글` 상단 펜 아이콘
 - Request는 `9) 채용 공고 등록` 필드 중 변경분만 전달
+- 업체 프로필 사진 삭제는 `profile_image_url: null`을 전달합니다.
+- 해당 `branch_id`에서 현재 로그인 사용자가 작성한 공고만 수정할 수 있습니다.
 
 ### Response Body (200)
 `7) 채용 공고 상세 조회`와 동일
@@ -585,6 +595,7 @@
 
 - `DELETE /recruitment/branches/{branch_id}/postings/{posting_id}`
 - Figma `내 채용 게시글` 상단 휴지통 아이콘
+- 해당 `branch_id`에서 현재 로그인 사용자가 작성한 공고만 삭제할 수 있습니다.
 
 ### Response Body (200)
 

@@ -135,6 +135,13 @@ class _WorkerRecruitmentDetailScreenState
                       ],
                     ),
                   ),
+                  if (_imageUrlOf(detail) != null)
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 0),
+                      child: _WorkerPostingImagePreview(
+                        imageUrl: _imageUrlOf(detail)!,
+                      ),
+                    ),
                   Padding(
                     padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 0),
                     child: Column(
@@ -282,6 +289,44 @@ class _WorkerRecruitmentDetailScreenState
                 ),
               ),
             ),
+    );
+  }
+}
+
+String? _imageUrlOf(WorkerRecruitmentPostingDetail? detail) {
+  final url = detail?.profileImageUrl?.trim();
+  return url == null || url.isEmpty ? null : url;
+}
+
+class _WorkerPostingImagePreview extends StatelessWidget {
+  const _WorkerPostingImagePreview({required this.imageUrl});
+
+  final String imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12.r),
+      child: SizedBox(
+        width: double.infinity,
+        height: 146,
+        child: Image.network(
+          imageUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Container(
+            color: const Color(0xFFD9D9D9),
+            alignment: Alignment.center,
+            child: Text(
+              '등록된 사진',
+              style: AppTypography.bodyLargeM.copyWith(
+                color: AppColors.textPrimary,
+                fontSize: 16.sp,
+                height: 16 / 16,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

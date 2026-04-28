@@ -2,13 +2,13 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/formatters/thousands_separator_input_formatter.dart';
 import '../../../data/models/recruitment/recruitment_models.dart';
 import '../../../data/repositories/manager_home_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
-import '../../../widgets/file_or_gallery_picker.dart';
 import '../../../widgets/hierarchical_region_picker_sheet.dart';
 import '../../auth/widgets/auth_input_field.dart';
 import 'recruitment_posting_detail_screen.dart';
@@ -117,15 +117,41 @@ class _RecruitmentPostingFormScreenState
   }
 
   Future<void> _pickImage() async {
-    final picked = await pickSingleFileOrGallery(
-      context: context,
-      allowedExtensions: const ['png', 'jpg', 'jpeg', 'webp'],
-      readBytesFromFilePicker: true,
-    );
-    if (picked == null || !mounted) return;
+    try {
+      final image = await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (image == null || !mounted) return;
+
+      final bytes = await image.readAsBytes();
+      if (!mounted) return;
+      setState(() {
+        _pickedImage = PlatformFile(
+          name: image.name.trim().isEmpty
+              ? 'recruitment-image.jpg'
+              : image.name,
+          size: bytes.length,
+          bytes: bytes,
+          path: image.path.isEmpty ? null : image.path,
+        );
+        _pickedImageBytes = bytes;
+        _profileImageUrl = null;
+      });
+    } on MissingPluginException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('현재 실행 환경에서 사진 선택 기능을 사용할 수 없습니다.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('사진 선택 실패: $e')));
+    }
+  }
+
+  void _removeImage() {
     setState(() {
-      _pickedImage = picked;
-      _pickedImageBytes = picked.bytes;
+      _pickedImage = null;
+      _pickedImageBytes = null;
       _profileImageUrl = null;
     });
   }
@@ -333,8 +359,14 @@ class _RecruitmentPostingFormScreenState
                           _InputGroup(
                             label: '업체 프로필 사진 첨부',
                             spacing: 12,
+                            trailing:
+                                (_pickedImageBytes != null &&
+                                        _pickedImageBytes!.isNotEmpty) ||
+                                    (_profileImageUrl != null &&
+                                        _profileImageUrl!.trim().isNotEmpty)
+                                ? _ImageDeleteIconButton(onTap: _removeImage)
+                                : null,
                             child: _ImageAttachmentBox(
-                              fileName: _pickedImage?.name,
                               bytes: _pickedImageBytes,
                               imageUrl: _profileImageUrl,
                               onTap: _pickImage,
@@ -766,24 +798,34 @@ class _InputGroup extends StatelessWidget {
     required this.label,
     required this.child,
     this.spacing = 8,
+    this.trailing,
   });
 
   final String label;
   final Widget child;
   final double spacing;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: AppTypography.bodyMediumM.copyWith(
-            fontSize: 14.sp,
-            height: 16 / 14,
-            color: AppColors.textPrimary,
-          ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: AppTypography.bodyMediumM.copyWith(
+                  fontSize: 14.sp,
+                  height: 16 / 14,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+            if (trailing != null) trailing!,
+          ],
         ),
         SizedBox(height: spacing),
         child,
@@ -833,13 +875,11 @@ class _PayTypeButton extends StatelessWidget {
 
 class _ImageAttachmentBox extends StatelessWidget {
   const _ImageAttachmentBox({
-    required this.fileName,
     required this.bytes,
     required this.imageUrl,
     required this.onTap,
   });
 
-  final String? fileName;
   final Uint8List? bytes;
   final String? imageUrl;
   final VoidCallback onTap;
@@ -849,16 +889,34 @@ class _ImageAttachmentBox extends StatelessWidget {
     final hasLocalImage = bytes != null && bytes!.isNotEmpty;
     final hasRemoteImage = imageUrl != null && imageUrl!.trim().isNotEmpty;
     final hasImage = hasLocalImage || hasRemoteImage;
+    if (!hasImage) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12.r),
+        child: Container(
+          width: 92,
+          height: 92,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.primaryLight,
+            borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(color: AppColors.primary),
+          ),
+          child: Icon(Icons.add_rounded, size: 40.r, color: AppColors.primary),
+        ),
+      );
+    }
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12.r),
       child: Container(
-        width: 92,
-        height: 92,
+        width: double.infinity,
+        height: 146,
         decoration: BoxDecoration(
-          color: AppColors.primaryLight,
+          color: const Color(0xFFD9D9D9),
           borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: AppColors.primary),
+          border: Border.all(color: AppColors.primary, width: 1),
           image: hasImage
               ? DecorationImage(
                   image: hasLocalImage
@@ -868,26 +926,38 @@ class _ImageAttachmentBox extends StatelessWidget {
                 )
               : null,
         ),
-        child: hasImage
-            ? Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12.r),
-                  color: Colors.black.withValues(alpha: 0.15),
-                ),
-                alignment: Alignment.bottomCenter,
-                padding: EdgeInsets.all(8.r),
-                child: Text(
-                  fileName ?? '이미지 변경',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.bodySmallM.copyWith(
-                    color: AppColors.grey0,
-                    fontSize: 10.sp,
-                    height: 16 / 10,
-                  ),
-                ),
-              )
-            : const Icon(Icons.add_rounded, size: 40, color: AppColors.primary),
+      ),
+    );
+  }
+}
+
+class _ImageDeleteIconButton extends StatelessWidget {
+  const _ImageDeleteIconButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(4.r),
+      child: Container(
+        width: 50,
+        height: 20,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: const Color(0xFFFF383C).withValues(alpha: 0.7),
+          borderRadius: BorderRadius.circular(2.r),
+        ),
+        child: Text(
+          '삭제',
+          style: AppTypography.bodySmallB.copyWith(
+            color: AppColors.grey0,
+            fontSize: 12.sp,
+            height: 20 / 12,
+            letterSpacing: -0.3,
+          ),
+        ),
       ),
     );
   }

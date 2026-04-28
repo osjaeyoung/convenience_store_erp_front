@@ -253,6 +253,68 @@ class _RecruitmentPostingDetailScreenState
     }
   }
 
+  Future<void> _deletePostingImage() async {
+    final detail = _detail;
+    if (detail == null || (_imageUrlOf(detail) == null)) return;
+    final ok = await showAppStyledDeleteDialog(
+      context,
+      message: '등록된 사진을 삭제할까요?',
+    );
+    if (ok != true || !mounted) return;
+
+    try {
+      final updated = await context
+          .read<ManagerHomeRepository>()
+          .patchRecruitmentPosting(
+            branchId: widget.branchId,
+            postingId: widget.postingId,
+            request: _requestFromDetail(detail, profileImageUrl: null),
+          );
+      if (!mounted) return;
+      setState(() => _detail = updated);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('사진이 삭제되었습니다.')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('사진 삭제 실패: $e')));
+    }
+  }
+
+  RecruitmentPostingRequest _requestFromDetail(
+    RecruitmentPostingDetail detail, {
+    required String? profileImageUrl,
+  }) {
+    return RecruitmentPostingRequest(
+      profileImageUrl: profileImageUrl,
+      companyName: detail.companyName ?? '',
+      title: detail.title ?? '',
+      regionSummary: detail.regionSummary ?? detail.regionPath ?? '',
+      regionPath: detail.regionPath,
+      address:
+          detail.address ?? detail.regionSummary ?? detail.regionPath ?? '',
+      payType: detail.payType ?? '시급',
+      payAmount: detail.payAmount,
+      workPeriod: detail.workPeriod ?? '',
+      workDays: detail.workDays ?? '',
+      workDaysDetail: detail.workDaysDetail,
+      workTime: detail.workTime ?? '',
+      workTimeDetail: detail.workTimeDetail,
+      jobCategory: detail.jobCategory ?? '편의점',
+      employmentType: detail.employmentType ?? '',
+      recruitmentDeadline: detail.recruitmentDeadline ?? '',
+      isAlwaysHiring: (detail.recruitmentDeadline ?? '').contains('상시'),
+      recruitmentHeadcount: detail.recruitmentHeadcount ?? '',
+      recruitmentHeadcountDetail: detail.recruitmentHeadcountDetail,
+      education: detail.education ?? '',
+      educationDetail: detail.educationDetail,
+      managerName: detail.managerName ?? '',
+      contactPhone: detail.contactPhone ?? '',
+    );
+  }
+
   Future<void> _openApplication(RecruitmentApplicationSummary item) async {
     final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
@@ -396,6 +458,20 @@ class _RecruitmentPostingDetailScreenState
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               _PostingSummaryHeader(detail: _detail!),
+                              if (_imageUrlOf(_detail!) != null)
+                                Padding(
+                                  padding: EdgeInsets.fromLTRB(
+                                    20.w,
+                                    16.h,
+                                    20.w,
+                                    0,
+                                  ),
+                                  child: _PostingImagePreview(
+                                    imageUrl: _imageUrlOf(_detail!)!,
+                                    showDelete: widget.mineMode,
+                                    onDelete: _deletePostingImage,
+                                  ),
+                                ),
                               Padding(
                                 padding: EdgeInsets.fromLTRB(
                                   20.w,
@@ -539,6 +615,11 @@ class _RecruitmentPostingDetailScreenState
   }
 
   String _formattedAmount(int amount) => _numberFormat.format(amount);
+}
+
+String? _imageUrlOf(RecruitmentPostingDetail detail) {
+  final url = detail.profileImageUrl?.trim();
+  return url == null || url.isEmpty ? null : url;
 }
 
 class _DetailTopTab extends StatelessWidget {
@@ -822,6 +903,86 @@ class _PostingSummaryHeader extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PostingImagePreview extends StatelessWidget {
+  const _PostingImagePreview({
+    required this.imageUrl,
+    this.showDelete = false,
+    this.onDelete,
+  });
+
+  final String imageUrl;
+  final bool showDelete;
+  final VoidCallback? onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        if (showDelete && onDelete != null) ...[
+          _PostingImageDeleteBadge(onTap: onDelete!),
+          SizedBox(height: 4.h),
+        ],
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12.r),
+          child: SizedBox(
+            width: double.infinity,
+            height: 146,
+            child: Image.network(
+              imageUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                color: const Color(0xFFD9D9D9),
+                alignment: Alignment.center,
+                child: Text(
+                  '등록된 사진',
+                  style: AppTypography.bodyLargeM.copyWith(
+                    color: AppColors.textPrimary,
+                    fontSize: 16.sp,
+                    height: 16 / 16,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PostingImageDeleteBadge extends StatelessWidget {
+  const _PostingImageDeleteBadge({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        width: 50,
+        height: 20,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: const Color(0xFFFF383C).withValues(alpha: 0.7),
+          borderRadius: BorderRadius.circular(2.r),
+        ),
+        child: Text(
+          '삭제',
+          style: AppTypography.bodySmallB.copyWith(
+            color: AppColors.grey0,
+            fontSize: 12.sp,
+            height: 20 / 12,
+            letterSpacing: -0.3,
+          ),
+        ),
       ),
     );
   }
