@@ -53,6 +53,8 @@ class RecentViewedJobSeeker extends Equatable {
     required this.employeeName,
     required this.age,
     this.viewedAt,
+    required this.averageRating,
+    required this.reviewCount,
   });
 
   final int employeeId;
@@ -60,6 +62,8 @@ class RecentViewedJobSeeker extends Equatable {
   final String employeeName;
   final int age;
   final String? viewedAt;
+  final double averageRating;
+  final int reviewCount;
 
   factory RecentViewedJobSeeker.fromJson(Map<String, dynamic> json) {
     return RecentViewedJobSeeker(
@@ -70,6 +74,8 @@ class RecentViewedJobSeeker extends Equatable {
       employeeName: json['employee_name'] as String? ?? '',
       age: (json['age'] as num?)?.toInt() ?? 0,
       viewedAt: json['viewed_at'] as String?,
+      averageRating: (json['average_rating'] as num?)?.toDouble() ?? 0,
+      reviewCount: (json['review_count'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -82,6 +88,53 @@ class RecentViewedJobSeeker extends Equatable {
     employeeName,
     age,
     viewedAt,
+    averageRating,
+    reviewCount,
+  ];
+}
+
+class JobSeekerOpenResult extends Equatable {
+  const JobSeekerOpenResult({
+    required this.opened,
+    required this.employeeId,
+    this.workerUserId,
+    required this.employeeName,
+    this.viewedAt,
+    required this.averageRating,
+    required this.reviewCount,
+  });
+
+  final bool opened;
+  final int employeeId;
+  final int? workerUserId;
+  final String employeeName;
+  final String? viewedAt;
+  final double averageRating;
+  final int reviewCount;
+
+  factory JobSeekerOpenResult.fromJson(Map<String, dynamic> json) {
+    return JobSeekerOpenResult(
+      opened: json['opened'] == true,
+      employeeId: (json['employee_id'] as num?)?.toInt() ?? 0,
+      workerUserId:
+          (json['worker_user_id'] as num?)?.toInt() ??
+          (json['applicant_user_id'] as num?)?.toInt(),
+      employeeName: json['employee_name'] as String? ?? '',
+      viewedAt: json['viewed_at'] as String?,
+      averageRating: (json['average_rating'] as num?)?.toDouble() ?? 0,
+      reviewCount: (json['review_count'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+    opened,
+    employeeId,
+    workerUserId,
+    employeeName,
+    viewedAt,
+    averageRating,
+    reviewCount,
   ];
 }
 
@@ -855,6 +908,7 @@ class RecruitmentApplicationSummary extends Equatable {
     required this.applicationId,
     this.appliedDateLabel,
     this.employeeId,
+    this.workerUserId,
     this.applicantUserId,
     this.applicationSource,
     required this.employeeName,
@@ -867,6 +921,7 @@ class RecruitmentApplicationSummary extends Equatable {
   final int applicationId;
   final String? appliedDateLabel;
   final int? employeeId;
+  final int? workerUserId;
   final int? applicantUserId;
   final String? applicationSource;
   final String employeeName;
@@ -880,6 +935,9 @@ class RecruitmentApplicationSummary extends Equatable {
       applicationId: (json['application_id'] as num?)?.toInt() ?? 0,
       appliedDateLabel: json['applied_date_label'] as String?,
       employeeId: (json['employee_id'] as num?)?.toInt(),
+      workerUserId:
+          (json['worker_user_id'] as num?)?.toInt() ??
+          (json['applicant_user_id'] as num?)?.toInt(),
       applicantUserId: (json['applicant_user_id'] as num?)?.toInt(),
       applicationSource: json['application_source'] as String?,
       employeeName: json['employee_name'] as String? ?? '',
@@ -895,6 +953,7 @@ class RecruitmentApplicationSummary extends Equatable {
     applicationId,
     appliedDateLabel,
     employeeId,
+    workerUserId,
     applicantUserId,
     applicationSource,
     employeeName,

@@ -10,6 +10,7 @@ import '../../../data/models/recruitment/recruitment_models.dart';
 import '../../../data/repositories/manager_home_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import '../../../widgets/app_styled_confirm_dialog.dart';
 import '../../../widgets/recruitment_inquiry_chat_composer.dart';
 import '../../account/account_dio_message.dart';
 import 'employment_contract_detail_screen.dart';
@@ -40,6 +41,7 @@ class _ManagerRecruitmentInquiryChatScreenState
   final ScrollController _scrollController = ScrollController();
   int? _chatId;
   bool _loading = true;
+  bool _deleting = false;
   bool _changed = false;
   Object? _error;
   RecruitmentChatSummary? _chat;
@@ -225,6 +227,35 @@ class _ManagerRecruitmentInquiryChatScreenState
     }
   }
 
+  Future<void> _deleteChat() async {
+    final chatId = _chatId;
+    if (chatId == null || chatId <= 0 || _deleting) return;
+    final confirmed = await showAppStyledDeleteDialog(
+      context,
+      message: '해당 채팅방을\n삭제하시겠습니까?',
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _deleting = true);
+    try {
+      await context.read<ManagerHomeRepository>().deleteRecruitmentChat(
+        chatId: chatId,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('채팅방이 삭제되었습니다.')));
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(accountDioMessage(error))));
+    } finally {
+      if (mounted) setState(() => _deleting = false);
+    }
+  }
+
   int? _contractIdFromPath(String? path) {
     if (path == null || path.trim().isEmpty) return null;
     final matches = RegExp(r'(\d+)').allMatches(path).toList();
@@ -309,7 +340,7 @@ class _ManagerRecruitmentInquiryChatScreenState
         ),
         actions: [
           IconButton(
-            onPressed: () {},
+            onPressed: _deleting ? null : _deleteChat,
             icon: const Icon(
               Icons.more_horiz_rounded,
               size: 30,
@@ -404,7 +435,8 @@ class _MessageList extends StatelessWidget {
                     )
                   : _IncomingMessageRow(
                       message: message,
-                      imageUrl: counterpartyImageUrl,
+                      imageUrl:
+                          message.senderProfileImageUrl ?? counterpartyImageUrl,
                       showAvatar: !isGroupedWithPrevious,
                       showTime: showTime,
                       onOpenDocument: () => onOpenDocument(message),

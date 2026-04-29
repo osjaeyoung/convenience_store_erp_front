@@ -52,6 +52,8 @@
   - 경영주/점장은 소속 지점의 채팅방 목록, 근로자는 본인이 연결된 채팅방 목록을 조회합니다.
   - 일반 메시지뿐 아니라 같은 지점-근로자 사이의 계약서 전송/완료 카드도 마지막 메시지와 안 읽은 수에 반영됩니다.
   - 상대방이 계정 프로필 이미지를 설정한 경우 `counterparty_profile_image_url`에 표시용 URL이 포함됩니다. 없으면 `null`입니다.
+  - `unread_count`는 현재 로그인 사용자가 아직 읽지 않은 **상대방 메시지 수**입니다. 전체 메시지 수나 전체 채팅방 메시지 수를 내려주면 안 됩니다.
+  - 정확한 개수 산정이 어려운 경우에도 최소 `0` 또는 `1`로 “읽지 않은 메시지가 있는지”만 표현합니다. 프론트는 `unread_count > 0`이면 unread 점 표시를 보여줍니다.
 
 #### Response Body (200)
 
@@ -82,7 +84,19 @@
 - `POST /chats/{chat_id}/messages` (일반 텍스트 메시지 전송)
   - Request: `{ "text": "지원서 보고 연락드립니다." }`
   - Response 메시지 항목에는 발신자가 계정 프로필 이미지를 설정한 경우 `sender_profile_image_url`이 포함됩니다. 없으면 `null`입니다.
-  - 메시지 전송 시 상대방에게 `type=chat_message`, `entity_type=chat`, `entity_id={chat_id}` 푸시 알림이 생성/발송됩니다.
+  - 메시지 전송 시 상대방에게 구인채용 채팅 푸시 알림이 생성/발송됩니다. 앱은 이 payload로 채팅 목록이 아니라 **채팅 상세 화면까지 바로 진입**합니다.
+  - 채팅 푸시 payload 필수/권장값:
+    - `type=recruitment_chat` 또는 `type=chat_message`
+    - `entity_type=recruitment_chat` 또는 `entity_type=chat`
+    - `entity_id={chat_id}`
+    - `chat_id={chat_id}` (`entity_id`와 같은 값, 상세 진입 안정성을 위해 함께 포함)
+    - `target_role=manager|owner|worker|job_seeker`
+    - 경영주/점장 수신: `target_route=/manager?tab=4&recruitmentTab=3`, `branch_id={branch_id}`, `employee_id={employee_id}` 권장
+    - 근로자 수신: `target_route=/job-seeker?tab=3`
+    - `title`, `body`는 FCM `notification`과 `data` 양쪽에 포함 권장
+  - 앱 알림함 row에도 위 payload를 동일하게 저장/반환해야 하며, `unread_count`는 새 알림 row 생성 직후 증가해야 합니다. 프론트 상단 알림 아이콘은 `unread_count > 0`이면 활성 상태로 표시합니다.
+  - 앱이 foreground 상태여도 알림이 표시되어야 하므로 FCM `notification.title/body` 또는 data `title/body` 중 하나는 반드시 포함합니다.
+  - 앱 알림함 row 생성과 FCM 발송은 메시지 저장 직후 수행합니다. 프론트는 foreground 수신 직후 unread 알림 수를 재조회하므로, `GET /push/notifications?only_unread=true`에 빠르게 반영되어야 합니다.
   - 경영주/점장 -> 근로자, 근로자 -> 해당 지점의 경영주/점장 방향 모두 지원합니다.
 
 ### 3-1. 채팅방 읽음 처리
@@ -90,6 +104,8 @@
   - 권한: 해당 지점의 경영주/점장 또는 해당 채팅방의 근로자
   - 채팅 상세 화면 진입 직후 호출합니다.
   - 현재 로그인 사용자가 아직 읽지 않은 상대방 메시지를 읽음 처리하고, 이후 `GET /chats`의 해당 채팅방 `unread_count`는 `0`으로 내려와야 합니다.
+  - 이 API는 채팅 메시지 read cursor만 갱신합니다. 앱 알림함의 푸시 알림 row(`push_notifications.is_read`)를 자동으로 읽음 처리하지 않습니다.
+  - 우측 상단 알림 아이콘은 앱 알림함의 미확인 알림 기준이므로, 채팅을 읽어도 사용자가 알림함에서 알림을 확인하기 전까지는 사라지지 않을 수 있습니다.
 
 #### Response Body (200)
 
@@ -106,6 +122,9 @@
   - 권한: 해당 지점의 경영주/점장 또는 해당 채팅방의 근로자
   - 목록 우측 `more` 아이콘에서 삭제 확인 후 호출합니다.
   - 삭제한 사용자에게는 이후 `GET /chats` 목록에서 보이지 않아야 합니다.
+  - 삭제는 카카오톡처럼 **사용자별 채팅 내역 삭제**입니다. 실제 `chat_messages`나 `employment_contracts`를 삭제하지 않으며, 삭제하지 않은 상대방에게는 기존 일반 메시지와 계약서 카드가 계속 보여야 합니다.
+  - 삭제한 사용자가 같은 상대와 다시 채팅을 시작하면 빈 방처럼 시작합니다. 서버는 해당 사용자에게만 삭제 시점 이전 일반 메시지, 계약서 전송/완료 카드, `last_message`, `last_message_at`을 노출하지 않습니다.
+  - 삭제 이후 상대방이 새 메시지나 새 계약서 이벤트를 보내면 삭제한 사용자에게도 그 시점 이후 내역만 다시 표시될 수 있습니다.
 
 #### Response Body (200)
 
@@ -577,7 +596,7 @@
 | `complete` | 근로자만 | 사업장 필수 + 근로자 필수 검증 후 `completed` 로 전환 |
 
 - `form_values`는 프론트가 화면 전체 상태를 통째로 보내도 됩니다.
-- 서버는 **현재 단계에서 허용된 키만 반영**하고, 다른 단계의 필드나 UI 전용 임시 필드(예: `work_day_*`)는 **무시**합니다.
+- 서버는 **현재 단계에서 허용된 키만 반영**합니다. 근무일 자동배정용 `work_weekdays`, `selected_weekdays`, `selected_workdays`, `selected_work_days`, `work_days`, `work_day_*`는 사업장 입력 단계에서 함께 저장됩니다.
 - 단, `required_field_keys`에 해당하는 필수값이 비어 있으면 기존처럼 `400`을 반환합니다.
 - `action=complete`로 `completed` 전환 시 계약 정보 기준으로 근무현황이 자동 생성됩니다.
   - 같은 계약 유형(`template_version`)의 완료 계약이 여러 건이면 **가장 최근 완료 계약서 기준**으로 반영됩니다.
@@ -602,9 +621,11 @@
    - 예: `"월, 화, 수, 목, 금"`, `"월~금"`, `"월/수/금"` (구분자: 쉼표·공백·슬래시·가운뎃점 등).  
    - `월~금`은 월→금 연속 요일로 확장됩니다.
 
-3. **체크박스 키 `work_day_1` … `work_day_7`**  
-   - 서버 해석: **`work_day_1` = 월요일**, `work_day_7` = 일요일 (Python weekday 0~6에 대응).  
-   - UI에서 요일 순서를 **일요일부터** 쓰는 경우, 체크 인덱스와 위 규칙이 어긋나지 않도록 **전송 전에 요일을 맞게 매핑**하거나, 가능하면 **`work_day_mon` … `work_day_sun`** 형태(명시 키)를 사용하세요.
+3. **체크박스 키 `work_day_*`**  
+   - 권장: `work_day_mon`, `work_day_tue`, `work_day_wed`, `work_day_thu`, `work_day_fri`, `work_day_sat`, `work_day_sun`처럼 명시 키를 보냅니다.
+   - `work_day_1` … `work_day_7`을 보내면 **월요일=1, 일요일=7**로 해석합니다.
+   - `work_day_0` … `work_day_6`을 보내고 `work_day_7`이 없으면 달력 UI에서 흔한 **일요일=0, 토요일=6** 형식으로 해석합니다.
+   - 예: 금/토 야간 근무를 Sunday-first 체크박스로 보내는 경우 `work_day_5=true`, `work_day_6=true`를 보내면 금요일/토요일에만 자동배정됩니다.
 
 4. **`PUT /staff-management/branches/{branch_id}/contracts/work-rules` (근무룰 저장)**  
    - 여기의 `weekday`는 **항상 Python 규칙 `0`~`6` (월~일)** 만 사용합니다. Dart `1`~`7`을 그대로 넣지 마세요.  

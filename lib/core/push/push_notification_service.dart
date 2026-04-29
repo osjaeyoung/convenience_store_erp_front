@@ -11,7 +11,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/account/screens/account_inquiry_detail_screen.dart';
 import '../../features/job_seeker/screens/worker_contract_chat_detail_screen.dart';
+import '../../features/job_seeker/screens/worker_recruitment_chat_screen.dart';
 import '../../features/manager/screens/recruitment_application_detail_screen.dart';
+import '../../features/manager/screens/recruitment_inquiry_chat_screen.dart';
 import '../../firebase_options.dart';
 
 @pragma('vm:entry-point')
@@ -34,9 +36,13 @@ class PushNotificationService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
+  final StreamController<Map<String, dynamic>>
+  _foregroundNotificationController =
+      StreamController<Map<String, dynamic>>.broadcast();
 
   GlobalKey<NavigatorState>? _navigatorKey;
   Future<void> Function(String token)? _onTokenReceived;
+  Future<void> Function()? _onNotificationReceived;
   StreamSubscription<RemoteMessage>? _onMessageSub;
   StreamSubscription<RemoteMessage>? _onOpenedSub;
   StreamSubscription<String>? _onTokenRefreshSub;
@@ -44,12 +50,17 @@ class PushNotificationService {
   Map<String, dynamic>? _pendingData;
   bool _initialized = false;
 
+  Stream<Map<String, dynamic>> get foregroundNotifications =>
+      _foregroundNotificationController.stream;
+
   Future<void> initialize({
     required GlobalKey<NavigatorState> navigatorKey,
     required Future<void> Function(String token) onTokenReceived,
+    Future<void> Function()? onNotificationReceived,
   }) async {
     _navigatorKey = navigatorKey;
     _onTokenReceived = onTokenReceived;
+    _onNotificationReceived = onNotificationReceived;
 
     if (_initialized) {
       flushPendingNavigation();
@@ -174,6 +185,10 @@ class PushNotificationService {
     _navigate(route, data);
   }
 
+  void handleNotificationPayload(Map<String, dynamic> data) {
+    _handleTapData(data);
+  }
+
   Future<void> _requestPlatformLocalNotificationPermission() async {
     if (defaultTargetPlatform == TargetPlatform.iOS) {
       final ios = _localNotifications
@@ -226,6 +241,14 @@ class PushNotificationService {
   Future<void> _onForegroundMessage(RemoteMessage message) async {
     final payload = <String, dynamic>{...message.data};
     final isRecruitmentChat = _isRecruitmentChatPayload(payload);
+    final route = resolveRoute(payload);
+    if (route != null) {
+      payload['target_route'] = route;
+    }
+
+    _foregroundNotificationController.add(Map<String, dynamic>.from(payload));
+    await _safeNotifyNotificationReceived();
+
     final title =
         message.notification?.title ??
         message.data['title']?.toString() ??
@@ -236,11 +259,6 @@ class PushNotificationService {
         (isRecruitmentChat ? '구인채용 채팅에 새 메시지가 도착했습니다.' : null);
     if ((title == null || title.isEmpty) && (body == null || body.isEmpty)) {
       return;
-    }
-
-    final route = resolveRoute(payload);
-    if (route != null) {
-      payload['target_route'] = route;
     }
 
     await _localNotifications.show(
@@ -255,7 +273,11 @@ class PushNotificationService {
           importance: Importance.high,
           priority: Priority.high,
         ),
-        iOS: const DarwinNotificationDetails(),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
       ),
       payload: jsonEncode(payload),
     );
@@ -268,10 +290,16 @@ class PushNotificationService {
   bool _isRecruitmentChatPayload(Map<String, dynamic> data) {
     final type = data['type']?.toString().toLowerCase();
     final entityType = data['entity_type']?.toString().toLowerCase();
+    final targetRoute = data['target_route']?.toString().toLowerCase();
+    final chatId = data['chat_id']?.toString();
     return type == 'recruitment_chat' ||
+        type == 'chat' ||
         type == 'chat_message' ||
         entityType == 'recruitment_chat' ||
-        entityType == 'chat';
+        entityType == 'chat' ||
+        (chatId != null && chatId.isNotEmpty) ||
+        (targetRoute != null &&
+            (targetRoute.contains('chat') || targetRoute.contains('tab=3')));
   }
 
   void _handleTapData(Map<String, dynamic> data) {
@@ -302,8 +330,10 @@ class PushNotificationService {
   }
 
   void _tryPushDetailScreen(BuildContext context, Map<String, dynamic> data) {
-    final entityType = data['entity_type']?.toString();
-    final entityIdStr = data['entity_id']?.toString();
+    final entityType = (data['entity_type'] ?? data['type'])
+        ?.toString()
+        .toLowerCase();
+    final entityIdStr = (data['entity_id'] ?? data['chat_id'])?.toString();
     final branchIdStr = data['branch_id']?.toString();
 
     if (entityType == null || entityType.isEmpty) return;
@@ -317,6 +347,8 @@ class PushNotificationService {
     final isManagerOrOwner = targetRole == 'manager' || targetRole == 'owner';
     final isJobSeeker = targetRole == 'job_seeker' || targetRole == 'worker';
 
+    final chatId = _parseInt(data['chat_id']) ?? entityId;
+
     if (entityType == 'contract_chat') {
       if (isJobSeeker) {
         Navigator.of(context).push(
@@ -325,6 +357,35 @@ class PushNotificationService {
                 WorkerContractChatDetailScreen(contractId: entityId),
           ),
         );
+      }
+    } else if (entityType == 'recruitment_chat' || entityType == 'chat') {
+      if (chatId <= 0) return;
+      if (isManagerOrOwner) {
+        Navigator.of(context).push(
+          MaterialPageRoute<bool>(
+            builder: (_) => ManagerRecruitmentInquiryChatScreen(
+              chatId: chatId,
+              branchId: _parseInt(data['branch_id']) ?? 0,
+              employeeId: _parseInt(data['employee_id']) ?? 0,
+              employeeName: data['employee_name']?.toString(),
+              profileImageUrl: data['profile_image_url']?.toString(),
+            ),
+          ),
+        );
+        return;
+      }
+      if (isJobSeeker) {
+        final title = data['counterparty_name']?.toString().trim();
+        Navigator.of(context).push(
+          MaterialPageRoute<bool>(
+            builder: (_) => WorkerRecruitmentChatScreen(
+              chatId: chatId,
+              title: title == null || title.isEmpty ? '채팅' : title,
+              profileImageUrl: data['profile_image_url']?.toString(),
+            ),
+          ),
+        );
+        return;
       }
     } else if (entityType == 'recruitment_application') {
       if (isManagerOrOwner) {
@@ -350,6 +411,12 @@ class PushNotificationService {
   Future<void> _safeUpsertToken(String token) async {
     try {
       await _onTokenReceived?.call(token);
+    } catch (_) {}
+  }
+
+  Future<void> _safeNotifyNotificationReceived() async {
+    try {
+      await _onNotificationReceived?.call();
     } catch (_) {}
   }
 

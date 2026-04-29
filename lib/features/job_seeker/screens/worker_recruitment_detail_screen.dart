@@ -305,11 +305,16 @@ class _WorkerPostingImagePreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12.r),
-      child: SizedBox(
-        width: double.infinity,
-        height: 146,
+    return Container(
+      width: double.infinity,
+      height: 146,
+      padding: const EdgeInsets.all(1),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: AppColors.primary),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(11.r),
         child: Image.network(
           imageUrl,
           fit: BoxFit.cover,

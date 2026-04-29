@@ -40,19 +40,11 @@ class _RecruitmentJobSeekerDetailScreenState
 
   Future<void> _loadProfile() async {
     final repo = context.read<ManagerHomeRepository>();
-    try {
-      await repo.openJobSeekerProfile(
-        branchId: widget.branchId,
-        employeeId: widget.employeeId,
-      );
-    } catch (_) {
-      // 최근 열람 저장 실패 시에도 상세는 보여준다.
-    }
-
+    final employeeId = _profileLookupEmployeeId();
     try {
       final profile = await repo.getJobSeekerProfile(
         branchId: widget.branchId,
-        employeeId: widget.employeeId,
+        employeeId: employeeId,
       );
       if (!mounted) return;
       setState(() {
@@ -77,7 +69,7 @@ class _RecruitmentJobSeekerDetailScreenState
       MaterialPageRoute<void>(
         builder: (_) => RecruitmentReviewScreen(
           branchId: widget.branchId,
-          employeeId: widget.employeeId,
+          employeeId: _effectiveEmployeeIdForChat(profile),
           workerUserId: profile.workerUserId ?? widget.workerUserId,
           initialEmployeeName: profile.employeeName,
           initialDesiredLocation: profile.desiredLocations.isNotEmpty
@@ -131,10 +123,19 @@ class _RecruitmentJobSeekerDetailScreenState
   }
 
   int _effectiveEmployeeIdForChat(JobSeekerProfile? profile) {
+    if (widget.workerUserId != null) {
+      return -widget.workerUserId!;
+    }
     final profileEmployeeId = profile?.employeeId;
     if (profileEmployeeId != null && profileEmployeeId > 0) {
       return profileEmployeeId;
     }
+    return widget.employeeId;
+  }
+
+  int _profileLookupEmployeeId() {
+    final workerUserId = widget.workerUserId;
+    if (workerUserId != null) return -workerUserId;
     return widget.employeeId;
   }
 
@@ -527,10 +528,11 @@ class _ScoreStars extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(maxStars, (index) {
+        final filled = index < filledCount;
         return Icon(
-          Icons.star_rounded,
+          filled ? Icons.star_rounded : Icons.star_border_rounded,
           size: 16,
-          color: index < filledCount ? color : color.withValues(alpha: 0.18),
+          color: color,
         );
       }),
     );

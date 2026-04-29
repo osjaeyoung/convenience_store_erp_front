@@ -453,7 +453,7 @@ class AuthRepository extends ChangeNotifier {
     int pageSize = 20,
   }) async {
     final res = await _apiClient.dio.get<Map<String, dynamic>>(
-      '/me/notifications',
+      '/push/notifications',
       queryParameters: {
         'only_unread': onlyUnread,
         'page': page,
@@ -466,7 +466,10 @@ class AuthRepository extends ChangeNotifier {
   }
 
   Future<int> refreshNotificationUnreadCount() async {
-    final notificationPage = await getNotifications(pageSize: 1);
+    final notificationPage = await getNotifications(
+      onlyUnread: true,
+      pageSize: 20,
+    );
     return notificationPage.unreadCount;
   }
 

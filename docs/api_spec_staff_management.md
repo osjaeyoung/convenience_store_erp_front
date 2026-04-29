@@ -31,7 +31,7 @@
 ### 프론트 참고 (자동 근무 배정·요일)
 
 - 일정 조회 시 **`schedule_source`가 `contract_auto`인 슬롯**은 근로계약 완료 시 자동 생성된 것입니다.
-- 계약서 `form_values`의 요일·주휴일 숫자/문자열 규약(Flutter `weekday` 1~7 지원, `work_days` 문자열 등)은 **`docs/api_spec_contract_chat.md` → 「프론트엔드 연동 (근무일 자동배정)」** 를 따릅니다.
+- 계약서 `form_values`의 요일·주휴일 숫자/문자열 규약(Flutter `weekday` 1~7, Sunday-first 체크박스 `work_day_0..6`, `work_days` 문자열 등)은 **`docs/api_spec_contract_chat.md` → 「프론트엔드 연동 (근무일 자동배정)」** 를 따릅니다.
 - **`PUT .../contracts/work-rules`** 의 `weekday`는 **`0`~`6`(월~일, Python)** 만 허용합니다.
 
 ---
@@ -414,6 +414,7 @@
 
 - `POST /staff-management/branches/{branch_id}/employees/from-user`
 - 앱 가입 사용자를 해당 점포 근무자로 등록 (search-users 검색 결과의 user_id 사용)
+- 같은 점포에 동일 `user_id` 또는 동일 연락처 근로자 row가 이미 있으면 새 row를 만들지 않고 `409 Conflict`를 반환합니다.
 
 ### Request Body
 ```json
@@ -446,6 +447,7 @@
 - 갑작스러운 알바 펑크 등으로 앱 가입/검색 없이 이름과 연락처만 입력해 임시 근무자를 등록합니다.
 - **중요**: 비회원 근무자는 `linked_user_id=null`, `is_guest=true` 로 저장하며, 이후 같은 연락처의 사용자가 회원가입/로그인하더라도 자동 연결하지 않습니다.
 - 비회원 근무자는 앱 계정이 없으므로 전자서명/채팅 기반 계약서 작성 대상이 아닙니다. 계약서/동의서는 `23-1) 파일 전용 등록`으로만 업로드합니다.
+- 같은 점포에 동일 연락처의 현근무자/퇴사자 row가 이미 있으면 새 row를 만들지 않고 `409 Conflict`를 반환합니다.
 
 ### Request Body
 ```json
@@ -628,6 +630,9 @@
 - `GET /staff-management/branches/{branch_id}/employees/{employee_id}/payroll-auto-fill?year=2025&month=12`
 - 근무자+연월 기준으로 **총근무시간, 시급, 기본급, 주휴수당** 자동 산출 (프론트에서 계산하지 않고 백엔드에서 반환)
 - 사용자는 저장 전 수정 가능
+- 주휴수당은 **계약 주 근로시간이 15시간(900분) 이상**이고, 해당 주에 **계약한 근로일 수를 모두 출근/예정 처리**한 경우에만 산정합니다. 결근(`absent`) 또는 미확정 상태가 있으면 해당 주 주휴수당은 0원입니다.
+- 주휴수당 산식은 실제 초과 근무시간이 아니라 계약 주 근로시간 기준입니다: `(계약 주 근로시간 / 40시간) × 8시간 × 시급`.
+- 예: 계약 주 30시간 근무자가 실제 32시간을 근무해도 주휴수당 산식에는 30시간을 사용합니다. 계약 주 14시간 근무자는 만근해도 주휴수당이 없습니다.
 
 ### Request Body
 없음 (쿼리: `year`, `month`)
@@ -638,7 +643,7 @@
   "total_work_minutes": 8400, // 해당월 총 근무시간(분) - 근무일정 기준
   "hourly_wage": 9860, // 시급(원) - 근로계약 또는 이전 급여명세 기준
   "base_pay": 1380400, // 기본급 (총근무시간×시급)
-  "weekly_allowance": 206400, // 주휴수당(원) - 주 15시간 이상인 주만 산정
+  "weekly_allowance": 60000, // 주휴수당(원) - 계약 주15시간 이상 + 계약근로일 만근 시 계약시간 기준 산정
   "resident_id_masked": null,
   "overtime_pay": 0,
   "taxable_salary": null,
@@ -1655,7 +1660,7 @@ files=@guardian-consent.pdf
       "average_weekly_minutes": 960, // 주 평균 근로분(현재 단일 주 확정값)
       "perfect_attendance": true, // 개근 충족 여부
       "legal_weekly_hours_condition_met": true, // 주15시간(900분) 이상 여부
-      "weekly_allowance_eligible": true, // 주휴수당 대상 여부(개근 + 15시간)
+      "weekly_allowance_eligible": true, // 주휴수당 대상 여부(계약근로일 만근 + 계약 주15시간 이상)
       "confirmed_by_user_id": 2, // 확정 처리한 사용자 ID
       "confirmed_at": "2026-03-09T10:30:00Z" // 확정 시각
     }

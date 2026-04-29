@@ -52,6 +52,11 @@ class AccountNotificationItem {
     required this.branchId,
     required this.entityType,
     required this.entityId,
+    required this.chatId,
+    required this.employeeId,
+    required this.counterpartyName,
+    required this.employeeName,
+    required this.profileImageUrl,
     required this.readAt,
     required this.createdAt,
   });
@@ -69,6 +74,11 @@ class AccountNotificationItem {
   final String? branchId;
   final String? entityType;
   final String? entityId;
+  final String? chatId;
+  final String? employeeId;
+  final String? counterpartyName;
+  final String? employeeName;
+  final String? profileImageUrl;
   final DateTime? readAt;
   final DateTime? createdAt;
 
@@ -87,6 +97,11 @@ class AccountNotificationItem {
       branchId: _toNullableString(json['branch_id']),
       entityType: _toNullableString(json['entity_type']),
       entityId: _toNullableString(json['entity_id']),
+      chatId: _toNullableString(json['chat_id']),
+      employeeId: _toNullableString(json['employee_id']),
+      counterpartyName: _toNullableString(json['counterparty_name']),
+      employeeName: _toNullableString(json['employee_name']),
+      profileImageUrl: _toNullableString(json['profile_image_url']),
       readAt: _toNullableDateTime(json['read_at']),
       createdAt: _toNullableDateTime(json['created_at']),
     );
@@ -113,6 +128,11 @@ class AccountNotificationItem {
       branchId: branchId,
       entityType: entityType,
       entityId: entityId,
+      chatId: chatId,
+      employeeId: employeeId,
+      counterpartyName: counterpartyName,
+      employeeName: employeeName,
+      profileImageUrl: profileImageUrl,
       readAt: readAt ?? this.readAt,
       createdAt: createdAt,
     );
@@ -129,6 +149,11 @@ class AccountNotificationItem {
       if (branchId != null) 'branch_id': branchId,
       if (entityType != null) 'entity_type': entityType,
       if (entityId != null) 'entity_id': entityId,
+      if (chatId != null) 'chat_id': chatId,
+      if (employeeId != null) 'employee_id': employeeId,
+      if (counterpartyName != null) 'counterparty_name': counterpartyName,
+      if (employeeName != null) 'employee_name': employeeName,
+      if (profileImageUrl != null) 'profile_image_url': profileImageUrl,
     };
   }
 }

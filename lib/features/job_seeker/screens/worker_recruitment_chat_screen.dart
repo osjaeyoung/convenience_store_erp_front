@@ -13,6 +13,7 @@ import '../../../theme/app_typography.dart';
 import '../../../widgets/recruitment_inquiry_chat_composer.dart';
 import '../../account/account_dio_message.dart';
 import '../widgets/worker_common.dart';
+import '../widgets/worker_contract_chat_leave_dialog.dart';
 import 'worker_contract_document_screen.dart';
 
 class WorkerRecruitmentChatScreen extends StatefulWidget {
@@ -36,6 +37,7 @@ class _WorkerRecruitmentChatScreenState
     extends State<WorkerRecruitmentChatScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _loading = true;
+  bool _deleting = false;
   Object? _error;
   RecruitmentChatSummary? _chat;
   String _currentUserRole = 'worker';
@@ -197,6 +199,31 @@ class _WorkerRecruitmentChatScreenState
     }
   }
 
+  Future<void> _deleteChat() async {
+    if (_deleting) return;
+    final confirmed = await showWorkerContractChatLeaveDialog(context);
+    if (!confirmed || !mounted) return;
+
+    setState(() => _deleting = true);
+    try {
+      await context.read<WorkerRecruitmentRepository>().deleteRecruitmentChat(
+        chatId: widget.chatId,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('채팅방이 삭제되었습니다.')));
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(accountDioMessage(error))));
+    } finally {
+      if (mounted) setState(() => _deleting = false);
+    }
+  }
+
   int? _contractIdFromPath(String? path) {
     if (path == null || path.trim().isEmpty) return null;
     final matches = RegExp(r'(\d+)').allMatches(path).toList();
@@ -292,7 +319,7 @@ class _WorkerRecruitmentChatScreenState
                     )
                   : _IncomingMessageRow(
                       message: message,
-                      imageUrl: _imageUrl,
+                      imageUrl: message.senderProfileImageUrl ?? _imageUrl,
                       showAvatar: !grouped,
                       showTime: showTime,
                       onOpenDocument: () => _openDocumentMessage(message),
@@ -320,6 +347,17 @@ class _WorkerRecruitmentChatScreenState
       ),
       titleSpacing: 0,
       title: Text(_title, style: AppTypography.appBarTitle),
+      actions: [
+        IconButton(
+          onPressed: _deleting ? null : _deleteChat,
+          icon: const Icon(
+            Icons.more_horiz_rounded,
+            color: AppColors.textPrimary,
+            size: 30,
+          ),
+        ),
+        SizedBox(width: 4.w),
+      ],
     );
   }
 }

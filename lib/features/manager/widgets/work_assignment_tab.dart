@@ -62,6 +62,9 @@ const _slotTimes = [
 
 const _weekdays = ['월', '화', '수', '목', '금', '토', '일'];
 
+/// 직원관리 근무룰/주간 저장 API는 Python weekday 규칙(월=0, 일=6)을 사용한다.
+int _staffManagementWeekday(DateTime date) => date.weekday - 1;
+
 String _slotEndTime(String time) {
   final parts = time.split(':');
   var h = int.tryParse(parts[0]) ?? 0;
@@ -1131,10 +1134,7 @@ class _WorkAssignmentTabState extends State<WorkAssignmentTab> {
           };
         }).toList();
 
-        return {
-          'weekday': d.weekday - 1, // 0=Monday, 6=Sunday
-          'slots': slots,
-        };
+        return {'weekday': _staffManagementWeekday(d), 'slots': slots};
       }).toList();
 
       bloc.add(

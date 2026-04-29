@@ -231,9 +231,11 @@ class _EtcRecordInlineFilePreviewState
       child: Padding(
         padding: EdgeInsets.all(16.r),
         child: Text(
-          '불러오지 못했습니다.\n$e',
+          '파일을 불러오지 못했습니다.\n잠시 후 다시 시도해주세요.',
           textAlign: TextAlign.center,
-          style: AppTypography.bodySmall.copyWith(color: AppColors.error),
+          style: AppTypography.bodySmall.copyWith(
+            color: AppColors.textSecondary,
+          ),
         ),
       ),
     );

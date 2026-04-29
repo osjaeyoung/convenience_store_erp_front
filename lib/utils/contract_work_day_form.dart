@@ -6,13 +6,19 @@ String contractWorkDayFormFieldKey(int mondayIndex0to6, String suffix) {
   return 'work_day_${mondayIndex0to6 + 1}_$suffix';
 }
 
-final _workDayKeyRe = RegExp(r'^work_day_(\d+)_(.+)$');
+final _workDayKeyRe = RegExp(r'^work_day_(\d+)(?:_(.+))?$');
 
-/// 예전 앱이 저장한 `work_day_0`…`work_day_6`(0=월…6=일)을 API 규격 `work_day_1`…`7`로 옮깁니다.
-/// 이미 `work_day_0_`가 없으면 변경하지 않습니다.
+/// `work_day_0`…`work_day_6`만 저장된 계약 데이터를 API 규격 `work_day_1`…`7`로 옮깁니다.
+/// 명세상 `work_day_0`…`6`은 Sunday-first 체크박스 형식(0=일, 6=토)입니다.
+/// 이미 `work_day_7`이 있거나 `work_day_0`이 없으면 변경하지 않습니다.
 Map<String, dynamic> migrateLegacyWorkDayKeysInMap(Map<String, dynamic> raw) {
-  final legacy = raw.keys.any((k) => k.startsWith('work_day_0_'));
-  if (!legacy) return raw;
+  final legacy = raw.keys.any(
+    (k) => k == 'work_day_0' || k.startsWith('work_day_0_'),
+  );
+  final hasApiSunday = raw.keys.any(
+    (k) => k == 'work_day_7' || k.startsWith('work_day_7_'),
+  );
+  if (!legacy || hasApiSunday) return raw;
 
   final out = Map<String, dynamic>.from(raw);
   final remove = <String>[];
@@ -24,7 +30,10 @@ Map<String, dynamic> migrateLegacyWorkDayKeysInMap(Map<String, dynamic> raw) {
     final d = int.tryParse(m.group(1)!) ?? -1;
     if (d < 0 || d > 6) continue;
     remove.add(e.key);
-    add['work_day_${d + 1}_${m.group(2)}'] = e.value;
+    final apiDay = d == 0 ? 7 : d;
+    final suffix = m.group(2);
+    add[suffix == null ? 'work_day_$apiDay' : 'work_day_${apiDay}_$suffix'] =
+        e.value;
   }
   for (final k in remove) {
     out.remove(k);

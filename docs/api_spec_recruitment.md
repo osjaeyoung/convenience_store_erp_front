@@ -76,15 +76,18 @@
   "recent_viewed_job_seekers": [
     {
       "employee_id": 501,
+      "worker_user_id": 901,
       "employee_name": "김수민",
       "age": 18,
-      "viewed_at": "2026-03-30T12:00:00Z"
+      "viewed_at": "2026-03-30T12:00:00Z",
+      "average_rating": 2.7,
+      "review_count": 5
     }
   ],
   "search_results": [
     {
       "employee_id": 602,
-      "worker_user_id": 701,
+      "worker_user_id": 901,
       "employee_name": "이사라",
       "age": 24,
       "gender": "female",
@@ -104,6 +107,7 @@
 - 지점에 이미 등록된 근로자: `employee_id=602`, `worker_user_id=901`
 - 전체 근로자 앱 회원 풀에서 조회됐지만 아직 현재 지점에 등록되지 않은 근로자: `employee_id=-901`, `worker_user_id=901`
 - 프론트는 프로필/문의/채팅에는 `employee_id`를 그대로 사용하고, 리뷰 조회에는 `worker_user_id`가 있으면 `worker_user_id` 기준 API를 사용합니다.
+- `recent_viewed_job_seekers`와 `search_results` 모두 `average_rating`, `review_count`를 내려줍니다. 채용 홈 리스트에서 바로 평점을 보여주며, 집계 기준은 `8) worker_user_id 기준 구직자 리뷰 상세 조회` 또는 `7) 구직자 리뷰 상세 조회`와 동일해야 합니다.
 
 ---
 
@@ -112,7 +116,8 @@
 - `POST /recruitment/branches/{branch_id}/job-seekers/{employee_id}/open`
 - 프로필 진입 시 호출
 - `최근 열람 구직자` 영역 구성에 사용
-- `employee_id`는 채용 홈에서 받은 값을 그대로 전달합니다. `employee_id=-{worker_user_id}`인 등록 전 근로자는 서버가 현재 지점의 연결 근무자 row를 생성한 뒤 실제 `employee_id`로 열람 기록을 저장합니다.
+- `employee_id`는 채용 홈에서 받은 값을 그대로 전달합니다. 단, `employee_id=-{worker_user_id}`인 등록 전 근로자는 **직원관리 근로자 row를 생성하지 않고** `worker_user_id` 기준으로 열람 기록만 저장합니다.
+- 열람 저장은 최근 열람 기록만 위한 API입니다. 단순 조회/열람만으로 직원관리 목록에 근로자가 추가되면 안 됩니다.
 
 ### Request Body
 없음
@@ -123,9 +128,19 @@
 {
   "opened": true,
   "employee_id": 602,
-  "viewed_at": "2026-03-30T12:02:01Z"
+  "worker_user_id": 901,
+  "employee_name": "이사라",
+  "viewed_at": "2026-03-30T12:02:01Z",
+  "average_rating": 2.7,
+  "review_count": 5
 }
 ```
+
+### 비고
+
+- `average_rating`, `review_count`는 홈 리스트 및 리뷰보기 API와 같은 `worker_user_id` 기준 집계를 사용합니다.
+- 프론트가 열람 저장 응답으로 최근 열람 카드를 즉시 갱신해도, 이후 `GET /home` 또는 `리뷰보기` 화면과 평점/리뷰수가 달라지면 안 됩니다.
+- 직원관리 근로자 row 생성은 실제 문의/채팅 생성처럼 명시적인 액션에서만 수행합니다. 프로필 조회(`GET /job-seekers/{employee_id}`)와 열람 저장(`POST /open`)은 등록 전 근로자를 직원으로 자동 등록하지 않습니다.
 
 ---
 
@@ -474,7 +489,7 @@
       "application_id": 3301,
       "applied_date_label": "지원날짜 2026.03.30",
       "employee_id": 602,
-      "worker_user_id": 901,
+      "worker_user_id": 701,
       "applicant_user_id": null,
       "application_source": "employee",
       "employee_name": "이사라",
@@ -508,6 +523,7 @@
 - 근로자 앱 지원건은 단일 상세/삭제 라우트를 유지하기 위해 `application_id`가 **음수**로 내려갑니다
 - `worker_user_id`는 리뷰/채팅 등 사용자 기준 API 호출에 사용합니다. 근로자 앱 직접 지원건은 `applicant_user_id`와 동일한 값이며, 기존 `BranchEmployee` 지원자는 계정 연결이 없으면 `null`일 수 있습니다.
 - 근로자 앱 지원건 카드의 `employee_name`은 회원가입 이름 우선, `desired_location`은 이력서 기준 주소 우선으로 내려갑니다
+- 지원현황 리스트의 `average_rating`, `review_count`는 지원자 상세 및 리뷰 상세 API와 같은 집계 기준이어야 합니다. 리스트 카드, 지원자 상세 카드, `리뷰보기` 화면이 서로 다른 값을 보여주면 안 됩니다.
 
 ---
 
@@ -558,6 +574,8 @@
 - 근로자 앱 지원건의 **희망 근무지** 표시(`desired_location`, `desired_locations`) 우선순위: **지원 시점 스냅샷**(`desired_location_snapshot`) → 그 외 **현재 이력서**의 `resume_region_path`·`resume_address_detail` 합성 → 마지막으로 **프로필** `user_profiles.address`. 스냅샷은 지원 API 호출 시 이력서·프로필 기준으로 서버가 저장하며, 이후 이력서를 고쳐도 지원 카드 문구는 스냅샷을 우선한다.
 - 상세 필드·지역 쿼리 규칙은 `docs/api_spec_personal_space.md` 및 하단 **「프론트엔드 연동 가이드」** 참고.
 - 근로자 앱 지원건의 `전화번호`는 항상 회원가입 프로필 전화번호 기준으로 내려간다.
+- `average_rating`, `review_count`는 `8) worker_user_id 기준 구직자 리뷰 상세 조회` 또는 `7) 구직자 리뷰 상세 조회`와 **같은 집계 기준**이어야 합니다. 지원현황 상세 카드와 `리뷰보기` 화면이 서로 다른 값을 보여주면 안 됩니다.
+- 특히 근로자 앱 지원건(`source_type="worker"`)은 내부 `employee_id`가 없거나 임시값일 수 있으므로, `worker_user_id/applicant_user_id` 기준 리뷰 집계를 우선 사용해야 합니다.
 
 ---
 
@@ -954,5 +972,6 @@ GET /api/v1/recruitment/branches/1/home?region=서울&region=부산
 ### 비고
 
 - 삭제 후 목록에서 해당 채팅방을 제거합니다.
-- 서버 정책에 따라 soft delete로 처리해도 됩니다. 단, 삭제한 사용자에게는 이후 `GET /chats` 목록에 표시되지 않아야 합니다.
+- 삭제한 사용자에게는 이후 `GET /chats` 목록에 표시되지 않아야 합니다.
+- 삭제한 사용자가 같은 구직자/근로자와 다시 채팅을 시작하면 새 대화로 취급합니다. 서버는 기존 일반 채팅 메시지(`message_type=text`)와 `last_message`, `last_message_at`을 초기화해 이전 채팅기록이 다시 노출되지 않게 합니다.
 

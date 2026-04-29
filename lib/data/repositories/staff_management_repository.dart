@@ -653,11 +653,22 @@ class StaffManagementRepository {
     required int branchId,
     required int employeeId,
     required int payrollId,
-    required List<Map<String, dynamic>> files,
+    required List<PlatformFile> files,
   }) async {
+    final formData = FormData();
+    for (final file in files) {
+      formData.files.add(
+        MapEntry('files', await _etcRecordMultipartFile(file)),
+      );
+    }
     final res = await _apiClient.dio.patch<Map<String, dynamic>>(
       '/staff-management/branches/$branchId/employees/$employeeId/payroll-statements/$payrollId/file',
-      data: {'files': files},
+      data: formData,
+      options: Options(
+        connectTimeout: const Duration(seconds: 60),
+        sendTimeout: const Duration(minutes: 5),
+        receiveTimeout: const Duration(minutes: 5),
+      ),
     );
     return res.data!;
   }

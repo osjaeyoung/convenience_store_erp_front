@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../account/account_dio_message.dart';
 import '../../../data/repositories/staff_management_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
@@ -60,14 +61,20 @@ class _GuestWorkerRegistrationScreenState
 
     setState(() => _submitting = true);
     try {
-      final data = await context
-          .read<StaffManagementRepository>()
-          .registerGuestEmployee(
-            branchId: widget.branchId,
-            name: name,
-            phoneNumber: phone,
-            hireDate: _todayYmd(),
-          );
+      final repo = context.read<StaffManagementRepository>();
+      final duplicate = await _findDuplicateEmployee(repo: repo, phone: phone);
+      if (duplicate != null) {
+        if (!mounted) return;
+        _showSnackBar(_duplicateEmployeeMessage(duplicate));
+        return;
+      }
+
+      final data = await repo.registerGuestEmployee(
+        branchId: widget.branchId,
+        name: name,
+        phoneNumber: phone,
+        hireDate: _todayYmd(),
+      );
       if (!mounted) return;
       setState(() {
         _registeredEmployee = {
@@ -80,10 +87,46 @@ class _GuestWorkerRegistrationScreenState
       _showSnackBar('비회원 근무자가 등록되었습니다.');
     } catch (error) {
       if (!mounted) return;
-      _showSnackBar('등록 실패: $error');
+      _showSnackBar(accountDioMessage(error));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
+  }
+
+  Future<Map<String, dynamic>?> _findDuplicateEmployee({
+    required StaffManagementRepository repo,
+    required String phone,
+  }) async {
+    final normalizedPhone = _normalizePhone(phone);
+    final compare = await repo.getEmployeesCompare(
+      branchId: widget.branchId,
+      q: normalizedPhone,
+    );
+    final employees = [
+      ...(compare['active_workers'] as List? ?? const []),
+      ...(compare['retired_workers'] as List? ?? const []),
+    ].whereType<Map>().map((item) => Map<String, dynamic>.from(item));
+
+    for (final employee in employees) {
+      if (_normalizePhone(employee['phone_number']) == normalizedPhone) {
+        return employee;
+      }
+    }
+    return null;
+  }
+
+  String _duplicateEmployeeMessage(Map<String, dynamic> employee) {
+    final name = employee['name']?.toString().trim();
+    final status = employee['employment_status']?.toString();
+    final statusLabel = status == 'retired' ? '퇴사자' : '현근무자';
+    if (name != null && name.isNotEmpty) {
+      return '$name님은 이미 $statusLabel로 등록되어 있습니다.';
+    }
+    return '이미 등록된 근로자입니다.';
+  }
+
+  String _normalizePhone(Object? value) {
+    return value?.toString().replaceAll(RegExp(r'[^0-9]'), '') ?? '';
   }
 
   Future<void> _deleteGuestWorker() async {
@@ -117,9 +160,9 @@ class _GuestWorkerRegistrationScreenState
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -454,10 +497,7 @@ class _GuestWorkerDocumentList extends StatelessWidget {
 }
 
 class _GuestWorkerDocumentRow extends StatelessWidget {
-  const _GuestWorkerDocumentRow({
-    required this.title,
-    required this.onTap,
-  });
+  const _GuestWorkerDocumentRow({required this.title, required this.onTap});
 
   final String title;
   final VoidCallback onTap;

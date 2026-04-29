@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_assets.dart';
 import '../../../core/navigation/logo_navigation_bridge.dart';
+import '../../../core/push/push_notification_service.dart';
 import '../../../core/router/app_router.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../account/screens/account_notifications_screen.dart';
@@ -92,16 +93,8 @@ class HomeCommonAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   Future<void> _openNotifications(BuildContext context) async {
-    final route = await openAccountNotificationsScreen(context);
-    if (!context.mounted || route == null) return;
-
-    final router = GoRouter.of(context);
-    Navigator.of(
-      context,
-      rootNavigator: true,
-    ).popUntil((route) => route.isFirst);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      router.go(route);
-    });
+    final payload = await openAccountNotificationsScreen(context);
+    if (!context.mounted || payload == null) return;
+    PushNotificationService.instance.handleNotificationPayload(payload);
   }
 }

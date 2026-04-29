@@ -27,6 +27,8 @@ class RecruitmentApplicationDetailScreen extends StatefulWidget {
 class _RecruitmentApplicationDetailScreenState
     extends State<RecruitmentApplicationDetailScreen> {
   JobSeekerProfile? _profile;
+  double? _reviewAverageRating;
+  int? _reviewCount;
   bool _loading = true;
   String? _error;
 
@@ -38,15 +40,17 @@ class _RecruitmentApplicationDetailScreenState
 
   Future<void> _load() async {
     try {
-      final profile = await context
-          .read<ManagerHomeRepository>()
-          .getRecruitmentApplicationDetail(
-            branchId: widget.branchId,
-            applicationId: widget.applicationId,
-          );
+      final repository = context.read<ManagerHomeRepository>();
+      final profile = await repository.getRecruitmentApplicationDetail(
+        branchId: widget.branchId,
+        applicationId: widget.applicationId,
+      );
+      final reviewPage = await _loadReviewSummary(repository, profile);
       if (!mounted) return;
       setState(() {
         _profile = profile;
+        _reviewAverageRating = reviewPage?.averageRating;
+        _reviewCount = reviewPage?.reviewCount;
         _loading = false;
         _error = null;
       });
@@ -54,10 +58,40 @@ class _RecruitmentApplicationDetailScreenState
       if (!mounted) return;
       setState(() {
         _profile = null;
+        _reviewAverageRating = null;
+        _reviewCount = null;
         _loading = false;
         _error = e.toString();
       });
     }
+  }
+
+  Future<JobSeekerReviewPage?> _loadReviewSummary(
+    ManagerHomeRepository repository,
+    JobSeekerProfile profile,
+  ) async {
+    try {
+      final employeeId = profile.employeeId ?? -1;
+      final workerUserId =
+          profile.workerUserId ?? (employeeId < 0 ? -employeeId : null);
+      if (workerUserId != null && workerUserId > 0) {
+        return repository.getJobSeekerReviewsByWorkerUserId(
+          branchId: widget.branchId,
+          workerUserId: workerUserId,
+          pageSize: 1,
+        );
+      }
+      if (employeeId > 0) {
+        return repository.getJobSeekerReviews(
+          branchId: widget.branchId,
+          employeeId: employeeId,
+          pageSize: 1,
+        );
+      }
+    } catch (_) {
+      // 리뷰 요약 조회 실패 시 지원자 상세 자체는 기존 프로필 값으로 표시한다.
+    }
+    return null;
   }
 
   Future<void> _openReviews() async {
@@ -74,7 +108,7 @@ class _RecruitmentApplicationDetailScreenState
               ? profile.desiredLocations.first
               : null,
           initialAverageRating: profile.averageRating,
-          initialReviewCount: profile.reviewCount,
+          initialReviewCount: _reviewCount ?? profile.reviewCount,
         ),
       ),
     );
@@ -150,6 +184,9 @@ class _RecruitmentApplicationDetailScreenState
                       children: [
                         _ApplicationHeroCard(
                           profile: _profile!,
+                          averageRating:
+                              _reviewAverageRating ?? _profile!.averageRating,
+                          reviewCount: _reviewCount ?? _profile!.reviewCount,
                           onViewReviews: _openReviews,
                         ),
                         SizedBox(height: 20.h),
@@ -206,10 +243,14 @@ class _RecruitmentApplicationDetailScreenState
 class _ApplicationHeroCard extends StatelessWidget {
   const _ApplicationHeroCard({
     required this.profile,
+    required this.averageRating,
+    required this.reviewCount,
     required this.onViewReviews,
   });
 
   final JobSeekerProfile profile;
+  final double averageRating;
+  final int reviewCount;
   final VoidCallback onViewReviews;
 
   @override
@@ -272,7 +313,7 @@ class _ApplicationHeroCard extends StatelessWidget {
               children: [
                 _ApplicantStars(
                   filledCount: _filledApplicantStarCount(
-                    profile.averageRating,
+                    averageRating,
                     maxStars: 3,
                   ),
                   maxStars: 3,
@@ -280,7 +321,7 @@ class _ApplicationHeroCard extends StatelessWidget {
                 ),
                 SizedBox(width: 4.w),
                 Text(
-                  '(${profile.reviewCount})',
+                  '($reviewCount)',
                   style: AppTypography.bodySmallR.copyWith(
                     fontSize: 12.sp,
                     height: 18 / 12,
@@ -540,10 +581,11 @@ class _ApplicantStars extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(maxStars, (index) {
+        final filled = index < filledCount;
         return Icon(
-          Icons.star_rounded,
+          filled ? Icons.star_rounded : Icons.star_border_rounded,
           size: 16,
-          color: index < filledCount ? color : color.withValues(alpha: 0.28),
+          color: color,
         );
       }),
     );

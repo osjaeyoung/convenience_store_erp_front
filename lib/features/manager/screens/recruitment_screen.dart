@@ -880,7 +880,7 @@ class _RecentViewedCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12.r),
       child: SizedBox(
-        width: 82,
+        width: 92,
         child: Column(
           children: [
             const _PersonAvatar(size: 60),
@@ -895,6 +895,30 @@ class _RecentViewedCard extends StatelessWidget {
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
+            ),
+            SizedBox(height: 2.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _ScoreStars(
+                  filledCount: _filledStarCount(
+                    item.averageRating,
+                    maxStars: 3,
+                  ),
+                  maxStars: 3,
+                  color: AppColors.primary,
+                ),
+                SizedBox(width: 2.w),
+                Text(
+                  '(${item.reviewCount})',
+                  style: AppTypography.bodySmallR.copyWith(
+                    fontSize: 11.sp,
+                    height: 14 / 11,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -1202,10 +1226,11 @@ class _ScoreStars extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(maxStars, (index) {
+        final filled = index < filledCount;
         return Icon(
-          Icons.star_rounded,
+          filled ? Icons.star_rounded : Icons.star_border_rounded,
           size: 12,
-          color: index < filledCount ? color : color.withValues(alpha: 0.18),
+          color: color,
         );
       }),
     );

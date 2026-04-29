@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/chat/recruitment_chat_read_store.dart';
+import '../../../core/push/push_notification_service.dart';
 import '../../../data/models/recruitment/recruitment_models.dart';
 import '../../../data/repositories/manager_home_repository.dart';
 import '../../../theme/app_colors.dart';
@@ -29,16 +30,42 @@ class _ManagerRecruitmentInquiryChatTabState
   int? _loadedBranchId;
   List<RecruitmentChatSummary> _chats = const [];
   Timer? _pollTimer;
+  StreamSubscription<Map<String, dynamic>>? _foregroundNotificationSub;
 
   @override
   void initState() {
     super.initState();
+    _foregroundNotificationSub = PushNotificationService
+        .instance
+        .foregroundNotifications
+        .listen(_handleForegroundNotification);
   }
 
   @override
   void dispose() {
     _pollTimer?.cancel();
+    _foregroundNotificationSub?.cancel();
     super.dispose();
+  }
+
+  void _handleForegroundNotification(Map<String, dynamic> payload) {
+    final type = payload['type']?.toString().toLowerCase();
+    final entityType = payload['entity_type']?.toString().toLowerCase();
+    final targetRoute = payload['target_route']?.toString().toLowerCase();
+    final chatId = payload['chat_id']?.toString();
+    final isRecruitmentChat =
+        type == 'recruitment_chat' ||
+        type == 'chat' ||
+        type == 'chat_message' ||
+        entityType == 'recruitment_chat' ||
+        entityType == 'chat' ||
+        (chatId != null && chatId.isNotEmpty) ||
+        (targetRoute != null &&
+            (targetRoute.contains('chat') || targetRoute.contains('tab=3')));
+    if (!isRecruitmentChat) return;
+    final branchId = _loadedBranchId;
+    if (branchId == null) return;
+    _refreshSilently(branchId);
   }
 
   Future<void> _load(int branchId) async {
@@ -220,7 +247,7 @@ class _ManagerRecruitmentInquiryChatTabState
           const Divider(color: AppColors.border, height: 1, thickness: 1),
       itemBuilder: (context, index) {
         final chat = _chats[index];
-        final unread = chat.unreadCount;
+        final hasUnread = chat.unreadCount > 0;
 
         return InkWell(
           onTap: () => _openChat(chat),
@@ -242,23 +269,14 @@ class _ManagerRecruitmentInquiryChatTabState
                     ),
                   ),
                 ),
-                if (unread > 0)
+                if (hasUnread)
                   Container(
-                    width: 20.r,
-                    height: 20.r,
+                    width: 8.r,
+                    height: 8.r,
                     margin: EdgeInsets.only(right: 12.w),
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
                       color: Color(0xFFFF4834), // AppColors.red or custom
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      unread > 99 ? '99+' : unread.toString(),
-                      style: AppTypography.bodySmallB.copyWith(
-                        color: AppColors.grey0,
-                        fontSize: 12.sp,
-                        height: 16 / 12,
-                      ),
                     ),
                   ),
                 IconButton(

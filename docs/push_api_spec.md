@@ -110,6 +110,9 @@
 
 - `unread_count`는 `only_unread` 필터와 무관하게 현재 사용자 전체 알림 중 `is_read=false`인 개수입니다.
 - 프론트 상단 알림 아이콘은 `unread_count > 0`일 때 활성 상태로 표시하므로, 알림함에 미읽음 항목이 있으면 반드시 1 이상으로 내려와야 합니다.
+- `only_unread=true`일 때 `items`는 반드시 `is_read=false` 항목만 내려줍니다. 프론트는 상단 알림 아이콘 동기화를 위해 `GET /push/notifications?only_unread=true&page_size=20`을 호출합니다.
+- `only_unread=true` 응답에서 `items`가 1개 이상이면 `unread_count`도 반드시 1 이상이어야 합니다. 반대로 미읽음 항목이 없으면 `items=[]`, `unread_count=0`이어야 합니다.
+- `unread_count`는 전체 알림 수, 전체 채팅 메시지 수, 채팅방 수가 아니라 오직 앱 알림함 row 중 `is_read=false`인 row 수입니다.
 
 ## 2-2) 푸시 알림 읽음 상태 변경
 
@@ -136,6 +139,8 @@
 ```
 
 - 읽음 처리 성공 후 `GET /me/notifications` 또는 `GET /push/notifications`의 같은 항목은 `is_read=true`로 내려와야 하며, `unread_count`에서 제외되어야 합니다.
+- 채팅방 상세 진입 또는 `PATCH /chats/{chat_id}/read`는 푸시 알림 row의 `is_read`를 자동으로 변경하지 않습니다. 상단 알림 아이콘은 사용자가 알림함에서 해당 알림을 직접 확인하거나 이 읽음 API를 호출했을 때만 사라집니다.
+- 즉, **채팅 메시지 읽음 상태**와 **앱 알림함 알림 읽음 상태**는 서로 다른 상태입니다.
 
 ## 2-3) 푸시 알림 삭제
 
@@ -191,11 +196,24 @@
 - `branch_id` (string/int, strongly recommended): 점포 식별자
 - `entity_type` (string, strongly recommended): 상세 리소스 타입
 - `entity_id` (string/int, strongly recommended): 상세 리소스 ID
+- `chat_id` (string/int, optional): 채팅 알림일 때 채팅방 ID. 채팅 상세 진입 안정성을 위해 `entity_id`와 같은 값으로 함께 내려주는 것을 권장
+- `employee_id` (string/int, optional): 경영주/점장 채팅 상세 진입 보조값. `branch_id`와 함께 있으면 채팅방 재조회 fallback에 사용 가능
+- `counterparty_name` 또는 `employee_name` (string, optional): 채팅 상세 상단 제목 fallback
+- `profile_image_url` (string, optional): 채팅 상세 상대방 프로필 이미지 fallback
 - `notification_id` (string/int, optional): 앱 알림함 row 식별자
 - `title`, `body` (string, recommended): foreground/data fallback 표시용 문구. 서버는 FCM `notification`과 `data` 양쪽에 포함합니다.
 
+### 3-1-1) Foreground 알림 표시 조건
+
+- 앱이 실행 중(foreground)이어도 채팅 알림이 사용자에게 보여야 합니다.
+- 서버는 채팅 FCM에 `notification.title/body` 또는 data `title/body` 중 하나를 반드시 포함합니다.
+- data-only로 발송하더라도 프론트 fallback을 위해 최소 `type`, `entity_type`, `entity_id`, `chat_id`를 포함합니다.
+- 채팅 알림 row는 FCM 발송 전후 지연 없이 생성되어야 합니다. 프론트는 foreground 수신 직후 unread count를 즉시/지연 재조회하므로, 짧은 시간 안에 `GET /push/notifications?only_unread=true`에 반영되어야 합니다.
+
 예시 `entity_type`:
 - `contract_chat`
+- `recruitment_chat`
+- `chat`
 - `recruitment_application`
 - `inquiry`
 - `owner_certification`
@@ -227,6 +245,7 @@
 
 - `manager_alert`, `manager_contract`, `manager_notice` -> `/manager?tab=0`
 - `manager_recruitment`, `recruitment_application` -> `/manager?tab=4&recruitmentTab=1`
+- `recruitment_chat`, `chat_message` -> 경영주/점장 `/manager?tab=4&recruitmentTab=3`, 근로자 `/job-seeker?tab=3`
 - `owner_certification_result` -> `/manager?tab=0`
 - `user_inquiry_answer` -> `target_role=owner|manager`면 `/manager?tab=0`, `target_role=job_seeker`면 `/job-seeker`
 - `job_seeker_recruitment` -> `/job-seeker?tab=0`
@@ -239,6 +258,11 @@
 - 상세 진입 조건:
   - `entity_type` + `entity_id` 존재
   - 경영/점장 도메인은 `branch_id` 존재
+- 채용 통합 채팅 상세 진입 조건:
+  - `entity_type=recruitment_chat` 또는 `entity_type=chat`
+  - `entity_id={chat_id}` 또는 `chat_id={chat_id}`
+  - 경영주/점장 수신이면 `branch_id` 필수, `employee_id` 권장
+  - 근로자 수신이면 `chat_id`만으로 상세 진입 가능
 - 조건 미충족 시 목록 화면에서 종료 (정상 동작)
 
 ---
@@ -325,18 +349,48 @@
 - type: `recruitment_chat`
 - entity_type: `recruitment_chat`
 - entity_id: `{chat_id}`
+- chat_id: `{chat_id}` (`entity_id`와 같은 값, 상세 진입 안정성을 위해 필수에 준해 포함)
 - branch_id: `{branch_id}`
+- employee_id: `{employee_id}` (경영주/점장 수신 시 권장)
+- counterparty_name / employee_name: `{상대방 이름}` (선택)
+- profile_image_url: `{상대방 프로필 이미지 URL}` (선택)
 - 경영주/점장 수신:
   - target_role: `manager` 또는 `owner`
   - target_route: `/manager?tab=4&recruitmentTab=3`
   - recruitment_tab: `3`
 - 근로자 수신:
-  - target_role: `worker`
+  - target_role: `worker` 또는 `job_seeker`
   - target_route: `/job-seeker?tab=3`
 - 앱이 foreground 상태여도 알림이 떠야 하므로 FCM `notification.title/body` 또는 data `title/body` 중 하나는 반드시 포함합니다.
-- data-only 전송 시에도 프론트 fallback을 위해 `type=recruitment_chat`, `entity_type=recruitment_chat`, `entity_id={chat_id}`를 포함해야 합니다.
+- data-only 전송 시에도 프론트 fallback을 위해 `type=recruitment_chat`, `entity_type=recruitment_chat`, `entity_id={chat_id}`, `chat_id={chat_id}`를 포함해야 합니다.
+- 앱 알림함 row(`GET /me/notifications` 또는 `GET /push/notifications`)에도 위 라우팅 payload 필드를 동일하게 저장/반환해야 합니다. 알림함에서 클릭해도 푸시 클릭과 동일하게 채팅 상세로 이동해야 합니다.
+- 알림함의 `unread_count`는 새 채팅 알림 row 생성 직후 증가해야 하며, 프론트 상단 알림 아이콘은 `unread_count > 0`이면 활성 아이콘을 표시합니다.
+- 채팅 상세에서 메시지를 확인해 `PATCH /chats/{chat_id}/read`가 호출되어도, 앱 알림함 row의 `is_read`는 자동으로 true 처리하지 않습니다. 사용자가 우측 상단 알림함에서 해당 알림을 확인해야 알림 badge가 사라집니다.
+- `GET /push/notifications?only_unread=true`는 채팅 알림을 포함한 모든 미확인 알림만 반환해야 합니다. 채팅 알림 row가 남아 있으면 `unread_count`가 0이면 안 됩니다.
 - Android 발송 시 `android.notification.channel_id`는 앱 매니페스트/로컬 채널과 같은 `high_importance_channel`을 사용합니다. 채널이 누락되면 Android 8+ 백그라운드 알림 표시가 누락될 수 있습니다.
 - 서버는 채팅 메시지 푸시를 지연 큐에만 적재하지 않고 메시지 저장 직후 앱 알림 row 생성과 FCM 발송을 바로 시도합니다.
+
+권장 payload 예시:
+
+```json
+{
+  "type": "recruitment_chat",
+  "target_role": "manager",
+  "target_route": "/manager?tab=4&recruitmentTab=3",
+  "tab": "4",
+  "recruitment_tab": "3",
+  "branch_id": "12",
+  "employee_id": "88",
+  "entity_type": "recruitment_chat",
+  "entity_id": "101",
+  "chat_id": "101",
+  "counterparty_name": "김수민",
+  "profile_image_url": "https://cdn.example.com/profiles/worker.png",
+  "notification_id": "7788",
+  "title": "[나눔 강남점] 새 채팅 메시지",
+  "body": "지원서 보고 연락드립니다."
+}
+```
 
 ### 6-5) 관리자 문의 답변 등록/수정 시 (어드민 -> 문의 작성자)
 

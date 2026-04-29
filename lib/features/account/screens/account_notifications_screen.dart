@@ -12,9 +12,11 @@ import '../../../theme/app_typography.dart';
 import '../account_dio_message.dart';
 import '../widgets/account_confirm_dialogs.dart';
 
-Future<String?> openAccountNotificationsScreen(BuildContext context) {
-  return Navigator.of(context, rootNavigator: true).push<String>(
-    MaterialPageRoute<String>(
+Future<Map<String, dynamic>?> openAccountNotificationsScreen(
+  BuildContext context,
+) {
+  return Navigator.of(context, rootNavigator: true).push<Map<String, dynamic>>(
+    MaterialPageRoute<Map<String, dynamic>>(
       builder: (_) => const AccountNotificationsScreen(),
     ),
   );
@@ -68,7 +70,8 @@ class _AccountNotificationsScreenState
 
   Future<void> _handleNotificationTap(AccountNotificationItem item) async {
     final repo = context.read<AuthRepository>();
-    final route = PushNotificationService.resolveRoute(item.toRoutePayload());
+    final payload = item.toRoutePayload();
+    final route = PushNotificationService.resolveRoute(payload);
     Object? readError;
 
     if (!item.isRead) {
@@ -89,7 +92,7 @@ class _AccountNotificationsScreenState
 
     if (!mounted) return;
     if (route != null) {
-      Navigator.of(context).pop(route);
+      Navigator.of(context).pop(payload);
       return;
     }
 
@@ -215,8 +218,10 @@ class _NotificationRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('yy.MM.dd. a hh:mm', 'ko_KR');
-    final dateStr = item.createdAt != null ? dateFormat.format(item.createdAt!) : '';
-    
+    final dateStr = item.createdAt != null
+        ? dateFormat.format(item.createdAt!)
+        : '';
+
     return InkWell(
       onTap: onTap,
       child: ConstrainedBox(

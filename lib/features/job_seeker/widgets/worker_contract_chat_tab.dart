@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/chat/recruitment_chat_read_store.dart';
+import '../../../core/push/push_notification_service.dart';
 import '../../../data/models/recruitment/recruitment_models.dart';
 import '../../../data/repositories/worker_recruitment_repository.dart';
 import '../../../theme/app_colors.dart';
@@ -28,6 +29,7 @@ class _WorkerContractChatTabState extends State<WorkerContractChatTab> {
   final String _emptyTitle = '아직 채팅이 없어요.';
   final String _emptyDescription = '점장 또는 경영주와 대화를 시작하면\n이곳에 표시됩니다.';
   Timer? _pollTimer;
+  StreamSubscription<Map<String, dynamic>>? _foregroundNotificationSub;
 
   @override
   void initState() {
@@ -36,12 +38,35 @@ class _WorkerContractChatTabState extends State<WorkerContractChatTab> {
     _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       _refreshSilently();
     });
+    _foregroundNotificationSub = PushNotificationService
+        .instance
+        .foregroundNotifications
+        .listen(_handleForegroundNotification);
   }
 
   @override
   void dispose() {
     _pollTimer?.cancel();
+    _foregroundNotificationSub?.cancel();
     super.dispose();
+  }
+
+  void _handleForegroundNotification(Map<String, dynamic> payload) {
+    final type = payload['type']?.toString().toLowerCase();
+    final entityType = payload['entity_type']?.toString().toLowerCase();
+    final targetRoute = payload['target_route']?.toString().toLowerCase();
+    final chatId = payload['chat_id']?.toString();
+    final isRecruitmentChat =
+        type == 'recruitment_chat' ||
+        type == 'chat' ||
+        type == 'chat_message' ||
+        entityType == 'recruitment_chat' ||
+        entityType == 'chat' ||
+        (chatId != null && chatId.isNotEmpty) ||
+        (targetRoute != null &&
+            (targetRoute.contains('chat') || targetRoute.contains('tab=3')));
+    if (!isRecruitmentChat) return;
+    _refreshSilently();
   }
 
   Future<void> _load() async {
@@ -193,7 +218,7 @@ class _WorkerContractChatTabState extends State<WorkerContractChatTab> {
             ),
             itemBuilder: (context, index) {
               final item = _items[index];
-              final unread = item.unreadCount;
+              final hasUnread = item.unreadCount > 0;
               return Padding(
                 padding: EdgeInsets.symmetric(vertical: 20.h),
                 child: Row(
@@ -221,26 +246,14 @@ class _WorkerContractChatTabState extends State<WorkerContractChatTab> {
                                 ),
                               ),
                             ),
-                            if (unread > 0) ...[
+                            if (hasUnread) ...[
                               SizedBox(width: 12.w),
                               Container(
-                                constraints: BoxConstraints(
-                                  minWidth: 20.r,
-                                  minHeight: 20.r,
-                                ),
-                                padding: EdgeInsets.symmetric(horizontal: 5.w),
-                                alignment: Alignment.center,
+                                width: 8.r,
+                                height: 8.r,
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFFF4834),
                                   borderRadius: BorderRadius.circular(100.r),
-                                ),
-                                child: Text(
-                                  unread > 99 ? '99+' : '$unread',
-                                  style: AppTypography.bodySmallB.copyWith(
-                                    color: AppColors.grey0,
-                                    fontSize: 12.sp,
-                                    height: 16 / 12,
-                                  ),
                                 ),
                               ),
                             ],

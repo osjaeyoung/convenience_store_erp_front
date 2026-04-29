@@ -428,10 +428,11 @@ class _ScoreStars extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(maxStars, (index) {
+        final filled = index < filledCount;
         return Icon(
-          Icons.star_rounded,
+          filled ? Icons.star_rounded : Icons.star_border_rounded,
           size: 16,
-          color: index < filledCount ? color : color.withValues(alpha: 0.18),
+          color: color,
         );
       }),
     );

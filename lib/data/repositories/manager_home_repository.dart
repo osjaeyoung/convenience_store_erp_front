@@ -149,13 +149,14 @@ class ManagerHomeRepository {
   }
 
   /// 구직자 프로필 열람 기록 저장
-  Future<void> openJobSeekerProfile({
+  Future<JobSeekerOpenResult> openJobSeekerProfile({
     required int branchId,
     required int employeeId,
   }) async {
-    await _apiClient.dio.post<Map<String, dynamic>>(
+    final res = await _apiClient.dio.post<Map<String, dynamic>>(
       '/recruitment/branches/$branchId/job-seekers/$employeeId/open',
     );
+    return JobSeekerOpenResult.fromJson(res.data ?? const {});
   }
 
   /// 구직자 프로필 조회

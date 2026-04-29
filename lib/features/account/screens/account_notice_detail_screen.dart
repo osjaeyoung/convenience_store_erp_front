@@ -11,10 +11,7 @@ import '../account_dio_message.dart';
 import '../widgets/account_figma_styles.dart';
 
 class AccountNoticeDetailScreen extends StatefulWidget {
-  const AccountNoticeDetailScreen({
-    super.key,
-    required this.noticeId,
-  });
+  const AccountNoticeDetailScreen({super.key, required this.noticeId});
 
   final int noticeId;
 
@@ -24,10 +21,7 @@ class AccountNoticeDetailScreen extends StatefulWidget {
 }
 
 class _AccountNoticeDetailScreenState extends State<AccountNoticeDetailScreen> {
-  static final DateFormat _dateTimeFormat = DateFormat(
-    'yyyy.MM.dd HH:mm:ss',
-    'ko_KR',
-  );
+  static final DateFormat _dateFormat = DateFormat('yyyy.MM.dd', 'ko_KR');
 
   AccountNotice? _notice;
   Object? _error;
@@ -46,8 +40,8 @@ class _AccountNoticeDetailScreenState extends State<AccountNoticeDetailScreen> {
     });
     try {
       final notice = await context.read<AuthRepository>().getNoticeDetail(
-            noticeId: widget.noticeId,
-          );
+        noticeId: widget.noticeId,
+      );
       if (!mounted) return;
       setState(() {
         _notice = notice;
@@ -70,60 +64,63 @@ class _AccountNoticeDetailScreenState extends State<AccountNoticeDetailScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _AccountSupportErrorView(
-                  message: accountDioMessage(_error!),
-                  onRetry: _load,
-                )
-              : ListView(
-                  padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 24.h),
-                  children: [
-                    Container(
-                      constraints: BoxConstraints(minHeight: 360.h),
-                      padding: EdgeInsets.all(16.r),
-                      decoration: BoxDecoration(
-                        color: AppColors.grey0,
-                        borderRadius: BorderRadius.circular(12.r),
-                        border: Border.all(color: AppColors.grey100),
+          ? _AccountSupportErrorView(
+              message: accountDioMessage(_error!),
+              onRetry: _load,
+            )
+          : ListView(
+              padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 24.h),
+              children: [
+                Container(
+                  constraints: BoxConstraints(minHeight: 360.h),
+                  padding: EdgeInsets.all(16.r),
+                  decoration: BoxDecoration(
+                    color: AppColors.grey0,
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(color: AppColors.grey100),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _notice?.title ?? '',
+                        style: AppTypography.bodyMediumR.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w500,
+                          height: 20 / 14,
+                        ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _notice?.title ?? '',
-                            style: AppTypography.bodyMediumR.copyWith(
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.w500,
-                              height: 20 / 14,
-                            ),
-                          ),
-                          SizedBox(height: 8.h),
-                          Text(
-                            _formatDate(_notice?.publishedAt),
-                            style: AppTypography.bodySmallR.copyWith(
-                              color: AppColors.textDisabled,
-                              height: 18 / 12,
-                            ),
-                          ),
-                          SizedBox(height: 16.h),
-                          Text(
-                            _notice?.content ?? '',
-                            style: AppTypography.bodyMediumR.copyWith(
-                              color: AppColors.textPrimary,
-                              height: 20 / 14,
-                            ),
-                          ),
-                        ],
+                      SizedBox(height: 16.h),
+                      Text(
+                        _notice?.content ?? '',
+                        style: AppTypography.bodyMediumR.copyWith(
+                          color: AppColors.textPrimary,
+                          height: 20 / 14,
+                        ),
                       ),
-                    ),
-                  ],
+                      SizedBox(height: 24.h),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          _formatDate(_notice?.publishedAt),
+                          style: AppTypography.bodySmallR.copyWith(
+                            color: AppColors.textDisabled,
+                            height: 18 / 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+              ],
+            ),
     );
   }
 
   String _formatDate(String? value) {
     final parsed = value == null ? null : DateTime.tryParse(value);
     if (parsed == null) return '-';
-    return _dateTimeFormat.format(parsed.toLocal());
+    return _dateFormat.format(parsed.toLocal());
   }
 }
 

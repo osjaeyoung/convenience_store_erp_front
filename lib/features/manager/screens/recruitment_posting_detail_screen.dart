@@ -928,14 +928,45 @@ class _PostingImagePreview extends StatelessWidget {
           _PostingImageDeleteBadge(onTap: onDelete!),
           SizedBox(height: 4.h),
         ],
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12.r),
-          child: SizedBox(
-            width: double.infinity,
-            height: 146,
+        Container(
+          width: double.infinity,
+          height: 146,
+          padding: const EdgeInsets.all(1),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(color: AppColors.primary),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(11.r),
             child: Image.network(
               imageUrl,
               fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  color: const Color(0xFFD9D9D9),
+                  alignment: Alignment.center,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 24.r,
+                        height: 24.r,
+                        child: const CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      SizedBox(height: 8.h),
+                      Text(
+                        '사진을 불러오는 중입니다.',
+                        style: AppTypography.bodySmallM.copyWith(
+                          color: AppColors.textSecondary,
+                          fontSize: 12.sp,
+                          height: 16 / 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
               errorBuilder: (_, __, ___) => Container(
                 color: const Color(0xFFD9D9D9),
                 alignment: Alignment.center,
@@ -1271,12 +1302,11 @@ class _ApplicantRatingStars extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(maxStars, (index) {
+        final filled = index < filledCount;
         return Icon(
-          Icons.star_rounded,
+          filled ? Icons.star_rounded : Icons.star_border_rounded,
           size: 16,
-          color: index < filledCount
-              ? AppColors.primary
-              : AppColors.primary.withValues(alpha: 0.18),
+          color: AppColors.primary,
         );
       }),
     );

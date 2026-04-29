@@ -97,7 +97,8 @@ class ConvenienceStoreApp extends StatefulWidget {
   State<ConvenienceStoreApp> createState() => _ConvenienceStoreAppState();
 }
 
-class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
+class _ConvenienceStoreAppState extends State<ConvenienceStoreApp>
+    with WidgetsBindingObserver {
   final GlobalKey<NavigatorState> _rootNavigatorKey =
       GlobalKey<NavigatorState>();
   final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
@@ -109,6 +110,7 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     widget.apiClient.setUnauthorizedHandler(_handleUnauthorized);
     _bootstrap();
   }
@@ -136,7 +138,8 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
     if (widget.authRepository.hasSignupDraft) {
       await widget.authRepository.clearSignupDraft();
     }
-    if (widget.authRepository.isLoggedIn && widget.authRepository.isSignupInProgress) {
+    if (widget.authRepository.isLoggedIn &&
+        widget.authRepository.isSignupInProgress) {
       await widget.authRepository.logout();
     }
 
@@ -180,6 +183,20 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
                 platform: PushNotificationService.platformName,
               );
             },
+            onNotificationReceived: () async {
+              if (!widget.authRepository.isLoggedIn) return;
+              for (final delay in const [
+                Duration.zero,
+                Duration(milliseconds: 800),
+                Duration(milliseconds: 2500),
+              ]) {
+                if (delay != Duration.zero) {
+                  await Future<void>.delayed(delay);
+                }
+                if (!widget.authRepository.isLoggedIn) return;
+                await widget.authRepository.refreshNotificationUnreadCount();
+              }
+            },
           )
           .timeout(const Duration(seconds: 8));
 
@@ -189,23 +206,27 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
     } catch (error) {
       debugPrint('Push initialization skipped: $error');
     } finally {
-      if (!mounted) return;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        PushNotificationService.instance.flushPendingNavigation();
-      });
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          PushNotificationService.instance.flushPendingNavigation();
+        });
+      }
     }
   }
 
-  Future<void> _syncAuthenticatedPushState() async {
+  Future<void> _syncAuthenticatedPushState({
+    bool forceNotificationUnreadRefresh = false,
+  }) async {
     try {
-      await PushNotificationService.instance
-          .onUserAuthenticated()
-          .timeout(const Duration(seconds: 8));
+      await PushNotificationService.instance.onUserAuthenticated().timeout(
+        const Duration(seconds: 8),
+      );
     } catch (error) {
       debugPrint('Push auth sync skipped: $error');
     }
 
-    if (!widget.authRepository.hasLoadedNotificationUnreadCount) {
+    if (forceNotificationUnreadRefresh ||
+        !widget.authRepository.hasLoadedNotificationUnreadCount) {
       try {
         await widget.authRepository.refreshNotificationUnreadCount();
       } catch (_) {}
@@ -213,7 +234,18 @@ class _ConvenienceStoreAppState extends State<ConvenienceStoreApp> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        widget.authRepository.isLoggedIn) {
+      unawaited(
+        _syncAuthenticatedPushState(forceNotificationUnreadRefresh: true),
+      );
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _router?.dispose();
     _authBloc?.close();
     super.dispose();
