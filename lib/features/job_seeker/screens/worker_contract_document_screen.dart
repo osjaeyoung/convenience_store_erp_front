@@ -9,6 +9,7 @@ import 'package:convenience_store_erp_front/core/errors/user_friendly_error_mess
 
 import '../../../data/models/worker/worker_recruitment_models.dart';
 import '../../../data/repositories/worker_recruitment_repository.dart';
+import '../../../utils/contract_work_schedule_display.dart';
 import '../../../utils/contract_work_day_form.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
@@ -235,6 +236,8 @@ class _WorkerContractDocumentScreenState
   }
 
   String _scheduledWorkTimeDisplay(WorkerContractChatDocument doc) {
+    final schedule = contractWorkScheduleSummary(doc.formValues);
+    if (schedule != null && schedule.isNotEmpty) return schedule;
     final start = _formValue('scheduled_work_start_time', doc);
     final end = _formValue('scheduled_work_end_time', doc);
     if (start.isEmpty && end.isEmpty) return '';
@@ -243,6 +246,8 @@ class _WorkerContractDocumentScreenState
   }
 
   String _breakTimeDisplay(WorkerContractChatDocument doc) {
+    final breakTime = contractBreakTimeSummary(doc.formValues);
+    if (breakTime != null && breakTime.isNotEmpty) return breakTime;
     final start = _formValue('break_start_time', doc);
     final end = _formValue('break_end_time', doc);
     if (start.isEmpty && end.isEmpty) return '';

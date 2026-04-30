@@ -2,6 +2,7 @@
 library employment_contract_read_plain_text;
 
 import '../../../utils/contract_signature_data.dart';
+import '../../../utils/contract_work_schedule_display.dart';
 
 String _fv(Map<String, dynamic> fv, String key) =>
     fv[key]?.toString().trim() ?? '';
@@ -13,10 +14,10 @@ String _formatKoreanDate(String? iso) {
 }
 
 String _wageTypeKo(String? t) => switch (t) {
-      'hourly' => '시급',
-      'daily' => '일급',
-      _ => '월급',
-    };
+  'hourly' => '시급',
+  'daily' => '일급',
+  _ => '월급',
+};
 
 String _paymentMethodLine(Map<String, dynamic> fv) {
   final t = _fv(fv, 'payment_method');
@@ -46,16 +47,18 @@ String buildStandardEmploymentContractPlainText(
   final swe = _fv(fv, 'scheduled_work_end_time');
   final bs = _fv(fv, 'break_start_time');
   final be = _fv(fv, 'break_end_time');
+  final workScheduleSummary = contractWorkScheduleSummary(fv);
+  final breakTimeSummary = contractBreakTimeSummary(fv);
   final wd = _fv(fv, 'work_days_per_week');
   final wh = _fv(fv, 'weekly_holiday_day');
   final wageAmt = _fv(fv, 'wage_amount');
   final wageLabel = _wageTypeKo(_fv(fv, 'wage_type'));
-  final wageLine =
-      wageAmt.isEmpty ? '_______ 원' : '$wageLabel $wageAmt 원';
+  final wageLine = wageAmt.isEmpty ? '_______ 원' : '$wageLabel $wageAmt 원';
   final bonusOn =
       fv['bonus_included'] == true || _fv(fv, 'bonus_included') == 'true';
   final bonusAmt = _fv(fv, 'bonus_amount');
-  final otherOn = fv['other_allowance_included'] == true ||
+  final otherOn =
+      fv['other_allowance_included'] == true ||
       _fv(fv, 'other_allowance_included') == 'true';
   final otherAmt = _fv(fv, 'other_allowance_amount');
   final meal = _fv(fv, 'meal_allowance');
@@ -81,9 +84,7 @@ String buildStandardEmploymentContractPlainText(
   );
   buf.writeln('다음과 같이 근로계약을 체결한다.');
   buf.writeln();
-  buf.writeln(
-    '1. 근로계약기간 : $periodStart부터 $periodEnd까지',
-  );
+  buf.writeln('1. 근로계약기간 : $periodStart부터 $periodEnd까지');
   buf.writeln('※ 근로계약기간을 정하지 않는 경우에는 "근로개시일"만 기재');
   buf.writeln();
   buf.writeln('2. 근 무 장 소 : ${_workPlaceLine(_fv(fv, 'work_place'))}');
@@ -91,11 +92,15 @@ String buildStandardEmploymentContractPlainText(
   buf.writeln('3. 업 무 내 용 : ${_workPlaceLine(_fv(fv, 'job_description'))}');
   buf.writeln();
   buf.writeln(
-    '4. 소정근로시간 : ${sws.isEmpty ? '____' : sws}부터 ${swe.isEmpty ? '____' : swe}까지',
+    workScheduleSummary == null
+        ? '4. 소정근로시간 : ${sws.isEmpty ? '____' : sws}부터 ${swe.isEmpty ? '____' : swe}까지'
+        : '4. 소정근로시간 : $workScheduleSummary',
   );
-  if (bs.isNotEmpty || be.isNotEmpty) {
+  if (breakTimeSummary != null || bs.isNotEmpty || be.isNotEmpty) {
     buf.writeln(
-      '(휴게시간: ${bs.isEmpty ? '____' : bs} ~ ${be.isEmpty ? '____' : be})',
+      breakTimeSummary == null
+          ? '(휴게시간: ${bs.isEmpty ? '____' : bs} ~ ${be.isEmpty ? '____' : be})'
+          : '(휴게시간: $breakTimeSummary)',
     );
   }
   buf.writeln();
@@ -197,9 +202,7 @@ String buildGuardianConsentPlainText(Map<String, dynamic> fv) {
   buf.writeln('연소근로자와의 관계 : ${_fv(fv, 'relation_to_minor_worker')}');
   buf.writeln();
   buf.writeln('연소근로자 인적사항');
-  buf.writeln(
-    '성 명 : ${_fv(fv, 'minor_name')} (만 ${_fv(fv, 'minor_age')} 세)',
-  );
+  buf.writeln('성 명 : ${_fv(fv, 'minor_name')} (만 ${_fv(fv, 'minor_age')} 세)');
   buf.writeln('주민등록번호 : ${_fv(fv, 'minor_resident_id_masked')}');
   buf.writeln('주 소 : ${_fv(fv, 'minor_address')}');
   buf.writeln();

@@ -6,6 +6,7 @@ import 'package:convenience_store_erp_front/core/errors/user_friendly_error_mess
 import '../../../data/repositories/staff_management_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import '../../../utils/contract_work_schedule_display.dart';
 import '../../../widgets/app_styled_confirm_dialog.dart';
 import '../../../widgets/contract_signature.dart';
 import 'employment_contract_attachment_helpers.dart';
@@ -469,6 +470,8 @@ class _EmploymentContractDetailScreenState
     final swe = _fv(fv, 'scheduled_work_end_time');
     final bs = _fv(fv, 'break_start_time');
     final be = _fv(fv, 'break_end_time');
+    final workScheduleSummary = contractWorkScheduleSummary(fv);
+    final breakTimeSummary = contractBreakTimeSummary(fv);
     final wd = _fv(fv, 'work_days_per_week');
     final wh = _fv(fv, 'weekly_holiday_day');
     final wageAmt = _fv(fv, 'wage_amount');
@@ -547,22 +550,28 @@ class _EmploymentContractDetailScreenState
           crossAxisAlignment: WrapCrossAlignment.end,
           children: [
             Text('4. 소정근로시간 : ', style: _docBodyStyle),
-            _u(sws),
-            Text('부터 ', style: _docBodyStyle),
-            _u(swe),
-            Text('까지', style: _docBodyStyle),
+            if (workScheduleSummary == null) ...[
+              _u(sws),
+              Text('부터 ', style: _docBodyStyle),
+              _u(swe),
+              Text('까지', style: _docBodyStyle),
+            ] else
+              _u(workScheduleSummary),
           ],
         ),
-        if (bs.isNotEmpty || be.isNotEmpty) ...[
+        if (breakTimeSummary != null || bs.isNotEmpty || be.isNotEmpty) ...[
           SizedBox(height: 6.h),
           Wrap(
             spacing: 4,
             crossAxisAlignment: WrapCrossAlignment.end,
             children: [
               Text('(휴게시간: ', style: _docBodyStyle),
-              _u(bs),
-              Text(' ~ ', style: _docBodyStyle),
-              _u(be),
+              if (breakTimeSummary == null) ...[
+                _u(bs),
+                Text(' ~ ', style: _docBodyStyle),
+                _u(be),
+              ] else
+                _u(breakTimeSummary),
               Text(')', style: _docBodyStyle),
             ],
           ),
