@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -101,37 +102,37 @@ class _AccountPasswordCodeScreenState extends State<AccountPasswordCodeScreen> {
     setState(() => _submitting = true);
     try {
       await context.read<AuthRepository>().verifyPhoneNumber(
-            phoneNumber: _toE164(widget.phoneNumber),
-            forceResendingToken: _resendToken,
-            codeSent: (verificationId, resendToken) {
-              if (!mounted) return;
-              _codeController.clear();
-              setState(() {
-                _verificationId = verificationId;
-                _resendToken = resendToken;
-                _expiresAt = DateTime.now().add(const Duration(minutes: 3));
-                _submitting = false;
-              });
-              _startTicker();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('인증번호를 다시 보냈습니다.')),
-              );
-            },
-            verificationFailed: (error) {
-              if (!mounted) return;
-              setState(() => _submitting = false);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(error.message ?? error.code)),
-              );
-            },
-            codeAutoRetrievalTimeout: (_) {},
-          );
+        phoneNumber: _toE164(widget.phoneNumber),
+        forceResendingToken: _resendToken,
+        codeSent: (verificationId, resendToken) {
+          if (!mounted) return;
+          _codeController.clear();
+          setState(() {
+            _verificationId = verificationId;
+            _resendToken = resendToken;
+            _expiresAt = DateTime.now().add(const Duration(minutes: 3));
+            _submitting = false;
+          });
+          _startTicker();
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('인증번호를 다시 보냈습니다.')));
+        },
+        verificationFailed: (error) {
+          if (!mounted) return;
+          setState(() => _submitting = false);
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(error.message ?? error.code)));
+        },
+        codeAutoRetrievalTimeout: (_) {},
+      );
     } catch (error) {
       if (!mounted) return;
       setState(() => _submitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(userFriendlyErrorMessage(error))));
     }
   }
 
@@ -265,7 +266,8 @@ class _AccountPasswordCodeScreenState extends State<AccountPasswordCodeScreen> {
                 width: double.infinity,
                 height: 52.h,
                 child: FilledButton(
-                  onPressed: _submitting ||
+                  onPressed:
+                      _submitting ||
                           _codeController.text.trim().length != 6 ||
                           _isExpired
                       ? null

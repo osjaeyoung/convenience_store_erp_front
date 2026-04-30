@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../../data/repositories/store_expense_repository.dart';
 import '../../../theme/app_colors.dart';
@@ -24,7 +25,8 @@ class StoreExpenseAddMonthScreen extends StatefulWidget {
       _StoreExpenseAddMonthScreenState();
 }
 
-class _StoreExpenseAddMonthScreenState extends State<StoreExpenseAddMonthScreen> {
+class _StoreExpenseAddMonthScreenState
+    extends State<StoreExpenseAddMonthScreen> {
   int? _year;
   int? _month;
   bool _submitting = false;
@@ -270,9 +272,9 @@ class _StoreExpenseAddMonthScreenState extends State<StoreExpenseAddMonthScreen>
     final year = _year;
     final month = _month;
     if (year == null || month == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('년도와 월을 선택해 주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('년도와 월을 선택해 주세요.')));
       return;
     }
 
@@ -311,10 +313,9 @@ class _StoreExpenseAddMonthScreenState extends State<StoreExpenseAddMonthScreen>
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('월 추가에 실패했습니다: $e')),
+        SnackBar(content: Text('월 추가에 실패했습니다: ${userFriendlyErrorMessage(e)}')),
       );
       setState(() => _submitting = false);
     }
   }
 }
-

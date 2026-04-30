@@ -32,6 +32,8 @@
 
 - 일정 조회 시 **`schedule_source`가 `contract_auto`인 슬롯**은 근로계약 완료 시 자동 생성된 것입니다.
 - 계약서 `form_values`의 요일·주휴일 숫자/문자열 규약(Flutter `weekday` 1~7, Sunday-first 체크박스 `work_day_0..6`, `work_days` 문자열 등)은 **`docs/api_spec_contract_chat.md` → 「프론트엔드 연동 (근무일 자동배정)」** 를 따릅니다.
+- 계약서 `form_values`의 `work_day_{n}_slots` 배열이 있으면 하루 여러 근무 구간을 생성합니다. 예: 금요일 `10:00~15:00`, `18:00~20:00` 두 구간을 각각 30분 슬롯으로 생성합니다.
+- 계약서의 요일별 근무 시간이 `23:00~06:00`처럼 자정을 넘는 경우 서버는 익일 종료로 해석하고 날짜별 30분 슬롯으로 나누어 `contract_auto` 일정을 생성합니다. 같은 요일을 두 번 등록하도록 요구하지 않습니다.
 - **`PUT .../contracts/work-rules`** 의 `weekday`는 **`0`~`6`(월~일, Python)** 만 허용합니다.
 
 ---

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../../data/models/manager_home/manager_alert.dart';
 import '../../../data/repositories/manager_home_repository.dart';
@@ -42,9 +43,9 @@ class _HomeAlertsScreenState extends State<HomeAlertsScreen> {
     });
     try {
       final items = widget.isOwner
-          ? (await ownerRepo.getAlerts(widget.branchId))
-              .map(ManagerAlert.fromJson)
-              .toList()
+          ? (await ownerRepo.getAlerts(
+              widget.branchId,
+            )).map(ManagerAlert.fromJson).toList()
           : await managerRepo.getAlerts(widget.branchId);
       if (!mounted) return;
       setState(() {
@@ -56,7 +57,7 @@ class _HomeAlertsScreenState extends State<HomeAlertsScreen> {
       setState(() {
         _alerts = const [];
         _loading = false;
-        _error = e.toString();
+        _error = userFriendlyErrorMessage(e);
       });
     }
   }
@@ -67,16 +68,16 @@ class _HomeAlertsScreenState extends State<HomeAlertsScreen> {
     try {
       if (widget.isOwner) {
         await ownerRepo.patchAlert(
-              branchId: widget.branchId,
-              alertId: alert.alertId,
-              isOpen: isOpen,
-            );
+          branchId: widget.branchId,
+          alertId: alert.alertId,
+          isOpen: isOpen,
+        );
       } else {
         await managerRepo.patchAlert(
-              branchId: widget.branchId,
-              alertId: alert.alertId,
-              isOpen: isOpen,
-            );
+          branchId: widget.branchId,
+          alertId: alert.alertId,
+          isOpen: isOpen,
+        );
       }
       if (!mounted) return;
       setState(() {
@@ -98,7 +99,7 @@ class _HomeAlertsScreenState extends State<HomeAlertsScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('알림 상태 변경 실패: $e')),
+        SnackBar(content: Text('알림 상태 변경 실패: ${userFriendlyErrorMessage(e)}')),
       );
     }
   }
@@ -127,96 +128,107 @@ class _HomeAlertsScreenState extends State<HomeAlertsScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(24.r),
-                    child: Text(
-                      _error!,
-                      style: AppTypography.bodyMediumR.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+          ? Center(
+              child: Padding(
+                padding: EdgeInsets.all(24.r),
+                child: Text(
+                  _error!,
+                  style: AppTypography.bodyMediumR.copyWith(
+                    color: AppColors.textSecondary,
                   ),
-                )
-              : _alerts.isEmpty
-                  ? Center(
-                      child: Text(
-                        '알림이 없습니다.',
-                        style: AppTypography.bodyMediumR.copyWith(
-                          color: AppColors.textSecondary,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            )
+          : _alerts.isEmpty
+          ? Center(
+              child: Text(
+                '알림이 없습니다.',
+                style: AppTypography.bodyMediumR.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: ListView.separated(
+                padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 24.h),
+                itemCount: _alerts.length,
+                separatorBuilder: (_, __) => SizedBox(height: 12.h),
+                itemBuilder: (context, index) {
+                  final alert = _alerts[index];
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.grey0,
+                      borderRadius: BorderRadius.circular(16.r),
+                      border: Border.all(color: AppColors.grey50),
+                    ),
+                    child: Theme(
+                      data: Theme.of(
+                        context,
+                      ).copyWith(dividerColor: Colors.transparent),
+                      child: ExpansionTile(
+                        tilePadding: EdgeInsets.fromLTRB(
+                          16.w,
+                          10.h,
+                          16.w,
+                          10.h,
                         ),
-                      ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _load,
-                      child: ListView.separated(
-                        padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 24.h),
-                        itemCount: _alerts.length,
-                        separatorBuilder: (_, __) => SizedBox(height: 12.h),
-                        itemBuilder: (context, index) {
-                          final alert = _alerts[index];
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: AppColors.grey0,
-                              borderRadius: BorderRadius.circular(16.r),
-                              border: Border.all(color: AppColors.grey50),
-                            ),
-                            child: Theme(
-                              data: Theme.of(context).copyWith(
-                                dividerColor: Colors.transparent,
-                              ),
-                              child: ExpansionTile(
-                                tilePadding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 10.h),
-                                childrenPadding: EdgeInsets.fromLTRB(16.w, 0.h, 16.w, 16.h),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16.r),
-                                ),
-                                collapsedShape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16.r),
-                                ),
-                                initiallyExpanded: alert.isOpen,
-                                onExpansionChanged: (expanded) => _toggleOpen(alert, expanded),
-                                title: Text(
-                                  alert.title,
-                                  style: AppTypography.bodyLargeM.copyWith(
-                                    color: AppColors.textPrimary,
-                                    fontSize: 16.sp,
-                                    height: 20 / 16,
+                        childrenPadding: EdgeInsets.fromLTRB(
+                          16.w,
+                          0.h,
+                          16.w,
+                          16.h,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                        ),
+                        collapsedShape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                        ),
+                        initiallyExpanded: alert.isOpen,
+                        onExpansionChanged: (expanded) =>
+                            _toggleOpen(alert, expanded),
+                        title: Text(
+                          alert.title,
+                          style: AppTypography.bodyLargeM.copyWith(
+                            color: AppColors.textPrimary,
+                            fontSize: 16.sp,
+                            height: 20 / 16,
+                          ),
+                        ),
+                        subtitle: alert.createdAt == null
+                            ? null
+                            : Padding(
+                                padding: EdgeInsets.only(top: 4.h),
+                                child: Text(
+                                  alert.createdAt!,
+                                  style: AppTypography.bodySmallR.copyWith(
+                                    color: AppColors.textTertiary,
+                                    fontSize: 12.sp,
+                                    height: 18 / 12,
                                   ),
                                 ),
-                                subtitle: alert.createdAt == null
-                                    ? null
-                                    : Padding(
-                                        padding: EdgeInsets.only(top: 4.h),
-                                        child: Text(
-                                          alert.createdAt!,
-                                          style: AppTypography.bodySmallR.copyWith(
-                                            color: AppColors.textTertiary,
-                                            fontSize: 12.sp,
-                                            height: 18 / 12,
-                                          ),
-                                        ),
-                                      ),
-                                children: [
-                                  Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      alert.content,
-                                      style: AppTypography.bodyMediumR.copyWith(
-                                        color: AppColors.textPrimary,
-                                        fontSize: 14.sp,
-                                        height: 20 / 14,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                              ),
+                        children: [
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              alert.content,
+                              style: AppTypography.bodyMediumR.copyWith(
+                                color: AppColors.textPrimary,
+                                fontSize: 14.sp,
+                                height: 20 / 14,
                               ),
                             ),
-                          );
-                        },
+                          ),
+                        ],
                       ),
                     ),
+                  );
+                },
+              ),
+            ),
     );
   }
 }

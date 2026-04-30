@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../account/account_dio_message.dart';
 import '../../../theme/app_colors.dart';
@@ -262,9 +263,9 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('저장 실패: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('저장 실패: ${userFriendlyErrorMessage(e)}')),
+        );
       }
     } finally {
       if (mounted) {
@@ -315,9 +316,9 @@ class _WorkerRegistrationScreenState extends State<WorkerRegistrationScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('퇴사 처리 실패: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('퇴사 처리 실패: ${userFriendlyErrorMessage(e)}')),
+        );
       }
     } finally {
       if (mounted) {

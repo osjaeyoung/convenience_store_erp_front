@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'dart:ui';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -260,7 +261,7 @@ class _PickedFileInlinePreviewState extends State<PickedFileInlinePreview> {
       child: Padding(
         padding: EdgeInsets.all(16.r),
         child: Text(
-          '불러오지 못했습니다.\n$e',
+          '불러오지 못했습니다.\n${userFriendlyErrorMessage(e)}',
           textAlign: TextAlign.center,
           style: AppTypography.bodySmall.copyWith(color: AppColors.error),
         ),

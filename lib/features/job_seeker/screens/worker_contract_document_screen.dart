@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../../data/models/worker/worker_recruitment_models.dart';
 import '../../../data/repositories/worker_recruitment_repository.dart';
@@ -122,7 +123,7 @@ class _WorkerContractDocumentScreenState
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = userFriendlyErrorMessage(e);
         _loading = false;
       });
     }
@@ -1447,7 +1448,7 @@ class _WorkerContractDocumentScreenState
       }
       return error.message ?? '요청에 실패했습니다.';
     }
-    return error.toString();
+    return userFriendlyErrorMessage(error);
   }
 
   Future<void> _submit() async {

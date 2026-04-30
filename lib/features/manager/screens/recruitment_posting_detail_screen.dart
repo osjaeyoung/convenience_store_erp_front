@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../../data/models/recruitment/recruitment_models.dart';
 import '../../../data/repositories/manager_home_repository.dart';
@@ -123,7 +124,7 @@ class _RecruitmentPostingDetailScreenState
       setState(() {
         _detail = null;
         _loading = false;
-        _error = e.toString();
+        _error = userFriendlyErrorMessage(e);
       });
     }
   }
@@ -148,9 +149,11 @@ class _RecruitmentPostingDetailScreenState
         _applicationPage = null;
         _loadingApplications = false;
       });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('지원현황을 불러오지 못했습니다: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('지원현황을 불러오지 못했습니다: ${userFriendlyErrorMessage(e)}'),
+        ),
+      );
     }
   }
 
@@ -184,9 +187,9 @@ class _RecruitmentPostingDetailScreenState
         Navigator.of(context).pop(true);
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('게시 실패: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('게시 실패: ${userFriendlyErrorMessage(e)}')),
+        );
       } finally {
         if (mounted) {
           setState(() => _publishing = false);
@@ -221,9 +224,9 @@ class _RecruitmentPostingDetailScreenState
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('삭제 실패: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('삭제 실패: ${userFriendlyErrorMessage(e)}')),
+      );
     } finally {
       if (mounted) {
         setState(() => _deleting = false);
@@ -277,9 +280,9 @@ class _RecruitmentPostingDetailScreenState
       ).showSnackBar(const SnackBar(content: Text('사진이 삭제되었습니다.')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('사진 삭제 실패: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('사진 삭제 실패: ${userFriendlyErrorMessage(e)}')),
+      );
     }
   }
 

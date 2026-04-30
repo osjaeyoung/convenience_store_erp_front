@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../../data/models/recruitment/recruitment_models.dart';
 import '../../../data/repositories/manager_home_repository.dart';
@@ -81,7 +82,7 @@ class _RecruitmentReviewScreenState extends State<RecruitmentReviewScreen> {
       setState(() {
         _reviewPage = null;
         _isLoading = false;
-        _error = e.toString();
+        _error = userFriendlyErrorMessage(e);
       });
     }
   }

@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../../core/formatters/thousands_separator_input_formatter.dart';
 import '../../../data/models/store_expense/store_expense_month.dart';
@@ -516,9 +517,11 @@ class _StoreExpenseAddItemScreenState extends State<StoreExpenseAddItemScreen> {
       Navigator.pop<bool>(context, true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('항목 저장에 실패했습니다: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('항목 저장에 실패했습니다: ${userFriendlyErrorMessage(e)}'),
+        ),
+      );
       setState(() => _saving = false);
     }
   }

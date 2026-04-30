@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../../data/repositories/staff_management_repository.dart';
 import '../../../theme/app_colors.dart';
@@ -279,9 +280,9 @@ class _EmployeeWorkHistoryEditScreenState
       ).pop(_rows.map((row) => row.toMap()).toList(growable: false));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('저장 실패: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('저장 실패: ${userFriendlyErrorMessage(e)}')),
+      );
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);

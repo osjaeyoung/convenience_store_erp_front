@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../../core/enums/user_role.dart';
 import '../../../data/repositories/manager_home_repository.dart';
@@ -56,9 +57,9 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
     final name = _managerNameController.text.trim();
     final phone = _normalizePhone(_managerPhoneController.text);
     if (name.isEmpty || phone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('이름과 전화번호를 먼저 입력해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('이름과 전화번호를 먼저 입력해주세요.')));
       return;
     }
 
@@ -74,14 +75,16 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
         _lookupItems = items.map(_ManagerLookupItem.fromJson).toList();
       });
       if (_lookupItems.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('사전등록된 점포가 없습니다.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('사전등록된 점포가 없습니다.')));
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('점포 조회에 실패했습니다: $e')),
+        SnackBar(
+          content: Text('점포 조회에 실패했습니다: ${userFriendlyErrorMessage(e)}'),
+        ),
       );
     } finally {
       if (mounted) setState(() => _lookuping = false);
@@ -91,9 +94,9 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
   Future<void> _joinOne(_ManagerLookupItem item) async {
     final phone = _normalizePhone(_managerPhoneController.text);
     if (phone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('전화번호를 입력해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('전화번호를 입력해주세요.')));
       return;
     }
     setState(() => _submitting = true);
@@ -119,7 +122,9 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('점포 연결에 실패했습니다: $e')),
+        SnackBar(
+          content: Text('점포 연결에 실패했습니다: ${userFriendlyErrorMessage(e)}'),
+        ),
       );
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -150,9 +155,9 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
         final name = _managerNameController.text.trim();
         final phone = _normalizePhone(_managerPhoneController.text);
         if (name.isEmpty || phone.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('이름과 전화번호를 입력해주세요.')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('이름과 전화번호를 입력해주세요.')));
           return;
         }
         final repo = context.read<ManagerHomeRepository>();
@@ -162,16 +167,18 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
         );
         if (!mounted) return;
         final linkedCount = (res['linked_count'] as num?)?.toInt() ?? 0;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$linkedCount개 점포 권한을 연결했습니다.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$linkedCount개 점포 권한을 연결했습니다.')));
       }
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('점포 추가에 실패했습니다: $e')),
+        SnackBar(
+          content: Text('점포 추가에 실패했습니다: ${userFriendlyErrorMessage(e)}'),
+        ),
       );
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -226,10 +233,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                           children: [
                             ..._buildDraftFields(),
                             SizedBox(height: 8.h),
-                            MintAddButton(
-                              label: '추가하기',
-                              onPressed: _addDraft,
-                            ),
+                            MintAddButton(label: '추가하기', onPressed: _addDraft),
                           ],
                         ),
                       )
@@ -273,15 +277,21 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12.r),
-                            borderSide: const BorderSide(color: AppColors.grey50),
+                            borderSide: const BorderSide(
+                              color: AppColors.grey50,
+                            ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12.r),
-                            borderSide: const BorderSide(color: AppColors.grey50),
+                            borderSide: const BorderSide(
+                              color: AppColors.grey50,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12.r),
-                            borderSide: const BorderSide(color: AppColors.primary),
+                            borderSide: const BorderSide(
+                              color: AppColors.primary,
+                            ),
                           ),
                         ),
                       ),
@@ -377,9 +387,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
       padding: EdgeInsets.only(bottom: 8.h),
       child: Text(
         text,
-        style: AppTypography.bodyLargeB.copyWith(
-          color: AppColors.textPrimary,
-        ),
+        style: AppTypography.bodyLargeB.copyWith(color: AppColors.textPrimary),
       ),
     );
   }
@@ -481,8 +489,8 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
 
 class _BranchDraft {
   _BranchDraft()
-      : companyNameController = TextEditingController(),
-        businessNumberController = TextEditingController();
+    : companyNameController = TextEditingController(),
+      businessNumberController = TextEditingController();
 
   final TextEditingController companyNameController;
   final TextEditingController businessNumberController;
@@ -518,9 +526,7 @@ class _ManagerLookupItem {
     );
   }
 
-  _ManagerLookupItem copyWith({
-    String? registrationStatus,
-  }) {
+  _ManagerLookupItem copyWith({String? registrationStatus}) {
     return _ManagerLookupItem(
       registrationId: registrationId,
       branchId: branchId,

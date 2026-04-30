@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../account/account_dio_message.dart';
 import '../../../data/repositories/staff_management_repository.dart';
@@ -153,7 +154,7 @@ class _GuestWorkerRegistrationScreenState
       Navigator.of(context).pop(true);
     } catch (error) {
       if (!mounted) return;
-      _showSnackBar('삭제 실패: $error');
+      _showSnackBar('삭제 실패: ${userFriendlyErrorMessage(error)}');
     } finally {
       if (mounted) setState(() => _deleting = false);
     }

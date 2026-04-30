@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
@@ -40,7 +41,8 @@ class EmployeeEtcRecordAddScreen extends StatefulWidget {
       _EmployeeEtcRecordAddScreenState();
 }
 
-class _EmployeeEtcRecordAddScreenState extends State<EmployeeEtcRecordAddScreen> {
+class _EmployeeEtcRecordAddScreenState
+    extends State<EmployeeEtcRecordAddScreen> {
   final _titleCtrl = TextEditingController();
   final _dateCtrl = TextEditingController();
   String? _issuedIso;
@@ -49,8 +51,7 @@ class _EmployeeEtcRecordAddScreenState extends State<EmployeeEtcRecordAddScreen>
 
   bool get _isViewMode => widget.viewRecord != null;
 
-  String? get _viewFileUrl =>
-      widget.viewRecord?['file_url']?.toString().trim();
+  String? get _viewFileUrl => widget.viewRecord?['file_url']?.toString().trim();
 
   @override
   void initState() {
@@ -120,20 +121,20 @@ class _EmployeeEtcRecordAddScreenState extends State<EmployeeEtcRecordAddScreen>
     setState(() => _submitting = true);
     try {
       await context.read<StaffManagementRepository>().deleteEmployeeRecord(
-            branchId: widget.branchId,
-            employeeId: widget.employeeId,
-            recordId: rid,
-          );
+        branchId: widget.branchId,
+        employeeId: widget.employeeId,
+        recordId: rid,
+      );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('삭제되었습니다.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('삭제되었습니다.')));
         Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('삭제 실패: $e')),
+          SnackBar(content: Text('삭제 실패: ${userFriendlyErrorMessage(e)}')),
         );
       }
     } finally {
@@ -200,9 +201,9 @@ class _EmployeeEtcRecordAddScreenState extends State<EmployeeEtcRecordAddScreen>
     final hasFile = _picked != null;
 
     if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('제목을 입력해 주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('제목을 입력해 주세요.')));
       return;
     }
 
@@ -214,9 +215,7 @@ class _EmployeeEtcRecordAddScreenState extends State<EmployeeEtcRecordAddScreen>
         if (issued == null || issued.isEmpty) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('파일을 첨부한 경우 작성일을 선택해 주세요.'),
-              ),
+              const SnackBar(content: Text('파일을 첨부한 경우 작성일을 선택해 주세요.')),
             );
           }
           return;
@@ -236,9 +235,7 @@ class _EmployeeEtcRecordAddScreenState extends State<EmployeeEtcRecordAddScreen>
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text(
-                    '연결에 실패했습니다. Base64 전송을 쓰려면 파일을 다시 선택해 주세요.',
-                  ),
+                  content: Text('연결에 실패했습니다. Base64 전송을 쓰려면 파일을 다시 선택해 주세요.'),
                 ),
               );
             }
@@ -269,20 +266,20 @@ class _EmployeeEtcRecordAddScreenState extends State<EmployeeEtcRecordAddScreen>
       }
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('기타 자료가 등록되었습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('기타 자료가 등록되었습니다.')));
       Navigator.pop(context, true);
     } on StateError catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('등록 실패: $e')),
+          SnackBar(content: Text('등록 실패: ${userFriendlyErrorMessage(e)}')),
         );
       }
     } finally {
@@ -290,7 +287,8 @@ class _EmployeeEtcRecordAddScreenState extends State<EmployeeEtcRecordAddScreen>
     }
   }
 
-  static EdgeInsets get _fieldPadding => EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h);
+  static EdgeInsets get _fieldPadding =>
+      EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h);
 
   @override
   Widget build(BuildContext context) {
@@ -391,9 +389,7 @@ class _EmployeeEtcRecordAddScreenState extends State<EmployeeEtcRecordAddScreen>
                 )
               else ...[
                 PickedFileInlinePreview(
-                  key: ValueKey<String>(
-                    '${_picked!.name}_${_picked!.size}',
-                  ),
+                  key: ValueKey<String>('${_picked!.name}_${_picked!.size}'),
                   file: _picked!,
                   height: 320,
                   onTapReplace: _pickFile,

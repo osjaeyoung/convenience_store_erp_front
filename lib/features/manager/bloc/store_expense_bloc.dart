@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../../data/models/store_expense/store_expense_dashboard.dart';
 import '../../../data/repositories/store_expense_repository.dart';
@@ -7,8 +8,10 @@ import '../../../data/repositories/store_expense_repository.dart';
 part 'store_expense_event.dart';
 part 'store_expense_state.dart';
 
-class StoreExpenseBloc extends Bloc<StoreExpenseBlocEvent, StoreExpenseBlocState> {
-  StoreExpenseBloc(this._repository) : super(const StoreExpenseBlocState.initial()) {
+class StoreExpenseBloc
+    extends Bloc<StoreExpenseBlocEvent, StoreExpenseBlocState> {
+  StoreExpenseBloc(this._repository)
+    : super(const StoreExpenseBlocState.initial()) {
     on<StoreExpenseDashboardRequested>(_onDashboardRequested);
   }
 
@@ -29,7 +32,7 @@ class StoreExpenseBloc extends Bloc<StoreExpenseBlocEvent, StoreExpenseBlocState
       );
       emit(StoreExpenseBlocState.dashboardLoaded(data));
     } catch (e) {
-      emit(StoreExpenseBlocState.failure(e.toString()));
+      emit(StoreExpenseBlocState.failure(userFriendlyErrorMessage(e)));
     }
   }
 }

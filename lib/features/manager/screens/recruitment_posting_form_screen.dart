@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../../core/formatters/thousands_separator_input_formatter.dart';
 import '../../../data/models/recruitment/recruitment_models.dart';
@@ -142,9 +143,9 @@ class _RecruitmentPostingFormScreenState
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('사진 선택 실패: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('사진 선택 실패: ${userFriendlyErrorMessage(e)}')),
+      );
     }
   }
 
@@ -216,7 +217,13 @@ class _RecruitmentPostingFormScreenState
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_isEditing ? '수정 실패: $e' : '미리보기 실패: $e')),
+        SnackBar(
+          content: Text(
+            _isEditing
+                ? '수정 실패: ${userFriendlyErrorMessage(e)}'
+                : '미리보기 실패: ${userFriendlyErrorMessage(e)}',
+          ),
+        ),
       );
     } finally {
       if (mounted) {

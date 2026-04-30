@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../../data/repositories/staff_management_repository.dart';
 import '../../../theme/app_colors.dart';
@@ -92,7 +93,7 @@ class _EmploymentContractsListScreenState
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = userFriendlyErrorMessage(e);
         _loading = false;
       });
     }

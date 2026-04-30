@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../../core/formatters/thousands_separator_input_formatter.dart';
 import '../../../data/repositories/staff_management_repository.dart';
@@ -303,9 +304,9 @@ class _PayrollStatementFormScreenState
           ).showSnackBar(SnackBar(content: Text(duplicateMessage)));
           return;
         }
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('저장 실패: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('저장 실패: ${userFriendlyErrorMessage(e)}')),
+        );
       }
     } finally {
       if (mounted) setState(() => _submitting = false);

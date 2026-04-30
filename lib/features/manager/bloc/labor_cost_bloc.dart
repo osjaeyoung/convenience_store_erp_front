@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../../data/models/labor_cost/expected_labor_cost.dart';
 import '../../../data/models/labor_cost/monthly_detail.dart';
@@ -31,7 +32,7 @@ class LaborCostBloc extends Bloc<LaborCostBlocEvent, LaborCostBlocState> {
       );
       emit(LaborCostBlocState.expectedLoaded(data));
     } catch (e) {
-      emit(LaborCostBlocState.failure(e.toString()));
+      emit(LaborCostBlocState.failure(userFriendlyErrorMessage(e)));
     }
   }
 
@@ -49,7 +50,7 @@ class LaborCostBloc extends Bloc<LaborCostBlocEvent, LaborCostBlocState> {
       );
       emit(LaborCostBlocState.monthlyDetailLoaded(data));
     } catch (e) {
-      emit(LaborCostBlocState.failure(e.toString()));
+      emit(LaborCostBlocState.failure(userFriendlyErrorMessage(e)));
     }
   }
 
@@ -67,7 +68,7 @@ class LaborCostBloc extends Bloc<LaborCostBlocEvent, LaborCostBlocState> {
       );
       emit(LaborCostBlocState.savingDetailLoaded(data));
     } catch (e) {
-      emit(LaborCostBlocState.failure(e.toString()));
+      emit(LaborCostBlocState.failure(userFriendlyErrorMessage(e)));
     }
   }
 }

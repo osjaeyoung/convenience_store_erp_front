@@ -1,4 +1,5 @@
 import 'dart:ui' as ui;
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
@@ -39,7 +40,9 @@ class EtcFilePreviewCommon {
   static String _httpAccessDeniedUserMessage(String absoluteUrl, int? code) {
     final u = absoluteUrl.toLowerCase();
     final isS3 =
-        u.contains('amazonaws.com') || u.contains('.s3.') || u.contains('s3://');
+        u.contains('amazonaws.com') ||
+        u.contains('.s3.') ||
+        u.contains('s3://');
     final tail = code != null ? ' (HTTP $code)' : '';
     if (isS3) {
       return '저장된 파일 주소(S3)로는 앱에서 바로 열 수 없습니다$tail.\n'
@@ -71,12 +74,10 @@ class EtcFilePreviewCommon {
         throw StateError(_httpAccessDeniedUserMessage(absolute, code));
       }
       if (e.type == DioExceptionType.badResponse && code != null) {
-        throw StateError(
-          '파일을 불러오지 못했습니다. (HTTP $code)\n${e.message ?? ''}',
-        );
+        throw StateError('파일을 불러오지 못했습니다. (HTTP $code)\n${e.message ?? ''}');
       }
       throw StateError(
-        '파일을 불러오지 못했습니다.\n${e.message ?? e.toString()}',
+        '파일을 불러오지 못했습니다.\n${e.message ?? userFriendlyErrorMessage(e)}',
       );
     }
   }
@@ -207,8 +208,7 @@ class EtcFilePreviewCommon {
 
     final bytes = await ensureBytes();
     if (looksLikePdf(bytes)) {
-      final pdfName =
-          name.toLowerCase().endsWith('.pdf') ? name : '$name.pdf';
+      final pdfName = name.toLowerCase().endsWith('.pdf') ? name : '$name.pdf';
       await Printing.sharePdf(bytes: bytes, filename: pdfName);
       return;
     }
@@ -247,8 +247,9 @@ class EtcFilePreviewCommon {
       throw StateError('파일을 읽을 수 없습니다. 다시 선택해 주세요.');
     }
     final bytes = Uint8List.fromList(raw);
-    var name =
-        file.name.trim().isEmpty ? 'attachment' : sanitizeFileNameSegment(file.name);
+    var name = file.name.trim().isEmpty
+        ? 'attachment'
+        : sanitizeFileNameSegment(file.name);
     final lower = name.toLowerCase();
 
     if (lower.endsWith('.pdf') || looksLikePdf(bytes)) {
@@ -258,21 +259,13 @@ class EtcFilePreviewCommon {
     }
     if (isImageFileName(name) || await canDecodeAsImage(bytes)) {
       if (!lower.contains('.')) name = '$name.jpg';
-      await Share.shareXFiles(
-        [
-          XFile.fromData(
-            bytes,
-            name: name,
-            mimeType: _mimeForFileName(name),
-          ),
-        ],
-        subject: subject,
-      );
+      await Share.shareXFiles([
+        XFile.fromData(bytes, name: name, mimeType: _mimeForFileName(name)),
+      ], subject: subject);
       return;
     }
-    await Share.shareXFiles(
-      [XFile.fromData(bytes, name: name)],
-      subject: subject,
-    );
+    await Share.shareXFiles([
+      XFile.fromData(bytes, name: name),
+    ], subject: subject);
   }
 }

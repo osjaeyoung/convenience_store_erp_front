@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -76,8 +77,7 @@ class _EmployeeEtcRecordPreviewScreenState
   }
 
   static String _formatDateLine(Map<String, dynamic> r) {
-    final raw =
-        (r['issued_date'] ?? r['created_at'])?.toString().trim() ?? '';
+    final raw = (r['issued_date'] ?? r['created_at'])?.toString().trim() ?? '';
     if (raw.isEmpty) return '';
     final d = DateTime.tryParse(raw);
     if (d == null) return '';
@@ -91,9 +91,9 @@ class _EmployeeEtcRecordPreviewScreenState
       : '기타 자료';
 
   String _suggestedDownloadName() => EtcFilePreviewCommon.suggestedDownloadName(
-        fileUrl: _fileUrl ?? '',
-        recordTitle: _title,
-      );
+    fileUrl: _fileUrl ?? '',
+    recordTitle: _title,
+  );
 
   Widget _buildPreviewBody() {
     final url = _fileUrl;
@@ -193,12 +193,7 @@ class _EmployeeEtcRecordPreviewScreenState
             return InteractiveViewer(
               minScale: 0.5,
               maxScale: 4,
-              child: Center(
-                child: Image.memory(
-                  b,
-                  fit: BoxFit.contain,
-                ),
-              ),
+              child: Center(child: Image.memory(b, fit: BoxFit.contain)),
             );
           },
         );
@@ -211,7 +206,7 @@ class _EmployeeEtcRecordPreviewScreenState
       child: Padding(
         padding: EdgeInsets.all(24.r),
         child: Text(
-          '미리보기를 불러오지 못했습니다.\n$e',
+          '미리보기를 불러오지 못했습니다.\n${userFriendlyErrorMessage(e)}',
           textAlign: TextAlign.center,
           style: AppTypography.bodyMediumR.copyWith(
             color: AppColors.textSecondary,
@@ -257,8 +252,9 @@ class _EmployeeEtcRecordPreviewScreenState
             SizedBox(height: 16.h),
             TextButton(
               onPressed: () async {
-                final uri =
-                    Uri.parse(EtcFilePreviewCommon.toAbsoluteFileUrl(url));
+                final uri = Uri.parse(
+                  EtcFilePreviewCommon.toAbsoluteFileUrl(url),
+                );
                 if (await canLaunchUrl(uri)) {
                   await launchUrl(uri, mode: LaunchMode.externalApplication);
                 }

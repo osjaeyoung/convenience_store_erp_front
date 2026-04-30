@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
@@ -55,6 +56,7 @@ class _EmployeeReviewScreenState extends State<EmployeeReviewScreen> {
     _rating = (widget.initialMyRating ?? 3).clamp(1, 3);
     _commentController.text = widget.initialComment ?? '';
   }
+
   bool _isSubmitting = false;
 
   @override
@@ -66,9 +68,9 @@ class _EmployeeReviewScreenState extends State<EmployeeReviewScreen> {
   Future<void> _submitReview() async {
     final comment = _commentController.text.trim();
     if (comment.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('평가 코멘트를 입력해 주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('평가 코멘트를 입력해 주세요.')));
       return;
     }
 
@@ -91,9 +93,7 @@ class _EmployeeReviewScreenState extends State<EmployeeReviewScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              _isEditMode ? '리뷰가 수정되었습니다.' : '리뷰가 등록되었습니다.',
-            ),
+            content: Text(_isEditMode ? '리뷰가 수정되었습니다.' : '리뷰가 등록되었습니다.'),
           ),
         );
         Navigator.of(context).pop(true);
@@ -102,7 +102,11 @@ class _EmployeeReviewScreenState extends State<EmployeeReviewScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_isEditMode ? '리뷰 수정 실패: $e' : '리뷰 등록 실패: $e'),
+            content: Text(
+              _isEditMode
+                  ? '리뷰 수정 실패: ${userFriendlyErrorMessage(e)}'
+                  : '리뷰 등록 실패: ${userFriendlyErrorMessage(e)}',
+            ),
           ),
         );
       }

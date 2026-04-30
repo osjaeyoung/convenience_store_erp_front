@@ -1,9 +1,9 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../data/repositories/staff_management_repository.dart';
-import '../../../data/services/payroll_file_storage_service.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../auth/widgets/auth_input_field.dart';
@@ -66,16 +66,16 @@ class _EmploymentContractFileAttachScreenState
 
   Future<void> _onAddPressed() async {
     if (_titleCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('제목을 입력해 주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('제목을 입력해 주세요.')));
       return;
     }
     final picked = _picked;
     if (picked == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('파일을 첨부해 주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('파일을 첨부해 주세요.')));
       return;
     }
 
@@ -90,20 +90,20 @@ class _EmploymentContractFileAttachScreenState
         files: [picked],
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('파일이 등록되었습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('파일이 등록되었습니다.')));
       Navigator.pop(context, true);
     } on StateError catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('등록 실패: $e')),
+          SnackBar(content: Text('등록 실패: ${userFriendlyErrorMessage(e)}')),
         );
       }
     } finally {
@@ -170,9 +170,7 @@ class _EmploymentContractFileAttachScreenState
               )
             else ...[
               PickedFileInlinePreview(
-                key: ValueKey<String>(
-                  '${_picked!.name}_${_picked!.size}',
-                ),
+                key: ValueKey<String>('${_picked!.name}_${_picked!.size}'),
                 file: _picked!,
                 height: 280,
                 onTapReplace: _pickFile,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../../data/models/store_expense/store_expense_dashboard.dart';
 import '../../../data/models/store_expense/store_expense_month.dart';
@@ -114,7 +115,7 @@ class _StoreCostScreenState extends State<StoreCostScreen>
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _monthsError = e.toString();
+        _monthsError = userFriendlyErrorMessage(e);
         _monthsLoading = false;
       });
     }
@@ -334,7 +335,9 @@ class _StoreCostScreenState extends State<StoreCostScreen>
                           context: context,
                           backgroundColor: AppColors.grey0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(24.r),
+                            ),
                           ),
                           builder: (sheetCtx) => SafeArea(
                             child: Column(
@@ -356,8 +359,12 @@ class _StoreCostScreenState extends State<StoreCostScreen>
                                     children: [
                                       for (final yy in years)
                                         ListTile(
-                                          title: Text('$yy년', textAlign: TextAlign.center),
-                                          onTap: () => Navigator.pop(sheetCtx, yy),
+                                          title: Text(
+                                            '$yy년',
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          onTap: () =>
+                                              Navigator.pop(sheetCtx, yy),
                                         ),
                                     ],
                                   ),
@@ -404,7 +411,9 @@ class _StoreCostScreenState extends State<StoreCostScreen>
                           context: context,
                           backgroundColor: AppColors.grey0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(24.r),
+                            ),
                           ),
                           builder: (sheetCtx) => SafeArea(
                             child: Column(
@@ -426,8 +435,12 @@ class _StoreCostScreenState extends State<StoreCostScreen>
                                     children: [
                                       for (var mm = 1; mm <= 12; mm++)
                                         ListTile(
-                                          title: Text('$mm월', textAlign: TextAlign.center),
-                                          onTap: () => Navigator.pop(sheetCtx, mm),
+                                          title: Text(
+                                            '$mm월',
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          onTap: () =>
+                                              Navigator.pop(sheetCtx, mm),
                                         ),
                                     ],
                                   ),
@@ -555,9 +568,9 @@ class _StoreCostScreenState extends State<StoreCostScreen>
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('월 변경에 실패했습니다: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('월 변경에 실패했습니다: ${userFriendlyErrorMessage(e)}')),
+      );
     }
   }
 
@@ -650,9 +663,9 @@ class _StoreCostScreenState extends State<StoreCostScreen>
       _loadDashboard(branchId);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('삭제에 실패했습니다: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('삭제에 실패했습니다: ${userFriendlyErrorMessage(e)}')),
+      );
     }
   }
 
@@ -721,7 +734,9 @@ class _StoreCostScreenState extends State<StoreCostScreen>
                           onDeleteMonth: (monthId) =>
                               _deleteMonth(branchId, monthId),
                           onEditItem: (item, monthId) {
-                            final month = _months.firstWhere((m) => m.expenseMonthId == monthId);
+                            final month = _months.firstWhere(
+                              (m) => m.expenseMonthId == monthId,
+                            );
                             _openEditItem(branchId, month, item);
                           },
                         ),

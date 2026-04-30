@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:ui';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -110,16 +112,6 @@ class _EmploymentContractFormScreenState
     fontWeight: FontWeight.w400,
     height: 1.0,
     color: Color(0xFF454545),
-  );
-
-  /// · 중복 입력 가능 (body medium_M, muted)
-  static TextStyle get _figmaWorkTimeSubnote => TextStyle(
-    fontFamily: 'Pretendard',
-    fontSize: 14.sp,
-    fontWeight: FontWeight.w500,
-    height: 20 / 14,
-    letterSpacing: -0.3,
-    color: Color(0xFFA3A4AF),
   );
 
   /// Figma 2534-14920 — 본문 (grey8 #000, 14 / 25)
@@ -254,6 +246,7 @@ class _EmploymentContractFormScreenState
           contractWorkDayFormFieldKey(i, 'break_has'),
           contractWorkDayFormFieldKey(i, 'break_start'),
           contractWorkDayFormFieldKey(i, 'break_end'),
+          contractWorkDayFormFieldKey(i, 'slots'),
         ]);
       }
     }
@@ -302,6 +295,12 @@ class _EmploymentContractFormScreenState
           }
           if (key == 'payment_method' && val is String) {
             _paymentMethod = val;
+            continue;
+          }
+          if (key.startsWith('work_day_') &&
+              key.endsWith('_slots') &&
+              val is List) {
+            _c[key]?.text = jsonEncode(val);
             continue;
           }
           _c[key]?.text = val.toString();
@@ -355,6 +354,7 @@ class _EmploymentContractFormScreenState
     final out = <String, dynamic>{};
     for (final e in _c.entries) {
       if (_numericKeys.contains(e.key)) continue;
+      if (e.key.startsWith('work_day_') && e.key.endsWith('_slots')) continue;
       final t = e.value.text.trim();
       if (t.isNotEmpty) {
         out[e.key] = t;
@@ -398,6 +398,12 @@ class _EmploymentContractFormScreenState
         if (_c[contractWorkDayFormFieldKey(i, 'enabled')]?.text.trim() == '1') {
           ww.add(i + 1);
         }
+        final slots = _decodeWorkDaySlots(
+          _c[contractWorkDayFormFieldKey(i, 'slots')]?.text,
+        );
+        if (slots.isNotEmpty) {
+          out[contractWorkDayFormFieldKey(i, 'slots')] = slots;
+        }
       }
       if (ww.isNotEmpty) {
         out['work_weekdays'] = ww;
@@ -407,6 +413,21 @@ class _EmploymentContractFormScreenState
       if (age != null) out['minor_age'] = age;
     }
     return out;
+  }
+
+  List<Map<String, dynamic>> _decodeWorkDaySlots(String? raw) {
+    final text = raw?.trim();
+    if (text == null || text.isEmpty) return const [];
+    try {
+      final decoded = jsonDecode(text);
+      if (decoded is! List) return const [];
+      return decoded
+          .whereType<Map>()
+          .map((item) => item.map((key, value) => MapEntry('$key', value)))
+          .toList();
+    } catch (_) {
+      return const [];
+    }
   }
 
   bool _fieldNonEmpty(String key) => (_c[key]?.text.trim().isNotEmpty ?? false);
@@ -771,7 +792,7 @@ class _EmploymentContractFormScreenState
             }
           }
         } else {
-          errMsg = '$errMsg: $e';
+          errMsg = userFriendlyErrorMessage(e);
         }
 
         ScaffoldMessenger.of(
@@ -1198,41 +1219,134 @@ class _EmploymentContractFormScreenState
       return (int.tryParse(p[0].trim()) ?? fh, int.tryParse(p[1].trim()) ?? fm);
     }
 
-    final slots = List<_DayWorkSlot>.generate(7, (_) => _DayWorkSlot());
+    int minutesOf(int h, int m) => h * 60 + m;
+
+    _DayWorkSlot slotFromJson(Map<String, dynamic> raw) {
+      final slot = _DayWorkSlot();
+      final start = parseHm(raw['start']?.toString(), 9, 0);
+      final end = parseHm(raw['end']?.toString(), 18, 0);
+      final breakStart = parseHm(raw['break_start']?.toString(), 13, 0);
+      final breakEnd = parseHm(raw['break_end']?.toString(), 14, 0);
+      slot
+        ..sh = start.$1
+        ..sm = start.$2
+        ..eh = end.$1
+        ..em = end.$2
+        ..breakHas =
+            (raw['break_start']?.toString().trim().isNotEmpty ?? false) ||
+            (raw['break_end']?.toString().trim().isNotEmpty ?? false)
+        ..bsh = breakStart.$1
+        ..bsm = breakStart.$2
+        ..beh = breakEnd.$1
+        ..bem = breakEnd.$2;
+      return slot;
+    }
+
+    Map<String, dynamic> slotToJson(_DayWorkSlot slot) {
+      return {
+        'start': '${two(slot.sh)}:${two(slot.sm)}',
+        'end': '${two(slot.eh)}:${two(slot.em)}',
+        if (slot.breakHas) ...{
+          'break_start': '${two(slot.bsh)}:${two(slot.bsm)}',
+          'break_end': '${two(slot.beh)}:${two(slot.bem)}',
+        },
+      };
+    }
+
+    String encodeSlots(List<_DayWorkSlot> slots) {
+      return jsonEncode(slots.map(slotToJson).toList());
+    }
+
+    final daySlots = List<List<_DayWorkSlot>>.generate(7, (_) => []);
+
+    ({int start, int end}) normalizedRange(_DayWorkSlot slot) {
+      final start = minutesOf(slot.sh, slot.sm);
+      final rawEnd = minutesOf(slot.eh, slot.em);
+      final end = rawEnd == 0 && start > 0 ? 24 * 60 : rawEnd;
+      return (start: start, end: end);
+    }
+
+    _DayWorkSlot? nextSlotAfter(List<_DayWorkSlot> slots) {
+      if (slots.isEmpty) return _DayWorkSlot();
+      final previous = slots.last;
+      final previousRange = normalizedRange(previous);
+      if (previousRange.end >= 24 * 60) return null;
+      final start = previousRange.end;
+      final lastMinuteOfDay = 23 * 60 + 59;
+      if (start >= lastMinuteOfDay) return null;
+      final end = start + 60 > lastMinuteOfDay ? lastMinuteOfDay : start + 60;
+      return _DayWorkSlot()
+        ..sh = previous.eh
+        ..sm = previous.em
+        ..eh = end ~/ 60
+        ..em = end % 60;
+    }
+
+    String? validateDaySlots() {
+      for (var dayIndex = 0; dayIndex < daySlots.length; dayIndex++) {
+        final slots = daySlots[dayIndex];
+        for (var i = 0; i < slots.length; i++) {
+          final a = normalizedRange(slots[i]);
+          if (a.end <= a.start) {
+            return '${dayKor[dayIndex]}요일 ${i + 1}구간의 종료시간은 시작시간보다 늦어야 합니다.';
+          }
+          for (var j = i + 1; j < slots.length; j++) {
+            final b = normalizedRange(slots[j]);
+            if (a.start < b.end && b.start < a.end) {
+              return '${dayKor[dayIndex]}요일 ${i + 1}구간과 ${j + 1}구간의 근무시간이 겹칩니다.';
+            }
+          }
+        }
+      }
+      return null;
+    }
+
     var hadStoredDay = false;
     for (var i = 0; i < 7; i++) {
       final en = _c[contractWorkDayFormFieldKey(i, 'enabled')]?.text.trim();
+      final storedSlots = _decodeWorkDaySlots(
+        _c[contractWorkDayFormFieldKey(i, 'slots')]?.text,
+      );
+      if (storedSlots.isNotEmpty) {
+        hadStoredDay = true;
+        daySlots[i] = storedSlots.map(slotFromJson).toList();
+        continue;
+      }
       if (en == '1' || en == '0') {
         hadStoredDay = true;
-        slots[i].open = en == '1';
+        if (en == '0') continue;
       }
+      final slot = _DayWorkSlot();
       final ws = _c[contractWorkDayFormFieldKey(i, 'start')]?.text ?? '';
       final we = _c[contractWorkDayFormFieldKey(i, 'end')]?.text ?? '';
       if (ws.isNotEmpty) {
         final a = parseHm(ws, 9, 0);
-        slots[i].sh = a.$1;
-        slots[i].sm = a.$2;
+        slot.sh = a.$1;
+        slot.sm = a.$2;
       }
       if (we.isNotEmpty) {
         final b = parseHm(we, 18, 0);
-        slots[i].eh = b.$1;
-        slots[i].em = b.$2;
+        slot.eh = b.$1;
+        slot.em = b.$2;
       }
       final bh = _c[contractWorkDayFormFieldKey(i, 'break_has')]?.text.trim();
       if (bh == '1' || bh == '0') {
-        slots[i].breakHas = bh == '1';
+        slot.breakHas = bh == '1';
       }
       final bs = _c[contractWorkDayFormFieldKey(i, 'break_start')]?.text ?? '';
       final be = _c[contractWorkDayFormFieldKey(i, 'break_end')]?.text ?? '';
       if (bs.isNotEmpty) {
         final c = parseHm(bs, 13, 0);
-        slots[i].bsh = c.$1;
-        slots[i].bsm = c.$2;
+        slot.bsh = c.$1;
+        slot.bsm = c.$2;
       }
       if (be.isNotEmpty) {
         final d = parseHm(be, 14, 0);
-        slots[i].beh = d.$1;
-        slots[i].bem = d.$2;
+        slot.beh = d.$1;
+        slot.bem = d.$2;
+      }
+      if (en == '1' || ws.isNotEmpty || we.isNotEmpty) {
+        daySlots[i] = [slot];
       }
     }
 
@@ -1248,17 +1362,18 @@ class _EmploymentContractFormScreenState
         final b1 = parseHm(_c['break_start_time']?.text, 13, 0);
         final b2 = parseHm(_c['break_end_time']?.text, 14, 0);
         for (var i = 0; i < 5; i++) {
-          slots[i]
-            ..open = true
-            ..sh = sh.$1
-            ..sm = sh.$2
-            ..eh = eh.$1
-            ..em = eh.$2
-            ..breakHas = brk
-            ..bsh = b1.$1
-            ..bsm = b1.$2
-            ..beh = b2.$1
-            ..bem = b2.$2;
+          daySlots[i] = [
+            _DayWorkSlot()
+              ..sh = sh.$1
+              ..sm = sh.$2
+              ..eh = eh.$1
+              ..em = eh.$2
+              ..breakHas = brk
+              ..bsh = b1.$1
+              ..bsm = b1.$2
+              ..beh = b2.$1
+              ..bem = b2.$2,
+          ];
         }
       }
     }
@@ -1351,11 +1466,47 @@ class _EmploymentContractFormScreenState
 
     Widget workTimeBlock(
       _DayWorkSlot s,
-      void Function(VoidCallback mutation) apply,
-    ) {
+      void Function(VoidCallback mutation) apply, {
+      required String label,
+      VoidCallback? onDelete,
+    }) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Row(
+            children: [
+              Text(
+                label,
+                style: AppTypography.bodySmallM.copyWith(
+                  color: AppColors.textSecondary,
+                  fontSize: 12.sp,
+                  height: 16 / 12,
+                ),
+              ),
+              const Spacer(),
+              if (onDelete != null)
+                TextButton(
+                  onPressed: onDelete,
+                  style: TextButton.styleFrom(
+                    minimumSize: Size.zero,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 8.w,
+                      vertical: 4.h,
+                    ),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    '삭제',
+                    style: AppTypography.bodySmallM.copyWith(
+                      color: AppColors.error,
+                      fontSize: 12.sp,
+                      height: 16 / 12,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          SizedBox(height: 8.h),
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1524,6 +1675,7 @@ class _EmploymentContractFormScreenState
     }
 
     final maxH = MediaQuery.sizeOf(context).height * 0.72;
+    String? overlapErrorMessage;
 
     final ok = await showDialog<bool>(
       context: context,
@@ -1532,6 +1684,7 @@ class _EmploymentContractFormScreenState
         builder: (ctx, setLocal) {
           void slot(int i, VoidCallback fn) {
             setLocal(() {
+              overlapErrorMessage = null;
               fn();
             });
           }
@@ -1559,26 +1712,23 @@ class _EmploymentContractFormScreenState
                         style: _figmaModalHeading,
                       ),
                     ),
-                    SizedBox(height: 8.h),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text('· 중복 입력 가능', style: _figmaWorkTimeSubnote),
-                    ),
                     SizedBox(height: 12.h),
                     Expanded(
                       child: SingleChildScrollView(
                         child: Column(
                           children: [
                             for (var i = 0; i < 7; i++) ...[
-                              if (!slots[i].open)
+                              if (daySlots[i].isEmpty)
                                 Padding(
                                   padding: EdgeInsets.only(bottom: 8.h),
                                   child: Material(
                                     color: AppColors.grey0,
                                     borderRadius: BorderRadius.circular(10.r),
                                     child: InkWell(
-                                      onTap: () =>
-                                          setLocal(() => slots[i].open = true),
+                                      onTap: () => setLocal(() {
+                                        overlapErrorMessage = null;
+                                        daySlots[i].add(_DayWorkSlot());
+                                      }),
                                       borderRadius: BorderRadius.circular(10.r),
                                       child: Container(
                                         width: double.infinity,
@@ -1623,9 +1773,10 @@ class _EmploymentContractFormScreenState
                                     child: Column(
                                       children: [
                                         InkWell(
-                                          onTap: () => setLocal(
-                                            () => slots[i].open = false,
-                                          ),
+                                          onTap: () => setLocal(() {
+                                            overlapErrorMessage = null;
+                                            daySlots[i].clear();
+                                          }),
                                           child: Row(
                                             mainAxisAlignment:
                                                 MainAxisAlignment.center,
@@ -1647,9 +1798,68 @@ class _EmploymentContractFormScreenState
                                           ),
                                         ),
                                         SizedBox(height: 8.h),
-                                        workTimeBlock(
-                                          slots[i],
-                                          (fn) => slot(i, fn),
+                                        for (
+                                          var slotIndex = 0;
+                                          slotIndex < daySlots[i].length;
+                                          slotIndex++
+                                        ) ...[
+                                          workTimeBlock(
+                                            daySlots[i][slotIndex],
+                                            (fn) => slot(i, fn),
+                                            label: '${slotIndex + 1}구간',
+                                            onDelete: daySlots[i].length > 1
+                                                ? () => setLocal(() {
+                                                    overlapErrorMessage = null;
+                                                    daySlots[i].removeAt(
+                                                      slotIndex,
+                                                    );
+                                                  })
+                                                : null,
+                                          ),
+                                          if (slotIndex !=
+                                              daySlots[i].length - 1)
+                                            Padding(
+                                              padding: EdgeInsets.symmetric(
+                                                vertical: 12.h,
+                                              ),
+                                              child: Divider(
+                                                color: AppColors.borderLight,
+                                                height: 1,
+                                              ),
+                                            ),
+                                        ],
+                                        SizedBox(height: 10.h),
+                                        SizedBox(
+                                          width: double.infinity,
+                                          height: 46,
+                                          child: FilledButton.icon(
+                                            onPressed: () => setLocal(() {
+                                              overlapErrorMessage = null;
+                                              final next = nextSlotAfter(
+                                                daySlots[i],
+                                              );
+                                              if (next == null) {
+                                                overlapErrorMessage =
+                                                    '${dayKor[i]}요일에 추가할 수 있는 시간이 없습니다.';
+                                                return;
+                                              }
+                                              daySlots[i].add(next);
+                                            }),
+                                            icon: Icon(
+                                              Icons.add_rounded,
+                                              size: 18.r,
+                                            ),
+                                            label: const Text('근무시간 추가'),
+                                            style: FilledButton.styleFrom(
+                                              backgroundColor:
+                                                  AppColors.primary,
+                                              foregroundColor: AppColors.grey0,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10.r),
+                                              ),
+                                            ),
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -1660,6 +1870,18 @@ class _EmploymentContractFormScreenState
                         ),
                       ),
                     ),
+                    if (overlapErrorMessage != null) ...[
+                      SizedBox(height: 10.h),
+                      Text(
+                        overlapErrorMessage!,
+                        textAlign: TextAlign.center,
+                        style: AppTypography.bodySmallM.copyWith(
+                          color: AppColors.error,
+                          fontSize: 12.sp,
+                          height: 16 / 12,
+                        ),
+                      ),
+                    ],
                     SizedBox(height: 12.h),
                     Row(
                       children: [
@@ -1677,7 +1899,14 @@ class _EmploymentContractFormScreenState
                         SizedBox(width: 10.w),
                         Expanded(
                           child: FilledButton(
-                            onPressed: () => Navigator.pop(ctx, true),
+                            onPressed: () {
+                              final message = validateDaySlots();
+                              if (message != null) {
+                                setLocal(() => overlapErrorMessage = message);
+                                return;
+                              }
+                              Navigator.pop(ctx, true);
+                            },
                             style: FilledButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               foregroundColor: AppColors.grey0,
@@ -1700,36 +1929,38 @@ class _EmploymentContractFormScreenState
     if (ok == true && mounted) {
       setState(() {
         for (var i = 0; i < 7; i++) {
-          final s = slots[i];
-          _c[contractWorkDayFormFieldKey(i, 'enabled')]!.text = s.open
+          final slots = daySlots[i];
+          final first = slots.isNotEmpty ? slots.first : null;
+          _c[contractWorkDayFormFieldKey(i, 'enabled')]!.text = slots.isNotEmpty
               ? '1'
               : '0';
-          if (!s.open) {
+          if (first == null) {
             _c[contractWorkDayFormFieldKey(i, 'start')]!.text = '';
             _c[contractWorkDayFormFieldKey(i, 'end')]!.text = '';
             _c[contractWorkDayFormFieldKey(i, 'break_has')]!.text = '0';
             _c[contractWorkDayFormFieldKey(i, 'break_start')]!.text = '';
             _c[contractWorkDayFormFieldKey(i, 'break_end')]!.text = '';
+            _c[contractWorkDayFormFieldKey(i, 'slots')]!.text = '';
           } else {
             _c[contractWorkDayFormFieldKey(i, 'start')]!.text =
-                '${two(s.sh)}:${two(s.sm)}';
+                '${two(first.sh)}:${two(first.sm)}';
             _c[contractWorkDayFormFieldKey(i, 'end')]!.text =
-                '${two(s.eh)}:${two(s.em)}';
-            _c[contractWorkDayFormFieldKey(i, 'break_has')]!.text = s.breakHas
-                ? '1'
-                : '0';
-            _c[contractWorkDayFormFieldKey(i, 'break_start')]!.text = s.breakHas
-                ? '${two(s.bsh)}:${two(s.bsm)}'
-                : '';
-            _c[contractWorkDayFormFieldKey(i, 'break_end')]!.text = s.breakHas
-                ? '${two(s.beh)}:${two(s.bem)}'
-                : '';
+                '${two(first.eh)}:${two(first.em)}';
+            _c[contractWorkDayFormFieldKey(i, 'break_has')]!.text =
+                first.breakHas ? '1' : '0';
+            _c[contractWorkDayFormFieldKey(i, 'break_start')]!.text =
+                first.breakHas ? '${two(first.bsh)}:${two(first.bsm)}' : '';
+            _c[contractWorkDayFormFieldKey(i, 'break_end')]!.text =
+                first.breakHas ? '${two(first.beh)}:${two(first.bem)}' : '';
+            _c[contractWorkDayFormFieldKey(i, 'slots')]!.text = encodeSlots(
+              slots,
+            );
           }
         }
 
-        final firstOpen = slots.indexWhere((e) => e.open);
+        final firstOpen = daySlots.indexWhere((e) => e.isNotEmpty);
         if (firstOpen >= 0) {
-          final s = slots[firstOpen];
+          final s = daySlots[firstOpen].first;
           _c['scheduled_work_start_time']!.text = '${two(s.sh)}:${two(s.sm)}';
           _c['scheduled_work_end_time']!.text = '${two(s.eh)}:${two(s.em)}';
           _c['break_start_time']!.text = s.breakHas
@@ -1745,11 +1976,11 @@ class _EmploymentContractFormScreenState
           _c['break_end_time']!.text = '';
         }
 
-        final openCount = slots.where((e) => e.open).length;
+        final openCount = daySlots.where((e) => e.isNotEmpty).length;
         if (openCount > 0) {
           _c['work_days_per_week']!.text = '$openCount';
         }
-        final restIdx = slots.indexWhere((e) => !e.open);
+        final restIdx = daySlots.indexWhere((e) => e.isEmpty);
         if (restIdx >= 0) {
           _c['weekly_holiday_day']!.text = dayKor[restIdx];
         } else if (openCount == 7) {
@@ -2340,6 +2571,10 @@ class _EmploymentContractFormScreenState
     for (var i = 0; i < 7; i++) {
       final en = _c[contractWorkDayFormFieldKey(i, 'enabled')]?.text.trim();
       if (en == '0' || en == '1') return true;
+      final slots = _decodeWorkDaySlots(
+        _c[contractWorkDayFormFieldKey(i, 'slots')]?.text,
+      );
+      if (slots.isNotEmpty) return true;
       final ws = _c[contractWorkDayFormFieldKey(i, 'start')]?.text.trim();
       if (ws != null && ws.isNotEmpty) return true;
     }
@@ -2347,16 +2582,69 @@ class _EmploymentContractFormScreenState
   }
 
   /// 근무로 설정된 요일만 (인덱스 0=월 … 6=일)
-  List<({int i, String start, String end})> _enabledWorkDaySlots() {
-    final out = <({int i, String start, String end})>[];
+  List<
+    ({
+      int i,
+      String start,
+      String end,
+      bool breakHas,
+      String breakStart,
+      String breakEnd,
+    })
+  >
+  _enabledWorkDaySlots() {
+    final out =
+        <
+          ({
+            int i,
+            String start,
+            String end,
+            bool breakHas,
+            String breakStart,
+            String breakEnd,
+          })
+        >[];
     for (var i = 0; i < 7; i++) {
       final en = _c[contractWorkDayFormFieldKey(i, 'enabled')]?.text.trim();
       if (en == '0') continue;
+      final slots = _decodeWorkDaySlots(
+        _c[contractWorkDayFormFieldKey(i, 'slots')]?.text,
+      );
+      if (slots.isNotEmpty) {
+        for (final slot in slots) {
+          final start = slot['start']?.toString().trim() ?? '';
+          final end = slot['end']?.toString().trim() ?? '';
+          if (start.isEmpty && end.isEmpty) continue;
+          final breakStart = slot['break_start']?.toString().trim() ?? '';
+          final breakEnd = slot['break_end']?.toString().trim() ?? '';
+          out.add((
+            i: i,
+            start: start,
+            end: end,
+            breakHas: breakStart.isNotEmpty || breakEnd.isNotEmpty,
+            breakStart: breakStart,
+            breakEnd: breakEnd,
+          ));
+        }
+        continue;
+      }
       final ws = _c[contractWorkDayFormFieldKey(i, 'start')]?.text.trim() ?? '';
       final we = _c[contractWorkDayFormFieldKey(i, 'end')]?.text.trim() ?? '';
       if (en != '1' && ws.isEmpty) continue;
       if (ws.isEmpty && we.isEmpty) continue;
-      out.add((i: i, start: ws, end: we));
+      final breakHas =
+          _c[contractWorkDayFormFieldKey(i, 'break_has')]?.text.trim() == '1';
+      out.add((
+        i: i,
+        start: ws,
+        end: we,
+        breakHas: breakHas,
+        breakStart:
+            _c[contractWorkDayFormFieldKey(i, 'break_start')]?.text.trim() ??
+            '',
+        breakEnd:
+            _c[contractWorkDayFormFieldKey(i, 'break_end')]?.text.trim() ?? '',
+      ));
     }
     return out;
   }
@@ -2395,9 +2683,13 @@ class _EmploymentContractFormScreenState
     final a = _c['scheduled_work_start_time']?.text.trim() ?? '';
     final b = _c['scheduled_work_end_time']?.text.trim() ?? '';
     if (a.isEmpty && b.isEmpty) return null;
-    if (a.isNotEmpty && b.isNotEmpty) return '$a~$b';
+    if (a.isNotEmpty && b.isNotEmpty) return _formatWorkTimeRange(a, b);
     if (a.isNotEmpty) return a;
     return b;
+  }
+
+  String _formatWorkTimeRange(String start, String end) {
+    return '$start~$end';
   }
 
   String? _scheduledWorkTimeChipDisplay() {
@@ -2406,7 +2698,7 @@ class _EmploymentContractFormScreenState
       if (slots.isEmpty) return _legacyScheduledWorkSummary();
       final groups = <String, List<int>>{};
       for (final o in slots) {
-        final key = '${o.start}~${o.end}';
+        final key = _formatWorkTimeRange(o.start, o.end);
         groups.putIfAbsent(key, () => []).add(o.i);
       }
       final parts = <String>[];
@@ -2427,18 +2719,13 @@ class _EmploymentContractFormScreenState
       final workSet = slots.map((s) => s.i).toSet();
       final byRange = <String, List<int>>{};
       for (final o in slots) {
-        if (_c[contractWorkDayFormFieldKey(o.i, 'break_has')]?.text.trim() !=
-            '1') {
-          continue;
-        }
-        final bs =
-            _c[contractWorkDayFormFieldKey(o.i, 'break_start')]?.text.trim() ??
-            '';
-        final be =
-            _c[contractWorkDayFormFieldKey(o.i, 'break_end')]?.text.trim() ??
-            '';
+        if (!o.breakHas) continue;
+        final bs = o.breakStart;
+        final be = o.breakEnd;
         if (bs.isEmpty && be.isEmpty) continue;
-        final key = '$bs~$be';
+        final key = bs.isNotEmpty && be.isNotEmpty
+            ? _formatWorkTimeRange(bs, be)
+            : '$bs~$be';
         byRange.putIfAbsent(key, () => []).add(o.i);
       }
       if (byRange.isEmpty) return null;
@@ -2465,7 +2752,7 @@ class _EmploymentContractFormScreenState
     final be = _c['break_end_time']?.text.trim() ?? '';
     if (bs.isEmpty && be.isEmpty) return null;
     if (bs.isNotEmpty && be.isNotEmpty) {
-      return Text('$bs~$be', style: _contractFigmaBody);
+      return Text(_formatWorkTimeRange(bs, be), style: _contractFigmaBody);
     }
     if (bs.isNotEmpty) return Text(bs, style: _contractFigmaBody);
     return Text(be, style: _contractFigmaBody);
@@ -3317,7 +3604,6 @@ class _EmploymentContractFormScreenState
 
 /// 소정근로시간 모달 — 요일별 펼침/접힘 (Figma 2534:18090 계열)
 class _DayWorkSlot {
-  bool open = false;
   int sh = 9;
   int sm = 0;
   int eh = 18;

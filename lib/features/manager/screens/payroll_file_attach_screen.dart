@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../../data/repositories/staff_management_repository.dart';
 import '../../../theme/app_colors.dart';
@@ -94,9 +95,9 @@ class _PayrollFileAttachScreenState extends State<PayrollFileAttachScreen> {
       Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('저장 실패: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('저장 실패: ${userFriendlyErrorMessage(e)}')),
+        );
       }
     } finally {
       if (mounted) setState(() => _submitting = false);

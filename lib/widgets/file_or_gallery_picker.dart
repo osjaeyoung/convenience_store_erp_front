@@ -1,4 +1,5 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -25,7 +26,9 @@ Future<PlatformFile?> pickSingleFileOrGallery({
         try {
           result = await FilePicker.platform.pickFiles(
             type: allowedExtensions.isEmpty ? FileType.any : FileType.custom,
-            allowedExtensions: allowedExtensions.isEmpty ? null : allowedExtensions,
+            allowedExtensions: allowedExtensions.isEmpty
+                ? null
+                : allowedExtensions,
             allowMultiple: false,
             withData: kIsWeb || readBytesFromFilePicker,
           );
@@ -60,7 +63,7 @@ Future<PlatformFile?> pickSingleFileOrGallery({
   } catch (e) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('파일 선택 실패: $e')),
+        SnackBar(content: Text('파일 선택 실패: ${userFriendlyErrorMessage(e)}')),
       );
     }
     return null;
@@ -82,7 +85,9 @@ Future<List<PlatformFile>?> pickMultipleFilesOrGallery({
         try {
           result = await FilePicker.platform.pickFiles(
             type: allowedExtensions.isEmpty ? FileType.any : FileType.custom,
-            allowedExtensions: allowedExtensions.isEmpty ? null : allowedExtensions,
+            allowedExtensions: allowedExtensions.isEmpty
+                ? null
+                : allowedExtensions,
             allowMultiple: true,
             withData: kIsWeb || readBytesFromFilePicker,
           );
@@ -99,16 +104,20 @@ Future<List<PlatformFile>?> pickMultipleFilesOrGallery({
         final picker = ImagePicker();
         final pickedFiles = await picker.pickMultiImage();
         if (pickedFiles.isEmpty) return null;
-        
+
         List<PlatformFile> result = [];
         for (final picked in pickedFiles) {
           final bytes = await picked.readAsBytes();
-          result.add(PlatformFile(
-            name: picked.name.trim().isEmpty ? 'image.jpg' : picked.name.trim(),
-            size: bytes.length,
-            bytes: bytes,
-            path: picked.path.isEmpty ? null : picked.path,
-          ));
+          result.add(
+            PlatformFile(
+              name: picked.name.trim().isEmpty
+                  ? 'image.jpg'
+                  : picked.name.trim(),
+              size: bytes.length,
+              bytes: bytes,
+              path: picked.path.isEmpty ? null : picked.path,
+            ),
+          );
         }
         return result;
     }
@@ -122,7 +131,7 @@ Future<List<PlatformFile>?> pickMultipleFilesOrGallery({
   } catch (e) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('파일 선택 실패: $e')),
+        SnackBar(content: Text('파일 선택 실패: ${userFriendlyErrorMessage(e)}')),
       );
     }
     return null;
@@ -186,9 +195,7 @@ class _UploadSourceTile extends StatelessWidget {
       leading: Icon(icon, color: AppColors.textPrimary),
       title: Text(
         label,
-        style: AppTypography.bodyMediumR.copyWith(
-          color: AppColors.textPrimary,
-        ),
+        style: AppTypography.bodyMediumR.copyWith(color: AppColors.textPrimary),
       ),
       onTap: onTap,
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../../data/models/recruitment/recruitment_models.dart';
 import '../../../data/repositories/manager_home_repository.dart';
@@ -57,7 +58,7 @@ class _RecruitmentJobSeekerDetailScreenState
       setState(() {
         _profile = null;
         _isLoading = false;
-        _error = e.toString();
+        _error = '회원 정보를 불러오지 못했습니다.\n이전 화면으로 돌아가 다시 확인해주세요.';
       });
     }
   }
@@ -116,9 +117,11 @@ class _RecruitmentJobSeekerDetailScreenState
       );
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('채팅방을 열 수 없습니다: $error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('채팅방을 열 수 없습니다. ${userFriendlyErrorMessage(error)}'),
+        ),
+      );
     }
   }
 
@@ -162,7 +165,10 @@ class _RecruitmentJobSeekerDetailScreenState
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-          ? _DetailErrorView(message: _error!, onRetry: _loadProfile)
+          ? _DetailErrorView(
+              message: _error!,
+              onBack: () => Navigator.of(context).maybePop(),
+            )
           : _profile == null
           ? const Center(child: Text('데이터를 불러올 수 없습니다.'))
           : Column(
@@ -460,10 +466,10 @@ class _WorkHistoryCard extends StatelessWidget {
 }
 
 class _DetailErrorView extends StatelessWidget {
-  const _DetailErrorView({required this.message, required this.onRetry});
+  const _DetailErrorView({required this.message, required this.onBack});
 
   final String message;
-  final VoidCallback onRetry;
+  final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -481,7 +487,7 @@ class _DetailErrorView extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 16.h),
-            TextButton(onPressed: onRetry, child: const Text('다시 시도')),
+            TextButton(onPressed: onBack, child: const Text('뒤로 가기')),
           ],
         ),
       ),

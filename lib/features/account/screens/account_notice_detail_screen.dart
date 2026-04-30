@@ -72,44 +72,53 @@ class _AccountNoticeDetailScreenState extends State<AccountNoticeDetailScreen> {
               padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 24.h),
               children: [
                 Container(
-                  constraints: BoxConstraints(minHeight: 360.h),
-                  padding: EdgeInsets.all(16.r),
+                  constraints: BoxConstraints(minHeight: 320.h),
+                  padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 24.h),
                   decoration: BoxDecoration(
                     color: AppColors.grey0,
-                    borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(color: AppColors.grey100),
+                    borderRadius: BorderRadius.circular(16.r),
+                    border: Border.all(color: AppColors.border),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.textPrimary.withValues(alpha: 0.04),
+                        blurRadius: 18,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         _notice?.title ?? '',
-                        style: AppTypography.bodyMediumR.copyWith(
+                        style: AppTypography.bodyLargeB.copyWith(
                           color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w500,
-                          height: 20 / 14,
+                          fontSize: 16.sp,
+                          height: 24 / 16,
                         ),
                       ),
-                      SizedBox(height: 16.h),
+                      SizedBox(height: 18.h),
                       Text(
                         _notice?.content ?? '',
                         style: AppTypography.bodyMediumR.copyWith(
                           color: AppColors.textPrimary,
-                          height: 20 / 14,
-                        ),
-                      ),
-                      SizedBox(height: 24.h),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Text(
-                          _formatDate(_notice?.publishedAt),
-                          style: AppTypography.bodySmallR.copyWith(
-                            color: AppColors.textDisabled,
-                            height: 18 / 12,
-                          ),
+                          fontSize: 14.sp,
+                          height: 22 / 14,
                         ),
                       ),
                     ],
+                  ),
+                ),
+                SizedBox(height: 12.h),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    '작성일 ${_formatDate(_notice?.publishedAt)}',
+                    style: AppTypography.bodySmallR.copyWith(
+                      color: AppColors.textTertiary,
+                      fontSize: 12.sp,
+                      height: 18 / 12,
+                    ),
                   ),
                 ),
               ],

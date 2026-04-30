@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:printing/printing.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../../data/repositories/staff_management_repository.dart';
 import '../../../theme/app_colors.dart';
@@ -78,7 +79,7 @@ class _PayrollStatementDetailScreenState
       if (!mounted) return;
       setState(() {
         _detail = Map<String, dynamic>.from(widget.summaryRow);
-        _error = e.toString();
+        _error = userFriendlyErrorMessage(e);
         _loading = false;
       });
     }
@@ -108,9 +109,9 @@ class _PayrollStatementDetailScreenState
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('삭제 실패: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('삭제 실패: ${userFriendlyErrorMessage(e)}')),
+        );
       }
     }
   }
@@ -139,9 +140,11 @@ class _PayrollStatementDetailScreenState
       await Printing.sharePdf(bytes: bytes, filename: _pdfFileName());
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('PDF 저장에 실패했습니다: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF 저장에 실패했습니다: ${userFriendlyErrorMessage(e)}'),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _pdfBusy = false);
@@ -164,9 +167,11 @@ class _PayrollStatementDetailScreenState
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('파일 저장에 실패했습니다: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('파일 저장에 실패했습니다: ${userFriendlyErrorMessage(e)}'),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _pdfBusy = false);

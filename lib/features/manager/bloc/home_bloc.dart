@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:dio/dio.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../../data/models/labor_cost/expected_labor_cost.dart';
 import '../../../data/models/manager_home/manager_alert.dart';
@@ -68,7 +69,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         }
       }
     } catch (e) {
-      emit(HomeState.failure(e.toString()));
+      emit(HomeState.failure(userFriendlyErrorMessage(e)));
     }
   }
 
@@ -210,7 +211,10 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       }
     } catch (e) {
       emit(
-        state.copyWith(detailLoading: false, detailErrorMessage: e.toString()),
+        state.copyWith(
+          detailLoading: false,
+          detailErrorMessage: userFriendlyErrorMessage(e),
+        ),
       );
     }
   }
@@ -291,7 +295,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         ),
       );
     } catch (e) {
-      emit(state.copyWith(detailErrorMessage: e.toString()));
+      emit(state.copyWith(detailErrorMessage: userFriendlyErrorMessage(e)));
     }
   }
 
@@ -343,7 +347,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         ),
       );
     } catch (e) {
-      emit(state.copyWith(detailErrorMessage: e.toString()));
+      emit(state.copyWith(detailErrorMessage: userFriendlyErrorMessage(e)));
     }
   }
 

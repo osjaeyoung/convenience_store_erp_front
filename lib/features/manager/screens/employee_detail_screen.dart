@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../auth/bloc/auth_bloc.dart';
 import '../../../theme/app_colors.dart';
@@ -24,6 +25,7 @@ class EmployeeDetailScreen extends StatefulWidget {
 
   final int branchId;
   final int employeeId;
+
   /// 목록(compare API)에서 전달한 내 별점 (있으면 리뷰 작성 시 초기값으로 사용)
   final int? initialMyRating;
 
@@ -48,8 +50,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
   Future<void> _onDeleteTap() async {
     final confirmed = await showAppStyledDeleteDialog(
       context,
-      message:
-          '이 근무자를 삭제하시겠습니까?\n근로계약, 근무일정, 리뷰 등 관련 데이터가 모두 삭제됩니다.',
+      message: '이 근무자를 삭제하시겠습니까?\n근로계약, 근무일정, 리뷰 등 관련 데이터가 모두 삭제됩니다.',
     );
     if (confirmed != true || !mounted) return;
 
@@ -60,15 +61,15 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
         employeeId: widget.employeeId,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('근무자가 삭제되었습니다.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('근무자가 삭제되었습니다.')));
         Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('삭제 실패: $e')),
+          SnackBar(content: Text('삭제 실패: ${userFriendlyErrorMessage(e)}')),
         );
       }
     }
@@ -77,8 +78,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
   Future<void> _onRetirementTap() async {
     final confirmed = await showAppStyledConfirmDialog(
       context,
-      message:
-          '이 근무자를 퇴사 처리하시겠습니까?\n퇴사일은 오늘 날짜로 등록됩니다.',
+      message: '이 근무자를 퇴사 처리하시겠습니까?\n퇴사일은 오늘 날짜로 등록됩니다.',
       confirmLabel: '확인',
       confirmBackgroundColor: AppColors.primaryDark,
     );
@@ -99,16 +99,16 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
         },
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('퇴사 처리되었습니다.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('퇴사 처리되었습니다.')));
         setState(() => _needsRefresh = true);
         _loadDetail();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('퇴사 처리 실패: $e')),
+          SnackBar(content: Text('퇴사 처리 실패: ${userFriendlyErrorMessage(e)}')),
         );
       }
     }
@@ -135,7 +135,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
         setState(() {
           _detail = null;
           _isLoading = false;
-          _error = e.toString();
+          _error = userFriendlyErrorMessage(e);
         });
       }
     }
@@ -167,24 +167,24 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(16.r),
-                    child: Text(
-                      _error!,
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppColors.error,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+          ? Center(
+              child: Padding(
+                padding: EdgeInsets.all(16.r),
+                child: Text(
+                  _error!,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.error,
                   ),
-                )
-              : _detail == null
-                  ? const Center(child: Text('데이터를 불러올 수 없습니다.'))
-                  : SingleChildScrollView(
-                      padding: EdgeInsets.all(16.r),
-                      child: _buildDetailContent(),
-                    ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            )
+          : _detail == null
+          ? const Center(child: Text('데이터를 불러올 수 없습니다.'))
+          : SingleChildScrollView(
+              padding: EdgeInsets.all(16.r),
+              child: _buildDetailContent(),
+            ),
     );
   }
 
@@ -195,9 +195,9 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
     // 상세 API에는 별점 필드 없음 → reviews에서 평균 계산 (compare API만 average_rating 제공)
     final avgRating = reviews.isNotEmpty
         ? reviews
-                .map((r) => (r as Map)['rating'] as num? ?? 0)
-                .reduce((a, b) => a + b) /
-            reviews.length
+                  .map((r) => (r as Map)['rating'] as num? ?? 0)
+                  .reduce((a, b) => a + b) /
+              reviews.length
         : 0.0;
     final ratingInt = avgRating.round().clamp(0, 3);
 
@@ -230,11 +230,10 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
     final isRetired = (employee['employment_status'] as String?) == 'retired';
 
     final branchDisplayName = _branchNameFromDetail(_detail!);
-    final workHistoriesRaw =
-        ((_detail!['work_histories'] as List?) ?? const [])
-            .whereType<Map>()
-            .map((e) => Map<String, dynamic>.from(e))
-            .toList();
+    final workHistoriesRaw = ((_detail!['work_histories'] as List?) ?? const [])
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
     final workHistoriesForUi = branchDisplayName.isEmpty
         ? workHistoriesRaw
         : workHistoriesRaw.map((m) {
@@ -255,7 +254,9 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
           showEditButton: true,
           starCount: ratingInt > 0 ? ratingInt : null,
           isEditMode: _isEditMode,
-          hireDateInputWidget: _isEditMode ? _buildHireDateInput(empHireDate) : null,
+          hireDateInputWidget: _isEditMode
+              ? _buildHireDateInput(empHireDate)
+              : null,
           onEditTap: () {
             if (_isEditMode) {
               setState(() => _isEditMode = false);
@@ -282,7 +283,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
                   height: 40,
                   fit: BoxFit.contain,
                 ),
-                    ),
+              ),
             );
           }),
         ),
@@ -341,9 +342,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
             child: Text(
               '퇴사',
               style: AppTypography.bodyMediumR.copyWith(
-                color: isRetired
-                    ? AppColors.grey100
-                    : AppColors.textSecondary,
+                color: isRetired ? AppColors.grey100 : AppColors.textSecondary,
                 decoration: TextDecoration.underline,
               ),
             ),
@@ -384,7 +383,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
     selected = DateTime(selected.year, selected.month, selected.day);
 
     showModalBottomSheet<void>(
-          context: context,
+      context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         height: 280,
@@ -434,7 +433,11 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
                       } catch (e) {
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('입사일 수정 실패: $e')),
+                            SnackBar(
+                              content: Text(
+                                '입사일 수정 실패: ${userFriendlyErrorMessage(e)}',
+                              ),
+                            ),
                           );
                         }
                       }
@@ -443,7 +446,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
                       '확인',
                       style: AppTypography.bodyMediumB.copyWith(
                         color: AppColors.primaryDark,
-                fontSize: 14.sp,
+                        fontSize: 14.sp,
                       ),
                     ),
                   ),
@@ -485,14 +488,14 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
       child: IntrinsicWidth(
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
-      decoration: BoxDecoration(
+          decoration: BoxDecoration(
             color: const Color(0xFFF5F5F7),
             borderRadius: BorderRadius.circular(5.r),
-      ),
-      child: Row(
+          ),
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
-        children: [
+            children: [
               SvgPicture.asset(
                 'assets/icons/svg/icon/calendar_mint_18.svg',
                 width: 18,
@@ -506,9 +509,9 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
                     : _hireDateButtonStyle.copyWith(
                         color: const Color(0xFF000000),
                         fontWeight: FontWeight.w400,
-            ),
-          ),
-        ],
+                      ),
+              ),
+            ],
           ),
         ),
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../../data/models/labor_cost/monthly_detail.dart';
 import '../../../data/repositories/labor_cost_repository.dart';
@@ -38,7 +39,8 @@ class LaborCostMonthlyListScreen extends StatefulWidget {
       _LaborCostMonthlyListScreenState();
 }
 
-class _LaborCostMonthlyListScreenState extends State<LaborCostMonthlyListScreen> {
+class _LaborCostMonthlyListScreenState
+    extends State<LaborCostMonthlyListScreen> {
   late int _year;
   late int _month;
   int _day = 1;
@@ -80,7 +82,7 @@ class _LaborCostMonthlyListScreenState extends State<LaborCostMonthlyListScreen>
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = userFriendlyErrorMessage(e);
         _loading = false;
       });
     }
@@ -88,7 +90,7 @@ class _LaborCostMonthlyListScreenState extends State<LaborCostMonthlyListScreen>
 
   Future<void> _pickMonth() async {
     var selected = DateTime(_year, _month, _day);
-    
+
     await showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -152,7 +154,9 @@ class _LaborCostMonthlyListScreenState extends State<LaborCostMonthlyListScreen>
                   mode: CupertinoDatePickerMode.monthYear,
                   initialDateTime: selected,
                   minimumDate: DateTime(2020),
-                  maximumDate: DateTime.now().add(const Duration(days: 365 * 2)),
+                  maximumDate: DateTime.now().add(
+                    const Duration(days: 365 * 2),
+                  ),
                   onDateTimeChanged: (v) => selected = v,
                 ),
               ),
@@ -173,26 +177,26 @@ class _LaborCostMonthlyListScreenState extends State<LaborCostMonthlyListScreen>
     final content = _loading
         ? const Center(child: CircularProgressIndicator())
         : _error != null
-            ? Center(
-                child: Padding(
-                  padding: EdgeInsets.all(24.r),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _error!,
-                        textAlign: TextAlign.center,
-                        style: AppTypography.bodyMediumR.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      SizedBox(height: 16.h),
-                      FilledButton(onPressed: _load, child: const Text('다시 시도')),
-                    ],
+        ? Center(
+            child: Padding(
+              padding: EdgeInsets.all(24.r),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _error!,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.bodyMediumR.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
-                ),
-              )
-            : _buildBody(_data!);
+                  SizedBox(height: 16.h),
+                  FilledButton(onPressed: _load, child: const Text('다시 시도')),
+                ],
+              ),
+            ),
+          )
+        : _buildBody(_data!);
 
     if (widget.embedded) {
       return ColoredBox(color: AppColors.grey0Alt, child: content);
@@ -227,58 +231,60 @@ class _LaborCostMonthlyListScreenState extends State<LaborCostMonthlyListScreen>
         child: ListView(
           padding: EdgeInsets.fromLTRB(0.w, 0.h, 0.w, 16.h),
           children: [
-          _MonthFilterBar(
-            label: _filterDateLabel(),
-            businessDays: d.businessDays,
-            onTap: _pickMonth,
-          ),
-          SizedBox(height: 12.h),
-          if (d.employees.isEmpty)
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.w),
-              child: Container(
-                padding: EdgeInsets.all(24.r),
-                decoration: BoxDecoration(
-                  color: AppColors.grey0,
-                  borderRadius: BorderRadius.circular(16.r),
+            _MonthFilterBar(
+              label: _filterDateLabel(),
+              businessDays: d.businessDays,
+              onTap: _pickMonth,
+            ),
+            SizedBox(height: 12.h),
+            if (d.employees.isEmpty)
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                child: Container(
+                  padding: EdgeInsets.all(24.r),
+                  decoration: BoxDecoration(
+                    color: AppColors.grey0,
+                    borderRadius: BorderRadius.circular(16.r),
+                  ),
+                  child: Text(
+                    '해당 월 급여 데이터가 없습니다.',
+                    textAlign: TextAlign.center,
+                    style: AppTypography.bodyMediumR.copyWith(
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
                 ),
-                child: Text(
-                  '해당 월 급여 데이터가 없습니다.',
-                  textAlign: TextAlign.center,
-                  style: AppTypography.bodyMediumR.copyWith(
-                    color: AppColors.textTertiary,
+              )
+            else
+              ...d.employees.map(
+                (e) => Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20.w),
+                  child: _EmployeeAccordionCard(
+                    employee: e,
+                    expanded: _expandedEmployeeIds.contains(e.employeeId),
+                    onToggle: () {
+                      setState(() {
+                        if (_expandedEmployeeIds.contains(e.employeeId)) {
+                          _expandedEmployeeIds.remove(e.employeeId);
+                        } else {
+                          _expandedEmployeeIds.add(e.employeeId);
+                        }
+                      });
+                    },
                   ),
                 ),
               ),
-            )
-          else
-            ...d.employees.map(
-              (e) => Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
-                child: _EmployeeAccordionCard(
-                  employee: e,
-                  expanded: _expandedEmployeeIds.contains(e.employeeId),
-                  onToggle: () {
-                    setState(() {
-                      if (_expandedEmployeeIds.contains(e.employeeId)) {
-                        _expandedEmployeeIds.remove(e.employeeId);
-                      } else {
-                        _expandedEmployeeIds.add(e.employeeId);
-                      }
-                    });
-                  },
-                ),
-              ),
+            SizedBox(height: 10.h),
+            _MonthlySummaryCard(
+              totalWorkMinutes: d.totalWorkMinutes,
+              totalCost: d.totalCost,
+              allowanceSummary: allowanceSummary.isEmpty
+                  ? '-'
+                  : allowanceSummary,
+              totalEmployeeCount: d.totalEmployeeCount,
+              changePercentText: '$changePercent%',
+              changeWentUp: changeWentUp,
             ),
-          SizedBox(height: 10.h),
-          _MonthlySummaryCard(
-            totalWorkMinutes: d.totalWorkMinutes,
-            totalCost: d.totalCost,
-            allowanceSummary: allowanceSummary.isEmpty ? '-' : allowanceSummary,
-            totalEmployeeCount: d.totalEmployeeCount,
-            changePercentText: '$changePercent%',
-            changeWentUp: changeWentUp,
-          ),
           ],
         ),
       ),
@@ -389,109 +395,119 @@ class _EmployeeAccordionCard extends StatelessWidget {
                   padding: EdgeInsets.all(16.r),
                   child: Column(
                     children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 11,
-                            vertical: 7,
-                          ),
-                          decoration: BoxDecoration(
-                            color: badgeOn ? AppColors.primary : AppColors.grey200,
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          child: Text(
-                            badgeText,
-                            style: AppTypography.bodySmallB.copyWith(
-                              fontSize: 12.sp,
-                              color: AppColors.grey0,
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 11,
+                              vertical: 7,
+                            ),
+                            decoration: BoxDecoration(
+                              color: badgeOn
+                                  ? AppColors.primary
+                                  : AppColors.grey200,
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                            child: Text(
+                              badgeText,
+                              style: AppTypography.bodySmallB.copyWith(
+                                fontSize: 12.sp,
+                                color: AppColors.grey0,
+                              ),
                             ),
                           ),
-                        ),
-                        SizedBox(width: 10.w),
-                        Image.asset(
-                          'assets/icons/png/common/star_green_icon.png',
-                          width: 18,
-                          height: 18,
-                        ),
-                        SizedBox(width: 10.w),
-                        Text(
-                          employee.employeeName,
-                          style: AppTypography.bodyLargeR.copyWith(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w400,
-                            height: 16 / 16,
-                            color: AppColors.textPrimary,
+                          SizedBox(width: 10.w),
+                          Image.asset(
+                            'assets/icons/png/common/star_green_icon.png',
+                            width: 18,
+                            height: 18,
                           ),
-                        ),
-                        const Spacer(),
-                        Icon(
-                          expanded
-                              ? Icons.keyboard_arrow_up_rounded
-                              : Icons.keyboard_arrow_down_rounded,
-                          size: 24,
-                          color: AppColors.grey150,
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 12.h),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Padding(
-                            padding: EdgeInsets.only(right: 14.w),
-                            child: _metricValue(
-                              label: '근무시간',
-                              value: _formatMinutes(employee.totalWorkMinutes),
+                          SizedBox(width: 10.w),
+                          Text(
+                            employee.employeeName,
+                            style: AppTypography.bodyLargeR.copyWith(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w400,
+                              height: 16 / 16,
+                              color: AppColors.textPrimary,
                             ),
                           ),
-                        ),
-                        Container(
-                          width: 1,
-                          height: 24,
-                          color: AppColors.grey50,
-                        ),
-                        Expanded(
-                          child: Padding(
-                            padding: EdgeInsets.only(left: 14.w),
-                            child: _metricValue(
-                              label: '주 근로',
-                              value: weeklyHours,
-                            ),
+                          const Spacer(),
+                          Icon(
+                            expanded
+                                ? Icons.keyboard_arrow_up_rounded
+                                : Icons.keyboard_arrow_down_rounded,
+                            size: 24,
+                            color: AppColors.grey150,
                           ),
-                        ),
-                      ],
-                    ),
-                    if (expanded) ...[
-                      SizedBox(height: 14.h),
-                      Container(
-                        padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 12.h),
-                        decoration: BoxDecoration(
-                          color: AppColors.grey0Alt,
-                          borderRadius: BorderRadius.circular(16.r),
-                        ),
-                        child: Column(
-                          children: [
-                            _detailLine(
-                              label: employee.wageTypeLabel,
-                              value: _wageAmountText(employee.wageAmount),
-                            ),
-                            _detailLine(
-                              label: '기타수당액',
-                              value: LaborCostFormatters.won(employee.overtimePay),
-                            ),
-                            _detailLine(
-                              label: '주휴수당액',
-                              value: LaborCostFormatters.won(employee.weeklyAllowance),
-                            ),
-                            _detailLine(
-                              label: '기본 급여액',
-                              value: LaborCostFormatters.won(employee.basePay),
-                            ),
-                          ],
-                        ),
+                        ],
                       ),
-                    ],
+                      SizedBox(height: 12.h),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.only(right: 14.w),
+                              child: _metricValue(
+                                label: '근무시간',
+                                value: _formatMinutes(
+                                  employee.totalWorkMinutes,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            width: 1,
+                            height: 24,
+                            color: AppColors.grey50,
+                          ),
+                          Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.only(left: 14.w),
+                              child: _metricValue(
+                                label: '주 근로',
+                                value: weeklyHours,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (expanded) ...[
+                        SizedBox(height: 14.h),
+                        Container(
+                          padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 12.h),
+                          decoration: BoxDecoration(
+                            color: AppColors.grey0Alt,
+                            borderRadius: BorderRadius.circular(16.r),
+                          ),
+                          child: Column(
+                            children: [
+                              _detailLine(
+                                label: employee.wageTypeLabel,
+                                value: _wageAmountText(employee.wageAmount),
+                              ),
+                              _detailLine(
+                                label: '기타수당액',
+                                value: LaborCostFormatters.won(
+                                  employee.overtimePay,
+                                ),
+                              ),
+                              _detailLine(
+                                label: '주휴수당액',
+                                value: LaborCostFormatters.won(
+                                  employee.weeklyAllowance,
+                                ),
+                              ),
+                              _detailLine(
+                                label: '기본 급여액',
+                                value: LaborCostFormatters.won(
+                                  employee.basePay,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -502,9 +518,7 @@ class _EmployeeAccordionCard extends StatelessWidget {
                       borderRadius: BorderRadius.vertical(
                         bottom: Radius.circular(16),
                       ),
-                      border: Border(
-                        top: BorderSide(color: AppColors.grey25),
-                      ),
+                      border: Border(top: BorderSide(color: AppColors.grey25)),
                     ),
                     padding: EdgeInsets.all(16.r),
                     child: _detailLine(
@@ -527,10 +541,7 @@ class _EmployeeAccordionCard extends StatelessWidget {
     return LaborCostFormatters.won(amount);
   }
 
-  Widget _metricValue({
-    required String label,
-    required String value,
-  }) {
+  Widget _metricValue({required String label, required String value}) {
     return Row(
       children: [
         Text(
@@ -574,11 +585,14 @@ class _EmployeeAccordionCard extends StatelessWidget {
           const Spacer(),
           Text(
             value,
-            style: (strong ? AppTypography.bodyLargeB : AppTypography.bodyMediumR)
-                .copyWith(
-              fontSize: strong ? 16 : 15,
-              color: strong ? AppColors.textPrimary : AppColors.textSecondary,
-            ),
+            style:
+                (strong ? AppTypography.bodyLargeB : AppTypography.bodyMediumR)
+                    .copyWith(
+                      fontSize: strong ? 16 : 15,
+                      color: strong
+                          ? AppColors.textPrimary
+                          : AppColors.textSecondary,
+                    ),
           ),
         ],
       ),
@@ -618,9 +632,15 @@ class _MonthlySummaryCard extends StatelessWidget {
             padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 12.h),
             child: Column(
               children: [
-                _summaryLine(label: '총 근무시간 합계', value: _formatMinutes(totalWorkMinutes)),
+                _summaryLine(
+                  label: '총 근무시간 합계',
+                  value: _formatMinutes(totalWorkMinutes),
+                ),
                 const Divider(height: 16, color: AppColors.grey25),
-                _summaryLine(label: '총 급여', value: LaborCostFormatters.won(totalCost)),
+                _summaryLine(
+                  label: '총 급여',
+                  value: LaborCostFormatters.won(totalCost),
+                ),
                 const Divider(height: 16, color: AppColors.grey25),
                 _summaryLine(label: '수당내역', value: allowanceSummary),
                 const Divider(height: 16, color: AppColors.grey25),
@@ -664,10 +684,7 @@ class _MonthlySummaryCard extends StatelessWidget {
     );
   }
 
-  Widget _summaryLine({
-    required String label,
-    required String value,
-  }) {
+  Widget _summaryLine({required String label, required String value}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

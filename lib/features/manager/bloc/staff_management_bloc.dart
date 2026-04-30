@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../../data/repositories/manager_home_repository.dart';
 import '../../../data/repositories/owner_home_repository.dart';
@@ -26,9 +27,7 @@ class StaffManagementBloc
     );
     on<StaffManagementReviewCreated>(_onReviewCreated);
     on<StaffManagementReviewDeleted>(_onReviewDeleted);
-    on<StaffManagementWorkerStatusSaveRequested>(
-      _onWorkerStatusSaveRequested,
-    );
+    on<StaffManagementWorkerStatusSaveRequested>(_onWorkerStatusSaveRequested);
     on<StaffManagementDaySchedulePutRequested>(_onDaySchedulePutRequested);
     on<StaffManagementWeekSchedulePutRequested>(_onWeekSchedulePutRequested);
   }
@@ -112,7 +111,7 @@ class StaffManagementBloc
       emit(
         state.copyWith(
           status: StaffManagementBlocStatus.failure,
-          errorMessage: e.toString(),
+          errorMessage: userFriendlyErrorMessage(e),
           isLoading: false,
         ),
       );
@@ -161,7 +160,7 @@ class StaffManagementBloc
       emit(
         state.copyWith(
           status: StaffManagementBlocStatus.failure,
-          errorMessage: e.toString(),
+          errorMessage: userFriendlyErrorMessage(e),
           isLoading: false,
         ),
       );
@@ -202,7 +201,7 @@ class StaffManagementBloc
       emit(
         state.copyWith(
           status: StaffManagementBlocStatus.failure,
-          errorMessage: e.toString(),
+          errorMessage: userFriendlyErrorMessage(e),
           isLoading: false,
         ),
       );
@@ -231,7 +230,7 @@ class StaffManagementBloc
       emit(
         state.copyWith(
           status: StaffManagementBlocStatus.failure,
-          errorMessage: e.toString(),
+          errorMessage: userFriendlyErrorMessage(e),
           isLoading: false,
         ),
       );
@@ -259,7 +258,7 @@ class StaffManagementBloc
       emit(
         state.copyWith(
           status: StaffManagementBlocStatus.failure,
-          errorMessage: e.toString(),
+          errorMessage: userFriendlyErrorMessage(e),
           isLoading: false,
         ),
       );
@@ -280,10 +279,7 @@ class StaffManagementBloc
     try {
       await _repository.putDaySchedule(
         branchId: event.branchId,
-        data: {
-          'work_date': event.workDate,
-          'slots': event.slots,
-        },
+        data: {'work_date': event.workDate, 'slots': event.slots},
       );
       add(
         StaffManagementDayScheduleRequested(
@@ -301,7 +297,7 @@ class StaffManagementBloc
       emit(
         state.copyWith(
           status: StaffManagementBlocStatus.failure,
-          errorMessage: e.toString(),
+          errorMessage: userFriendlyErrorMessage(e),
           isLoading: false,
         ),
       );
@@ -322,10 +318,7 @@ class StaffManagementBloc
     try {
       await _repository.putWeekSchedule(
         branchId: event.branchId,
-        data: {
-          'week_start_date': event.weekStartDate,
-          'days': event.days,
-        },
+        data: {'week_start_date': event.weekStartDate, 'days': event.days},
       );
       add(
         StaffManagementWeekScheduleRequested(
@@ -343,7 +336,7 @@ class StaffManagementBloc
       emit(
         state.copyWith(
           status: StaffManagementBlocStatus.failure,
-          errorMessage: e.toString(),
+          errorMessage: userFriendlyErrorMessage(e),
           isLoading: false,
         ),
       );
@@ -385,7 +378,7 @@ class StaffManagementBloc
       emit(
         state.copyWith(
           status: StaffManagementBlocStatus.failure,
-          errorMessage: e.toString(),
+          errorMessage: userFriendlyErrorMessage(e),
           isLoading: false,
         ),
       );
@@ -443,7 +436,7 @@ class StaffManagementBloc
       emit(
         state.copyWith(
           status: StaffManagementBlocStatus.failure,
-          errorMessage: e.toString(),
+          errorMessage: userFriendlyErrorMessage(e),
           isLoading: false,
         ),
       );
@@ -483,7 +476,7 @@ class StaffManagementBloc
       emit(
         state.copyWith(
           status: StaffManagementBlocStatus.failure,
-          errorMessage: e.toString(),
+          errorMessage: userFriendlyErrorMessage(e),
           isLoading: false,
         ),
       );

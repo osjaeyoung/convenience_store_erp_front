@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../../core/formatters/thousands_separator_input_formatter.dart';
 import '../../../data/models/store_expense/store_expense_month.dart';
@@ -264,20 +265,20 @@ class _StoreExpenseEditItemScreenState
 
   Widget _fileArea() {
     if (_pickedFiles.isEmpty) {
-    return InkWell(
-      onTap: _pickFiles,
+      return InkWell(
+        onTap: _pickFiles,
         borderRadius: BorderRadius.circular(14.r),
-      child: Container(
-        width: double.infinity,
+        child: Container(
+          width: double.infinity,
           height: 132,
-        decoration: BoxDecoration(
+          decoration: BoxDecoration(
             color: AppColors.grey0Alt,
             borderRadius: BorderRadius.circular(14.r),
             border: Border.all(color: AppColors.grey50),
           ),
           child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
               Container(
                 width: 40,
                 height: 40,
@@ -292,13 +293,13 @@ class _StoreExpenseEditItemScreenState
                 ),
               ),
               SizedBox(height: 10.h),
-                  Text(
-                    '파일을 첨부해주세요.',
-                    style: AppTypography.bodyMediumB.copyWith(
-                      color: AppColors.primary,
-                      fontSize: 14.sp,
-                    ),
-                  ),
+              Text(
+                '파일을 첨부해주세요.',
+                style: AppTypography.bodyMediumB.copyWith(
+                  color: AppColors.primary,
+                  fontSize: 14.sp,
+                ),
+              ),
               SizedBox(height: 4.h),
               Text(
                 '영수증 사진 또는 PDF를 업로드할 수 있어요.',
@@ -315,9 +316,9 @@ class _StoreExpenseEditItemScreenState
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
+      children: [
         Row(
-                        children: [
+          children: [
             Expanded(
               child: Text(
                 '첨부파일',
@@ -340,11 +341,11 @@ class _StoreExpenseEditItemScreenState
                 style: AppTypography.bodySmallB.copyWith(
                   color: AppColors.primary,
                   fontSize: 13.sp,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                ),
+              ),
+            ),
+          ],
+        ),
         SizedBox(height: 8.h),
         for (final f in _pickedFiles) ...[
           _attachedFileCard(f),
@@ -408,7 +409,7 @@ class _StoreExpenseEditItemScreenState
         (path.startsWith('http') ||
             path.contains('amazonaws.com') ||
             path.startsWith('expenses/'));
-    
+
     if (isRemoteOrS3) {
       return EtcRecordInlineFilePreview(
         fileUrl: path,
@@ -417,7 +418,7 @@ class _StoreExpenseEditItemScreenState
         showFileName: false,
       );
     }
-    
+
     return PickedFileInlinePreview(
       key: ValueKey<String>('${f.name}_${f.size}'),
       file: f,
@@ -557,9 +558,11 @@ class _StoreExpenseEditItemScreenState
       Navigator.pop<bool>(context, true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('항목 수정에 실패했습니다: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('항목 수정에 실패했습니다: ${userFriendlyErrorMessage(e)}'),
+        ),
+      );
       setState(() => _saving = false);
     }
   }
@@ -567,77 +570,77 @@ class _StoreExpenseEditItemScreenState
   Future<void> _delete() async {
     final sure =
         await showDialog<bool>(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.55),
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24.r),
-        ),
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(24.w, 32.h, 24.w, 24.h),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                '이 지출 항목을 삭제할까요?',
-                style: AppTypography.heading3.copyWith(
-                  color: AppColors.textPrimary,
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.w600,
-                  height: 24 / 18,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 32.h),
-              Row(
+          context: context,
+          barrierColor: Colors.black.withValues(alpha: 0.55),
+          builder: (ctx) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24.r),
+            ),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(24.w, 32.h, 24.w, 24.h),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: Size.fromHeight(48.h),
-                        backgroundColor: AppColors.grey0,
-                        foregroundColor: AppColors.primary,
-                        side: const BorderSide(color: AppColors.primary),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                      ),
-                      child: Text(
-                        '취소',
-                        style: AppTypography.bodyMediumM.copyWith(
-                          fontSize: 14.sp,
-                        ),
-                      ),
+                  Text(
+                    '이 지출 항목을 삭제할까요?',
+                    style: AppTypography.heading3.copyWith(
+                      color: AppColors.textPrimary,
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w600,
+                      height: 24 / 18,
                     ),
+                    textAlign: TextAlign.center,
                   ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      style: FilledButton.styleFrom(
-                        minimumSize: Size.fromHeight(48.h),
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.grey0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r),
+                  SizedBox(height: 32.h),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: Size.fromHeight(48.h),
+                            backgroundColor: AppColors.grey0,
+                            foregroundColor: AppColors.primary,
+                            side: const BorderSide(color: AppColors.primary),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                          ),
+                          child: Text(
+                            '취소',
+                            style: AppTypography.bodyMediumM.copyWith(
+                              fontSize: 14.sp,
+                            ),
+                          ),
                         ),
                       ),
-                      child: Text(
-                        '삭제',
-                        style: AppTypography.bodyMediumB.copyWith(
-                          fontSize: 14.sp,
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          style: FilledButton.styleFrom(
+                            minimumSize: Size.fromHeight(48.h),
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: AppColors.grey0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                          ),
+                          child: Text(
+                            '삭제',
+                            style: AppTypography.bodyMediumB.copyWith(
+                              fontSize: 14.sp,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
         ) ??
         false;
 
@@ -654,9 +657,11 @@ class _StoreExpenseEditItemScreenState
       Navigator.pop<bool>(context, true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('항목 삭제에 실패했습니다: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('항목 삭제에 실패했습니다: ${userFriendlyErrorMessage(e)}'),
+        ),
+      );
       setState(() => _saving = false);
     }
   }

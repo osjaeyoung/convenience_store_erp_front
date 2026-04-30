@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../../data/models/recruitment/recruitment_models.dart';
 import '../../../data/repositories/manager_home_repository.dart';
@@ -61,7 +62,7 @@ class _RecruitmentApplicationDetailScreenState
         _reviewAverageRating = null;
         _reviewCount = null;
         _loading = false;
-        _error = e.toString();
+        _error = userFriendlyErrorMessage(e);
       });
     }
   }
@@ -142,9 +143,11 @@ class _RecruitmentApplicationDetailScreenState
       );
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('채팅방을 열 수 없습니다: $error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('채팅방을 열 수 없습니다. ${userFriendlyErrorMessage(error)}'),
+        ),
+      );
     }
   }
 

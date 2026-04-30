@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:convenience_store_erp_front/core/errors/user_friendly_error_message.dart';
 
 import '../../../data/models/recruitment/recruitment_models.dart';
 import '../../../data/repositories/manager_home_repository.dart';
@@ -58,14 +59,14 @@ class RecruitmentBloc extends Bloc<RecruitmentBlocEvent, RecruitmentBlocState> {
           RecruitmentBlocState.success(
             homeData: previousData,
             branchId: event.branchId,
-            paginationErrorMessage: e.toString(),
+            paginationErrorMessage: userFriendlyErrorMessage(e),
           ),
         );
         return;
       }
       emit(
         RecruitmentBlocState.failure(
-          e.toString(),
+          userFriendlyErrorMessage(e),
           previousData: previousData,
           branchId: event.branchId,
         ),
